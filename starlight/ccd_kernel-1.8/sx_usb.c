@@ -234,7 +234,7 @@ static int serial = 1;
 static int force  = 0;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 MODULE_AUTHOR("David Schmenk, dschmenk@earthlink.net");
-MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver");
+MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.8a");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(model, "SX camera model");
 MODULE_PARM_DESC(color, "SX camera one-shot color flag");
@@ -250,6 +250,7 @@ static struct usb_device_id sx_usb_id_table[] =
     {USB_DEVICE(EZUSB_VENDOR_ID,  EZUSB_PRODUCT_ID)},
     {USB_DEVICE(EZUSB2_VENDOR_ID, EZUSB2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2_PRODUCT_ID)},
+    {USB_DEVICE(ECHO2a_VENDOR_ID, ECHO2a_PRODUCT_ID)},
     {}
 };
 MODULE_DEVICE_TABLE(usb, sx_usb_id_table);
@@ -1197,8 +1198,10 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
         MOD_INC_USE_COUNT;
         return (&ezusb_device);
     }
-    else if(usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
-            usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID)
+    else if((usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
+             usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID) || 
+            (usbdev->descriptor.idVendor  == ECHO2a_VENDOR_ID &&
+             usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID))
     {
         struct ccd_mini     mini_device;
         int                 sx_model, sx_color;

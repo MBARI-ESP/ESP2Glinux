@@ -47,6 +47,8 @@
 #define EZUSB2_PRODUCT_ID   0x8613
 #define ECHO2_VENDOR_ID     0x4444
 #define ECHO2_PRODUCT_ID    0x4220
+#define ECHO2a_VENDOR_ID    0x1278  //added 10/24/03 -- brent@mbari.org 
+#define ECHO2a_PRODUCT_ID   0x0100  //added 10/24/03 -- brent@mbari.org 
 /*
  * Set and reset 8051 requests.
  */
