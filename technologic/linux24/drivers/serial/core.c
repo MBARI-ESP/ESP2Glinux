@@ -1788,8 +1788,7 @@ static int uart_read_proc(char *page, char **start, off_t off,
 	int i, len = 0, l;
 	off_t begin = 0;
 
-	len += sprintf(page, "serinfo:1.0 driver%s%s revision:%s\n",
-			"", "", "");
+	len += sprintf(page, "serinfo:1.0 driver revision: MBARI\n");
 	for (i = 0; i < drv->nr && len < PAGE_SIZE - 96; i++) {
 		l = uart_line_info(page + len, drv, i);
 		len += l;
@@ -2094,34 +2093,27 @@ static int uart_pm(struct pm_dev *dev, pm_request_t rqst, void *data)
 }
 #endif
 
-#define MAX_NORMAL_NAME 10
 static inline void
 uart_report_port(struct uart_driver *drv, struct uart_port *port)
 {
-  
 #ifdef CONFIG_DEVFS_FS
-    // Copy the port's normal name, but take out the '%d' on the end that
-    // devfs needs.
-    char name[MAX_NORMAL_NAME];
-    int i;
-    for( i=0 ; i < MAX_NORMAL_NAME ; i++ )
-    {
-        if( drv->normal_name[i] != '%' )
-        {
-            name[i] = drv->normal_name[i];
-        }
-        else
-        {
-            name[i] = 0;
-            break;
-        }
+    // exclude the %d at the end of the name that devfs needs
+    const char *src = drv->normal_name;
+    for (;;) {
+      switch (*src) {
+        case '\0':
+        case '%':
+          goto brk;
+      }
+      src++;
     }
+brk: printk("%.*s%d at ", src-drv->normal_name, drv->normal_name, port->line);
+#else
+    printk("%s%d at ", drv->normal_name, port->line);
 #endif
-
-    printk("%s%d at ", name, port->line);
 	switch (port->iotype) {
 	case UPIO_PORT:
-		printk("I/O 0x%x", port->iobase);
+		printk("0x%x", port->iobase);
 		break;
 	case UPIO_HUB6:
 		printk("I/O 0x%x offset 0x%x", port->iobase, port->hub6);
@@ -2387,20 +2379,21 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *port)
 	port->info = state->info;
 
 	uart_configure_port(drv, state, port);
-
+        if (port->type != PORT_UNKNOWN) {
 	/*
-	 * Register the port whether it's detected or not.  This allows
-	 * setserial to be used to alter this ports parameters.
+	 * Do not register the port if it's not detected.
+         * I don't care about setserial -- brent@mbari.org
 	 */
-	tty_register_devfs(drv->normal_driver, 0, drv->minor + port->line);
-	tty_register_devfs(drv->callout_driver, 0, drv->minor + port->line);
+	  tty_register_devfs(drv->normal_driver, 0, drv->minor + port->line);
+	  tty_register_devfs(drv->callout_driver, 0, drv->minor + port->line);
 
 #ifdef CONFIG_PM
-	port->cons = drv->cons;
-	state->pm = pm_register(PM_SYS_DEV, PM_SYS_COM, uart_pm);
-	if (state->pm)
+	  port->cons = drv->cons;
+	  state->pm = pm_register(PM_SYS_DEV, PM_SYS_COM, uart_pm);
+	  if (state->pm)
 		state->pm->data = state;
 #endif
+        }
 
  out:
 	up(&port_sem);
@@ -2419,6 +2412,7 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *port)
  */
 int uart_remove_one_port(struct uart_driver *drv, struct uart_port *port)
 {
+  if (port->type != PORT_UNKNOWN) {
 	struct uart_state *state = drv->state + port->line;
 
 	BUG_ON(in_interrupt());
@@ -2440,8 +2434,8 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *port)
 	uart_unconfigure_port(drv, state);
 	state->port = NULL;
 	up(&port_sem);
-
-	return 0;
+  }
+  return 0;
 }
 
 /*
@@ -2522,47 +2516,49 @@ uart_find_match_or_unused(struct uart_driver *drv, struct uart_port *port)
 int uart_register_port(struct uart_driver *drv, struct uart_port *port)
 {
 	struct uart_state *state;
-	int ret;
+	int ret = -ENOSPC;
 
 	down(&port_sem);
 
-	state = uart_find_match_or_unused(drv, port);
+        if (port->type != PORT_UNKNOWN) {
+        
+	  state = uart_find_match_or_unused(drv, port);
 
-	if (state) {
-		/*
-		 * Ok, we've found a line that we can use.
-		 *
-		 * If we find a port that matches this one, and it appears
-		 * to be in-use (even if it doesn't have a type) we shouldn't
-		 * alter it underneath itself - the port may be open and
-		 * trying to do useful work.
-		 */
-		if (uart_users(state) != 0) {
-			ret = -EBUSY;
-			goto out;
-		}
+	  if (state) {
+		  /*
+		   * Ok, we've found a line that we can use.
+		   *
+		   * If we find a port that matches this one, and it appears
+		   * to be in-use (even if it doesn't have a type) we shouldn't
+		   * alter it underneath itself - the port may be open and
+		   * trying to do useful work.
+		   */
+		  if (uart_users(state) != 0) {
+			  ret = -EBUSY;
+			  goto out;
+		  }
 
-		/*
-		 * If the port is already initialised, don't touch it.
-		 */
-		if (state->port->type == PORT_UNKNOWN) {
-			state->port->iobase   = port->iobase;
-			state->port->membase  = port->membase;
-			state->port->irq      = port->irq;
-			state->port->uartclk  = port->uartclk;
-			state->port->fifosize = port->fifosize;
-			state->port->regshift = port->regshift;
-			state->port->iotype   = port->iotype;
-			state->port->flags    = port->flags;
-			state->port->line     = state - drv->state;
-			state->port->mapbase  = port->mapbase;
+		  /*
+		   * If the port is already initialised, don't touch it.
+		   */
+		  if (state->port->type == PORT_UNKNOWN) {
+			  state->port->iobase   = port->iobase;
+			  state->port->membase  = port->membase;
+			  state->port->irq      = port->irq;
+			  state->port->uartclk  = port->uartclk;
+			  state->port->fifosize = port->fifosize;
+			  state->port->regshift = port->regshift;
+			  state->port->iotype   = port->iotype;
+			  state->port->flags    = port->flags;
+			  state->port->line     = state - drv->state;
+			  state->port->mapbase  = port->mapbase;
 
-			uart_configure_port(drv, state, state->port);
-		}
+			  uart_configure_port(drv, state, state->port);
+		  }
 
-		ret = state->port->line;
-	} else
-		ret = -ENOSPC;
+		  ret = state->port->line;
+	  }
+        }
  out:
 	up(&port_sem);
 	return ret;
@@ -2589,7 +2585,7 @@ void uart_unregister_port(struct uart_driver *drv, int line)
 	state = drv->state + line;
 
 	down(&port_sem);
-	uart_unconfigure_port(drv, state);
+        uart_unconfigure_port(drv, state);
 	up(&port_sem);
 }
 
