@@ -23,7 +23,7 @@ HOSTCFLAGS	= -Wstrict-prototypes -Wall -O2 -fomit-frame-pointer
 #  gcc 3.4 builds a kernel that boots, but finds only 8MB of RAM
 #
 CROSS_COMPILE = /usr/local/opt/crosstool/arm-linux/gcc-3.3.4-glibc-2.3.2/bin/arm-linux-
-INSTALL_MOD_PATH = $(TOPDIR)/target
+INSTALL_MOD_PATH = $(HOME)/armHost
 
 #
 # Include the make variables (CC, etc...)
@@ -40,7 +40,7 @@ OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
-DEPMOD		= /bin/true #/sbin/depmod does not work for arm objects!
+DEPMOD		= $(TOPDIR)/../depmod.pl
 MODFLAGS	= -DMODULE
 CFLAGS_KERNEL	=
 PERL		= perl
@@ -419,14 +419,12 @@ _modinst_:
 # vmlinux.  This depmod is only for convenience to give the initial
 # boot a modules.dep even before / is mounted read-write.  However the
 # boot script depmod is the master version.
-ifeq "$(strip $(INSTALL_MOD_PATH))" ""
-depmod_opts	:=
-else
-depmod_opts	:= -b $(INSTALL_MOD_PATH) -r
-endif
+depmod_opts	:= -b $(MODLIB)
 .PHONY: _modinst_post
-_modinst_post: _modinst_post_pcmcia
-	if [ -r System.map ]; then $(DEPMOD) -ae -F System.map $(depmod_opts) $(KERNELRELEASE); fi
+_modinst_post: #vmlinux #_modinst_post_pcmcia
+	$(DEPMOD) -k vmlinux $(depmod_opts)
+	$(STRIP) --strip-unneeded `find $(MODLIB) -name "*.o"`
+#	if [ -r System.map ]; then $(DEPMOD) -ae -F System.map $(depmod_opts) $(KERNELRELEASE); fi
 
 # Backwards compatibilty symlinks for people still using old versions
 # of pcmcia-cs with hard coded pathnames on insmod.  Remove
