@@ -523,20 +523,18 @@ static unsigned int csambauart_get_mctrl(struct uart_port *port)
 
 static void csambauart_set_mctrl(struct uart_port *port, unsigned int mctrl)
 {
-	struct uart_amba_port *uap = (struct uart_amba_port *)port;
-	unsigned int ctrl = 0;
+    struct uart_amba_port *uap = (struct uart_amba_port *)port;
 	
 	/* If there's no RTS and DTR for this UART, do nothing here */
-	if(	(uap->rts_mask == 0) && (uap->dtr_mask == 0) )
-		return;
-  
-    if ((mctrl & TIOCM_RTS) == 0)
-		ctrl |= uap->rts_mask;
-	
-    if ((mctrl & TIOCM_DTR) == 0)
-		ctrl |= uap->dtr_mask;
-    
-	UART_PUT_MCR(ctrl, port);
+    if ( uap->rts_mask | uap->dtr_mask ) {  
+      unsigned int ctrl = 0;
+      if (mctrl & TIOCM_RTS)
+		  ctrl |= uap->rts_mask;
+      if (mctrl & TIOCM_DTR)
+		  ctrl |= uap->dtr_mask;
+      UART_PUT_MCR(ctrl, port);
+//printk ("AMBA serial ctrl assigned 0x%02x\n", ctrl);
+    }
 }
 
 static void csambauart_break_ctl(struct uart_port *port, int break_state)
