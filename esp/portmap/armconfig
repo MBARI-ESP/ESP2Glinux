@@ -2,5 +2,7 @@
 # unpack and patch portmap daemon for arm-linux -- 3/15/05 brent@mbari.org
 
 : ${PORTMAPVERS:=portmap_5beta}
-tar xzf portmap_5gentoo.tar.gz && cd $PORTMAPVERS || exit 2
+rm -rf $PORTMAPVERS && 
+tar xzf portmap_5gentoo.tar.gz && 
+cd $PORTMAPVERS &&
 echo Done.

@@ -8,7 +8,7 @@
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
-cd ${READLNVERS-zlib-1.2.2} || exit 2
+cd ${ZLIB-zlib-1.2.2} || exit 2
 make install || exit 1
 mkdir -p $HOSTTOP || exit 3
 set -x

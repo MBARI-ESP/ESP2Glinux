@@ -8,7 +8,7 @@
 : ${LIBTOP:=${1-$ARMGCC/usr}}
 : ${DBVERS:=dropbear-0.45}
 export CC CFLAGS CXXFLAGS
-tar xzf $DBVERS.tar.gz && cd $DBVERS && 
+rm -rf $DBVERS && tar xzf $DBVERS.tar.gz && cd $DBVERS && 
 patch < ../restore-all-fd.patch &&
 cp -f ../options.embedded options.h && ac_cv_func_logout=no \
 configure --host=arm-unknown-linux --prefix=$LIBTOP \
