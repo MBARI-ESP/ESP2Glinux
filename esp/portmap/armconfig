@@ -1,0 +1,6 @@
+#!/bin/sh
+# unpack and patch portmap daemon for arm-linux -- 3/15/05 brent@mbari.org
+
+: ${PORTMAPVERS:=portmap_5beta}
+tar xzf $PORTMAPVERS.tar.gz && cd $PORTMAPVERS || exit 2
+echo Done.
