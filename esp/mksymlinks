@@ -1,0 +1,27 @@
+#!/bin/sh
+#mksymlinks -- make symbolic links in directory $1
+
+[ "$1" = "--help" ] && { cat - <<EOS
+  Usage: `basename $0` {base directory} {precmd}
+Make symbolic links specified on stdin relative to specified base directory
+If base directory is omitted, make them in the current directory
+Each line of of stdin is of the form:
+"symlink Name" -> "symlink Target"
+Lines that lack the " -> " are ignored.  They may function as comments.
+precmd is an optional preparation command.
+Commonly, it is "rm -f" to remove any existing link beforehand
+EOS
+}
+
+[ "$1" ] && {
+  mkdir -p $1 && cd $1 || exit 4
+}
+
+while read linkName arrow linkTarget; do
+  [ "$arrow" = '->' ] && {
+    dir=`dirname $linkName`
+    [ "$2" ] && eval $2 $linkName
+    [ -d $dir ] || mkdir -p $dir
+    ln -s $linkTarget $linkName
+  }
+done
