@@ -1,7 +1,8 @@
 #!/bin/sh
-# patch busybox for arm-linux -- 3/15/05 brent@mbari.org
+# unpack & patch busybox for arm-linux -- 3/15/05 brent@mbari.org
 
-cd ${BBVERS-busybox-1.00} || exit 2
+tar xjf busybox-1.00.tar.bz2 &&
+cd ${BBVERS-busybox-1.00} &&
 patch -p1 <../busybox-1.00esp.patch &&
 echo "Done."
 
