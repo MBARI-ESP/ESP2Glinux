@@ -1,0 +1,22 @@
+#!/bin/sh
+# build & install busybox for arm-linux -- 3/10/05 brent@mbari.org
+# note that I build two busybox binaries.
+#  one is called suidbox as it is for suid binaries only
+#  This avoids having all busybox commands running suid root
+
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${BBVERS-busybox-1.00} || exit 2
+make clean && 
+cp ../config.busybox .config && 
+cp ../vi.c editors &&
+cp ../Config.in.networking networking &&
+cp ../Config.in.loginutils loginutils &&
+make &&
+sed -f ../fixlinks.sed busybox.links >busybox.links.fixed &&
+mv busybox.links.fixed busybox.links &&
+make install || exit 1
+make clean && cp ../config.suidbox .config && 
+make && make install BUSYBIN=suidbox &&
+echo "Done."
+
