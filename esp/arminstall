@@ -1,0 +1,21 @@
+#!/bin/sh
+#  unpack, patch, build and install all MBARI embedded linux packages 
+#  for now, we get away without dealing with interpackage build
+#  dependencies.  This may change in futher...  -- 3/15/05 brent@mbari.org
+
+if [ "$1" ]; then
+  dirs="$*"
+else
+  dirs=`echo *`
+fi
+
+mksymlinks ~/armHost "rm -f" < symlinks
+for dir in $dirs; do
+  [ -d $dir ] && [ $dir != CVS ] && (
+    echo
+    echo "BUILDING $dir:"
+    cd $dir
+    [ -x armconfig ] && { armconfig || exit $?; }
+    [ -x arminstall ] && { arminstall || exit $?; }
+  )
+done
