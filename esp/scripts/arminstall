@@ -1,9 +1,9 @@
 #!/bin/sh
-# install miscellenous script and configuration files -- 3/15/05 brent@mbari.org
+# install miscellenous script and configuration files -- 3/18/05 brent@mbari.org
 
 : ${TARGETTOP:=${2-/}}
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 echo "Installing scripts and configuration in $HOSTTOP"
-cp -a rootfs/* $HOSTTOP &&
+cp -fa rootfs/* $HOSTTOP &&
 rm -rf `find $HOSTTOP -name CVS` &&
 echo "Done."
