@@ -79,7 +79,7 @@ static int tty_drivers_read_proc(char *page, char **start, off_t off,
 			type = deftype;
 			break;
 		}
-		len += sprintf(page+len, "%-20s /dev/%-8s %3d %7s %s\n",
+		len += sprintf(page+len, "%-16s /dev/%-16s %3d %7s %s\n",
 			       p->driver_name ? p->driver_name : "unknown",
 			       p->name, p->major, range, type);
 		if (len+begin > off+count)
@@ -133,21 +133,37 @@ static int tty_ldiscs_read_proc(char *page, char **start, off_t off,
  */
 void proc_tty_register_driver(struct tty_driver *driver)
 {
-	struct proc_dir_entry *ent;
-		
-	if ((!driver->read_proc && !driver->write_proc) ||
-	    !driver->driver_name ||
-	    driver->proc_entry)
-		return;
+  struct proc_dir_entry *ent;
 
-	ent = create_proc_entry(driver->driver_name, 0, proc_tty_driver);
-	if (!ent)
-		return;
-	ent->read_proc = driver->read_proc;
-	ent->write_proc = driver->write_proc;
-	ent->data = driver;
+  if ((driver->read_proc || driver->write_proc) &&
+      driver->driver_name &&
+      !driver->proc_entry) {
 
-	driver->proc_entry = ent;
+    // use driver_name only until first % or /
+    char name[64];  //max allowable tty driver name is 63 chars?
+    char *dst = name;
+    char *end = name + sizeof(name)-1;
+    char *src = driver->driver_name;
+    while (dst < end) {
+      char c = *src++;
+      switch (c) {
+        case '\0':
+        case '%':
+        case '/':
+          goto brk;
+      }
+      *dst++ = c;
+    }
+brk:  *dst = '\0';
+
+    ent = create_proc_entry(name, 0, proc_tty_driver);
+    if (ent) {
+      ent->read_proc = driver->read_proc;
+      ent->write_proc = driver->write_proc;
+      ent->data = driver;
+      driver->proc_entry = ent;
+    }
+  }
 }
 
 /*
