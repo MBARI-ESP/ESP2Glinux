@@ -18,15 +18,6 @@ hostname
 #start devfsd
 /sbin/devfsd /dev 
 
-#create shortcuts to compact flash partitions
-[ /dev/hda* = '/dev/hda*' ] && ( cd /dev
-  hda=ide/host0/bus0/target0/lun0
-  [ -b $hda/disc ] && ln -s $hda/disc hda
-  for part in $hda/part*; do
-    [ -b $part ] && ln -s $part hda${part#$hda/part}
-  done
-)
-
 echo "Mounting /proc"
 mount -n -t proc proc /proc
 
