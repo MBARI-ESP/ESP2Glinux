@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
 SUBLEVEL = 26
-EXTRAVERSION =-vrs1-cirrus-1-2-1-ts6
+EXTRAVERSION =-vrs1-cirrus-ts6-mbari
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -17,8 +17,14 @@ HPATH   	= $(TOPDIR)/include
 FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math-emu
 
 HOSTCC  	= gcc
-HOSTCFLAGS	= -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
-CROSS_COMPILE = $(shell cd $(TOPDIR)/../../tools/crosstool/arm-9tdmi-linux-gnu/gcc-3.3.4-glibc-2.3.2/bin/ && pwd)/arm-9tdmi-linux-gnu-
+HOSTCFLAGS	= -Wstrict-prototypes -Wall -O2 -fomit-frame-pointer
+#
+#  Use technologics gcc 3.3 toolchain for building the kernel
+#  gcc 3.4 builds a kernel that boots, but finds only 8MB of RAM
+#
+CROSS_COMPILE = /usr/local/opt/crosstool/arm-linux/gcc-3.3.4-glibc-2.3.2/bin/arm-linux-
+INSTALL_MOD_PATH = $(TOPDIR)/target
+
 #
 # Include the make variables (CC, etc...)
 #
@@ -34,7 +40,7 @@ OBJCOPY		= $(CROSS_COMPILE)objcopy
 OBJDUMP		= $(CROSS_COMPILE)objdump
 MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
-DEPMOD		= /sbin/depmod
+DEPMOD		= /bin/true #/sbin/depmod does not work for arm objects!
 MODFLAGS	= -DMODULE
 CFLAGS_KERNEL	=
 PERL		= perl
