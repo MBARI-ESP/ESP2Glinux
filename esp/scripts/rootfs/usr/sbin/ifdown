@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+#  ifdown [interface name]
+#
+
+usage ()
+{
+    echo "usage:  ifdown [netInterface]"
+    echo "  deconfigure and disable the specified network interface"
+    exit 1
+}
+
+
+case "$1" in
+  -*|*/*|'') #any flag is a request for help
+    usage    
+  ;;
+  
+  *) #anything else must be the name of an interface
+    echo "Shutting down interface $1 ..."
+    pidfn=/var/run/udhcpc-$1.pid
+    [ -r $pidfn ] && {
+      kill `cat $pidfn` 2>/dev/null
+      rm -f $pidfn
+    }
+    ifconfig $1 down 
+  ;;
+esac

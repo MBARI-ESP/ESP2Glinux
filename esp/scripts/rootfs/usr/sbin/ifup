@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+#  ifup [interface name|definition file]
+#
+
+usage ()
+{
+    echo "usage:  ifup [netInterface|full path to definition file]"
+    echo "  configure and enable the specified network interface"
+    exit 1
+}
+
+ifup_function ()
+{
+    [ "${DEVICE}" ] || {
+      echo "Network DEVICE to start was not specified"
+      usage
+    }
+    echo "Bringing up interface $DEVICE ..."
+    [ "$IPADDR" ] && {
+      unset mask cast
+      [ "$NETMASK" ] && mask="netmask $NETMASK"
+      [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
+      ifconfig $DEVICE $IPADDR $mask $cast || exit 2
+      [ "$NETWORK" ] && route add -net $NETWORK $mask dev $DEVICE
+      [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $DEVICE
+    }
+    case "$BOOTPROTO" in
+      dhcp*)
+        daemon=/sbin/udhcpc  #only use this dhcp client
+        if test -x $daemon  ; then
+          pidfn=/var/run/udhcpc-$DEVICE.pid
+          if [ -r $pidfn ]; then
+            kill `cat $pidfn` 2>/dev/null
+          else
+            mkdir -p `dirname $pidfn`
+          fi
+          echo -n "Determining IP configuration for $DEVICE...."
+	  insmod af_packet >/dev/null 2>&1
+          mode=${BOOTPROTO#dhcp-}
+          [ "$mode" = "$BOOTPROTO" ] && mode=n
+          [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
+          $daemon -p $pidfn $DHCPNAME -$mode -i $DEVICE ||
+            echo "DHCP failed:  $interface IP=$IPADDR $mask $cast"
+        else
+            echo "No $daemon client daemon installed!"
+        fi
+      ;;
+      *)
+        [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast"
+      ;;
+    esac
+}
+
+case "$1" in
+  "")  #take the interface definitions from the environment
+    [ "${DEVICE}" ] || usage    
+    ifup_function
+  ;;
+  
+  */*) #assume anything with a / is the path to an interface definition file
+    unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
+    . $1 || exit 2
+    ifup_function
+  ;;
+  
+  -*)  #any flag is a request for help
+    usage    
+  ;;
+  
+  *) #anything else must be the name of an interface
+    unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
+    . /etc/sysconfig/ifcfg-$1 || exit 2
+    ifup_function
+  ;;
+esac
