@@ -1,0 +1,325 @@
+diff -ur busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
+--- busybox-1.00/applets/install.sh	2001-03-08 13:42:11.000000000 -0800
++++ busybox-1.00.new/applets/install.sh	2005-03-10 12:32:15.000000000 -0800
+@@ -2,6 +2,7 @@
+ 
+ export LC_ALL=POSIX
+ export LC_CTYPE=POSIX
++: ${BUSYBIN:=busybox}
+ 
+ prefix=$1
+ if [ "$prefix" = "" ]; then
+@@ -16,28 +17,28 @@
+ h=`sort busybox.links | uniq`
+ 
+ 
+-rm -f $prefix/bin/busybox || exit 1
++rm -f $prefix/bin/$BUSYBIN || exit 1
+ mkdir -p $prefix/bin || exit 1
+-install -m 755 busybox $prefix/bin/busybox || exit 1
++install -m 755 busybox $prefix/bin/$BUSYBIN || exit 1
+ 
+ for i in $h ; do
+ 	appdir=`dirname $i`
+ 	mkdir -p $prefix/$appdir || exit 1
+ 	if [ "$2" = "--hardlinks" ]; then
+-	    bb_path="$prefix/bin/busybox"
++	    bb_path="$prefix/bin/$BUSYBIN"
+ 	else
+ 	    case "$appdir" in
+ 		/)
+-		    bb_path="bin/busybox"
++		    bb_path="bin/$BUSYBIN"
+ 		;;
+ 		/bin)
+-		    bb_path="busybox"
++		    bb_path="$BUSYBIN"
+ 		;;
+-		/sbin)
+-		    bb_path="../bin/busybox"
++		/*/*)
++		    bb_path="../../bin/$BUSYBIN"
+ 		;;
+-		/usr/bin|/usr/sbin)
+-		    bb_path="../../bin/busybox"
++		/*)
++		    bb_path="../bin/$BUSYBIN"
+ 		;;
+ 		*)
+ 		echo "Unknown installation directory: $appdir"
+diff -ur busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
+--- busybox-1.00/editors/Config.in	2004-03-15 00:28:31.000000000 -0800
++++ busybox-1.00.new/editors/Config.in	2005-03-04 13:17:26.000000000 -0800
+@@ -108,6 +108,7 @@
+ 	bool "  Handle window resize"
+ 	default y
+ 	depends on CONFIG_VI
++	select CONFIG_FEATURE_AUTOWIDTH
+ 	help
+ 	  Make busybox vi behave nicely with terminals that get resized.
+ 
+diff -ur busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
+--- busybox-1.00/editors/vi.c	2004-08-19 12:15:06.000000000 -0700
++++ busybox-1.00.new/editors/vi.c	2005-03-13 18:31:46.000000000 -0800
+@@ -19,7 +19,7 @@
+  */
+ 
+ static const char vi_Version[] =
+-	"$Id$";
++       "$Id$";
+ 
+ /*
+  * To compile for standalone use:
+@@ -285,6 +285,7 @@
+ static int mycmp(Byte *, Byte *, int);	// string cmp based in "ignorecase"
+ #endif							/* CONFIG_FEATURE_VI_SEARCH */
+ #ifdef CONFIG_FEATURE_VI_COLON
++static char *initialCmd = NULL;   //remember arg of -c on cmd line if specified
+ static void Hit_Return(void);
+ static Byte *get_one_address(Byte *, int *);	// get colon addr, if present
+ static Byte *get_address(Byte *, int *, int *);	// get two colon addrs, if present
+@@ -365,8 +366,14 @@
+ 	//  1-  process $HOME/.exrc file
+ 	//  2-  process EXINIT variable from environment
+ 	//  3-  process command line args
+-	while ((c = getopt(argc, argv, "hCR")) != -1) {
++	while ((c = getopt(argc, argv, "c:hCR")) != -1) {
+ 		switch (c) {
++#ifdef CONFIG_FEATURE_VI_COLON
++                case 'c':       // execute command first
++                        free (initialCmd);  //ignore any previous -c args
++                        initialCmd = strdup (optarg);
++                        break;
++#endif
+ #ifdef CONFIG_FEATURE_VI_CRASHME
+ 		case 'C':
+ 			crashme = 1;
+@@ -380,7 +387,6 @@
+ #endif							/* CONFIG_FEATURE_VI_READONLY */
+ 			//case 'r':	// recover flag-  ignore- we don't use tmp file
+ 			//case 'x':	// encryption flag- ignore
+-			//case 'c':	// execute command first
+ 			//case 'h':	// help -- just use default
+ 		default:
+ 			show_help();
+@@ -505,6 +511,9 @@
+ 	ioq = ioq_start = last_modifying_cmd = 0;
+ 	adding2q = 0;
+ #endif							/* CONFIG_FEATURE_VI_DOT_CMD */
++#ifdef CONFIG_FEATURE_VI_COLON
++        if (initialCmd) colon(initialCmd);  //run initial command just before main loop
++#endif
+ 	redraw(FALSE);			// dont force every col re-draw
+ 	show_status_line();
+ 
+@@ -1937,7 +1946,10 @@
+ #endif							/* CONFIG_FEATURE_VI_READONLY */
+ #ifdef CONFIG_FEATURE_VI_SET
+ 	"\n\tSome colon mode commands with \':\'"
+-#endif							/* CONFIG_FEATURE_VI_SET */
++#ifdef CONFIG_FEATURE_VI_COLON
++	"\n\t & after -c cmd line arg"
++#endif
++#endif                                                  /* CONFIG_FEATURE_VI_SET */
+ #ifdef CONFIG_FEATURE_VI_SETOPTS
+ 	"\n\tSettable options with \":set\""
+ #endif							/* CONFIG_FEATURE_VI_SETOPTS */
+diff -ur busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
+--- busybox-1.00/include/usage.h	2004-09-14 09:23:56.000000000 -0700
++++ busybox-1.00.new/include/usage.h	2005-03-13 18:19:24.000000000 -0800
+@@ -2331,6 +2331,7 @@
+ 	"\t-n\t\tRun as a foreground process\n" \
+ 	"\t-O FILE\t\tUse an alternate log file (default=/var/log/messages)\n" \
+ 	"\t-S\t\tMake logging output smaller." \
++	"\t-l n\tLocally log only messages of at least the given priority.\n"\
+ 	USAGE_ROTATE_LOGFILE( \
+ 	"\n\t-s SIZE\t\tMax size (KB) before rotate (default=200KB, 0=off)\n" \
+ 	"\t-b NUM\t\tNumber of rotated logs to keep (default=1, max=99, 0=purge)") \
+diff -ur busybox-1.00/init/init.c busybox-1.00.new/init/init.c
+--- busybox-1.00/init/init.c	2004-10-08 01:21:54.000000000 -0700
++++ busybox-1.00.new/init/init.c	2005-03-08 23:14:40.000000000 -0800
+@@ -674,8 +674,13 @@
+ 	/* We have to fork here, since the kernel calls do_exit(0) in
+ 	 * linux/kernel/sys.c, which can cause the machine to panic when
+ 	 * the init process is killed.... */
++ message (CONSOLE, "Forking for Reboot...");       
+ 	if ((pid = fork()) == 0) {
++ message (CONSOLE, "calling kernel reboot(%lx)...", magic);
++ sleep(1);     
+ 		reboot(magic);
++ message (CONSOLE, "reboot returned.");
++ sleep(1);
+ 		_exit(0);
+ 	}
+ 	waitpid (pid, NULL, 0);
+@@ -683,6 +688,11 @@
+ 
+ static void shutdown_system(void)
+ {
++        static const int toblock[] = {
++	  SIGHUP, SIGCHLD, SIGUSR1, SIGUSR2, SIGINT, SIGTERM, SIGCONT,
++          SIGSTOP, SIGTSTP};
++        int i;
++                    
+ 	sigset_t block_signals;
+ 
+ 	/* run everything to be run at "shutdown".  This is done _prior_
+@@ -692,15 +702,9 @@
+ 
+ 	/* first disable all our signals */
+ 	sigemptyset(&block_signals);
+-	sigaddset(&block_signals, SIGHUP);
+-	sigaddset(&block_signals, SIGCHLD);
+-	sigaddset(&block_signals, SIGUSR1);
+-	sigaddset(&block_signals, SIGUSR2);
+-	sigaddset(&block_signals, SIGINT);
+-	sigaddset(&block_signals, SIGTERM);
+-	sigaddset(&block_signals, SIGCONT);
+-	sigaddset(&block_signals, SIGSTOP);
+-	sigaddset(&block_signals, SIGTSTP);
++        
++        for (i=0; i<sizeof(toblock)/sizeof(int); i++)
++          sigaddset(&block_signals, toblock[i]);
+ 	sigprocmask(SIG_BLOCK, &block_signals, NULL);
+ 
+ 	/* Allow Ctrl-Alt-Del to reboot system. */
+@@ -718,7 +722,6 @@
+ 	message(CONSOLE | LOG, "Sending SIGKILL to all processes.");
+ 	kill(-1, SIGKILL);
+ 	sleep(1);
+-
+ 	sync();
+ }
+ 
+diff -ur busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount_point.c
+--- busybox-1.00/libbb/find_mount_point.c	2004-03-15 00:28:42.000000000 -0800
++++ busybox-1.00.new/libbb/find_mount_point.c	2005-03-10 23:53:23.000000000 -0800
+@@ -52,6 +52,7 @@
+ 		return 0;
+ 
+ 	while ((mountEntry = getmntent(mountTable)) != 0) {
++        	if (strcmp(mountEntry->mnt_type, "rootfs") == 0) continue;
+ 		if (strcmp(name, mountEntry->mnt_dir) == 0
+ 			|| strcmp(name, mountEntry->mnt_fsname) == 0)	/* String match. */
+ 			break;
+diff -ur busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
+--- busybox-1.00/loginutils/Config.in	2004-08-26 16:12:59.000000000 -0700
++++ busybox-1.00.new/loginutils/Config.in	2005-03-04 15:52:28.000000000 -0800
+@@ -69,7 +69,7 @@
+ config CONFIG_LOGIN
+ 	bool "login"
+ 	default n
+-	select CONFIG_FEATURE_SUID
++#	select CONFIG_FEATURE_SUID
+ 	help
+ 	  login is used when signing onto a system.
+ 
+@@ -88,7 +88,7 @@
+ config CONFIG_PASSWD
+ 	bool "passwd"
+ 	default n
+-	select CONFIG_FEATURE_SUID
++#	select CONFIG_FEATURE_SUID
+ 	help
+ 	  passwd changes passwords for user and group accounts.  A normal user
+ 	  may only change the password for his/her own account, the super user
+@@ -101,7 +101,7 @@
+ config CONFIG_SU
+ 	bool "su"
+ 	default n
+-	select CONFIG_FEATURE_SUID
++#	select CONFIG_FEATURE_SUID
+ 	help
+ 	  su is used to become another user during a login session.
+ 	  Invoked without a username, su defaults to becoming the super user.
+@@ -119,20 +119,20 @@
+ config CONFIG_VLOCK
+ 	bool "vlock"
+ 	default n
+-	select CONFIG_FEATURE_SUID
++#	select CONFIG_FEATURE_SUID
+ 	help
+ 	  Build the "vlock" applet which allows you to lock (virtual) terminals.
+ 
+ 	  Note that Busybox binary must be setuid root for this applet to
+ 	  work properly.
+ 
+-comment "Common options for adduser, deluser, login, su"
+-	depends on CONFIG_ADDUSER || CONFIG_DELUSER || CONFIG_LOGIN || CONFIG_SU
++comment "Common options for adduser, deluser, login, su & passwd"
++	depends on CONFIG_ADDUSER || CONFIG_DELUSER || CONFIG_LOGIN || CONFIG_SU || CONFIG_PASSWD
+ 
+ config CONFIG_FEATURE_SHADOWPASSWDS
+ 	bool "Support for shadow passwords"
+ 	default n
+-	depends on CONFIG_ADDUSER || CONFIG_DELUSER || CONFIG_LOGIN || CONFIG_SU
++	depends on CONFIG_ADDUSER || CONFIG_DELUSER || CONFIG_LOGIN || CONFIG_SU || CONFIG_PASSWD
+ 	help
+ 	  Build support for shadow password in /etc/shadow.  This file is only
+ 	  readable by root and thus the encrypted passwords are no longer
+diff -ur busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
+--- busybox-1.00/networking/Config.in	2004-09-23 13:08:46.000000000 -0700
++++ busybox-1.00.new/networking/Config.in	2005-03-01 23:30:16.000000000 -0800
+@@ -492,7 +492,7 @@
+ config CONFIG_TELNETD
+ 	bool "telnetd"
+ 	default n
+-	select CONFIG_LOGIN
++#	select CONFIG_LOGIN
+ 	help
+ 	  A daemon for the TELNET protocol, allowing you to log onto the host
+ 	  running the daemon.  Please keep in mind that the TELNET protocol
+diff -ur busybox-1.00/sysklogd/syslogd.c busybox-1.00.new/sysklogd/syslogd.c
+--- busybox-1.00/sysklogd/syslogd.c	2004-09-14 11:12:13.000000000 -0700
++++ busybox-1.00.new/sysklogd/syslogd.c	2005-03-13 18:23:06.000000000 -0800
+@@ -71,6 +71,9 @@
+ /* interval between marks in seconds */
+ static int MarkInterval = 20 * 60;
+ 
++/* level of messages to be locally logged */
++static int logLevel = 7;
++
+ /* localhost's name */
+ static char LocalHostName[64];
+ 
+@@ -152,7 +155,7 @@
+ 
+ void ipcsyslog_cleanup(void)
+ {
+-	printf("Exiting Syslogd!\n");
++//	printf("Exiting Syslogd!\n");
+ 	if (shmid != -1) {
+ 		shmdt(buf);
+ 	}
+@@ -458,7 +461,7 @@
+ 
+ 	if (local_logging == TRUE)
+ #endif
+-	{
++	if (LOG_PRI(pri) <= logLevel) {
+ 		/* now spew out the message to wherever it is supposed to go */
+ 		if (small)
+ 			message("%s %s\n", timestamp, msg);
+@@ -623,7 +626,7 @@
+ 	char *p;
+ 
+ 	/* do normal option parsing */
+-	while ((opt = getopt(argc, argv, "m:nO:s:Sb:R:LC::")) > 0) {
++	while ((opt = getopt(argc, argv, "m:nO:l:s:Sb:R:LC::")) > 0) {
+ 		switch (opt) {
+ 		case 'm':
+ 			MarkInterval = atoi(optarg) * 60;
+@@ -634,6 +637,13 @@
+ 		case 'O':
+ 			logFilePath = optarg;
+ 			break;
++                case 'l':
++                        logLevel = atoi(optarg);
++                        /* Valid levels are between 0 and 7 */
++                        if ((unsigned)logLevel > 7) {
++                                bb_show_usage();
++                        }
++                        break;
+ #ifdef CONFIG_FEATURE_ROTATE_LOGFILE
+ 		case 's':
+ 			logFileSize = atoi(optarg) * 1024;
