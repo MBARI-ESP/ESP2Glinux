@@ -1,0 +1,14 @@
+#!/bin/sh
+# build & install sysvinit for arm-linux -- 3/14/05 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-/sbin}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${SYSVVERS-sysvinit-2.85}/src || exit 2
+make init CFLAGS="-Os -fomit-frame-pointer -D_GNU_SOURCE" CC=/arm/bin/gcc &&
+$ARMSTRIP init &&
+install init $HOSTTOP || exit 1
+echo "Done."
