@@ -1,0 +1,15 @@
+#!/bin/sh
+# build & install portmap daemon for arm-linux -- 3/2/05 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-/sbin}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${PORTMAPVERS-portmap_5beta} || exit 2
+make clean all O="-Os -fomit-frame-pointer" CC=/arm/bin/gcc &&
+$ARMSTRIP portmap &&
+install portmap $HOSTTOP || exit 1
+echo "Done."
+echo "Ensure that an rpc user entry exist in in /etc/passwd and /etc/group"
