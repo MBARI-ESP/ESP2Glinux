@@ -1,0 +1,12 @@
+OPTIONS=""
+
+case "$1" in
+    start)
+       echo "Starting portmap..."
+       /sbin/portmap $OPTIONS
+       ;;
+                         
+     *)
+       echo "usage: start"
+       ;;
+esac

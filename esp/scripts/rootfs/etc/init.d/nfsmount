@@ -1,0 +1,64 @@
+#!/bin/sh
+#mount or umount nfs filesystems from /etc/fstab
+#and start logging to a file via nfs if /var/log is mounted
+#default is to mount all entries marked " nfs "
+#this can be overridden.  For example:
+##  mount="#mbari" service mountall start
+#mounts all entries containing the string #mbari
+
+op=$1;shift
+: ${mount:="$@"}
+: ${mount:="[[:space:]]nfs[[:space:]]"}
+mntpts=`grep "$mount" /etc/fstab | 
+	while read device mntpt rest; do echo $mntpt; done`
+	
+[ -z "$mntpts" ] && {
+  echo "/etc/fstab contains no \"$mount\" entries!"
+  exit 1
+}
+
+mounted() {
+  cat /proc/mounts | 
+    while read device mntpt rest; do
+      [ "$1" = "$mntpt" ] && return
+    done
+}
+
+
+mnt() {
+  set $mntpts
+  for mntpt; do
+    mounted $mntpt || mount $mntpt
+  done
+}
+
+umnt() {
+  set $mntpts
+  for mntpt; do
+    mounted $mntpt && {
+      case $mntpt in /var|/var/log)
+        /etc/init.d/syslog start
+      esac
+      umount $mntpt
+    }
+  done
+}
+
+case "$op" in
+    start)
+       mnt
+       ;;
+                         
+    restart)
+       umnt
+       mnt
+       ;;
+       
+    stop)
+       umnt
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

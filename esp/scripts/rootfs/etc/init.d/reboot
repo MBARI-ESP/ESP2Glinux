@@ -1,0 +1,13 @@
+#!/bin/sh
+: ${rebootOptions:=$2}
+
+case "$1" in
+    start)
+       echo "Rebooting ..."
+       /sbin/crash/reboot $rebootOptions
+       ;;
+                         
+     *)
+       echo "usage: start"
+       ;;
+esac

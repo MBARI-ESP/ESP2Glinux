@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# network	stop, restart, start, the networking
+# subsequent args specify a list of interfaces
+
+op="$1"
+shift
+case "$op" in 
+   start)
+      if [ "$1" ]; then
+        unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
+	for dev; do
+          ifup $dev
+        done
+      else
+        fnspec='/etc/sysconfig/ifcfg-*'
+        fns=`echo $fnspec`
+        [ "$fns" = "$fnspec" ] && exit
+	for defFn in $fns; do
+          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
+          export AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
+          . $defFn && [ "$AUTOSTART" = "yes" ] && ifup
+        done
+      fi
+   ;;
+   stop)
+      devs=${@:-`sed -ne'/:/p' /proc/net/dev | cut -d: -f1`}
+      for dev in $devs; do ifdown $dev; done
+   ;;
+
+   restart)
+	$0 stop	"$@"
+	$0 start "$@"
+	;;
+   *)
+   	echo "usage: start|stop|restart {interfaces}"
+   ;;
+esac
+   
+	

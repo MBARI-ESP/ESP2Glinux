@@ -1,0 +1,26 @@
+OPTIONS=""
+daemon=inetd
+action="start-stop-daemon -x /usr/sbin/$daemon -p /var/run/$daemon.pid"
+
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       [ -d /usr/share/empty ] || mkdir -m600 -p /usr/share/empty  #for vsftpd
+       $action -S -- $OPTIONS
+       ;;
+                         
+    restart)
+       echo "Sending SIGHUP to inetd"
+       $action -K -s 1 | grep -q "none killed" && 
+         $action -S -- $OPTIONS
+       ;;
+       
+    stop)
+       echo "Stopping inetd"
+       $action -K
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac
