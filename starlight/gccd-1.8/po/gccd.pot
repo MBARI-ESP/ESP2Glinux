@@ -1,0 +1,960 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-09-17 16:55-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/gccd.c:92
+msgid "Dark"
+msgstr ""
+
+#: src/gccd.c:93
+msgid "Blue"
+msgstr ""
+
+#: src/gccd.c:94
+msgid "Green"
+msgstr ""
+
+#: src/gccd.c:95
+msgid "Cyan"
+msgstr ""
+
+#: src/gccd.c:96
+msgid "Red"
+msgstr ""
+
+#: src/gccd.c:97
+msgid "Magenta"
+msgstr ""
+
+#: src/gccd.c:98
+msgid "Yellow"
+msgstr ""
+
+#: src/gccd.c:99
+msgid "Luminance"
+msgstr ""
+
+#: src/gccd.c:146
+msgid "_Acquire..."
+msgstr ""
+
+#: src/gccd.c:146 src/gccd.c:390
+msgid "Acquire new CCD image"
+msgstr ""
+
+#: src/gccd.c:151 src/gccd.c:398
+msgid "Properties"
+msgstr ""
+
+#: src/gccd.c:151
+msgid "Image Properties"
+msgstr ""
+
+#: src/gccd.c:157
+msgid "Save All"
+msgstr ""
+
+#: src/gccd.c:157
+msgid "Save All Images"
+msgstr ""
+
+#: src/gccd.c:162
+msgid "Close All"
+msgstr ""
+
+#: src/gccd.c:162
+msgid "Close All Images"
+msgstr ""
+
+#: src/gccd.c:172
+msgid "Working Directory..."
+msgstr ""
+
+#: src/gccd.c:172
+msgid "Set Working Directory"
+msgstr ""
+
+#: src/gccd.c:176
+msgid "Close Warning"
+msgstr ""
+
+#: src/gccd.c:176
+msgid "Warn on unsaved image close"
+msgstr ""
+
+#: src/gccd.c:180
+msgid "COM Ports..."
+msgstr ""
+
+#: src/gccd.c:180
+msgid "Set COM ports"
+msgstr ""
+
+#: src/gccd.c:188
+msgid "Linear Ramp"
+msgstr ""
+
+#: src/gccd.c:188
+msgid "View image using linear grey scale"
+msgstr ""
+
+#: src/gccd.c:192
+msgid "GammaLog 1 Ramp"
+msgstr ""
+
+#: src/gccd.c:192
+msgid "View image using Gamma Log 1.0 / 1.0 grey scale"
+msgstr ""
+
+#: src/gccd.c:196
+msgid "GammaLog 2 Ramp"
+msgstr ""
+
+#: src/gccd.c:196
+msgid "View image using Gamma Log 1.0 / 2.0 grey scale"
+msgstr ""
+
+#: src/gccd.c:200
+msgid "GammaLog 3 Ramp"
+msgstr ""
+
+#: src/gccd.c:200
+msgid "View image using Gamma Log 1.0 / 3.0 grey scale"
+msgstr ""
+
+#: src/gccd.c:204
+msgid "GammaLog 4 Ramp"
+msgstr ""
+
+#: src/gccd.c:204
+msgid "View image using Gamma Log 1.0 / 4.0 grey scale"
+msgstr ""
+
+#: src/gccd.c:208
+msgid "Linear Red Ramp"
+msgstr ""
+
+#: src/gccd.c:208
+msgid "View image using linear red scale"
+msgstr ""
+
+#: src/gccd.c:212
+msgid "GammaLog 1 Red Ramp"
+msgstr ""
+
+#: src/gccd.c:212
+msgid "View image using Gamma Log 1.0 / 1.0 red scale"
+msgstr ""
+
+#: src/gccd.c:216
+msgid "GammaLog 2 Red Ramp"
+msgstr ""
+
+#: src/gccd.c:216
+msgid "View image using Gamma Log 1.0 / 2.0 red scale"
+msgstr ""
+
+#: src/gccd.c:220
+msgid "GammaLog 3 Red Ramp"
+msgstr ""
+
+#: src/gccd.c:220
+msgid "View image using Gamma Log 1.0 / 3.0 red scale"
+msgstr ""
+
+#: src/gccd.c:224
+msgid "GammaLog 4 Red Ramp"
+msgstr ""
+
+#: src/gccd.c:224
+msgid "View image using Gamma Log 1.0 / 4.0 red scale"
+msgstr ""
+
+#: src/gccd.c:228
+msgid "Invert"
+msgstr ""
+
+#: src/gccd.c:228
+msgid "View image using inversion palette"
+msgstr ""
+
+#: src/gccd.c:232
+msgid "False Color 1"
+msgstr ""
+
+#: src/gccd.c:232
+msgid "View image using false color palette #1"
+msgstr ""
+
+#: src/gccd.c:236
+msgid "False Color 2"
+msgstr ""
+
+#: src/gccd.c:236
+msgid "View image using false color palette #2"
+msgstr ""
+
+#: src/gccd.c:240
+msgid "False Color 3"
+msgstr ""
+
+#: src/gccd.c:240
+msgid "View image using false color palette #3"
+msgstr ""
+
+#: src/gccd.c:244
+msgid "MinMax Highlite"
+msgstr ""
+
+#: src/gccd.c:244
+msgid "View image using minimum, middle, & maximin highlite palette"
+msgstr ""
+
+#: src/gccd.c:248
+msgid "4 Level"
+msgstr ""
+
+#: src/gccd.c:248
+msgid "View image using 4 level decimation palette"
+msgstr ""
+
+#: src/gccd.c:257
+msgid "Show Histogram"
+msgstr ""
+
+#: src/gccd.c:257
+msgid "Open histogram window"
+msgstr ""
+
+#: src/gccd.c:262
+msgid "Contrast Stretch"
+msgstr ""
+
+#: src/gccd.c:262
+msgid "Contrast stretch image"
+msgstr ""
+
+#: src/gccd.c:266
+msgid "Aspect Corrected"
+msgstr ""
+
+#: src/gccd.c:266
+msgid "Correct for aspect ratio"
+msgstr ""
+
+#: src/gccd.c:270
+msgid "Bin Corrected"
+msgstr ""
+
+#: src/gccd.c:270
+msgid "Correct for binning"
+msgstr ""
+
+#: src/gccd.c:274
+msgid "Filter Color"
+msgstr ""
+
+#: src/gccd.c:274
+msgid "Show image using filter color information"
+msgstr ""
+
+#: src/gccd.c:280
+msgid "Toolbar"
+msgstr ""
+
+#: src/gccd.c:280
+msgid "Toolbar display toggle"
+msgstr ""
+
+#: src/gccd.c:284
+msgid "Notebook"
+msgstr ""
+
+#: src/gccd.c:284
+msgid "Notebook display mode"
+msgstr ""
+
+#: src/gccd.c:288
+msgid "Toplevel"
+msgstr ""
+
+#: src/gccd.c:288
+msgid "Toplevel display mode"
+msgstr ""
+
+#: src/gccd.c:292
+msgid "Modal"
+msgstr ""
+
+#: src/gccd.c:292
+msgid "Modal display mode"
+msgstr ""
+
+#: src/gccd.c:296
+msgid "Default"
+msgstr ""
+
+#: src/gccd.c:296
+msgid "Default display mode"
+msgstr ""
+
+#: src/gccd.c:308
+msgid "Flip Horizontal"
+msgstr ""
+
+#: src/gccd.c:308
+msgid "Flip image horizontally"
+msgstr ""
+
+#: src/gccd.c:312
+msgid "Flip Vertical"
+msgstr ""
+
+#: src/gccd.c:312
+msgid "Flip image vertically"
+msgstr ""
+
+#: src/gccd.c:316
+msgid "Rotate 90 degrees"
+msgstr ""
+
+#: src/gccd.c:316
+msgid "Rotate image 90 degrees"
+msgstr ""
+
+#: src/gccd.c:320
+msgid "Rotate 180 degrees"
+msgstr ""
+
+#: src/gccd.c:320
+msgid "Rotate image 180 degrees"
+msgstr ""
+
+#: src/gccd.c:324
+msgid "Rotate 270 degrees"
+msgstr ""
+
+#: src/gccd.c:324
+msgid "Rotate image 270 degrees"
+msgstr ""
+
+#: src/gccd.c:328
+msgid "Scale 1:1 Aspect"
+msgstr ""
+
+#: src/gccd.c:328
+msgid "Scale to 1:1 aspect ratio"
+msgstr ""
+
+#: src/gccd.c:332
+msgid "Scale 1/2 X"
+msgstr ""
+
+#: src/gccd.c:332
+msgid "Scale to half size"
+msgstr ""
+
+#: src/gccd.c:336
+msgid "Scale 2 X"
+msgstr ""
+
+#: src/gccd.c:336
+msgid "Scale to twice size"
+msgstr ""
+
+#: src/gccd.c:340
+msgid "Scale 4 X"
+msgstr ""
+
+#: src/gccd.c:340
+msgid "Scale to four times size"
+msgstr ""
+
+#: src/gccd.c:345
+msgid "Native Matrix Split"
+msgstr ""
+
+#: src/gccd.c:345 src/gccd.c:349
+msgid "Split apart image based on camera color matrix"
+msgstr ""
+
+#: src/gccd.c:349
+msgid "L/RGB Matrix Split"
+msgstr ""
+
+#: src/gccd.c:354
+msgid "Remove Noise"
+msgstr ""
+
+#: src/gccd.c:354
+msgid "Remove noise from image"
+msgstr ""
+
+#: src/gccd.c:358
+msgid "Remove Background"
+msgstr ""
+
+#: src/gccd.c:358
+msgid "Remove background offset from image"
+msgstr ""
+
+#: src/gccd.c:362
+msgid "Remove VBE"
+msgstr ""
+
+#: src/gccd.c:362
+msgid "Venetian Blind Effect removal filter"
+msgstr ""
+
+#: src/gccd.c:379
+msgid "_Image"
+msgstr ""
+
+#: src/gccd.c:390
+msgid "Acquire"
+msgstr ""
+
+#: src/gccd.c:394
+msgid "Open"
+msgstr ""
+
+#: src/gccd.c:394
+msgid "Open CCD image"
+msgstr ""
+
+#: src/gccd.c:398
+msgid "CCD image properties"
+msgstr ""
+
+#: src/gccd.c:402
+msgid "Save"
+msgstr ""
+
+#: src/gccd.c:402
+msgid "Save CCD image"
+msgstr ""
+
+#: src/gccd.c:406 src/gccd.c:1457
+msgid "Close"
+msgstr ""
+
+#: src/gccd.c:406
+msgid "Close CCD image"
+msgstr ""
+
+#: src/gccd.c:411
+msgid "Exit"
+msgstr ""
+
+#: src/gccd.c:411
+msgid "Exit program"
+msgstr ""
+
+#: src/gccd.c:730
+#, c-format
+msgid ""
+"Min: %lu\n"
+"\n"
+"Ave: %lu\n"
+"\n"
+"Sigma: %.2f\n"
+"\n"
+"Max: %lu"
+msgstr ""
+
+#: src/gccd.c:1143
+msgid "Unable to load file.  Probably invalid FITS format."
+msgstr ""
+
+#: src/gccd.c:1148
+msgid "Open File"
+msgstr ""
+
+#: src/gccd.c:1169
+msgid "Already an image with that name.  Select a unique name."
+msgstr ""
+
+#: src/gccd.c:1173
+msgid "Invalid name.  Must be non-empty."
+msgstr ""
+
+#: src/gccd.c:1209
+msgid "Image Header"
+msgstr ""
+
+#: src/gccd.c:1308
+msgid "Save File"
+msgstr ""
+
+#: src/gccd.c:1348 src/gccd.c:1871
+msgid "Image not saved"
+msgstr ""
+
+#: src/gccd.c:1371 src/gccd.c:1397 src/gccd.c:1902
+msgid "Images not saved"
+msgstr ""
+
+#: src/gccd.c:1430
+msgid "Select Working Directory"
+msgstr ""
+
+#: src/gccd.c:1453
+msgid "Telescope"
+msgstr ""
+
+#: src/gccd.c:1455 src/ccd_gui.c:3796
+msgid "Filter Wheel"
+msgstr ""
+
+#: src/gccd.c:1461
+msgid "COM Ports"
+msgstr ""
+
+#: src/gccd.c:1465 src/gccd.c:1501 src/ccd_gui.c:2989 src/ccd_gui.c:3003
+#: src/ccd_gui.c:3008 src/ccd_gui.c:3013 src/ccd_gui.c:3027 src/ccd_gui.c:3731
+msgid "(None)"
+msgstr ""
+
+#: src/gccd.c:1576
+msgid "Log Graph"
+msgstr ""
+
+#: src/gccd.c:1577
+msgid "ADUs"
+msgstr ""
+
+#: src/gccd.c:1591
+msgid "Histogram"
+msgstr ""
+
+#: src/gccd.c:1832
+msgid "About GNOME CCD"
+msgstr ""
+
+#: src/gccd.c:1834
+msgid ""
+"GNOME CCD is a CCD camera control and imaging program.  It is designed with "
+"astronimical applications in mind, but surely can be used elsewhere.\n"
+"http://home.earthlink.net/~dschmenk"
+msgstr ""
+
+#: src/gccd.c:1933
+msgid "Output status bar text to stdout"
+msgstr ""
+
+#: src/gccd.c:1942
+msgid "Output guiding errors to stdout"
+msgstr ""
+
+#: src/ccd_gui.c:298 src/ccd_gui.c:561 src/ccd_gui.c:1340 src/ccd_gui.c:3180
+msgid "Begin"
+msgstr ""
+
+#: src/ccd_gui.c:300 src/ccd_gui.c:563 src/ccd_gui.c:2821 src/ccd_gui.c:3789
+msgid "Idle"
+msgstr ""
+
+#: src/ccd_gui.c:441 src/ccd_gui.c:2038 src/ccd_gui.c:2768
+msgid "Telescope busy.  Wait for GOTO to complete."
+msgstr ""
+
+#: src/ccd_gui.c:467
+msgid "Stabilize Guiding..."
+msgstr ""
+
+#: src/ccd_gui.c:1186 src/ccd_gui.c:1915 src/ccd_gui.c:2792 src/ccd_gui.c:2809
+msgid "Busy"
+msgstr ""
+
+#: src/ccd_gui.c:1375
+msgid "Unable to find suitable guide star."
+msgstr ""
+
+#.
+#. * Load image into displayable pixmap.
+#.
+#: src/ccd_gui.c:1454
+msgid "Select Guide Object"
+msgstr ""
+
+#: src/ccd_gui.c:1587
+msgid "Find New Guide Star..."
+msgstr ""
+
+#.
+#. * Message box notification.
+#.
+#: src/ccd_gui.c:1599
+msgid ""
+"Guide star lost.  Select a new guide object or clear current object before "
+"restarting exposure"
+msgstr ""
+
+#.
+#. * Update centroid offset.
+#.
+#: src/ccd_gui.c:1630 src/ccd_gui.c:3592
+#, c-format
+msgid "Offset (%.2f, %.2f)"
+msgstr ""
+
+#: src/ccd_gui.c:1771 src/ccd_gui.c:3156
+msgid "minute"
+msgstr ""
+
+#: src/ccd_gui.c:1773 src/ccd_gui.c:3155
+msgid "second"
+msgstr ""
+
+#: src/ccd_gui.c:1811
+msgid "Focus/Find"
+msgstr ""
+
+#: src/ccd_gui.c:1838
+msgid "Bias frame must match image dimensions"
+msgstr ""
+
+#: src/ccd_gui.c:1846
+msgid "Dark frame must match image dimensions"
+msgstr ""
+
+#: src/ccd_gui.c:1854
+msgid "Flat frame must match image dimensions"
+msgstr ""
+
+#: src/ccd_gui.c:1867
+msgid "Filter flat frame must match image dimensions"
+msgstr ""
+
+#: src/ccd_gui.c:1927
+msgid "Unable to self-guide the selected camera."
+msgstr ""
+
+#: src/ccd_gui.c:1966 src/ccd_gui.c:2483
+msgid "Unable to connect to guide camera."
+msgstr ""
+
+#: src/ccd_gui.c:1970
+msgid "Find Guide Star..."
+msgstr ""
+
+#: src/ccd_gui.c:1986 src/ccd_gui.c:2428
+msgid "Cancel"
+msgstr ""
+
+#: src/ccd_gui.c:1997 src/ccd_gui.c:3277
+msgid "LX 200"
+msgstr ""
+
+#: src/ccd_gui.c:1999 src/ccd_gui.c:3276
+msgid "STAR 2000"
+msgstr ""
+
+#: src/ccd_gui.c:2006 src/ccd_gui.c:2018
+msgid "Unable to connect to telescope."
+msgstr ""
+
+#: src/ccd_gui.c:2345
+msgid "Unable to find suitable centroid."
+msgstr ""
+
+#: src/ccd_gui.c:2427
+msgid "OK"
+msgstr ""
+
+#: src/ccd_gui.c:2515
+msgid "Loading Guide Field..."
+msgstr ""
+
+#: src/ccd_gui.c:2587
+msgid "Training lost the guide star.  Try reducing the training time."
+msgstr ""
+
+#: src/ccd_gui.c:2654
+msgid "Scope control may need to be reversed in RA."
+msgstr ""
+
+#: src/ccd_gui.c:2665
+msgid "Scope control may need to be reversed in Dec."
+msgstr ""
+
+#: src/ccd_gui.c:2685
+msgid "Left"
+msgstr ""
+
+#: src/ccd_gui.c:2685
+msgid "Right"
+msgstr ""
+
+#: src/ccd_gui.c:2685
+msgid "Up"
+msgstr ""
+
+#: src/ccd_gui.c:2685
+msgid "Down"
+msgstr ""
+
+#: src/ccd_gui.c:2694
+#, c-format
+msgid "Measure %s rate..."
+msgstr ""
+
+#: src/ccd_gui.c:2726
+msgid "First select a very bright guide star before training."
+msgstr ""
+
+#: src/ccd_gui.c:2730
+msgid "Training Guide Tracking Rate"
+msgstr ""
+
+#: src/ccd_gui.c:3096
+msgid "No CCD cameras found!"
+msgstr ""
+
+#: src/ccd_gui.c:3108
+msgid "CCD Camera Controller"
+msgstr ""
+
+#: src/ccd_gui.c:3154
+msgid "msec"
+msgstr ""
+
+#: src/ccd_gui.c:3176
+msgid "Beep when done"
+msgstr ""
+
+#: src/ccd_gui.c:3181
+msgid "Hide"
+msgstr ""
+
+#: src/ccd_gui.c:3211
+msgid "Telescope Control"
+msgstr ""
+
+#: src/ccd_gui.c:3213
+msgid "Rev X"
+msgstr ""
+
+#. GTK_EXPAND |
+#: src/ccd_gui.c:3217
+msgid "Rev Y"
+msgstr ""
+
+#. GTK_EXPAND |
+#: src/ccd_gui.c:3221
+msgid "Swap XY"
+msgstr ""
+
+#. GTK_EXPAND |
+#: src/ccd_gui.c:3225
+msgid "Slew"
+msgstr ""
+
+#: src/ccd_gui.c:3264
+msgid "Unable to connect to telescope.  Setting to manual"
+msgstr ""
+
+#: src/ccd_gui.c:3275
+msgid "Manual"
+msgstr ""
+
+#: src/ccd_gui.c:3317
+msgid "X Bin"
+msgstr ""
+
+#: src/ccd_gui.c:3341
+msgid "Y Bin"
+msgstr ""
+
+#: src/ccd_gui.c:3374
+msgid "Calibration Frames"
+msgstr ""
+
+#: src/ccd_gui.c:3383
+msgid "Bias Frame or Standard Dark Frame:"
+msgstr ""
+
+#: src/ccd_gui.c:3391
+msgid "Scalable Dark Frame:"
+msgstr ""
+
+#: src/ccd_gui.c:3399
+msgid "Flat Frame:"
+msgstr ""
+
+#: src/ccd_gui.c:3407
+msgid "Image"
+msgstr ""
+
+#: src/ccd_gui.c:3410
+msgid "Image Name Base"
+msgstr ""
+
+#: src/ccd_gui.c:3424
+msgid "Auto-Save"
+msgstr ""
+
+#: src/ccd_gui.c:3431
+msgid "Multiple Exposures"
+msgstr ""
+
+#: src/ccd_gui.c:3434
+msgid "Count:"
+msgstr ""
+
+#: src/ccd_gui.c:3442
+msgid "Auto-Register"
+msgstr ""
+
+#: src/ccd_gui.c:3478
+msgid "Options"
+msgstr ""
+
+#: src/ccd_gui.c:3526
+msgid "ADU Histogram"
+msgstr ""
+
+#: src/ccd_gui.c:3540
+msgid "Focus Control"
+msgstr ""
+
+#: src/ccd_gui.c:3572
+msgid "Find & Focus"
+msgstr ""
+
+#: src/ccd_gui.c:3582
+msgid "Reticule"
+msgstr ""
+
+#: src/ccd_gui.c:3618
+msgid "Self-Guide"
+msgstr ""
+
+#: src/ccd_gui.c:3635
+msgid "Ignore Errors"
+msgstr ""
+
+#: src/ccd_gui.c:3642
+msgid "Auto-Guide"
+msgstr ""
+
+#: src/ccd_gui.c:3647
+msgid "Tracking pix/sec"
+msgstr ""
+
+#: src/ccd_gui.c:3655
+msgid "Up:"
+msgstr ""
+
+#: src/ccd_gui.c:3664
+msgid "Down:"
+msgstr ""
+
+#: src/ccd_gui.c:3673
+msgid "Left:"
+msgstr ""
+
+#: src/ccd_gui.c:3682
+msgid "Right:"
+msgstr ""
+
+#: src/ccd_gui.c:3689
+msgid "Train"
+msgstr ""
+
+#: src/ccd_gui.c:3694
+msgid "Guide Object"
+msgstr ""
+
+#: src/ccd_gui.c:3696
+msgid "Select"
+msgstr ""
+
+#: src/ccd_gui.c:3699 src/ccd_gui.c:3735
+msgid "Clear"
+msgstr ""
+
+#: src/ccd_gui.c:3705
+msgid "Guide"
+msgstr ""
+
+#: src/ccd_gui.c:3749
+msgid "Other"
+msgstr ""
+
+#: src/ccd_gui.c:3753
+#, c-format
+msgid "Filter #%d"
+msgstr ""
+
+#: src/ccd_gui.c:3758
+msgid "Seq."
+msgstr ""
+
+#: src/ccd_gui.c:3785
+msgid "Home/Reset"
+msgstr ""
+
+#: src/ccd_gui.c:3793
+msgid "Auto-Sequence"
+msgstr ""
+
+#: src/ccd_gui.c:3821
+msgid "Noise threshold in standard deviations:"
+msgstr ""
+
+#: src/ccd_gui.c:3831
+msgid "Maximum horizontal radius for point registration:"
+msgstr ""
+
+#: src/ccd_gui.c:3841
+msgid "Maximum vertical radius for point registration:"
+msgstr ""
+
+#: src/ccd_gui.c:3851
+#, c-format
+msgid "Horizontal search range % for next point registration:"
+msgstr ""
+
+#: src/ccd_gui.c:3861
+#, c-format
+msgid "Veritical search range % for next point registration:"
+msgstr ""
+
+#: src/ccd_gui.c:3871
+msgid "Vertical interleave guide adjustment:"
+msgstr ""
+
+#: src/ccd_gui.c:3881
+msgid "Ignore guide offsets less than:"
+msgstr ""
+
+#: src/ccd_gui.c:3891
+msgid "Guide exposure duration (msec):"
+msgstr ""
+
+#: src/ccd_gui.c:3901
+msgid "Guide training duration (msec):"
+msgstr ""
+
+#: src/ccd_gui.c:3911
+msgid "STAR2000 init delay (msec):"
+msgstr ""
+
+#: src/ccd_gui.c:3924
+msgid "Misc. Values"
+msgstr ""
