@@ -1,0 +1,19 @@
+#!/bin/sh
+# build & install libzlib-1.2.2 for arm-linux -- 2/18/05 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${LIBTOP:=$ARMGCC}
+: ${TARGETTOP:=${2-/lib}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${READLNVERS-zlib-1.2.2} || exit 2
+make install || exit 1
+mkdir -p $HOSTTOP || exit 3
+set -x
+for lib in libz; do
+  cp -af $LIBTOP$TARGETTOP/$lib.so* $HOSTTOP &&
+  $ARMSTRIP $HOSTTOP/$lib.so.?.?.? || exit 3
+done
+echo "Done."
