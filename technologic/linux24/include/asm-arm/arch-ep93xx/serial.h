@@ -38,7 +38,7 @@
 #define _SER_IRQ0	IRQ_UARTINT0
 #define _SER_IRQ1	IRQ_UARTINT1
 
-#define RS_TABLE_SIZE	4
+#define RS_TABLE_SIZE
 
 #define STD_COM_FLAGS (ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST)
 
@@ -50,9 +50,22 @@
 	{ 0, BASE_BAUD, TS7XXX_TTYS3, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS3 */ \
 	{ 0, BASE_BAUD, TS7XXX_TTYS4, _SER_IRQ1, STD_COM_FLAGS },	/* ttyS4 */ \
 	{ 0, BASE_BAUD, TS7XXX_TTYS5, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS5 */ \
+        { 0 },                                                          /* ttyS6 */ \
+        { 0 },                                                          /* ttyS7 */ \
 
 
+//additional serial ports for MBARI's Octal USART -- 3/28/05 Brent@mbari.org
+#define XR_BAUD (14745600 / 16)                //The XR788's baud rate generator
+#define XR_BASE (TS7XXX_IO8_BASE + 0x01C00400) //base chip @0x400 in 8-bit I/O space
 
-#define EXTRA_SERIAL_PORT_DEFNS
-
+#define EXTRA_SERIAL_PORT_DEFNS \
+	{ 0, XR_BAUD, XR_BASE+0x00, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS8 */    \
+	{ 0, XR_BAUD, XR_BASE+0x10, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS9 */    \
+	{ 0, XR_BAUD, XR_BASE+0x20, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS10 */   \
+	{ 0, XR_BAUD, XR_BASE+0x30, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS11 */   \
+	{ 0, XR_BAUD, XR_BASE+0x40, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS12 */   \
+	{ 0, XR_BAUD, XR_BASE+0x50, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS13 */   \
+	{ 0, XR_BAUD, XR_BASE+0x60, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS14 */   \
+	{ 0, XR_BAUD, XR_BASE+0x70, _SER_IRQ0, STD_COM_FLAGS },	/* ttyS15 */   \
+        
 #endif
