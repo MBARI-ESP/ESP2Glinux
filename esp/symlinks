@@ -1,11 +1,33 @@
-Configuration symlinks for ESP embedded linux - 3/14/05 BAR
+Configuration symlinks for ESP embedded linux - 3/16/05 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
 
-To build forest of symlinks under rootfs
+To build forest of symlinks and empty directories under rootfs
 
 ============================================================
+
+First the mountpoints and empty directories:
+
+dev ->
+proc ->
+
+mnt ->
+bufflehead/etc ->
+bufflehead/home ->
+cf ->
+engineering ->
+ESP ->
+flash ->
+project ->
+tempbox ->
+u ->
+home/brent/esp2 ->
+
+
+============================================================
+
+Next the symlinks:
 
 etc/hosts -> /var/etc/hosts
 etc/issue.net -> issue
