@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=GCCD
+Name[es]=GCCD
+Name[fi]=GCCD
+Name[no]=GCCD
+Name[sv]=GCCD
+Comment=CCD Camera Control
+Comment[es]=
+Comment[fi]=
+Comment[sv]=
+Comment[no]=
+Exec=gccd
+Icon=gccd-logo.png
+Terminal=0
+Type=Application

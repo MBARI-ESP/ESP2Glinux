@@ -1,0 +1,49 @@
+TDI (Time-Delay Integration) README
+===================================
+
+
+Requirements
+------------
+
+TDI can be built to use the SVGA library to display the loaded pixels row 
+by row.  It can also be built without SVGA support in which case only the 
+standard C library and math library are required.
+
+
+Usage
+-----
+
+TDI takes a few parameters to calculate the correct sidereal rate and 
+pixel integration time.  It is meant to be run non-interactively, perhaps 
+from a cron job.  The options are:
+
+	-c camera_device_name
+	-l focal_length
+	-d declination
+	-r right_ascension
+	-t exposure_time_minutes
+	-b bias_frame_file
+	-s scaled_dark_frame_file
+	-f flat_frame_file
+	-o output_filename
+	-i (interactive : must run as root)
+
+
+tdi_cal is a program to create the calibration frames used by tdi. Its
+options are:
+
+	-b bias_frame_file
+	-s scaled_dark_frame_file
+	-f flat_frame_file
+
+
+TO DO
+-----
+
+Add 800x600 SVGA mode.
+
+Feeback
+-------
+
+Dave Schmenk
+dschmenk@earthlink.net

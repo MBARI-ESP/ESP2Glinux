@@ -1,0 +1,120 @@
+Testguide README
+================
+
+
+Requirements
+------------
+
+Testguide requires the SVGA library and development headers to build and 
+run.  As such, it must be run as root to access the VGA hardware.  It has 
+been known to work alongside the X server on some machines, but I wouldn't 
+count on it.  No X server is required to run.  The mouse device must be 
+symbolically linked to /dev/mouse in order for it to be accessible from 
+the progam.  This is usually the case, but check anyway.
+ 
+
+Usage
+-----
+
+Testguide is a sample program used to debug and test various modes of the 
+CCD drivers.  It is a horribly ugly and hard to use application.  However 
+it is useful.  It it missing all the handy user-interface buttons and 
+dialog boxes to make it somewhat friendly.  However, alll its functions 
+save one are accessed through simple one-key commands.  They are listed 
+here for your reference.
+
+	SPACE:	Expose frame
+	C:	Toggle continuous capture mode
+	B:	Toggle bin accumulation when binning (camera specific)
+	S:	Toggle contrast strecth
+	V:	Toggle vertical flip
+	H:	Toggle horizontal flip
+	G:	Toggle guide image
+	F:	Toggle focus mode
+	F1:	Set image bin factor to 1x1
+	F2:	.. 2x2
+	F3:	.. 3x3
+	F4:	.. 4x4
+	F5:	Set # of DAC bits read to 16 or max bits
+	F6:	.. 12 bits
+	F7:	.. 8 bits
+	F8:	.. 4 bits
+	F9:	Adjust exposure down by large amount
+	F10:	Adjust exposure down by small amount
+	F11:	Adjust exposure up by small amount
+	F12:	Adjust exposure up by large amount
+	W:	Write FITS file of current image
+	ESCAPE:	Quit
+
+The last function, guide star selection, is only available with the mouse.  
+The mouse can be pointed in the image window and the left button will 
+display the equivalent guide image in the guiding window.  This is the 
+area that will be read out for guiding when enabled.
+
+
+Focusing
+--------
+
+Focus mode just brings up a scaled image of the center of the camera 
+field.  It is meant to help reach a better focus.  Look at the image 
+hostogram to help decide when it is good.  I actually use the full screen 
+image binned at 4x4 at the DAC bits set to 8 to get a screen update of 
+about a second/frame.  With the binning improving the sensitivity it 
+really helps reach gross focus quickly.  Be sure to revert the DAC back to 
+full res afterward.  Binning can also be done in focus mode.
+ 
+
+Guiding
+-------
+
+The guiding feature is only available on those CCDs that can read out the 
+even and odd fields independently like the Starlight Xpress M series.  To 
+guide, first capture an image of the desired area in order to select a 
+guide star.  Move the mouse over an appropriate star and press the left 
+button.  The mouse can be moved with the button down to get a good 
+position.  The guide window will be updating from the on-screen window.  
+When you are satisfied, press 'G' to begin guiding.  The guide window will 
+start updating from the camera.  When you are ready, press 'SPACE' to 
+begin the integration.  The exposure will happen twice, once for each 
+field.  Guiding can be disabled by pressing 'G' again.
+
+
+Exposing
+--------
+
+The gauge on the right of the screen is a very ugly graduated time scale.  
+The scale is broken up into 0->0.5 seconds, 0.5->1 second, 1 second->1
+minute, 1 minute->1 hour.  Move the bar up and down with F9-F10 to express 
+the desired exposure duration.  While exposing, a bright red bar will rise 
+until it hits the top of the dim red bar at which time the exposure is 
+complete.  A red bar moves down the right side of the image which shows 
+the download progress.  The download is done when the bar reaches the 
+bottom and disappears.  Hopefully you have a pretty picture when its all 
+done.
+
+
+File Saving
+-----------
+
+The 'W' key writes the current image to a file in the current directory 
+with the name imageXXX.fits where XXX is an incrementing number starting 
+from 000.  It has a hack to allow reading the FITS file into the GIMP, but 
+should be removed for all other FITS capable programs.  Not much of a save 
+feature, but at least it sort of works.  Feel free to write a better one 
+:-)
+
+
+I Would Like It To Do This And This
+-----------------------------------
+
+Knock yourself out.  This was only meant to be a testbed for the CCD 
+drivers.  A fully windowed X based program using KDE or Gnome would be 
+much more appropriate.  Perhaps I'll get inspired to write one if someone 
+else doesn't beat me to it.
+
+
+Feeback
+-------
+
+Dave Schmenk
+dschmenk@earthlink.net

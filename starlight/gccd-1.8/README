@@ -1,0 +1,69 @@
+GCCD 1.5 README
+===============
+
+
+What is GCCD?
+-------------
+
+GCCD is a CCD camera control and imaging application.  It is specifically 
+designed to get the best images from your camera setup.  As such, support 
+for telescope tracking, filter wheels, automatic guiding (including 
+self-guiding for SX MX cameras), and someday focusers.  One shot color 
+cameras are fully supported, including the ability to 'track-n-stack' 
+images.  They will be split apart to each color channel before being 
+registered.  GCCD is not a celestial charting program.  For a great 
+program that supports just about everything, look to XEphem.  GCCD is not 
+am image processing program.  Use GIMP for that.  GCCD is meant to make 
+acquiring images as simple and automatic as possible.
+
+
+Build Requirements
+------------------
+
+GCCD is a Gnome application.  In order to build it, you will need to have 
+the Gnome build headers installed.  GCCD uses the GDK-PIXBUF library so 
+that will need to be installed as well.  Because I've found so many 
+problems trying to get distro-supplied version of Gnome working, I just 
+went to Ximian and downloaded theirs.  You may need to download all sorfts 
+of extra programs to get the build to work.  The only machine I have that 
+can fully buid from scratch is Debian 2.2 with Ximain Gnome.  Hope it 
+isn't as painfull for you.
+
+
+Supported Cameras
+-----------------
+
+GCCD uses any camera that is supported by the CCD camera kernel driver.  
+See the kernel driver README for more details.
+
+Supported Accesories
+--------------------	
+
+Currently GCCD can control the telescope through the LX200 serial port 
+interface or the Starlight Xpress STAR2000 adapter.  The interface is used 
+for guiding and slewing the scope.  No 'GOTO' capability exists.  For 
+filter work, the TrueTech Custom Filter Wheel is supported.  A filter 
+sequence can be set up to automatically set the filter and expose a 
+percentage of the requested expose time (1% to 1000%).  In order to access 
+the serial ports from GCCD, make sure the device files /dev/ttyS* are 
+read/writeable to your account.
+
+
+Features, Bugs, Etc.
+--------------------
+
+Many features that you want probably aren't there.  Probably many bugs
+I haven't found yet :-)  I've fixed everything I know about.
+
+Feeback
+-------
+
+Please, give feedback.  I'm building this app for how I want to image.  
+That isn't too say it is the only or best way to do things.  In fact, I 
+am pretty clueless about imaging and am using this as an excuse to learn.  
+The idea is to have an imaging application the way we would like it.
+ 
+ 
+Dave Schmenk
+dschmenk@earthlink.net
+
