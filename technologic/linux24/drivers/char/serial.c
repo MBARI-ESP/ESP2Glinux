@@ -65,7 +65,7 @@
  */
 
 static char *serial_version = "5.05c";
-static char *serial_revdate = "2001-07-08";
+static char *serial_revdate = "2005-29-03";
 
 /*
  * Serial driver configuration section.  Here are the various options:
@@ -261,6 +261,15 @@ static struct timer_list serial_timer;
 #ifndef SERIAL_TYPE_NORMAL
 #define SERIAL_TYPE_NORMAL	1
 #define SERIAL_TYPE_CALLOUT	2
+#endif
+
+//define device name once
+#if (LINUX_VERSION_CODE > 0x2032D && defined(CONFIG_DEVFS_FS))
+#define DEVNAMEprefix "tts/"
+#define DEVNAMEprefixN DEVNAMEprefix "%d"
+#else
+#define DEVNAMEprefix "ttyS"
+#define DEVNAMEprefixN DEVNAMEprefix
 #endif
 
 /* number of characters left in xmit buffer before we ask for more */
@@ -1333,7 +1342,7 @@ static int startup(struct async_struct * info)
 	 */
 	if (!(info->flags & ASYNC_BUGGY_UART) &&
 	    (serial_inp(info, UART_LSR) == 0xff)) {
-		printk("ttyS%d: LSR safety check engaged!\n", state->line);
+		printk(DEVNAMEprefix "%d: LSR safety check engaged!\n", state->line);
 		if (capable(CAP_SYS_ADMIN)) {
 			if (info->tty)
 				set_bit(TTY_IO_ERROR, &info->tty->flags);
@@ -3641,7 +3650,7 @@ static void autoconfig(struct serial_state * state)
 	state->type = PORT_UNKNOWN;
 
 #ifdef SERIAL_DEBUG_AUTOCONF
-	printk("Testing ttyS%d (0x%04lx, 0x%04x)...\n", state->line,
+	printk("Testing " DEVNAME "%d (0x%04lx, 0x%04x)...\n", state->line,
 	       state->port, (unsigned) state->iomem_base);
 #endif
 	
@@ -3689,7 +3698,7 @@ static void autoconfig(struct serial_state * state)
 		serial_outp(info, UART_IER, scratch);
 		if (scratch2 || scratch3 != 0x0F) {
 #ifdef SERIAL_DEBUG_AUTOCONF
-			printk("serial: ttyS%d: simple autoconfig failed "
+			printk("serial: " DEVNAMEprefix "%d: simple autoconfig failed "
 			       "(%02x, %02x)\n", state->line, 
 			       scratch2, scratch3);
 #endif
@@ -3716,7 +3725,7 @@ static void autoconfig(struct serial_state * state)
 		serial_outp(info, UART_MCR, save_mcr);
 		if (status1 != 0x90) {
 #ifdef SERIAL_DEBUG_AUTOCONF
-			printk("serial: ttyS%d: no UART loopback failed\n",
+			printk("serial: " DEVNAMEprefix "%d: no UART loopback failed\n",
 			       state->line);
 #endif
 			restore_flags(flags);
@@ -5448,11 +5457,7 @@ static int __init rs_init(void)
 #if (LINUX_VERSION_CODE > 0x20100)
 	serial_driver.driver_name = "serial";
 #endif
-#if (LINUX_VERSION_CODE > 0x2032D && defined(CONFIG_DEVFS_FS))
-	serial_driver.name = "tts/%d";
-#else
-	serial_driver.name = "ttyS";
-#endif
+	serial_driver.name = DEVNAMEprefixN;
 	serial_driver.major = TTY_MAJOR;
 	serial_driver.minor_start = 64 + SERIAL_DEV_OFFSET;
 	serial_driver.name_base = SERIAL_DEV_OFFSET;
@@ -5541,30 +5546,22 @@ static int __init rs_init(void)
 			autoconfig(state);
 	}
 	for (i = 0, state = rs_table; i < NR_PORTS; i++,state++) {
-		if (state->type == PORT_UNKNOWN)
-			continue;
-		if (   (state->flags & ASYNC_BOOT_AUTOCONF)
-		    && (state->flags & ASYNC_AUTO_IRQ)
-		    && (state->port != 0 || state->iomem_base != 0))
-			state->irq = detect_uart_irq(state);
-		if (state->io_type == SERIAL_IO_MEM) {
-			printk(KERN_INFO"ttyS%02d%s at 0x%p (irq = %d) is a %s\n",
-	 		       state->line + SERIAL_DEV_OFFSET,
-			       (state->flags & ASYNC_FOURPORT) ? " FourPort" : "",
-			       state->iomem_base, state->irq,
-			       uart_config[state->type].name);
-		}
-		else {
-			printk(KERN_INFO "ttyS%02d%s at 0x%04lx (irq = %d) is a %s\n",
-	 		       state->line + SERIAL_DEV_OFFSET,
-			       (state->flags & ASYNC_FOURPORT) ? " FourPort" : "",
-			       state->port, state->irq,
-			       uart_config[state->type].name);
-		}
-		tty_register_devfs(&serial_driver, 0,
-				   serial_driver.minor_start + state->line);
-		tty_register_devfs(&callout_driver, 0,
-				   callout_driver.minor_start + state->line);
+	  if (state->type != PORT_UNKNOWN) {
+	    if (   (state->flags & ASYNC_BOOT_AUTOCONF)
+		&& (state->flags & ASYNC_AUTO_IRQ)
+		&& (state->port != 0 || state->iomem_base != 0))
+		    state->irq = detect_uart_irq(state);
+	    printk(KERN_INFO DEVNAMEprefix "%d%s @ 0x%lx (irq = %d) is a %s\n",
+	 	   state->line + SERIAL_DEV_OFFSET,
+		   (state->flags & ASYNC_FOURPORT) ? " FourPort" : "",
+		   state->io_type == SERIAL_IO_MEM ? (long int) state->iomem_base : state->port,
+                   state->irq,
+		   uart_config[state->type].name);
+	    tty_register_devfs(&serial_driver, 0,
+			       serial_driver.minor_start + state->line);
+	    tty_register_devfs(&callout_driver, 0,
+			       callout_driver.minor_start + state->line);
+          }
 	}
 #ifdef ENABLE_SERIAL_PCI
 	probe_serial_pci();
@@ -5693,7 +5690,7 @@ int register_serial(struct serial_struct *req)
 	if ((state->flags & ASYNC_AUTO_IRQ) && CONFIGURED_SERIAL_PORT(state))
 		state->irq = detect_uart_irq(state);
 
-       printk(KERN_INFO "ttyS%02d at %s 0x%04lx (irq = %d) is a %s\n",
+       printk(KERN_INFO DEVNAMEprefix "%d at %s 0x%lx (irq = %d) is a %s\n",
 	      state->line + SERIAL_DEV_OFFSET,
 	      state->iomem_base ? "iomem" : "port",
 	      state->iomem_base ? (unsigned long)state->iomem_base :
@@ -5723,7 +5720,7 @@ void unregister_serial(int line)
 	if (state->info && state->info->tty)
 		tty_hangup(state->info->tty);
 	state->type = PORT_UNKNOWN;
-	printk(KERN_INFO "ttyS%02d unloaded\n", state->line);
+	printk(KERN_INFO DEVNAMEprefix "%02d unloaded\n", state->line);
 	/* These will be hidden, because they are devices that will no longer
 	 * be available to the system. (ie, PCMCIA modems, once ejected)
 	 */
