@@ -1,0 +1,40 @@
+#!/bin/sh
+# /etc/rc.d/sysinit	
+# This file is used by inittab and init. Place here all the stuff you want
+# to be done before any other system startup scripts are executed
+# that will affect the system as a whole or are needed by the system
+
+# Ingore CTRL+C
+trap ":" INT QUIT TSTP
+
+# Set our Path
+PATH='/bin:/sbin:/usr/bin:/usr/sbin'
+export PATH
+
+echo "MBARI ESP Embedded Linux    http://www.mbari.org   mailto:brent@mbari.org"
+hostname -F /etc/HOSTNAME
+hostname
+
+#start devfsd
+/sbin/devfsd /dev 
+
+#create shortcuts to compact flash partitions
+[ /dev/hda* = '/dev/hda*' ] && ( cd /dev
+  hda=ide/host0/bus0/target0/lun0
+  [ -b $hda/disc ] && ln -s $hda/disc hda
+  for part in $hda/part*; do
+    [ -b $part ] && ln -s $part hda${part#$hda/part}
+  done
+)
+
+echo "Mounting /proc"
+mount -n -t proc proc /proc
+
+if  test -x /sbin/dmesg  ; then
+	if  test -f /etc/consolelog.level  ; then
+		. /etc/consolelog.level
+	else
+		LOGLEVEL=1
+	fi
+	/sbin/dmesg -n $LOGLEVEL
+fi

@@ -1,0 +1,44 @@
+#! /bin/sh
+#
+# /etc/rc	
+# Technologic Systems 		2.28.02
+# Revised:  3/8/05 brent@mbari.org for use with busybox init
+# This script will descend into the rcN.d directory of the specified
+# runlevel and execute all K scripts (passing them 'stop' argument)
+# and then execute all S scripts (passing them the 'start' agument)
+#
+
+# Ignore CTRL+C
+trap ":" INT QUIT TSTP
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+stty sane
+umask 022
+export PATH 
+
+runlevel=$1
+rundir=/etc/rc.d/rc$runlevel.d
+
+# You'll notice we don't do that previous runlevel thing
+# that other distros do
+
+# Check that there is indeed an rcN.d directory to descend into
+if [ -d $rundir ]; then
+	#run K scripts first
+	for i in $rundir/K*
+	do
+		#we make the assumption that all K scripts in rcN.d
+		#need the stop argument
+		[ -x "$i" ] && $i stop
+	done
+	#run S scripts 
+	for i in $rundir/S*
+	do
+		#we make the assumption that all S  scripts in rcN.d
+		#need the start argument
+		[ -x "$i" ] && $i start
+	done
+else
+	echo "ERROR!!! No $rundir directory found!!!!"
+fi
+exit 0
