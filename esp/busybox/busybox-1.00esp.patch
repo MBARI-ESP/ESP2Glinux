@@ -61,15 +61,6 @@ diff -ur busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
 diff -ur busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
 --- busybox-1.00/editors/vi.c	2004-08-19 12:15:06.000000000 -0700
 +++ busybox-1.00.new/editors/vi.c	2005-03-13 18:31:46.000000000 -0800
-@@ -19,7 +19,7 @@
-  */
- 
- static const char vi_Version[] =
--	"$Id$";
-+       "$Id$";
- 
- /*
-  * To compile for standalone use:
 @@ -285,6 +285,7 @@
  static int mycmp(Byte *, Byte *, int);	// string cmp based in "ignorecase"
  #endif							/* CONFIG_FEATURE_VI_SEARCH */
