@@ -22,6 +22,7 @@ flash ->
 project ->
 tempbox ->
 u ->
+home/esp/esp2 ->
 home/brent/esp2 ->
 
 
@@ -61,7 +62,9 @@ etc/rc.d/rc7.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc7.d/S99poweroff -> ../../init.d/poweroff
 etc/resolv.conf -> /var/etc/resolv.conf
 home/brent/bin/su -> /usr/bin/be
+home/brent/.profile -> /etc/profile.esp
 home/esp/bin/su -> /usr/bin/be
+home/esp/.profile -> /etc/profile.esp
 root/.profile -> /etc/profile
 tmp -> /cf/tmp
 usr/bin/ssh2 -> ssh
