@@ -1,0 +1,17 @@
+#!/bin/sh
+# build & install setserial for arm-linux -- 3/2/05 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+: ${PPPBINS:=pppd/pppd chat/chat}  #pppdump/pppdump pppstat/pppstat
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${PPPVERS-ppp-2.4.2} || exit 2
+make CC=/arm/bin/gcc DESTDIR=$ARMGCC COPTS="-Os -fomit-frame-pointer "  &&
+$ARMSTRIP `find pppd/plugins -name "*.so"` &&
+$ARMSTRIP $PPPBINS || exit 2
+install -m 755 $PPPBINS $HOSTTOP/usr/sbin || exit 3
+make -C pppd/plugins install DESTDIR=$HOSTTOP || exit 4
+echo "Done."
