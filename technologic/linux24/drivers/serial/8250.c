@@ -175,6 +175,9 @@ static const struct serial_uart_config uart_config[PORT_MAX_8250+1] = {
 
 static _INLINE_ unsigned int serial_in(struct uart_8250_port *up, int offset)
 {
+#ifdef  TS7XXX_IO8_BASE  //optimize for this hardware -- brent@mbari.org
+  return inb(up->port.iobase + offset);
+#else  
 	offset <<= up->port.regshift;
 
 	switch (up->port.iotype) {
@@ -190,11 +193,15 @@ static _INLINE_ unsigned int serial_in(struct uart_8250_port *up, int offset)
 	default:
 		return inb(up->port.iobase + offset);
 	}
+#endif
 }
 
 static _INLINE_ void
 serial_out(struct uart_8250_port *up, int offset, int value)
 {
+#ifdef  TS7XXX_IO8_BASE  //optimize for this hardware -- brent@mbari.org
+  outb(value, up->port.iobase + offset);
+#else
 	offset <<= up->port.regshift;
 
 	switch (up->port.iotype) {
@@ -212,6 +219,7 @@ serial_out(struct uart_8250_port *up, int offset, int value)
 	default:
 		outb(value, up->port.iobase + offset);
 	}
+#endif
 }
 
 /*
