@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install vsftpd daemon for arm-linux -- 3/2/05 brent@mbari.org
+# build & install vsftpd daemon for arm-linux -- 3/15/05 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -10,8 +10,8 @@ echo "  for execution at $TARGETTOP on the ARM target"
 cd ${FTPDVERS-vsftpd-1.2.2} || exit 2
 make CFLAGS="-Os -fomit-frame-pointer" CC=/arm/bin/gcc PREFIX=$ARMGCC &&
 $ARMSTRIP vsftpd &&
-install -m 755 vsftpd $HOSTTOP/usr/sbin &&
-mkdir -p $HOSTTOP/usr/share/empty || exit 2
+install -Dm 755 vsftpd $HOSTTOP/usr/sbin/vsftpd &&
+mkdir -pm 755 $HOSTTOP/usr/share/empty || exit 2
 [ -f $HOSTTOP/etc/vsftpd.conf ] || install -m 644 vsftpd.conf $HOSTTOP/etc
 echo "Done."
 echo "Ensure that inetd is configured to start /sbin/vsftpd"

@@ -10,5 +10,5 @@ echo "  for execution at $TARGETTOP on the ARM target"
 cd ${SYSVVERS-sysvinit-2.85}/src || exit 2
 make init CFLAGS="-Os -fomit-frame-pointer -D_GNU_SOURCE" CC=/arm/bin/gcc &&
 $ARMSTRIP init &&
-install init $HOSTTOP || exit 1
+install -Dm 755 init $HOSTTOP/init || exit 1
 echo "Done."
