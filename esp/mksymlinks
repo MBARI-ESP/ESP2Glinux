@@ -11,6 +11,7 @@ Lines that lack the " -> " are ignored.  They may function as comments.
 precmd is an optional preparation command.
 Commonly, it is "rm -f" to remove any existing link beforehand
 EOS
+exit 1
 }
 
 [ "$1" ] && {
