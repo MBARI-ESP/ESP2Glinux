@@ -1,0 +1,2 @@
+#!/bin/sh
+/sbin/init 6 && /bin/sleep 10 && /bin/echo "Waiting to reboot..."
