@@ -1,0 +1,33 @@
+# things to do before the start of any interactive ruby session
+#  7/9/04 brent@mbari.org
+require 'irb/completion'
+require 'sourceref'
+
+prompt = IRB.conf[:PROMPT][:DEFAULT]
+prompt[:RETURN] = "=> %s\n"
+prompt[:AUTO_INDENT] = true
+
+display=ENV["DISPLAY"]
+srcHost=display[0,display.index(':')] unless srcHost=ENV["SRCHOST"] if display
+
+if srcHost  #is there a remote host for source code?
+  class <<SourceRef.remote = Object.new  #if so, view/edit remotely
+    def host= host
+      @srcHost = host
+    end
+    def system localCmd
+      if display=ENV['DISPLAY']
+        Kernel.system (
+          'ssh -t '<<@srcHost<<' "'<<'DISPLAY='<<display<<' '<<localCmd<<'"')
+      else
+      	Kernel.system (
+      	  'ssh '<<@srcHost<<' "'<<localCmd<<'"')
+      end
+    end
+    def remap path  #clever symlinks obviate the need for path remapping :-)
+      path
+    end
+  end
+  SourceRef.remote.host=srcHost
+end
+
