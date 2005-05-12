@@ -6,6 +6,11 @@
 ##  mount="#mbari" service mountall start
 #mounts all entries containing the string #mbari
 
+[ -f /etc/resolv.conf ] || {
+  echo "Missing Network -- skipping NFS mounts"
+  exit 1
+}
+
 op=$1;shift
 : ${mount:="$@"}
 : ${mount:="[[:space:]]nfs[[:space:]]"}
@@ -18,29 +23,39 @@ mntpts=`grep "$mount" /etc/fstab |
 }
 
 mounted() {
+  realmnt=`realpath $1`
   cat /proc/mounts | 
     while read device mntpt rest; do
-      [ "$1" = "$mntpt" ] && return
+      [ "$realmnt" = "$mntpt" ] && return
     done
 }
 
+chklog() {
+#stop logging monentarily of mntpt is /var or /var/log
+  act=$1
+  mntpt=$2
+    case $mntpt in
+      /var|/var/log)
+        pidof syslogd >/dev/null && /etc/init.d/syslog stop >/dev/null
+          $act $mntpt
+        /etc/init.d/syslog start >/dev/null
+      ;;
+      *)  
+        $act $mntpt
+    esac
+}
 
 mnt() {
   set $mntpts
   for mntpt; do
-    mounted $mntpt || mount $mntpt
+    mounted $mntpt || chklog mount $mntpt
   done
 }
 
 umnt() {
   set $mntpts
   for mntpt; do
-    mounted $mntpt && {
-      case $mntpt in /var|/var/log)
-        /etc/init.d/syslog start
-      esac
-      umount $mntpt
-    }
+    mounted $mntpt && chklog umount $mntpt
   done
 }
 
