@@ -4,7 +4,7 @@ cd /dev
 rm -f I2Cgate
 [ -z "$I2Cgate" ] && {
   I2Cgate=ttyAM0
-  [ -c tts/2 ] && I2Cgate=tts/2
+#  [ -c tts/2 ] && I2Cgate=tts/2
 }
 ln -s $I2Cgate I2Cgate  #serial port that talks to the I2C gateway
 chmod g+rw $I2Cgate
