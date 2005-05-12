@@ -2,21 +2,19 @@ DEVICE=eth0
 AUTOSTART=yes
 BOOTPROTO=dhcp-b       #dhcp in background
 DHCPNAME=`cat /etc/HOSTNAME`
-hostname $DHCPNAME
 
 IPADDR=192.168.0.50    #use this configuration if dhcp fails
 GATEWAY=192.168.0.1   
 BROADCAST=192.168.0.255
 NETMASK=255.255.255.0
-
-cat >/etc/resolv.conf <<EOS
-search mbari.org
-nameserver $GATEWAY
-EOS
+unset resolv_conf #may be set to a shell function to write resolv.conf to stdout
 
 shortName=`echo $DCHPNAME | cut -d. -f1`
 [ "$shortName" = "$DHCPNAME" ] && unset shortName
-cat >/etc/hosts <<EOS  #add IP addresses for LAN neighbors to this table
+
+hosts() {
+  cat <<EOS #add IP addresses for LAN neighbors to this table
 127.0.0.1   localhost
 $IPADDR  $DHCPNAME $shortName
 EOS
+}
