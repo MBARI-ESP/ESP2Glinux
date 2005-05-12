@@ -1,4 +1,0 @@
-# set up environment for ESP gen2 target -- 3/17/05 Brent@mbari.org
-export PATH=.:$HOME/bin:${PATH#.:$HOME/bin:}
-. ~/esp2/bin/ESPenv
-[ "$ESPhome" ] && echo ESPhome=$ESPhome
