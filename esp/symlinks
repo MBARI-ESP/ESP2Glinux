@@ -30,8 +30,6 @@ home/brent/esp2 ->
 
 Next the symlinks:
 
-etc/hosts -> /var/etc/hosts
-etc/issue.net -> issue
 etc/rc.d/rc0.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc0.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc0.d/K60network -> ../../init.d/network
@@ -39,13 +37,16 @@ etc/rc.d/rc0.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc0.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc0.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc0.d/S99halt -> ../../init.d/halt
+
 etc/rc.d/rc3.d/S10rtc -> ../../init.d/rtc
 etc/rc.d/rc3.d/S20sysmount -> ../../init.d/sysmount
 etc/rc.d/rc3.d/S30syslog -> ../../init.d/syslog
 etc/rc.d/rc3.d/S40network -> ../../init.d/network
 etc/rc.d/rc3.d/S50portmap -> ../../init.d/portmap
 etc/rc.d/rc3.d/S70inetd -> ../../init.d/inetd
+etc/rc.d/rc3.d/S80nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc3.d/S90local -> ../../init.d/local
+
 etc/rc.d/rc6.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc6.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc6.d/K60network -> ../../init.d/network
@@ -53,6 +54,7 @@ etc/rc.d/rc6.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc6.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc6.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc6.d/S99reboot -> ../../init.d/reboot
+
 etc/rc.d/rc7.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc7.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc7.d/K60network -> ../../init.d/network
@@ -60,13 +62,19 @@ etc/rc.d/rc7.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc7.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc7.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc7.d/S99poweroff -> ../../init.d/poweroff
-etc/resolv.conf -> /var/etc/resolv.conf
-home/brent/bin/su -> /usr/bin/be
-home/brent/.profile -> /etc/profile.esp
-home/esp/bin/su -> /usr/bin/be
-home/esp/.profile -> /etc/profile.esp
-root/.profile -> /etc/profile
+
 tmp -> /cf/tmp
+var -> /cf/var
+
+etc/hosts -> /var/etc/hosts
+etc/issue.net -> issue
+etc/resolv.conf -> /var/etc/resolv.conf
+root/.profile -> /etc/profile
 usr/bin/ssh2 -> ssh
 usr/share/udhcpc -> /etc/udhcpc
-var -> /cf/var
+home/brent/bin/su -> /usr/bin/be
+home/brent/.profile -> /etc/esp/profile
+home/brent/.irbrc -> /etc/esp/irbrc
+home/esp/bin/su -> /usr/bin/be
+home/esp/.profile -> /etc/esp/profile
+home/esp/.irbrc -> /etc/esp/irbrc
