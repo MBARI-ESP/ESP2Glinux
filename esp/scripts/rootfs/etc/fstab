@@ -1,16 +1,17 @@
 proc /proc proc noauto	      #noauto as 1st option causes mountall to skip
 none /dev devfs remount,rw    #for case of sysmount restart
  
-/dev/root / auto remount,noatime #list noauto as 1st option for r/o root
+/dev/root / auto remount,noatime #noauto as 1st option for r/o root
 /dev/hda1 /cf auto noatime       #try to mount /cf at boot time
 
 bufflehead:/etc /bufflehead/etc nfs intr,noauto
 bufflehead:/home /bufflehead/home nfs intr,noauto
-bufflehead:/home/brent/esp2 /home/brent/esp2 nfs intr,noauto
 bufflehead:/var/log/ESPhost /var/log nfs intr,nolock,noauto
 
-tempest:/vol/vol0/users /u nfs bg,soft,nosuid,nodev,exec,noauto	#mbari
-tempest:/tempbox /tempbox nfs bg,soft,nosuid,nodev,exec,noauto	#mbari
-tornado:/Engineering /engineering nfs bg,soft,nosuid,nodev,exec,noauto #mbari
-tornado:/vol/vol1/ProjectLibrary /project nfs bg,soft,nosuid,nodev,exec,noauto #mbari
-tornado:/ESP /ESP nfs bg,soft,nosuid,nodev,exec,noauto #mbari
+ESPlapcow:/home /lapcow/home nfs bg,intr,noauto
+
+tempest:/vol/vol0/users /u nfs bg,intr,nosuid,nodev,noauto	#mbari
+tempest:/tempbox /tempbox nfs bg,intr,nosuid,nodev,noauto	#mbari
+tornado:/Engineering /engineering nfs bg,intr,nosuid,nodev,noauto #mbari
+tornado:/vol/vol1/ProjectLibrary /project nfs bg,intr,nosuid,nodev,noauto #mbari
+tornado:/ESP /ESP nfs bg,intr,nosuid,nodev,noauto #mbari
