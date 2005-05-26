@@ -60,13 +60,13 @@ unsigned int share_irqs = SERIAL8250_SHARE_IRQS;
 /*
  * Debugging.
  */
-#if 0
+#if 1
 #define DEBUG_AUTOCONF(fmt...)	printk(fmt)
 #else
 #define DEBUG_AUTOCONF(fmt...)	do { } while (0)
 #endif
 
-#if 0
+#if 1
 #define DEBUG_INTR(fmt...)	printk(fmt)
 #else
 #define DEBUG_INTR(fmt...)	do { } while (0)
@@ -170,7 +170,9 @@ static const struct serial_uart_config uart_config[PORT_MAX_8250+1] = {
 	{ "16C950/954",	128,	UART_CLEAR_FIFO | UART_USE_FIFO },
 	{ "ST16654",	64,	UART_CLEAR_FIFO | UART_USE_FIFO | UART_STARTECH },
 	{ "XR16850",	128,	UART_CLEAR_FIFO | UART_USE_FIFO | UART_STARTECH },
-	{ "RSA",	2048,	UART_CLEAR_FIFO | UART_USE_FIFO }
+	{ "RSA",	2048,	UART_CLEAR_FIFO | UART_USE_FIFO },
+        { "NS16550A",   16,     UART_CLEAR_FIFO | UART_USE_FIFO },
+        { "XR16788",    64,     UART_CLEAR_FIFO | UART_USE_FIFO }
 };
 
 static _INLINE_ unsigned int serial_in(struct uart_8250_port *up, int offset)
@@ -559,6 +561,12 @@ static void autoconfig_16550a(struct uart_8250_port *up)
 		up->port.type = PORT_16750;
 		return;
 	}
+        
+        //the XR16788 always has at least a 64 byte deep fifo
+        if (size_fifo(up) >= 64) {
+          up->port.type = PORT_XR16788;
+          return;
+        }        
 }
 
 /*
@@ -986,9 +994,18 @@ static _INLINE_ void check_modem_status(struct uart_8250_port *up)
 static inline void
 serial8250_handle_port(struct uart_8250_port *up, struct pt_regs *regs)
 {
-	unsigned int status = serial_inp(up, UART_LSR);
 
-	DEBUG_INTR("status = %x...", status);
+	unsigned int status = serial_inp(up, UART_LSR);
+        
+  if (up->port.type == PORT_XR16788) {
+        unsigned base = up->port.iobase & ~0xff;
+        DEBUG_INTR("PORT %d INTSRC = 0x%08X, ", (up->port.iobase>>4) & 7,
+          inb (base+0x80)<<24 |
+          inb (base+0x81)<<16 |
+          inb (base+0x82)<<8 |
+          inb (base+0x83));
+  }          
+	DEBUG_INTR("status = %x\n", status);
 
 	if (status & UART_LSR_DR)
 		receive_chars(up, &status, regs);
@@ -1044,6 +1061,7 @@ static void serial8250_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 			/* If we hit this, we're dead. */
 			printk(KERN_ERR "serial8250: too much work for "
 				"irq%d\n", irq);
+serial8250_stop_rx (up);
 			break;
 		}
 	} while (l != end);
