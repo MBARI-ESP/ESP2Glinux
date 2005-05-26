@@ -60,13 +60,13 @@ unsigned int share_irqs = SERIAL8250_SHARE_IRQS;
 /*
  * Debugging.
  */
-#if 1
+#if 0
 #define DEBUG_AUTOCONF(fmt...)	printk(fmt)
 #else
 #define DEBUG_AUTOCONF(fmt...)	do { } while (0)
 #endif
 
-#if 1
+#if 0
 #define DEBUG_INTR(fmt...)	printk(fmt)
 #else
 #define DEBUG_INTR(fmt...)	do { } while (0)
@@ -1061,7 +1061,9 @@ static void serial8250_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 			/* If we hit this, we're dead. */
 			printk(KERN_ERR "serial8250: too much work for "
 				"irq%d\n", irq);
-serial8250_stop_rx (up);
+#if 0
+serial8250_stop_rx (up);  //in case an interrupt is stuck active
+#endif
 			break;
 		}
 	} while (l != end);
