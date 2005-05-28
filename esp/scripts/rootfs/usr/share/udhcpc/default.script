@@ -1,0 +1,81 @@
+#!/bin/sh
+# udhcpc script edited by Tim Riker <Tim@Rikers.org>
+# revised:  5/7/05 by brent@mbari.org
+
+[ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
+
+RESOLV_CONF="/etc/resolv.conf"
+HOSTS="/etc/hosts"
+leased=/var/run/leased-$interface
+
+case "$1" in
+  deconfig|leasefail)
+    if [ -f $leased ]; then
+      unset DEVICE IPADDR NETMASK BROADCAST NETWORK
+      . /etc/sysconfig/ifcfg-$interface || IPADDR=0.0.0.0
+      unset mask cast
+      [ "$NETMASK" ] && mask="netmask $NETMASK"
+      [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
+      echo -n "$interface DHCP failed: "
+      ifconfig $interface down  #purge old routes
+      ifconfig $interface $IPADDR $mask $cast && {
+        echo "IP=$IPADDR $mask $cast"
+        [ "$NETWORK" ] && route add -net $NETWORK $mask dev $interface
+        [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $interface
+      }
+      hostname -F /etc/HOSTNAME  #revert back to original host name
+      if type resolv_conf >/dev/null 2>&1; then
+        resolv_conf > $RESOLV_CONF
+      else
+        realConf=`realpath $RESOLV_CONF 2>/dev/null` && rm -f $realConf
+      fi
+      if type hosts >/dev/null 2>&1; then
+        hosts > $HOSTS
+      else
+        realHosts=`realpath $HOSTS 2>/dev/null` && rm -f $realHosts
+      fi      
+      rm $leased
+    else
+      ifconfig $interface up  #so dhcpcd can use the interface
+    fi
+  ;;
+
+  renew|bound)
+    newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
+    newDNSspec="$domain DNS:$dns"
+    leaseSpec=
+    DNSspec=
+    [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
+    [ "$newLeaseSpec" = "$leaseSpec" ] || { 
+      [ "$broadcast" ] && BROADCAST="broadcast $broadcast"
+      [ "$subnet" ] && NETMASK="netmask $subnet"
+      ifconfig $interface $ip $BROADCAST $NETMASK &&
+        echo "DHCP $1 $interface to $ip $NETMASK $BROADCAST"
+
+      if [ "$router" ] ; then
+	while route del default gw 0.0.0.0 dev $interface 2>/dev/null; do
+          :
+	done
+
+        for i in $router ; do
+	   route add default gw $i dev $interface
+        done
+      fi
+      echo "$newLeaseSpec" >$leased
+    }    
+    [ "$newDNSspec" = "$DNSspec" ] || { 
+      echo -n > $RESOLV_CONF
+      unset dom
+      [ "$domain" ] && dom=".$domain"
+      [ "$hostname" ] && hostname $hostname$dom && \
+        echo "hostname set to $hostname$dom"
+      echo search $domain mbari.org >> $RESOLV_CONF
+      for i in $dns ; do
+	echo adding dns $i
+	echo nameserver $i >> $RESOLV_CONF
+      done
+      echo "127.0.0.1 localhost" >$HOSTS #clear any ad hoc DNS
+      echo "$newDNSspec" >>$leased
+    }
+
+esac
