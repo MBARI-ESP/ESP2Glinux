@@ -1,7 +1,7 @@
 #!/bin/sh
 #  unpack, patch, build and install all MBARI embedded linux packages 
 #  for now, we get away without dealing with interpackage build
-#  dependencies.  This may change in futher...  -- 3/15/05 brent@mbari.org
+#  dependencies.  This may change in future...  -- 5/28/05 brent@mbari.org
 
 if [ "$1" ]; then
   dirs="$*"
@@ -19,3 +19,5 @@ for dir in $dirs; do
     [ -x arminstall ] && { arminstall || exit $?; }
   )
 done
+
+echo "now run buildjffs2 > [imageFile.jffs2]"
