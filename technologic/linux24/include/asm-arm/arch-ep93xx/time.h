@@ -60,8 +60,8 @@ extern __inline__ void setup_timer(void)
      * the timer load value is the timer interval
      * divided by 2. 
      */
-    outl( 5085, TIMER1LOAD );
-    outl( 5085, TIMER1VALUE);  /* countdown */
+    outl( 5084, TIMER1LOAD );
+    outl( 5084, TIMER1VALUE);  /* countdown */
 
     /*
      * Set up Timer 1 for 508 kHz clock and periodic mode.
