@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 3/16/05 BAR
+Configuration symlinks for ESP embedded linux - 5/28/05 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -15,6 +15,7 @@ proc ->
 mnt ->
 bufflehead/etc ->
 bufflehead/home ->
+lapcow/home ->
 cf ->
 engineering ->
 ESP ->
@@ -22,9 +23,6 @@ flash ->
 project ->
 tempbox ->
 u ->
-home/esp/esp2 ->
-home/brent/esp2 ->
-
 
 ============================================================
 
@@ -71,10 +69,10 @@ etc/issue.net -> issue
 etc/resolv.conf -> /var/etc/resolv.conf
 root/.profile -> /etc/profile
 usr/bin/ssh2 -> ssh
-usr/share/udhcpc -> /etc/udhcpc
 home/brent/bin/su -> /usr/bin/be
 home/brent/.profile -> /etc/esp/profile
 home/brent/.irbrc -> /etc/esp/irbrc
 home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
 home/esp/.irbrc -> /etc/esp/irbrc
+home/esp/
