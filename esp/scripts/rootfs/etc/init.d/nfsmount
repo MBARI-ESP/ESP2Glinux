@@ -23,7 +23,8 @@ mntpts=`grep "$mount" /etc/fstab |
 }
 
 mounted() {
-  realmnt=`realpath $1`
+#returns true if $1 is mounted, false if not, 2 if it does not exist
+  realmnt=`realpath $1` || return 2
   cat /proc/mounts | 
     while read device mntpt rest; do
       [ "$realmnt" = "$mntpt" ] && return
@@ -48,7 +49,8 @@ chklog() {
 mnt() {
   set $mntpts
   for mntpt; do
-    mounted $mntpt || chklog mount $mntpt
+    mounted $mntpt
+    [ $? = 1 ] && chklog mount $mntpt
   done
 }
 
