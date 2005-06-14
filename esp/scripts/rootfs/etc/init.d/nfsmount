@@ -35,6 +35,7 @@ chklog() {
 #stop logging monentarily of mntpt is /var or /var/log
   act=$1
   mntpt=$2
+  echo "  ${act}ing $mntpt " 
     case $mntpt in
       /var|/var/log)
         pidof syslogd >/dev/null && /etc/init.d/syslog stop >/dev/null
@@ -47,6 +48,7 @@ chklog() {
 }
 
 mnt() {
+  echo "Mounting network filesystems ..."
   set $mntpts
   for mntpt; do
     mounted $mntpt
@@ -55,6 +57,7 @@ mnt() {
 }
 
 umnt() {
+  echo "Unmounting network filesystems ..."
   set $mntpts
   for mntpt; do
     mounted $mntpt && chklog umount $mntpt
