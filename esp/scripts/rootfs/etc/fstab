@@ -8,10 +8,10 @@ bufflehead:/etc /bufflehead/etc nfs intr,noauto
 bufflehead:/home /bufflehead/home nfs intr,noauto
 bufflehead:/var/log/ESPhost /var/log nfs intr,nolock,noauto
 
-ESPlapcow:/home /lapcow/home nfs bg,intr,noauto
+ESPlapcow:/home /lapcow/home nfs intr,noauto
 
-tempest:/vol/vol0/users /u nfs bg,intr,nosuid,nodev,noauto	#mbari
+tempest:/users /u nfs bg,intr,nosuid,nodev,noauto	#mbari
 tempest:/tempbox /tempbox nfs bg,intr,nosuid,nodev,noauto	#mbari
 tornado:/Engineering /engineering nfs bg,intr,nosuid,nodev,noauto #mbari
-tornado:/vol/vol1/ProjectLibrary /project nfs bg,intr,nosuid,nodev,noauto #mbari
+tornado:/vol/vol1/ProjectLibrary /project bg,nfs intr,nosuid,nodev,noauto #mbari
 tornado:/ESP /ESP nfs bg,intr,nosuid,nodev,noauto #mbari
