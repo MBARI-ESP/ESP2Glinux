@@ -1,0 +1,439 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <title>Gnome CCD Camera Imaging</title>
+</head>
+<body>
+<div align="Center">
+<h1><big><big>Gnome CCD Camera Imaging for Linux</big></big></h1>
+<div align="Left"><i><big>Version 0.3 Last modified 4/23/2001</big></i><br>
+<br>
+<hr align="Left" width="100%" size="2"></div>
+<div align="Left">
+<h2>Table of Contents:</h2>
+<ul>
+  <li><a href="#Introduction">Introduction</a></li>
+  <ul>
+    <li><a href="#Introduction"></a><a href="#Web_Site">Web Site</a></li>
+    <li><a href="#Feedback">Feedback</a><br>
+    </li>
+  </ul>
+  <li><a href="#Main_Image_View">Main Image View</a></li>
+  <ul>
+    <li><a href="#Load_Image">Load Image</a></li>
+    <li><a href="#Acquire_Image">Acquire Image</a><br>
+    </li>
+    <li><a href="#Image_Properties">Image Properties</a></li>
+    <li><a href="#Save_Image">Save Image</a></li>
+    <li><a href="#Working_Directory">Working Directory</a></li>
+    <li><a href="#COM_Port_Settings">COM Port Settings</a><br>
+    </li>
+    <li><a href="#View_Multiple_Document_Interface">View Multiple Document Interface Settings</a><br>
+    </li>
+    <li><a href="#View_Image_Colorized">View Image Colorized</a></li>
+    <li><a href="#View_Image_Contrast_Stretched">View Image Contrast Stretched</a></li>
+    <li><a href="#Flip_Image">Flip Image</a></li>
+    <li><a href="#Invert_Image">Invert Image</a></li>
+    <li><a href="#Splitting_OneShot_Color_Frames_into">Splitting One-Shot Color Frames into Individual
+
+
+ Color Frames</a><br>
+    </li>
+  </ul>
+  <li><a href="#Acquire_Image_Control">Acquire Image Control</a></li>
+  <ul>
+    <li><a href="#Select_Camera">Select Camera</a></li>
+    <li><a href="#Exposure_Duration">Exposure Duration</a></li>
+    <li><a href="#Exposure_BeginCancel">Exposure Begin/Cancel</a><br>
+    </li>
+  </ul>
+  <ul>
+    <li><a href="#Exposure_Option">Exposure Option</a></li>
+    <ul>
+      <li><a href="#Binning">Binning</a></li>
+      <li><a href="#Calibration">Calibration</a><br>
+      </li>
+      <li><a href="#Multiple_Exposures">Multiple Exposures</a></li>
+      <ul>
+        <li><a href="#Frame_Combine_Modes">Frame Combine Modes</a></li>
+        <li><a href="#AutoRegistration">Auto-Registration</a></li>
+      </ul>
+    </ul>
+    <li><a href="#Find__Focus">Find &amp;Focus</a></li>
+    <ul>
+      <li><a href="#Image_Scale">Image Scale</a></li>
+    </ul>
+    <ul>
+      <li><a href="#Image_Histogram">Image Histogram</a></li>
+    </ul>
+    <li><a href="#Guide">Guide</a></li>
+    <ul>
+      <li><a href="#Select_Guide_Camera">Select Guide Camera</a></li>
+      <li><a href="#Self_Guide_Fields">Self Guide Fields</a></li>
+      <li><a href="#Select_Guide_Object">Select Guide Object</a></li>
+      <li><a href="#Select_Guide_Object">Clear Guide Object</a></li>
+      <li><a href="#Tracking_Rates">Tracking Rates</a></li>
+      <li><a href="#Train_Tracking">Train Tracking</a></li>
+    </ul>
+    <li><a href="#Filter_Wheel">Filter Wheel</a></li>
+    <ul>
+      <li><a href="#Color_Selection">Color Selection</a></li>
+      <li><a href="#Sequence_Inclusion">Sequence Inclusion</a></li>
+      <li><a href="#Exposure_Percentage">Exposure Percentage</a><br>
+      </li>
+      <li><a href="#Flat_Field">Flat Field</a></li>
+    </ul>
+    <li><a href="#Miscellaneous_Values">Miscellaneous Values</a></li>
+    <li><a href="#Telescope_Control">Telescope Control</a></li>
+    <ul>
+      <li><a href="#Slewing">Slewing</a></li>
+      <li><a href="#Reversing_Directions">Reversing&nbsp; Directions</a></li>
+      <li><a href="#Select_Interface">Select Interface</a></li>
+    </ul>
+  </ul>
+  <li><a href="#Usage">Usage</a></li>
+  <ul>
+    <li><a href="#Creating_Calibration_Frames">Creating Calibration Frames</a></li>
+    <li><a href="#OneShot_Color_Cameras_and_Image">Using Mutltiple Cameras</a></li>
+  </ul>
+  <li><a href="#Supported_Devices">Supported Devices</a></li>
+</ul>
+<hr align="Left" width="100%" size="2">
+<h2><a name="Introduction"></a>Introduction:</h2>
+The Gnome CCD Camera Imaging application, <b>gccd</b>, is a basic camera,
+
+
+ telescope, and filter wheel controller.&nbsp; It is not meant to be an astronomical
+
+
+ image processing application.&nbsp; However, over time it might start to include
+
+
+ more and more image processing functions.&nbsp; In order to make the best images,
+
+
+ <b>gccd</b>can control telescope slewing and filter wheels for color imaging.&nbsp;
+
+
+ One-shot color cameras are supported by allowing the full color frame to
+
+
+ be split into individual color frames.&nbsp; More than one CCD camera can be
+
+
+ controlled to allow for guiding using one camera while integrating on another.&nbsp;
+
+
+ The Starlight Xpress MX series of cameras can self-guide so that guiding
+
+
+ and integration can occur on the same camera.&nbsp; Multiple exposures can be
+
+
+ combined using a number of arithmetic operations to create calibation frames.&nbsp;
+
+
+ By enabling auto-registration, multiple short exposures can be added to
+
+
+ simulate a longer single integration.&nbsp; The one-shot color cameras will split
+
+
+ its colors before registration.
+
+
+<h3><a name="Web_Site"></a>Web Site:</h3>
+For the latest news and updates: <a href="http://home.earthlink.net/~dschmenk">http://home.earthlink.net/~dschmenk</a>
+<h3><a name="Feedback"></a>Feedback:</h3>
+Send me mail: <a href="mailto:dschmenk@earthlink.net">dschmenk@earthlink.net</a><br>
+<h2><a name="Main_Image_View"></a>Main Image View:</h2>
+The main view of <b>gccd</b>is a MDI window that can display multiple images
+
+
+ in either a single notebook view or multiple top level windows, one for
+
+
+ each image.&nbsp; Images are manipulated, opened, and stored from the main view.&nbsp;
+
+
+ 
+
+
+<h3><a name="Load_Image"></a>Load Image:</h3>
+FITS format is the only graphics files that can be accessed through <b>gccd</b>.&nbsp;
+
+
+ Any FITS format file can be loaded.<br>
+<h3><a name="Acquire_Image"></a>Acquire Image:</h3>
+Acquiring an image brings up the CCD control panel.&nbsp; Look in the Acquire
+
+
+ Image Control section for a full description of this function.
+
+
+<h3><a name="Image_Properties"></a>Image Properties:</h3>
+Image properties are basically the FITS file header records.&nbsp; Some are static
+
+
+ and cannot be edited.&nbsp; Others are fields used to identify the image and
+
+
+ other pertinent information.&nbsp; The NAME field is the base filename without
+
+
+ any directory path or extension.&nbsp; Use this to help identify the image with
+
+
+ a glance.&nbsp; It must also be unique among the loaded images.&nbsp; The static fields
+
+
+ define the format and parameters of the exposure.
+
+
+<h3><a name="Save_Image"></a>Save Image:</h3>
+FITS format is the only graphics file format that images can be saved with.&nbsp;
+
+
+ The default extension is .fits but this can be changed using 'Save As'.&nbsp;
+
+
+ The FITS header can be edited with the '<a href="#Image_Properties">Image Properties</a>'
+
+
+ menu item.
+
+
+<h3><a name="Working_Directory"></a>Working Directory:</h3>
+The working directory is the default directory used to load and save images.&nbsp;
+
+
+ It can be set through the Preferences drop-down menu.&nbsp; Once set, it is retained
+
+
+ accross invocations.
+
+
+<h3><a name="COM_Port_Settings"></a>COM Port Settings:</h3>
+Both the telescope slewing control and the filter wheel control require access
+
+
+ to a serial port.&nbsp; If 'None' is selected, that device will not be enabled
+
+
+ in the CCD Control panel.&nbsp; Since <b>gccd</b>does not run with root priveledges,
+
+
+ the serial port device files, /dev/ttyS*, need to allow access to regular
+
+
+ user applications.&nbsp; Use the <b>chmod</b>program to alter the priveledge
+
+
+ access bits to the serial device files.
+
+
+<h3><a name="View_Multiple_Document_Interface"></a>View Multiple Document Interface Settings:</h3>
+The Gnome MDI window can be viewed in three diffent modes.&nbsp; Notebook, toplevel,
+
+
+ and modal.&nbsp; Notebook and modal only display one image at a time in a single
+
+
+ main window.&nbsp; The notebook view has tabs along one side that can be clicked
+
+
+ to bring any image to the front.&nbsp; Modal doesn't have tab settings but the
+
+
+ 'Window' menu has the list of all images loaded and can be selected with
+
+
+ the menu items.&nbsp; The toplevel view gives each image its own window.&nbsp; This
+
+
+ can display all the images at once, but requires lots of screen real-estate.&nbsp;
+
+
+ The default view mode is defined in the Gnome Control Panel.&nbsp; The view mode
+
+
+ will remain persistent accross invocations once set, regardless of the Gnome
+
+
+ Control Panel.
+
+
+<h3><a name="View_Image_Colorized"></a>View Image Colorized:</h3>
+One-shot color cameras and monochrome images taken through filters can be
+
+
+ displayed using the color information recorded from the camera and/or filter
+
+
+ wheel.&nbsp; The colorized image is only an aid in seeing the color in the image
+
+
+ because it hasn't been calibrated.&nbsp; An image processing program is needed
+
+
+ to adjust the color balance.
+
+
+<h3><a name="View_Image_Contrast_Stretched"></a>View Image Contrast Stretched:</h3>
+Many images don't use the full dynamic range of the DAC so they can be very
+
+
+ dark.&nbsp; The contrast stretch setting simply does a linear stretch of the
+
+
+ images' min and max values to the display.&nbsp; This does not change the image
+
+
+ data in any way, it is simply a visual aid.
+
+
+<h3><a name="Flip_Image"></a>Flip Image:</h3>
+An image can be flipped in the horizontal or verical direction.&nbsp; This in
+
+
+ normally done to re-orient the image because of an optical path that flips
+
+
+ the image.
+
+
+<h3><a name="Invert_Image"></a>Invert Image:</h3>
+An image can be inverted, basically making a negative of the original.&nbsp; Some
+
+
+ astronomers find this a better way to view faint images.&nbsp; This can be done
+
+
+ twice to restore the original image.<br>
+<h3><a name="Splitting_OneShot_Color_Frames_into"></a>Splitting One-Shot Color Frames into Individual
+
+
+ Color Frames:</h3>
+One-shot color cameras achieve a full color image with a single integration
+
+
+ because of a color matrix overlaying the pixel grid of the CCD.&nbsp; Individual
+
+
+ color frames can be synthesized by analyzing the color matrix and copying
+
+
+ the pixels of each unique color to a new frame.&nbsp; Colors that aren't represented
+
+
+ because of the matrix ordering are created from an average of their nearest
+
+
+ neighbors that match the color.&nbsp; The recombination of the color frames and
+
+
+ their calibration is left to the image processing program.<br>
+<br>
+<hr align="Left" width="100%" size="2">
+<h2><a name="Acquire_Image_Control"></a>Acquire Image Control:</h2>
+The Acquisition Control contains all the options for imaging.&nbsp; It has three
+ main control areas.&nbsp; The main exposure options are available at the bottom
+ of the panel.&nbsp; Exposure duration and camera selection as well as status
+ are always visible.&nbsp; On the right is the telescope control panel.&nbsp; It is
+ always available for moving and slewing the telescope.&nbsp; Options for inverting
+ the right ascension and declination can be set to match the image view.&nbsp;
+ Finally, the notebook view contains all the advanced options for integration,
+ guiding, and filter wheel control.
+<h3><a name="Select_Camera"></a>Select Camera:</h3>
+All identified cameras are avialable in a drop down list.&nbsp; The displayed
+ camera is what will be used for integrating.<br>
+<h3><a name="Exposure_Duration"></a>Exposure Duration:</h3>
+The exposure duration can be selected using three units: milliseconds, seconds,
+ and minutes.&nbsp; This allows for integrations from instantaneous to many hours.<br>
+<h3><a name="Exposure_BeginCancel"></a>Exposure Begin/Cancel:</h3>
+Exposures are started with the main Begin button at the bottom of the panel.&nbsp;
+ Once the integration begins, the button label changes to Cancel.&nbsp; The button
+ can be pressed again to abort the exposure.&nbsp; If the <a href="#Find__Focus">Find
+ &amp;Focus</a>panel is active, the integrated frame will be sent to the
+ find/focus window instead of being saved.<br>
+<hr align="Left" width="100%" size="2">
+<h3><a name="Exposure_Option"></a>Exposure Option:</h3>
+Options for the integrated image <br>
+<h4><a name="Binning"></a>Binning:</h4>
+The image can be binned vertically and/or horizontally at 1X, 2X and 4X.&nbsp;
+ Depending on the camera, the binning will occur inside the CCD chip or digitally
+ as the image is read.<br>
+<h4><a name="Calibration"></a>Calibration:</h4>
+Calibration can be carried out using bias, dark, and flat frames.&nbsp; Bias frames
+ are zero length integrations used to subtract out DC bias and read noise.&nbsp;
+ A standard dark frame, one that includes bias and has the same exposure
+ time as the selected integration can be used in the bias frame option.&nbsp;
+ Scaled dark frames can be used as generic darks.&nbsp; They should be exposed
+ for a least twice as long as the intended calibrated integration.&nbsp; Flat
+ fields are used to counteract effects of dust in the optical path and vignetting.&nbsp;
+ If using the <a href="#Flat_Field">filter wheel flat field</a>, this option
+ should be left as (None) otherwise it will override the filter flat field.<br>
+<h4><a name="Multiple_Exposures"></a>Multiple Exposures:</h4>
+Many back to back integrations can be made for various reasons.&nbsp; The images
+ can be individually sent to the <a href="#Main_Image_View">Main View</a>for capturing
+ good seeing for planetary images&nbsp; or combined to improve a deep sky image.<br>
+<h5><a name="Frame_Combine_Modes"></a>Frame Combine Modes:</h5>
+The combine modes allow most common arithatic frame combinations.&nbsp; Summing,
+ averaging, median, minimum, and maximum operations are supported.<br>
+<h5><a name="AutoRegistration"></a>Auto-Registration:</h5>
+The individual frames can be registered to the first image frame so all the
+ exposed frames can be combined.&nbsp; If frames are kept seperate, they will
+ still be registered before being sent to the <a href="#Main_Image_View">Main View</a>.&nbsp;
+ When registering with a one-shot color camera, the combined color frame
+ will be split into individual color frames before the registration takes
+ place.&nbsp; This keeps the color matrix information from being corrupted since
+ registration will shift each frame by a sub-pixel amounts.<br>
+<h3><a name="Find__Focus"></a>Find &amp;Focus:</h3>
+Achieving good focus is actually harder than it should be.&nbsp; To help, the
+ Find &amp;Focus pane tries to make image downloads as short as possible
+ so the image frame rate allows real-time focus control.&nbsp; The same features
+ make locating and centering objects easer as well.&nbsp; Some cameras can also
+ reduce the DAC precision to improve download time as well.<br>
+<h4><a name="Image_Scale"></a>Image Scale:</h4>
+By using the binning and windowing features of the CCD camera, the integrated
+ image can be quickly downloaded.&nbsp; The image scale can be set from 4:1 to
+ 1:4.&nbsp; Zooming out to 4:1 uses binning to reduce download time and increase
+ camera sensitivity.&nbsp; This scale helps achieve gross focus.&nbsp; By moving to
+ the next scale level and adjusting focus along the way, good focus can be
+ quickly achieved.&nbsp; The focus image will be contrast stretched to help find
+ the sharpest image.<br>
+<h4><a name="Image_Histogram"></a>Image Histogram:</h4>
+The histogram of the image will help identify when best focus is achieved.&nbsp;
+ Minimum and maximum pixel values can be used as a focus quality measurement.&nbsp;
+ Because the focus pane automatically applies a contrast stretch, it cannot
+ be used to measure the relative brightness of the image.&nbsp; Use the histogram
+ for quantitative focus feedback. <br>
+<h3><a name="Guide"></a>Guide:</h3>
+<h4><a name="Select_Guide_Camera"></a>Select Guide Camera:</h4>
+<h4><a name="Self_Guide_Fields"></a>Self Guide Fields:</h4>
+<h4><a name="Select_Guide_Object"></a>Select Guide Object:</h4>
+<h4><a name="Clear_Guide_Object"></a>Clear Guide Object:</h4>
+<h4><a name="Tracking_Rates"></a>Tracking Rates:</h4>
+<h4><a name="Train_Tracking"></a>Train Tracking:</h4>
+<h3><a name="Filter_Wheel"></a>Filter Wheel:</h3>
+<h4><a name="Color_Selection"></a>Color Selection:</h4>
+<h4><a name="Sequence_Inclusion"></a>Sequence Inclusion:</h4>
+<h4><a name="Exposure_Percentage"></a>Exposure Percentage:</h4>
+<h4><a name="Flat_Field"></a>Flat Field:</h4>
+<h3><a name="Miscellaneous_Values"></a>Miscellaneous Values:</h3>
+<h3><a name="Telescope_Control"></a>Telescope Control:</h3>
+<h4><a name="Slewing"></a>Slewing:</h4>
+<h4><a name="Reversing_Directions"></a>Reversing&nbsp; Directions:</h4>
+<h4><a name="Select_Interface"></a>Select Interface:</h4>
+<hr align="Left" width="100%" size="2">
+<h2><a name="Usage"></a>Usage:</h2>
+<h3><a name="Creating_Calibration_Frames"></a>Creating Calibration Frames:</h3>
+<h3><a name="Using_Mutltiple_Cameras"></a>Using Mutltiple Cameras:</h3>
+<hr align="Left" width="100%" size="2">
+<h2><a name="Supported_Devices"></a>Supported Devices:</h2>
+<br>
+</div>
+</div>
+</body>
+</html>
