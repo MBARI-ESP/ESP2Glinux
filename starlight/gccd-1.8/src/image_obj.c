@@ -301,16 +301,8 @@ int ccd_image_save_fits(struct ccd_image *image)
     sprintf(record[i++], "NAXIS   = %20d", 2);
     sprintf(record[i++], "NAXIS1  = %20d",   image->width);
     sprintf(record[i++], "NAXIS2  = %20d",   image->height);
-    if (image->depth == 16)
-    {
-        sprintf(record[i++], "BZERO   = %20f", 32768.0);
-        sprintf(record[i++], "BSCALE  = %20f", 1.0);
-    }
-    if (image->depth == 32)
-    {
-        sprintf(record[i++], "BZERO   = %20f", 2147483647.0);
-        sprintf(record[i++], "BSCALE  = %20f", 1.0);
-    }
+    sprintf(record[i++], "BZERO   = %20f", 0.0);
+    sprintf(record[i++], "BSCALE  = %20f", 1.0);
     sprintf(record[i++], "DATAMIN = %20u", image->datamin);
     sprintf(record[i++], "DATAMAX = %20u", image->datamax);
     if (image->color != CCD_COLOR_MONOCHROME)
@@ -373,7 +365,7 @@ int ccd_image_save_fits(struct ccd_image *image)
     fits_pixels = malloc(image_pitch);
     for (i = 0; i < image->height; i++)
     {
-        convert_pixels(image->pixels + image_size - (i+1) * image_pitch, fits_pixels, 1 << (pixel_size*8-1), pixel_size, image->width);
+        convert_pixels(image->pixels + image_size - (i+1) * image_pitch, fits_pixels, 0, pixel_size, image->width);
         write(fd, fits_pixels, image_pitch);
     }
     free(fits_pixels);
