@@ -29,3 +29,8 @@ if  test -x /sbin/dmesg  ; then
 	fi
 	/sbin/dmesg -n $LOGLEVEL
 fi
+
+#try to compensate for the TS-7200's systematic clock drift
+adjtimex -qf 640000  2>/dev/null
+
+
