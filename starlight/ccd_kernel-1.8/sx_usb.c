@@ -251,6 +251,7 @@ static struct usb_device_id sx_usb_id_table[] =
     {USB_DEVICE(EZUSB2_VENDOR_ID, EZUSB2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2a_VENDOR_ID, ECHO2a_PRODUCT_ID)},
+    {USB_DEVICE(ECHO2a_VENDOR_ID, ECHO2a_PRODUCT_ID2)},
     {}
 };
 MODULE_DEVICE_TABLE(usb, sx_usb_id_table);
@@ -1201,7 +1202,9 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
     else if((usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
              usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID) || 
             (usbdev->descriptor.idVendor  == ECHO2a_VENDOR_ID &&
-             usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID))
+            (usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID ||
+             usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID2)
+            ))
     {
         struct ccd_mini     mini_device;
         int                 sx_model, sx_color;
