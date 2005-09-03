@@ -54,9 +54,7 @@ realPath() {
 
 case "$1" in
     start)
-      echo "Mounting filesystems defined in /etc/fstab"
-      { insmod fat; insmod vfat; } >/dev/null 2>&1
-      
+      echo "Mounting filesystems defined in /etc/fstab"      
       mount -a
       swapon -a
 
@@ -67,14 +65,16 @@ case "$1" in
         cd $var 2>/dev/null || {
           redoIfRO "$var" "mkdir -p $var && touch $var" && cd $var
         } && {
-          log=`realPath $var/log` && redoIfRO $log  \
-           "mkdir -p $log && touch $log"
-          etc=`realPath $var/etc` && redoIfRO $etc  \
-           "mkdir -p $etc && touch $etc"
-          run=`realPath $var/run` && redoIfRO $run \
-           "rm -rf $run/* $run/.[^.]* && mkdir -p $run && touch $run"
-          lock=`realPath $var/lock` && redoIfRO $lock \
-           "rm -rf $lock/* $lock/.[^.]* && mkdir -p $lock && chgrp tty $lock"
+          log=`realPath $var/log` &&
+            redoIfRO $log "mkdir -p $log && chgrp log $log && chmod g+w $log"
+          etc=`realPath $var/etc` &&
+            redoIfRO $etc "mkdir -p $etc && touch $etc"
+          run=`realPath $var/run` &&
+            redoIfRO $run \
+             "rm -rf $run/* $run/.[^.]* && mkdir -p $run && touch $run"
+          lock=`realPath $var/lock` &&
+            redoIfRO $lock \
+             "rm -rf $lock/* $lock/.[^.]* && mkdir -p $lock && chgrp tty $lock"
         }
       }
        ;;
