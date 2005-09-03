@@ -76,6 +76,7 @@ if [ "$CONFIG_USB" = "y" -o  "$CONFIG_USB" = "m" ]; then
    dep_tristate '  USB Scanner support' CONFIG_USB_SCANNER $CONFIG_USB
    dep_tristate '  Microtek X6USB scanner support' CONFIG_USB_MICROTEK $CONFIG_USB $CONFIG_SCSI
    dep_tristate '  HP53xx USB scanner support (EXPERIMENTAL)' CONFIG_USB_HPUSBSCSI $CONFIG_USB $CONFIG_SCSI $CONFIG_EXPERIMENTAL
+   dep_tristate '  Starlight Xpress SVX CCD camera' CONFIG_USB_STARLIGHT $CONFIG_USB
 
    comment 'USB Multimedia devices'
    if [ "$CONFIG_VIDEO_DEV" = "n" ]; then
