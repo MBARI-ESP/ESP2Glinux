@@ -2,17 +2,17 @@ Notes on how to configure the TS-7200 from Technologics as an ESP controller
 
 A) Build the Flash Filesystem if its not up to date
 
-$ cd ../esp
-$ armconfig && arminstall  #this builds the filesystem tree rooted at ~/armhost
+$ cd ~/linux/esp
+$ arminstall  #this builds the filesystem tree rooted at ~/armHost
 
 
 B) Add Ruby and its supporting libs to the base tree
 
 $ cd ~/ESP/gen2/software
 $ cd termcap
-$ armconfig && arminstall
+$ arminstall
 $ cd ../readline
-$ armconfig && arminstall
+$ armconfig
 $ cd ../ruby
 $ armconfig && arminstall
 
@@ -28,7 +28,7 @@ $ make dep clean bzImage modules modules_install
 D) Create the JFFS2 filesystem image
 
 $ cd ../esp
-$ buildjffs2 > armhost.jffs2
+$ buildjffs2 > armHost.jffs2
 
 
 E) Configure Redboot
@@ -66,14 +66,14 @@ E) Install JP 4 to use COM2 as the console port
 
 G) Replace the kernel with the one last build on Bufflehead
 
-RedBoot>  %{getKernel}
+RedBoot>  %{getKernel} zImage  #assumes zImage installed at root of tftp server
 RedBoot>  fis delete vmlinux
 RedBoot>  fis create vmlinux
 
 
 H) Install the staging Compact Flash and boot the board
 
-poweer off board, install CF card, power on
+power off board, install CF card, power on
 control-C to enter redboot
 RedBoot> %{bootHda2}
 
@@ -84,7 +84,7 @@ on ESPstage as root:
 # flash_eraseall /dev/mtd/1
 
 on bufflehead:
-$ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
+$ cat /home/brent/armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
 
 
 J) reboot and let the board start normally
@@ -92,7 +92,7 @@ J) reboot and let the board start normally
   login as root, RNAprobe
 
 
-K) Change the /etc/HOSTNAME
+K) Change the /etc/HOSTNAME and corresponding entry for /var/log in /etc/fstab
     reboot
     
 
