@@ -1,5 +1,5 @@
 #!/bin/sh
-# unpack and configure linux24 for arm-linux -- 3/18/05 brent@mbari.org
+# unpack and configure linux24 for arm-linux -- 9/2/05 brent@mbari.org
 #  This is still not completely automated!
 #
 #  The patched kernel source from technologists can be downloaded with:
@@ -16,9 +16,8 @@
 
 [ ! -d linux24 ] && {
   rm -rf linux24_ts8
-  tar xjf linux24ts8.tar.bz2 && cd linux24 || exit 3
-  ln -s linux24_ts8 linux24
+  tar xzf linux24_ts8_src.tar.gz &&
+  ln -s linux24_ts8 linux24 || exit
 }
-cd linux24 &&
-cp ../mbari.config .config &&
-make oldconfig
+cp mbari.config linux24/.config
+#cd linux24 && make oldconfig
