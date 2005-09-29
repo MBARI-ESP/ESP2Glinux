@@ -133,6 +133,9 @@ obj-$(CONFIG_USB_BRLVGER)	+= brlvger.o
 obj-$(CONFIG_USB_LCD)		+= usblcd.o
 obj-$(CONFIG_USB_SPEEDTOUCH)	+= speedtch.o
 
+# Starlight SXV camera support
+obj-$(CONFIG_USB_STARLIGHT)	+= ccd.o sx_usb.o
+
 # Object files in subdirectories
 mod-subdirs	:= serial host
 
