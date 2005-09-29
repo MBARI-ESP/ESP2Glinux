@@ -1,6 +1,7 @@
 VERSION_MAJOR =1
 VERSION_MINOR =8
-CFLAGS        =-I/usr/src/linux/include -include /usr/src/linux/include/linux/modversions.h -D__KERNEL__ -DMODULE -DVERSION_MAJOR=$(VERSION_MAJOR) -DVERSION_MINOR=$(VERSION_MINOR) -O2 -Wall
+KERNEL        = /usr/src/linux
+CFLAGS        =-I$(KERNEL)/include -include $(KERNEL)/include/linux/modversions.h -D__KERNEL__ -DMODULE -DVERSION_MAJOR=$(VERSION_MAJOR) -DVERSION_MINOR=$(VERSION_MINOR) -O2 -Wall
 MISCDIR       =/lib/modules/$(shell uname -r)/misc
 CC            =gcc  #-2.95
 
