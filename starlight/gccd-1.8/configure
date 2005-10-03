@@ -1680,7 +1680,7 @@ fi
 
 PACKAGE=gccd
 
-VERSION=1.8-mbari
+VERSION=1.8-MBARI
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { { echo "$as_me:$LINENO: error: source directory already configured; run \"make distclean\" there first" >&5

@@ -2,7 +2,7 @@ AC_INIT(src/gccd.c)
 
 AM_CONFIG_HEADER(config.h)
 
-AM_INIT_AUTOMAKE(gccd, 1.8-mbari)
+AM_INIT_AUTOMAKE(gccd, 1.8-MBARI)
 
 AM_MAINTAINER_MODE
 
