@@ -1286,6 +1286,8 @@ static void cbSaveAsOK(GtkWidget *widget, gpointer data)
         gnome_mdi_child_set_name(gnome_mdi_get_active_child(GNOME_MDI(mdi)), image->name);
         imageUpdateList();
         image->changed = FALSE;
+    }else{
+        gnome_warning_dialog_parented(_("Unable to save file."), GTK_WINDOW(gnome_mdi_get_active_window(GNOME_MDI(mdi))));
     }
 }
 static void cbSaveAs(GtkObject *object, gpointer data)
@@ -1315,11 +1317,14 @@ static void cbSave(GtkObject *object, gpointer data)
 
     if (child && (image = (struct ccd_image *)gtk_object_get_user_data(GTK_OBJECT(child))))
     {
-       if (image->changed && (ccd_image_save_fits(image) == 0))
-       {
+       if (image->changed)
+         if (ccd_image_save_fits(image) == 0)
+         {
            gnome_mdi_child_set_name(child, image->name);
            image->changed = FALSE;
-       }
+         }else{
+           gnome_warning_dialog_parented(_("Unable to save file."), GTK_WINDOW(gnome_mdi_get_active_window(GNOME_MDI(mdi))));
+         }           
     }
 }
 static void cbSaveAll(GtkObject *object, gpointer data)
@@ -1328,11 +1333,14 @@ static void cbSaveAll(GtkObject *object, gpointer data)
 
     for (image = ccd_image_first(); image; image = ccd_image_next(image))
     {
-        if (image->changed && (ccd_image_save_fits(image) == 0))
-        {
+        if (image->changed)
+          if (ccd_image_save_fits(image) == 0)
+          {
             gnome_mdi_child_set_name(GNOME_MDI_CHILD(image->child), image->name);
             image->changed = FALSE;
-        }
+          }else{
+            gnome_warning_dialog_parented(_("Unable to save file."), GTK_WINDOW(gnome_mdi_get_active_window(GNOME_MDI(mdi))));
+          }
     }
 }
 static void cbClose(GtkObject *object, gpointer data)

@@ -291,6 +291,7 @@ int ccd_image_save_fits(struct ccd_image *image)
         strcat(filename, image->ext);
     }
     fd = creat(filename, 0666);
+    if (fd < 0) return fd;
     /*
      * Fill header records.
      */
@@ -375,8 +376,7 @@ int ccd_image_save_fits(struct ccd_image *image)
     memset(record, 0, FITS_RECORD_SIZE);
     if (image_size % FITS_RECORD_SIZE)
         write(fd, record, FITS_RECORD_SIZE - (image_size % FITS_RECORD_SIZE));
-    close(fd);
-    return (0);
+    return close(fd);
 }
 /*
  * Load image from FITS file.
