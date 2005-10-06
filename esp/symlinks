@@ -39,8 +39,9 @@ etc/rc.d/rc0.d/S99halt -> ../../init.d/halt
 etc/rc.d/rc3.d/S10rtc -> ../../init.d/rtc
 etc/rc.d/rc3.d/S20sysmount -> ../../init.d/sysmount
 etc/rc.d/rc3.d/S30syslog -> ../../init.d/syslog
-etc/rc.d/rc3.d/S40network -> ../../init.d/network
-etc/rc.d/rc3.d/S50portmap -> ../../init.d/portmap
+etc/rc.d/rc3.d/S40usb -> ../../init.d/usb
+etc/rc.d/rc3.d/S50network -> ../../init.d/network
+etc/rc.d/rc3.d/S60portmap -> ../../init.d/portmap
 etc/rc.d/rc3.d/S70inetd -> ../../init.d/inetd
 etc/rc.d/rc3.d/S80nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc3.d/S90local -> ../../init.d/local
