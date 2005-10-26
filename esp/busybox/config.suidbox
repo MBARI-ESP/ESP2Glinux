@@ -86,6 +86,7 @@ PREFIX="/home/brent/armHost"
 # CONFIG_MKFIFO is not set
 # CONFIG_MKNOD is not set
 # CONFIG_MV is not set
+# CONFIG_NOHUP is not set
 # CONFIG_OD is not set
 # CONFIG_PRINTF is not set
 # CONFIG_PWD is not set

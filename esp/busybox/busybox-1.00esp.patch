@@ -1,6 +1,6 @@
-diff -ur busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
+diff -ru busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
 --- busybox-1.00/applets/install.sh	2001-03-08 13:42:11.000000000 -0800
-+++ busybox-1.00.new/applets/install.sh	2005-03-10 12:32:15.000000000 -0800
++++ busybox-1.00.new/applets/install.sh	2005-10-25 21:53:14.000000000 -0700
 @@ -2,6 +2,7 @@
  
  export LC_ALL=POSIX
@@ -47,9 +47,38 @@ diff -ur busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
  		;;
  		*)
  		echo "Unknown installation directory: $appdir"
-diff -ur busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
+diff -ru busybox-1.00/coreutils/Config.in busybox-1.00.new/coreutils/Config.in
+--- busybox-1.00/coreutils/Config.in	2004-08-10 19:45:47.000000000 -0700
++++ busybox-1.00.new/coreutils/Config.in	2005-10-25 21:53:14.000000000 -0700
+@@ -329,6 +329,12 @@
+ 	help
+ 	  mv is used to move or rename files or directories.
+ 
++config CONFIG_NOHUP
++	bool "nohup"
++	default n
++	help
++	  run a command immune to hangups, with output to a non-tty.
++
+ config CONFIG_OD
+ 	bool "od"
+ 	default n
+Only in busybox-1.00.new/coreutils: Config.in.orig
+diff -ru busybox-1.00/coreutils/Makefile.in busybox-1.00.new/coreutils/Makefile.in
+--- busybox-1.00/coreutils/Makefile.in	2004-10-08 00:45:14.000000000 -0700
++++ busybox-1.00.new/coreutils/Makefile.in	2005-10-25 21:53:14.000000000 -0700
+@@ -58,6 +58,7 @@
+ COREUTILS-$(CONFIG_MKFIFO)  	+= mkfifo.o
+ COREUTILS-$(CONFIG_MKNOD)   	+= mknod.o
+ COREUTILS-$(CONFIG_MV)      	+= mv.o
++COREUTILS-$(CONFIG_NOHUP)       += nohup.o
+ COREUTILS-$(CONFIG_OD)      	+= od.o
+ COREUTILS-$(CONFIG_PRINTF)  	+= printf.o
+ COREUTILS-$(CONFIG_PWD)     	+= pwd.o
+Only in busybox-1.00.new/coreutils: nohup.c
+diff -ru busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
 --- busybox-1.00/editors/Config.in	2004-03-15 00:28:31.000000000 -0800
-+++ busybox-1.00.new/editors/Config.in	2005-03-04 13:17:26.000000000 -0800
++++ busybox-1.00.new/editors/Config.in	2005-10-25 21:53:14.000000000 -0700
 @@ -108,6 +108,7 @@
  	bool "  Handle window resize"
  	default y
@@ -58,9 +87,18 @@ diff -ur busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
  	help
  	  Make busybox vi behave nicely with terminals that get resized.
  
-diff -ur busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
+diff -ru busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
 --- busybox-1.00/editors/vi.c	2004-08-19 12:15:06.000000000 -0700
-+++ busybox-1.00.new/editors/vi.c	2005-03-13 18:31:46.000000000 -0800
++++ busybox-1.00.new/editors/vi.c	2005-10-25 21:54:01.000000000 -0700
+@@ -19,7 +19,7 @@
+  */
+ 
+ static const char vi_Version[] =
+-	"$Id$";
++       "$Id$";
+ 
+ /*
+  * To compile for standalone use:
 @@ -285,6 +285,7 @@
  static int mycmp(Byte *, Byte *, int);	// string cmp based in "ignorecase"
  #endif							/* CONFIG_FEATURE_VI_SEARCH */
@@ -115,10 +153,38 @@ diff -ur busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
  #ifdef CONFIG_FEATURE_VI_SETOPTS
  	"\n\tSettable options with \":set\""
  #endif							/* CONFIG_FEATURE_VI_SETOPTS */
-diff -ur busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
+diff -ru busybox-1.00/include/applets.h busybox-1.00.new/include/applets.h
+--- busybox-1.00/include/applets.h	2004-08-26 16:01:34.000000000 -0700
++++ busybox-1.00.new/include/applets.h	2005-10-25 21:53:14.000000000 -0700
+@@ -412,6 +412,9 @@
+ #ifdef CONFIG_NETSTAT
+ 	APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER)
+ #endif
++#ifdef CONFIG_NOHUP
++	APPLET(nohup, nohup_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
++#endif
+ #ifdef CONFIG_NSLOOKUP
+ 	APPLET(nslookup, nslookup_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
+ #endif
+Only in busybox-1.00.new/include: applets.h.orig
+diff -ru busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
 --- busybox-1.00/include/usage.h	2004-09-14 09:23:56.000000000 -0700
-+++ busybox-1.00.new/include/usage.h	2005-03-13 18:19:24.000000000 -0800
-@@ -2331,6 +2331,7 @@
++++ busybox-1.00.new/include/usage.h	2005-10-25 21:53:14.000000000 -0700
+@@ -1813,6 +1813,13 @@
+ 	"\t-w raw sockets\n" \
+ 	"\t-x unix sockets"
+ 
++#define nohup_trivial_usage \
++	"COMMAND [ARGS]"
++#define nohup_full_usage \
++	"run a command immune to hangups, with output to a non-tty"
++#define nohup_example_usage \
++	"$ nohup make &"
++
+ #define nslookup_trivial_usage \
+ 	"[HOST] [SERVER]"
+ #define nslookup_full_usage \
+@@ -2331,6 +2338,7 @@
  	"\t-n\t\tRun as a foreground process\n" \
  	"\t-O FILE\t\tUse an alternate log file (default=/var/log/messages)\n" \
  	"\t-S\t\tMake logging output smaller." \
@@ -126,9 +192,10 @@ diff -ur busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
  	USAGE_ROTATE_LOGFILE( \
  	"\n\t-s SIZE\t\tMax size (KB) before rotate (default=200KB, 0=off)\n" \
  	"\t-b NUM\t\tNumber of rotated logs to keep (default=1, max=99, 0=purge)") \
-diff -ur busybox-1.00/init/init.c busybox-1.00.new/init/init.c
+Only in busybox-1.00.new/include: usage.h.orig
+diff -ru busybox-1.00/init/init.c busybox-1.00.new/init/init.c
 --- busybox-1.00/init/init.c	2004-10-08 01:21:54.000000000 -0700
-+++ busybox-1.00.new/init/init.c	2005-03-08 23:14:40.000000000 -0800
++++ busybox-1.00.new/init/init.c	2005-10-25 21:53:14.000000000 -0700
 @@ -674,8 +674,13 @@
  	/* We have to fork here, since the kernel calls do_exit(0) in
  	 * linux/kernel/sys.c, which can cause the machine to panic when
@@ -182,9 +249,9 @@ diff -ur busybox-1.00/init/init.c busybox-1.00.new/init/init.c
  	sync();
  }
  
-diff -ur busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount_point.c
+diff -ru busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount_point.c
 --- busybox-1.00/libbb/find_mount_point.c	2004-03-15 00:28:42.000000000 -0800
-+++ busybox-1.00.new/libbb/find_mount_point.c	2005-03-10 23:53:23.000000000 -0800
++++ busybox-1.00.new/libbb/find_mount_point.c	2005-10-25 21:53:14.000000000 -0700
 @@ -52,6 +52,7 @@
  		return 0;
  
@@ -193,9 +260,9 @@ diff -ur busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount
  		if (strcmp(name, mountEntry->mnt_dir) == 0
  			|| strcmp(name, mountEntry->mnt_fsname) == 0)	/* String match. */
  			break;
-diff -ur busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
+diff -ru busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
 --- busybox-1.00/loginutils/Config.in	2004-08-26 16:12:59.000000000 -0700
-+++ busybox-1.00.new/loginutils/Config.in	2005-03-04 15:52:28.000000000 -0800
++++ busybox-1.00.new/loginutils/Config.in	2005-10-25 21:53:14.000000000 -0700
 @@ -69,7 +69,7 @@
  config CONFIG_LOGIN
  	bool "login"
@@ -248,9 +315,10 @@ diff -ur busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
  	help
  	  Build support for shadow password in /etc/shadow.  This file is only
  	  readable by root and thus the encrypted passwords are no longer
-diff -ur busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
+Only in busybox-1.00.new/loginutils: Config.in.loginutils
+diff -ru busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
 --- busybox-1.00/networking/Config.in	2004-09-23 13:08:46.000000000 -0700
-+++ busybox-1.00.new/networking/Config.in	2005-03-01 23:30:16.000000000 -0800
++++ busybox-1.00.new/networking/Config.in	2005-10-25 21:53:14.000000000 -0700
 @@ -492,7 +492,7 @@
  config CONFIG_TELNETD
  	bool "telnetd"
@@ -260,9 +328,10 @@ diff -ur busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
  	help
  	  A daemon for the TELNET protocol, allowing you to log onto the host
  	  running the daemon.  Please keep in mind that the TELNET protocol
-diff -ur busybox-1.00/sysklogd/syslogd.c busybox-1.00.new/sysklogd/syslogd.c
+Only in busybox-1.00.new/networking: Config.in.networking
+diff -ru busybox-1.00/sysklogd/syslogd.c busybox-1.00.new/sysklogd/syslogd.c
 --- busybox-1.00/sysklogd/syslogd.c	2004-09-14 11:12:13.000000000 -0700
-+++ busybox-1.00.new/sysklogd/syslogd.c	2005-03-13 18:23:06.000000000 -0800
++++ busybox-1.00.new/sysklogd/syslogd.c	2005-10-25 21:53:14.000000000 -0700
 @@ -71,6 +71,9 @@
  /* interval between marks in seconds */
  static int MarkInterval = 20 * 60;
@@ -314,3 +383,205 @@ diff -ur busybox-1.00/sysklogd/syslogd.c busybox-1.00.new/sysklogd/syslogd.c
  #ifdef CONFIG_FEATURE_ROTATE_LOGFILE
  		case 's':
  			logFileSize = atoi(optarg) * 1024;
+diff -ruP busybox-1.00/coreutils/nohup.c busybox-1.00.new/coreutils/nohup.c
+--- busybox-1.00/coreutils/nohup.c	1969-12-31 16:00:00.000000000 -0800
++++ busybox-1.00.new/coreutils/nohup.c	2005-10-25 22:04:34.000000000 -0700
+@@ -0,0 +1,198 @@
++/* vi: set sw=4 ts=4: */
++/* nohup -- run a command immune to hangups, with output to a non-tty
++   Copyright (C) 2003, 2004, 2005 Free Software Foundation, Inc.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 2, or (at your option)
++   any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software Foundation,
++   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
++
++/* Written by Jim Meyering  */
++/* initial busybox port by Bernhard Fischer */
++
++#include <stdio_ext.h> /* __fpending */
++#include <stdio.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/types.h>
++#include <signal.h>
++#include <errno.h>
++
++#include "busybox.h"
++#define EXIT_CANNOT_INVOKE (126)
++#define NOHUP_FAILURE (127)
++#define EXIT_ENOENT NOHUP_FAILURE
++
++
++
++#if defined F_GETFD && defined F_SETFD
++static inline int set_cloexec_flag (int desc)
++{
++	int flags = fcntl (desc, F_GETFD, 0);
++	if (0 <= flags) {
++		if (flags == (flags |= FD_CLOEXEC) ||
++			fcntl (desc, F_SETFD, flags) != -1) {
++			return 0;
++		}
++	}
++	return -1;
++}
++#else
++#define set_cloexec_flag(desc) (0)
++#endif
++
++static int fd_reopen (int desired_fd, char const *file, int flags, mode_t mode)
++{
++	int fd;
++
++	close (desired_fd);
++	fd = open (file, flags, mode);
++	if (fd == desired_fd || fd < 0)
++		return fd;
++	else {
++		int fd2 = fcntl (fd, F_DUPFD, desired_fd);
++		int saved_errno = errno;
++		close (fd);
++		errno = saved_errno;
++		return fd2;
++	}
++}
++
++
++/* Close standard output, exiting with status 'exit_failure' on failure.
++   If a program writes *anything* to stdout, that program should close
++   stdout and make sure that it succeeds before exiting.  Otherwise,
++   suppose that you go to the extreme of checking the return status
++   of every function that does an explicit write to stdout.  The last
++   printf can succeed in writing to the internal stream buffer, and yet
++   the fclose(stdout) could still fail (due e.g., to a disk full error)
++   when it tries to write out that buffered data.  Thus, you would be
++   left with an incomplete output file and the offending program would
++   exit successfully.  Even calling fflush is not always sufficient,
++   since some file systems (NFS and CODA) buffer written/flushed data
++   until an actual close call.
++
++   Besides, it's wasteful to check the return value from every call
++   that writes to stdout -- just let the internal stream state record
++   the failure.  That's what the ferror test is checking below.
++
++   It's important to detect such failures and exit nonzero because many
++   tools (most notably `make' and other build-management systems) depend
++   on being able to detect failure in other tools via their exit status.  */
++
++static void close_stdout (void)
++{
++	int prev_fail = ferror (stdout);
++	int none_pending = (0 == __fpending (stdout));
++	int fclose_fail = fclose (stdout);
++
++	if (prev_fail || fclose_fail) {
++		/* If ferror returned zero, no data remains to be flushed, and we'd
++		otherwise fail with EBADF due to a failed fclose, then assume that
++		it's ok to ignore the fclose failure.  That can happen when a
++		program like cp is invoked like this `cp a b >&-' (i.e., with
++		stdout closed) and doesn't generate any output (hence no previous
++		error and nothing to be flushed).  */
++		if ((fclose_fail ? errno : 0) == EBADF && !prev_fail && none_pending)
++			return;
++
++		bb_perror_msg_and_die(bb_msg_write_error);
++	}
++}
++
++
++int nohup_main (int argc, char **argv)
++{
++	int saved_stderr_fd;
++
++	if (argc < 2)
++		bb_show_usage();
++
++	bb_default_error_retval = NOHUP_FAILURE;
++
++	atexit (close_stdout);
++
++	/* If standard input is a tty, replace it with /dev/null.
++	 Note that it is deliberately opened for *writing*,
++	 to ensure any read evokes an error.  */
++	if (isatty (STDIN_FILENO))
++		fd_reopen (STDIN_FILENO, "/dev/null", O_WRONLY, 0);
++
++	/* If standard output is a tty, redirect it (appending) to a file.
++	 First try nohup.out, then $HOME/nohup.out.  */
++	if (isatty (STDOUT_FILENO)) {
++		char *in_home = NULL;
++		char const *file = "nohup.out";
++		int fd = fd_reopen (STDOUT_FILENO, file,
++				O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR);
++
++		if (fd < 0) {
++			if ((in_home = getenv ("HOME")) != NULL) {
++				in_home = concat_path_file(in_home, file);
++				fd = fd_reopen (STDOUT_FILENO, in_home,
++						O_CREAT | O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR);
++			}
++			if (fd < 0) {
++				bb_perror_msg("failed to open '%s'", file);
++				if (in_home)
++					bb_perror_msg("failed to open '%s'",in_home);
++				exit (NOHUP_FAILURE);
++			}
++			file = in_home;
++		}
++
++		umask (~(S_IRUSR | S_IWUSR));
++		bb_error_msg("appending output to '%s'", file);
++//		if (ENABLE_FEATURE_CLEAN_UP)
++			free (in_home);
++	}
++
++	/* If standard error is a tty, redirect it to stdout.  */
++	if (isatty (STDERR_FILENO)) {
++	/* Save a copy of stderr before redirecting, so we can use the original
++	 if execve fails.  It's no big deal if this dup fails.  It might
++	 not change anything, and at worst, it'll lead to suppression of
++	 the post-failed-execve diagnostic.  */
++		saved_stderr_fd = dup (STDERR_FILENO);
++
++		if (0 <= saved_stderr_fd && set_cloexec_flag (saved_stderr_fd) == -1)
++			bb_perror_msg_and_die("failed to set the copy"
++					"of stderr to close on exec");
++
++		if (dup2 (STDOUT_FILENO, STDERR_FILENO) < 0) {
++			if (errno != EBADF)
++				bb_perror_msg_and_die("failed to redirect standard error");
++			close (STDERR_FILENO);
++		}
++	} else
++		saved_stderr_fd = STDERR_FILENO;
++
++	signal (SIGHUP, SIG_IGN);
++
++	{
++	char **cmd = argv + 1;
++
++	execvp (*cmd, cmd);
++
++	/* The execve failed.  Output a diagnostic to stderr only if:
++	   - stderr was initially redirected to a non-tty, or
++	   - stderr was initially directed to a tty, and we
++	   can dup2 it to point back to that same tty.
++	   In other words, output the diagnostic if possible, but only if
++	   it will go to the original stderr.  */
++	if (dup2 (saved_stderr_fd, STDERR_FILENO) == STDERR_FILENO)
++		bb_perror_msg("cannot run command '%s'",*cmd);
++
++	return (errno == ENOENT ? EXIT_ENOENT : EXIT_CANNOT_INVOKE);
++	}
++}
++
