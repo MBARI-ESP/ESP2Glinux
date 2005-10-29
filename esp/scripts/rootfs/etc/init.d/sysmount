@@ -67,7 +67,7 @@ case "$1" in
         } && {
           log=`realPath $var/log` &&
             redoIfRO $log "mkdir -p $log && chgrp log $log && chmod g+w $log"
-          etc=`realPath $var/etc` &&
+          etc=`realPath $var/etc/ppp` &&
             redoIfRO $etc "mkdir -p $etc && touch $etc"
           run=`realPath $var/run` &&
             redoIfRO $run \
