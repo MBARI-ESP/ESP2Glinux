@@ -12,7 +12,7 @@
 
 #RS-232 port configuration
 freewave     #symlink /dev/freewave to the modem's serial port
-57600        #baud rate
+115200       #baud rate
 crtscts      #hardware RTS/CTS handshaking
 modem        #monitor carrier detect
 lock         #request exclusive access to the port
