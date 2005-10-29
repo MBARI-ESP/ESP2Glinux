@@ -66,6 +66,7 @@ tmp -> /cf/tmp
 var -> /cf/var
 
 etc/hosts -> /var/etc/hosts
+etc/ppp/resolv.conf -> /var/etc/ppp/resolv.conf
 etc/issue.net -> issue
 etc/resolv.conf -> /var/etc/resolv.conf
 root/.profile -> /etc/profile
