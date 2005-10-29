@@ -1,0 +1,11 @@
+#!/bin/sh
+# $Id$
+# executed after disconnecting the ppp interface.
+
+resolv=/etc/resolv.conf
+
+if [ "$USEPEERDNS" ]; then
+
+  [ "`head -1 /etc/resolv.conf`" = "#$1" ] && > /etc/resolv.conf
+
+fi

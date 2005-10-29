@@ -1,0 +1,13 @@
+#!/bin/sh
+# $Id$
+# executed after connecting the ppp interface.
+
+resolv=/etc/resolv.conf
+
+if [ "$USEPEERDNS" -a ! -s $resolv ]; then
+
+  echo "#$1" >$resolv
+  echo search shore.mbari.org >>$resolv
+  cat /etc/ppp/resolv.conf >>$resolv
+  
+fi
