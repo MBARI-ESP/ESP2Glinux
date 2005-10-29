@@ -6,7 +6,7 @@
 ##  mount="#mbari" service mountall start
 #mounts all entries containing the string #mbari
 
-[ -f /etc/resolv.conf ] || {
+[ -s /etc/resolv.conf ] || {
   echo "Missing Network -- skipping NFS mounts"
   exit 1
 }

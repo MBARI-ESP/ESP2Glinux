@@ -13,7 +13,7 @@ case "$op" in
           ifup $dev
         done
       else
-        rm -f /etc/resolv.conf
+        > /etc/resolv.conf
         fnspec='/etc/sysconfig/ifcfg-*'
         fns=`echo $fnspec`
         [ "$fns" = "$fnspec" ] && exit
