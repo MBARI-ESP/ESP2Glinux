@@ -9,3 +9,9 @@ rm -f I2Cgate
 ln -s $I2Cgate I2Cgate  #serial port that talks to the I2C gateway
 chmod g+rw $I2Cgate
 chgrp tty $I2Cgate
+
+ln -s tts/15 freewave   #serial port connected to the freewave radio modem
+stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
+
+#supprt for the ppp deamon
+modprobe ppp_async && modprobe ppp_deflate
