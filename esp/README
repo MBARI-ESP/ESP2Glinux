@@ -1,4 +1,5 @@
-Notes on how to configure the TS-7200 from Technologics as an ESP controller
+Notes on how to configure the TS-7200 from Technologics as an ESP controller'
+ -- revised:  11/7/05 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -12,7 +13,7 @@ $ cd ~/ESP/gen2/software
 $ cd termcap
 $ arminstall
 $ cd ../readline
-$ armconfig
+$ armconfig && arminstall
 $ cd ../ruby
 $ armconfig && arminstall
 
@@ -20,6 +21,7 @@ $ armconfig && arminstall
 C) Build the kernel
 
 Build the kernel source if necessary
+$ cd ~/linux/technologic
 $ armconfig  #see comments in armconfig for downloading the latest
 $ cd linux24
 $ make dep clean bzImage modules modules_install
@@ -27,7 +29,7 @@ $ make dep clean bzImage modules modules_install
 
 D) Create the JFFS2 filesystem image
 
-$ cd ../esp
+$ cd ../../esp
 $ buildjffs2 > armHost.jffs2
 
 
@@ -84,7 +86,7 @@ on ESPstage as root:
 # flash_eraseall /dev/mtd/1
 
 on bufflehead:
-$ cat /home/brent/armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
+$ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
 
 
 J) reboot and let the board start normally
