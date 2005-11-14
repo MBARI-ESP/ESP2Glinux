@@ -1,0 +1,4 @@
+DEVICE=eth0:1
+AUTOSTART=no
+DHCPNAME=ESPbuoy
+BOOTPROTO="dhcp-b -c$DHCPNAME -s/usr/share/udhcpc/proxy.script"
