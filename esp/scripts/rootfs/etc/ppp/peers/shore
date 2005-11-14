@@ -27,9 +27,10 @@ holdoff 15  #try to reestablish link 15 seconds after it terminates
 maxfail 0   #never give up!
 
 #IP addressing
-10.2.2.10:  #default local address
+10.2.2.10:    #default local address
 ipcp-accept-local   #let the peer override our default address
-usepeerdns  #ask shore to supply us  DNS server addresses
+usepeerdns    #ask shore to supply us  DNS server addresses
+defaultroute  #use PPP as the default route
 
 #compression
 deflate 12  #deflate in 4k byte blocks
