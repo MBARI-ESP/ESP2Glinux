@@ -54,9 +54,9 @@ realPath() {
 
 case "$1" in
     start)
-      echo "Mounting filesystems defined in /etc/fstab"      
+      echo "Mounting filesystems and swapfiles defined in /etc/fstab"      
       mount -a
-      swapon -a
+      swapon -a 2>/dev/null
 
       #Set up temporary directories, preserves existing symlinks
       tmp=`realPath /tmp` &&
@@ -81,7 +81,7 @@ case "$1" in
                          
     stop)
       echo -n "Unmounting file systems ... "
-      swapoff -a
+      swapoff -a 2>/dev/null
       umount -ar 2>&1 | grep -v "none busy"
       echo "Done!"
        ;;
