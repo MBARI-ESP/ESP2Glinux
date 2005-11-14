@@ -18,3 +18,4 @@ hosts() {
 $IPADDR  $DHCPNAME $shortName
 EOS
 }
+NSprepCmd="hosts > $HOSTS"  #run after interface comes up
