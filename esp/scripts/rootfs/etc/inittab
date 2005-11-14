@@ -35,4 +35,4 @@ lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1
 ca::ctrlaltdel:/sbin/init 6
 
 #keep the ppp link up (via the radio-modem)
-ppp:12345:respawn:/usr/sbin/pppd call shore nodetach logfile /dev/null
+#ppp:12345:respawn:/usr/sbin/pppd call shore nodetach logfile /dev/null
