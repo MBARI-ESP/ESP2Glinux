@@ -29,14 +29,10 @@ case "$1" in
       else
         realConf=`realpath $RESOLV_CONF 2>/dev/null` && rm -f $realConf
       fi
-      if type hosts >/dev/null 2>&1; then
-        hosts > $HOSTS
-      else
-        realHosts=`realpath $HOSTS 2>/dev/null` && rm -f $realHosts
-      fi      
+      eval $NSprepCmd
       rm $leased
     else
-      ifconfig $interface up  #so dhcpcd can use the interface
+      ifconfig $interface up  #so dhcp can use it
     fi
   ;;
 
