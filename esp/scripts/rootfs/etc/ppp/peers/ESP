@@ -1,0 +1,36 @@
+# $Id$
+# pppd configuration for the shore-side ESP server - 10/27/05 brent@mbari.org
+
+#connection
+linkname ESP
+auth        #require password authorization
+persist     #don't terminate if the link breaks
+holdoff 15  #try to reestablish link 15 seconds after it terminates
+maxfail 0   #never give up!
+
+#debugging options
+#debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+#logfile
+#dump
+
+#RS-232 port configuration
+freewave     #symlink /dev/freewave to the modem's serial port
+115200       #baud rate
+crtscts      #hardware RTS/CTS handshaking
+modem        #monitor carrier detect
+lock         #request exclusive access to the port
+
+#IP addressing
+:geno4       #set our local address so peer is on our network
+ms-dns 134.89.10.26	#use MBARI's DNS servers
+ms-dns 134.89.10.17  
+proxyarp     #make far end look like it is on our network
+ktune        #turn on IP forwarding for routing to remote host
+
+
+#compression
+deflate 12  #deflate in 4k byte blocks
