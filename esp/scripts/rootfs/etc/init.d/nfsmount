@@ -1,10 +1,13 @@
 #!/bin/sh
-#mount or umount nfs filesystems from /etc/fstab
+#mount or umount filesystems of the specified type
 #and start logging to a file via nfs if /var/log is mounted
-#default is to mount all entries marked " nfs "
+#default is to mount all nfs entries
 #this can be overridden.  For example:
-##  mount="#mbari" service mountall start
-#mounts all entries containing the string #mbari
+##  fstype=vfat service nfsmount start
+#one can also select mounts of the specified type:
+##  mount="#mbari" service nfsmount start
+#mounts all (nfs) entries containing the string #mbari
+
 
 [ -s /etc/resolv.conf ] || {
   echo "Missing Network -- skipping NFS mounts"
@@ -12,13 +15,16 @@
 }
 
 op=$1;shift
+: ${fstype:=nfs}
 : ${mount:="$@"}
-: ${mount:="[[:space:]]nfs[[:space:]]"}
 mntpts=`grep "$mount" /etc/fstab | 
-	while read device mntpt rest; do echo $mntpt; done`
-	
+    while read device mntpt fs rest; do
+      [ "$device" = "#END" ] && break
+      [ "$fs" = "$fstype" ] && echo $mntpt
+    done`
+    
 [ -z "$mntpts" ] && {
-  echo "/etc/fstab contains no \"$mount\" entries!"
+  echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
   exit 1
 }
 
