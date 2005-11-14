@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 5/28/05 BAR
+Configuration symlinks for ESP embedded linux - 11/9/05 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -31,7 +31,6 @@ Next the symlinks:
 etc/rc.d/rc0.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc0.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc0.d/K60network -> ../../init.d/network
-etc/rc.d/rc0.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc0.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc0.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc0.d/S99halt -> ../../init.d/halt
@@ -49,7 +48,6 @@ etc/rc.d/rc3.d/S90local -> ../../init.d/local
 etc/rc.d/rc6.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc6.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc6.d/K60network -> ../../init.d/network
-etc/rc.d/rc6.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc6.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc6.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc6.d/S99reboot -> ../../init.d/reboot
@@ -57,7 +55,6 @@ etc/rc.d/rc6.d/S99reboot -> ../../init.d/reboot
 etc/rc.d/rc7.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc7.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc7.d/K60network -> ../../init.d/network
-etc/rc.d/rc7.d/K70syslogd -> ../../init.d/syslogd
 etc/rc.d/rc7.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc7.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc7.d/S99poweroff -> ../../init.d/poweroff
@@ -66,6 +63,7 @@ tmp -> /cf/tmp
 var -> /cf/var
 
 etc/hosts -> /var/etc/hosts
+etc/mtab -> /proc/mounts
 etc/ppp/resolv.conf -> /var/etc/ppp/resolv.conf
 etc/issue.net -> issue
 etc/resolv.conf -> /var/etc/resolv.conf
