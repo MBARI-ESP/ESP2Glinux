@@ -519,3 +519,23 @@ diff -ruP busybox-1.00/coreutils/nohup.c busybox-1.00.new/coreutils/nohup.c
 +	}
 +}
 +
+diff -u busybox-1.00/networking/udhcp/socket.c busybox-1.00.new/networking/udhcp/socket.c
+--- busybox-1.00/networking/udhcp/socket.c	2005-11-14 23:15:08.000000000 -0800
++++ busybox-1.00.new/networking/udhcp/socket.c	2005-11-14 23:44:44.000000000 -0800
+@@ -116,8 +116,15 @@
+ 		close(fd);
+ 		return -1;
+ 	}
++        
++//	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
++{
++  char *dst = interface.ifr_ifrn.ifrn_name;
++  int len = IFNAMSIZ;
++  while (len-- && *inf && *inf != ':') *dst++=*inf++;
++  while (len--) *dst++ = 0;
++}
+ 
+-	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
+ 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {
+ 		close(fd);
+ 		return -1;
