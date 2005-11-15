@@ -20,4 +20,5 @@
   ln -s linux24_ts8 linux24 || exit
 }
 cp mbari.config linux24/.config
-#cd linux24 && make oldconfig
+#cd linux24 && make menuconfig #--simply save back the config to .config
+
