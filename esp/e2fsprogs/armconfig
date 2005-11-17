@@ -1,0 +1,1 @@
+CFLAGS="-Os -fomit-frame-pointer"  configure --with-cc=/arm/bin/gcc --host=arm --prefix=`pwd`/arm --with-gnu-ld=yes
