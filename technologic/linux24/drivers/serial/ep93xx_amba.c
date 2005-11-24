@@ -49,6 +49,8 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 
+#define DELAY_TIMEX HZ
+
 #if defined(CONFIG_SERIAL_AMBA_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
 #define SUPPORT_SYSRQ
 #endif
@@ -74,6 +76,7 @@
 #define CALLOUT_AMBA_MINOR	16
 #define CALLOUT_AMBA_NR		UART_NR
 
+static struct timer_list timer;
 static struct tty_driver normal, callout;
 static struct tty_struct *cs_amba_table[UART_NR];
 static struct termios *cs_amba_termios[UART_NR], *cs_amba_termios_locked[UART_NR];
@@ -474,6 +477,12 @@ static void csambauart_modem_status(struct uart_port *port)
 	wake_up_interruptible(&uap->port.info->delta_msr_wait);
 }
 
+static void csambauart_dcd_timer(unsigned long data) {
+  csambauart_modem_status((struct uart_port *)data);
+  timer.expires = jiffies + DELAY_TIMEX;
+  add_timer (&timer);
+}
+
 static void csambauart_int(int irq, void *dev_id, struct pt_regs *regs)
 {
 	struct uart_port *port = dev_id;
@@ -577,11 +586,17 @@ static int csambauart_startup(struct uart_port *port)
 	UART_PUT_CR(port, AMBA_UARTCR_UARTEN | AMBA_UARTCR_RIE |
 			  AMBA_UARTCR_RTIE);
 
+	timer.expires = jiffies + DELAY_TIMEX;
+	timer.data = (unsigned long )port;
+	timer.function = csambauart_dcd_timer;
+	add_timer (&timer);
 	return 0;
 }
 
 static void csambauart_shutdown(struct uart_port *port)
 {
+      del_timer (&timer);
+
 	/*
 	 * Free the interrupt
 	 */
@@ -844,7 +859,7 @@ static int ts7200_uart_get_fr (struct uart_port *port) {
 	uart_fr = (readl(port->membase + AMBA_UARTFR) ) & 0xff ;
 	dcd_status = (inb(TS7XXX_IO8_BASE + 0x00800000)) & 0x40;
 
-	if (dcd_status)
+	if (!dcd_status) // inverted sense (was backwards) -- mos 2005-11-22
 		uart_fr &= ~AMBA_UARTFR_DCD;
 	else
 		uart_fr |= AMBA_UARTFR_DCD;
