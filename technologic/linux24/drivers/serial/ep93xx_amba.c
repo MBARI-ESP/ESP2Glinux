@@ -49,7 +49,8 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 
-#define DELAY_TIMEX HZ
+#define HANDSHAKE_LINE  0     //line with modem status handshake inputs
+#define DELAY_TIMEX (HZ/2)    //check modem status at least every 500ms
 
 #if defined(CONFIG_SERIAL_AMBA_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
 #define SUPPORT_SYSRQ
@@ -81,7 +82,7 @@ static struct tty_driver normal, callout;
 static struct tty_struct *cs_amba_table[UART_NR];
 static struct termios *cs_amba_termios[UART_NR], *cs_amba_termios_locked[UART_NR];
 
-static int ts7200_uart_get_fr (struct uart_port *) ;
+static unsigned ts7200_uart_get_fr (struct uart_port *) ;
 
 #ifdef SUPPORT_SYSRQ
 static struct console cs_amba_console;
@@ -478,7 +479,10 @@ static void csambauart_modem_status(struct uart_port *port)
 }
 
 static void csambauart_dcd_timer(unsigned long data) {
-  csambauart_modem_status((struct uart_port *)data);
+  struct uart_port *port = (struct uart_port *)data;
+  disable_irq(port->irq);
+  csambauart_modem_status(port);
+  enable_irq(port->irq);
   timer.expires = jiffies + DELAY_TIMEX;
   add_timer (&timer);
 }
@@ -561,41 +565,12 @@ static void csambauart_break_ctl(struct uart_port *port, int break_state)
 	spin_unlock_irqrestore(&port->lock, flags);
 }
 
-static int csambauart_startup(struct uart_port *port)
-{
-	struct uart_amba_port *uap = (struct uart_amba_port *)port;
-    int retval;
-
-    csambauart_enable_clocks(port);
-
-	/*
-	 * Allocate the IRQ
-	 */
-	retval = request_irq(port->irq, csambauart_int, 0, "amba", port);
-	if (retval)
-		return retval;
-
-	/*
-	 * initialise the old status of the modem signals
-	 */
-	uap->old_status = UART_GET_FR(port) & AMBA_UARTFR_MODEM_ANY;
-
-	/*
-	 * Finally, enable interrupts
-	 */
-	UART_PUT_CR(port, AMBA_UARTCR_UARTEN | AMBA_UARTCR_RIE |
-			  AMBA_UARTCR_RTIE);
-
-	timer.expires = jiffies + DELAY_TIMEX;
-	timer.data = (unsigned long )port;
-	timer.function = csambauart_dcd_timer;
-	add_timer (&timer);
-	return 0;
-}
+static int csambauart_startup(struct uart_port *port);
 
 static void csambauart_shutdown(struct uart_port *port)
 {
-      del_timer (&timer);
+        if (port == (struct uart_port *)(timer.data))
+          del_timer (&timer);
 
 	/*
 	 * Free the interrupt
@@ -843,28 +818,56 @@ static struct uart_amba_port amba_ports[UART_NR] = {
 	}
 };
 
+static int csambauart_startup(struct uart_port *port)
+{
+	struct uart_amba_port *uap = (struct uart_amba_port *)port;
+        int retval;
+        csambauart_enable_clocks(port);
+
+	/*
+	 * Allocate the IRQ
+	 */
+	retval = request_irq(port->irq, csambauart_int, 0, "amba", port);
+	if (retval)
+		return retval;
+
+	/*
+	 * initialise the old status of the modem signals
+	 */
+	uap->old_status = UART_GET_FR(port) & AMBA_UARTFR_MODEM_ANY;
+
+	/*
+	 * Finally, enable interrupts
+	 */
+	UART_PUT_CR(port, AMBA_UARTCR_UARTEN | AMBA_UARTCR_RIE |
+			  AMBA_UARTCR_RTIE);
+
+        if (port->line == HANDSHAKE_LINE) {
+          //only line 0 has modem handshakes attached
+	  timer.expires = jiffies + DELAY_TIMEX;
+	  timer.data = (unsigned long )port;
+	  timer.function = csambauart_dcd_timer;
+	  add_timer (&timer);
+        }
+	return 0;
+}
+
 /*
  * We need to support DCD changes, however, our hardware doesn't 
  * have DCD hooked up the typical way on COM1, hence, the following 
  * hack
  * 	-- L.A.Y, Technologic Systems 08/2004
+ *
+ * Matched return types, optimized -- brent@mbari.org  11/28/05
  */
-static int ts7200_uart_get_fr (struct uart_port *port) {
-	volatile unsigned long uart_fr ;
-	unsigned short dcd_status;
-	
-	if (port->membase != amba_ports[0].port.membase ) 
-		return ( (readl(port->membase + AMBA_UARTFR) ) & 0xff );
-	
-	uart_fr = (readl(port->membase + AMBA_UARTFR) ) & 0xff ;
-	dcd_status = (inb(TS7XXX_IO8_BASE + 0x00800000)) & 0x40;
-
-	if (!dcd_status) // inverted sense (was backwards) -- mos 2005-11-22
-		uart_fr &= ~AMBA_UARTFR_DCD;
-	else
-		uart_fr |= AMBA_UARTFR_DCD;
-
-	return uart_fr;
+static unsigned ts7200_uart_get_fr (struct uart_port *port) {
+  unsigned uart_fr = readl(port->membase + AMBA_UARTFR);
+  if (port->line == HANDSHAKE_LINE) {
+    uart_fr &= ~AMBA_UARTFR_DCD;
+    if (!(inb(TS7XXX_IO8_BASE + 0x00800000) & 0x40))
+      uart_fr |= AMBA_UARTFR_DCD;
+  }
+  return uart_fr & 0xff;
 }
 	
 #ifdef CONFIG_SERIAL_AMBA_CONSOLE
