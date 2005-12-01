@@ -1,0 +1,24 @@
+#!/bin/sh
+daemon=/usr/sbin/ifplugd
+options="--no-auto --no-shutdown --no-startup -u0 -d10 -t5"
+
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       exec $daemon $options
+       ;;
+                         
+    restart)
+       $0 stop
+       exec $0 start
+       ;;
+       
+    stop)
+       echo "Stopping $daemon"
+       exec $daemon -k $options
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac
