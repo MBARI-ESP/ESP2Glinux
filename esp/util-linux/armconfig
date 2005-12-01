@@ -1,0 +1,13 @@
+#!/bin/bash
+# unpack, patch and configure util-linux-2.12i build for arm-linux 
+#  -- 3/15/05 brent@mbari.org
+: ${CFLAGS:="-Os -fomit-frame-pointer"}
+: ${CXXFLAGS:=$CFLAGS}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${UTILVERS:=util-linux-2.12i}
+export PKG_CONFIG_PATH=$LIBTOP/lib/pkgconfig
+export CC CFLAGS CXXFLAGS
+rm -rf $UTILVERS && tar xzf $UTILVERS.tar.gz && cd $UTILVERS &&
+configure --host=arm &&
+echo "Next, run make in $UTILVERS"
