@@ -539,3 +539,30 @@ diff -u busybox-1.00/networking/udhcp/socket.c busybox-1.00.new/networking/udhcp
  	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {
  		close(fd);
  		return -1;
+diff -ru busybox-1.00/networking/udhcp/Makefile.in busybox-1.01/networking/udhcp/Makefile.in
+--- busybox-1.00/networking/udhcp/Makefile.in	2004-10-08 01:49:26.000000000 -0700
++++ busybox-1.01/networking/udhcp/Makefile.in	2005-08-16 18:29:10.000000000 -0700
+@@ -47,7 +47,7 @@
+ libraries-y+=$(UDHCP_DIR)$(UDHCP_AR)
+ 
+ $(UDHCP_DIR)$(UDHCP_AR): $(UDHCP_OBJS)
+-	$(AR) -ro $@ $(UDHCP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(UDHCP_OBJS)
+ 
+ $(UDHCP_OBJS): $(UDHCP_DIR)%.o : $(srcdir)/%.c
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -DIN_BUSYBOX -c $< -o $@
+diff -ru busybox-1.00/networking/udhcp/dhcpc.c busybox-1.01/networking/udhcp/dhcpc.c
+--- busybox-1.00/networking/udhcp/dhcpc.c	2004-05-19 01:29:05.000000000 -0700
++++ busybox-1.01/networking/udhcp/dhcpc.c	2005-08-16 18:29:10.000000000 -0700
+@@ -419,6 +428,11 @@
+ 					(unsigned long) packet.xid, xid);
+ 				continue;
+ 			}
++			/* Ignore packets that aren't for us */
++			if (memcmp(packet.chaddr, client_config.arp, 6)) {
++				DEBUG(LOG_INFO, "packet does not have our chaddr -- ignoring");
++				continue;
++			}
+ 
+ 			if ((message = get_option(&packet, DHCP_MESSAGE_TYPE)) == NULL) {
+ 				DEBUG(LOG_ERR, "couldnt get option from packet -- ignoring");
