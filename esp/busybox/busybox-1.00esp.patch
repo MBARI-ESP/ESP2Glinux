@@ -1,6 +1,6 @@
-diff -ru busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
---- busybox-1.00/applets/install.sh	2001-03-08 13:42:11.000000000 -0800
-+++ busybox-1.00.new/applets/install.sh	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/applets/install.sh busybox-1.00/applets/install.sh
+--- busybox-1.00.original/applets/install.sh	2001-03-08 13:42:11.000000000 -0800
++++ busybox-1.00/applets/install.sh	2005-12-02 00:09:35.000000000 -0800
 @@ -2,6 +2,7 @@
  
  export LC_ALL=POSIX
@@ -47,9 +47,9 @@ diff -ru busybox-1.00/applets/install.sh busybox-1.00.new/applets/install.sh
  		;;
  		*)
  		echo "Unknown installation directory: $appdir"
-diff -ru busybox-1.00/coreutils/Config.in busybox-1.00.new/coreutils/Config.in
---- busybox-1.00/coreutils/Config.in	2004-08-10 19:45:47.000000000 -0700
-+++ busybox-1.00.new/coreutils/Config.in	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/coreutils/Config.in busybox-1.00/coreutils/Config.in
+--- busybox-1.00.original/coreutils/Config.in	2004-08-10 19:45:47.000000000 -0700
++++ busybox-1.00/coreutils/Config.in	2005-12-02 00:09:35.000000000 -0800
 @@ -329,6 +329,12 @@
  	help
  	  mv is used to move or rename files or directories.
@@ -63,10 +63,9 @@ diff -ru busybox-1.00/coreutils/Config.in busybox-1.00.new/coreutils/Config.in
  config CONFIG_OD
  	bool "od"
  	default n
-Only in busybox-1.00.new/coreutils: Config.in.orig
-diff -ru busybox-1.00/coreutils/Makefile.in busybox-1.00.new/coreutils/Makefile.in
---- busybox-1.00/coreutils/Makefile.in	2004-10-08 00:45:14.000000000 -0700
-+++ busybox-1.00.new/coreutils/Makefile.in	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/coreutils/Makefile.in busybox-1.00/coreutils/Makefile.in
+--- busybox-1.00.original/coreutils/Makefile.in	2004-10-08 00:45:14.000000000 -0700
++++ busybox-1.00/coreutils/Makefile.in	2005-12-02 00:09:35.000000000 -0800
 @@ -58,6 +58,7 @@
  COREUTILS-$(CONFIG_MKFIFO)  	+= mkfifo.o
  COREUTILS-$(CONFIG_MKNOD)   	+= mknod.o
@@ -75,10 +74,10 @@ diff -ru busybox-1.00/coreutils/Makefile.in busybox-1.00.new/coreutils/Makefile.
  COREUTILS-$(CONFIG_OD)      	+= od.o
  COREUTILS-$(CONFIG_PRINTF)  	+= printf.o
  COREUTILS-$(CONFIG_PWD)     	+= pwd.o
-Only in busybox-1.00.new/coreutils: nohup.c
-diff -ru busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
---- busybox-1.00/editors/Config.in	2004-03-15 00:28:31.000000000 -0800
-+++ busybox-1.00.new/editors/Config.in	2005-10-25 21:53:14.000000000 -0700
+Only in busybox-1.00/coreutils: nohup.c
+diff -ru busybox-1.00.original/editors/Config.in busybox-1.00/editors/Config.in
+--- busybox-1.00.original/editors/Config.in	2004-03-15 00:28:31.000000000 -0800
++++ busybox-1.00/editors/Config.in	2005-12-02 00:09:35.000000000 -0800
 @@ -108,6 +108,7 @@
  	bool "  Handle window resize"
  	default y
@@ -87,9 +86,9 @@ diff -ru busybox-1.00/editors/Config.in busybox-1.00.new/editors/Config.in
  	help
  	  Make busybox vi behave nicely with terminals that get resized.
  
-diff -ru busybox-1.00/include/applets.h busybox-1.00.new/include/applets.h
---- busybox-1.00/include/applets.h	2004-08-26 16:01:34.000000000 -0700
-+++ busybox-1.00.new/include/applets.h	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/include/applets.h busybox-1.00/include/applets.h
+--- busybox-1.00.original/include/applets.h	2004-08-26 16:01:34.000000000 -0700
++++ busybox-1.00/include/applets.h	2005-12-02 00:09:35.000000000 -0800
 @@ -412,6 +412,9 @@
  #ifdef CONFIG_NETSTAT
  	APPLET(netstat, netstat_main, _BB_DIR_BIN, _BB_SUID_NEVER)
@@ -100,10 +99,9 @@ diff -ru busybox-1.00/include/applets.h busybox-1.00.new/include/applets.h
  #ifdef CONFIG_NSLOOKUP
  	APPLET(nslookup, nslookup_main, _BB_DIR_USR_BIN, _BB_SUID_NEVER)
  #endif
-Only in busybox-1.00.new/include: applets.h.orig
-diff -ru busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
---- busybox-1.00/include/usage.h	2004-09-14 09:23:56.000000000 -0700
-+++ busybox-1.00.new/include/usage.h	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/include/usage.h busybox-1.00/include/usage.h
+--- busybox-1.00.original/include/usage.h	2004-09-14 09:23:56.000000000 -0700
++++ busybox-1.00/include/usage.h	2005-12-02 00:14:04.000000000 -0800
 @@ -1813,6 +1813,13 @@
  	"\t-w raw sockets\n" \
  	"\t-x unix sockets"
@@ -126,10 +124,33 @@ diff -ru busybox-1.00/include/usage.h busybox-1.00.new/include/usage.h
  	USAGE_ROTATE_LOGFILE( \
  	"\n\t-s SIZE\t\tMax size (KB) before rotate (default=200KB, 0=off)\n" \
  	"\t-b NUM\t\tNumber of rotated logs to keep (default=1, max=99, 0=purge)") \
-Only in busybox-1.00.new/include: usage.h.orig
-diff -ru busybox-1.00/init/init.c busybox-1.00.new/init/init.c
---- busybox-1.00/init/init.c	2004-10-08 01:21:54.000000000 -0700
-+++ busybox-1.00.new/init/init.c	2005-10-25 21:53:14.000000000 -0700
+@@ -2610,17 +2618,18 @@
+ 	"/dev/tty2\n"
+ 
+ #define udhcpc_trivial_usage \
+-	"[-fbnqv] [-c CLIENTID] [-H HOSTNAME] [-i INTERFACE]\n[-p pidfile] [-r IP] [-s script]"
++	"[-fbnqv] [-c CLIENTID] [-H HOSTNAME] [-i INTERFACE]\n[-p pidfile] [-r IP] [-s script] [-m duration]"
+ #define udhcpc_full_usage \
+ 	"\t-c,\t--clientid=CLIENTID\tClient identifier\n" \
+ 	"\t-H,\t--hostname=HOSTNAME\tClient hostname\n" \
+-	"\t-h,\t                   \tAlias for -H\n" \
++	"\t-i,\t--interface=INTERFACE\tInterface to use (default: eth0)\n" \
++	"\t-m,\t--maxlease=seconds\tLongest lease to accept (accelerates probes)\n" \
++	"\t-h,\t\t\tAlias for -H\n" \
+ 	"\t-f,\t--foreground\tDo not fork after getting lease\n" \
+ 	"\t-b,\t--background\tFork to background if lease cannot be immediately negotiated.\n" \
+-	"\t-i,\t--interface=INTERFACE\tInterface to use (default: eth0)\n" \
+-	"\t-n,\t--now\tExit with failure if lease cannot be immediately negotiated.\n" \
++	"\t-n,\t--now\t\tExit with failure if lease cannot be immediately negotiated.\n" \
+ 	"\t-p,\t--pidfile=file\tStore process ID of daemon in file\n" \
+-	"\t-q,\t--quit\tQuit after obtaining lease\n" \
++	"\t-q,\t--quit\t\tQuit after obtaining lease\n" \
+ 	"\t-r,\t--request=IP\tIP address to request (default: none)\n" \
+ 	"\t-s,\t--script=file\tRun file at dhcp events (default: /usr/share/udhcpc/default.script)\n" \
+ 	"\t-v,\t--version\tDisplay version"
+diff -ru busybox-1.00.original/init/init.c busybox-1.00/init/init.c
+--- busybox-1.00.original/init/init.c	2004-10-08 01:21:54.000000000 -0700
++++ busybox-1.00/init/init.c	2005-12-02 00:09:35.000000000 -0800
 @@ -674,8 +674,13 @@
  	/* We have to fork here, since the kernel calls do_exit(0) in
  	 * linux/kernel/sys.c, which can cause the machine to panic when
@@ -183,9 +204,9 @@ diff -ru busybox-1.00/init/init.c busybox-1.00.new/init/init.c
  	sync();
  }
  
-diff -ru busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount_point.c
---- busybox-1.00/libbb/find_mount_point.c	2004-03-15 00:28:42.000000000 -0800
-+++ busybox-1.00.new/libbb/find_mount_point.c	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/libbb/find_mount_point.c busybox-1.00/libbb/find_mount_point.c
+--- busybox-1.00.original/libbb/find_mount_point.c	2004-03-15 00:28:42.000000000 -0800
++++ busybox-1.00/libbb/find_mount_point.c	2005-12-02 00:09:35.000000000 -0800
 @@ -52,6 +52,7 @@
  		return 0;
  
@@ -194,9 +215,9 @@ diff -ru busybox-1.00/libbb/find_mount_point.c busybox-1.00.new/libbb/find_mount
  		if (strcmp(name, mountEntry->mnt_dir) == 0
  			|| strcmp(name, mountEntry->mnt_fsname) == 0)	/* String match. */
  			break;
-diff -ru busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
---- busybox-1.00/loginutils/Config.in	2004-08-26 16:12:59.000000000 -0700
-+++ busybox-1.00.new/loginutils/Config.in	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/loginutils/Config.in busybox-1.00/loginutils/Config.in
+--- busybox-1.00.original/loginutils/Config.in	2004-08-26 16:12:59.000000000 -0700
++++ busybox-1.00/loginutils/Config.in	2005-12-02 00:09:35.000000000 -0800
 @@ -69,7 +69,7 @@
  config CONFIG_LOGIN
  	bool "login"
@@ -249,10 +270,9 @@ diff -ru busybox-1.00/loginutils/Config.in busybox-1.00.new/loginutils/Config.in
  	help
  	  Build support for shadow password in /etc/shadow.  This file is only
  	  readable by root and thus the encrypted passwords are no longer
-Only in busybox-1.00.new/loginutils: Config.in.loginutils
-diff -ru busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
---- busybox-1.00/networking/Config.in	2004-09-23 13:08:46.000000000 -0700
-+++ busybox-1.00.new/networking/Config.in	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/networking/Config.in busybox-1.00/networking/Config.in
+--- busybox-1.00.original/networking/Config.in	2004-09-23 13:08:46.000000000 -0700
++++ busybox-1.00/networking/Config.in	2005-12-02 00:09:35.000000000 -0800
 @@ -492,7 +492,7 @@
  config CONFIG_TELNETD
  	bool "telnetd"
@@ -262,10 +282,137 @@ diff -ru busybox-1.00/networking/Config.in busybox-1.00.new/networking/Config.in
  	help
  	  A daemon for the TELNET protocol, allowing you to log onto the host
  	  running the daemon.  Please keep in mind that the TELNET protocol
-Only in busybox-1.00.new/networking: Config.in.networking
-diff -ru busybox-1.00/sysklogd/syslogd.c busybox-1.00.new/sysklogd/syslogd.c
---- busybox-1.00/sysklogd/syslogd.c	2004-09-14 11:12:13.000000000 -0700
-+++ busybox-1.00.new/sysklogd/syslogd.c	2005-10-25 21:53:14.000000000 -0700
+diff -ru busybox-1.00.original/networking/udhcp/Makefile.in busybox-1.00/networking/udhcp/Makefile.in
+--- busybox-1.00.original/networking/udhcp/Makefile.in	2004-10-08 01:49:26.000000000 -0700
++++ busybox-1.00/networking/udhcp/Makefile.in	2005-12-02 00:09:35.000000000 -0800
+@@ -47,7 +47,7 @@
+ libraries-y+=$(UDHCP_DIR)$(UDHCP_AR)
+ 
+ $(UDHCP_DIR)$(UDHCP_AR): $(UDHCP_OBJS)
+-	$(AR) -ro $@ $(UDHCP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(UDHCP_OBJS)
+ 
+ $(UDHCP_OBJS): $(UDHCP_DIR)%.o : $(srcdir)/%.c
+ 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -DIN_BUSYBOX -c $< -o $@
+diff -ru busybox-1.00.original/networking/udhcp/dhcpc.c busybox-1.00/networking/udhcp/dhcpc.c
+--- busybox-1.00.original/networking/udhcp/dhcpc.c	2004-05-19 01:29:05.000000000 -0700
++++ busybox-1.00/networking/udhcp/dhcpc.c	2005-12-02 00:09:35.000000000 -0800
+@@ -68,6 +68,7 @@
+ 	clientid: NULL,
+ 	hostname: NULL,
+ 	ifindex: 0,
++        maxLease: 0,
+ 	arp: "\0\0\0\0\0\0",		/* appease gcc-3.0 */
+ };
+ 
+@@ -78,6 +79,7 @@
+ "Usage: udhcpc [OPTIONS]\n\n"
+ "  -c, --clientid=CLIENTID         Client identifier\n"
+ "  -H, --hostname=HOSTNAME         Client hostname\n"
++"  -m, --maxlease=seconds          Longest lease time accepted\n"
+ "  -h                              Alias for -H\n"
+ "  -f, --foreground                Do not fork after getting lease\n"
+ "  -b, --background                Fork to background if lease cannot be\n"
+@@ -204,6 +206,7 @@
+ 		{"quit",	no_argument,		0, 'q'},
+ 		{"request",	required_argument,	0, 'r'},
+ 		{"script",	required_argument,	0, 's'},
++                {"maxlease",    required_argument,      0, 'm'},
+ 		{"version",	no_argument,		0, 'v'},
+ 		{0, 0, 0, 0}
+ 	};
+@@ -211,7 +214,7 @@
+ 	/* get options */
+ 	while (1) {
+ 		int option_index = 0;
+-		c = getopt_long(argc, argv, "c:fbH:h:i:np:qr:s:v", arg_options, &option_index);
++		c = getopt_long(argc, argv, "c:fbH:h:i:np:qr:s:m:v", arg_options, &option_index);
+ 		if (c == -1) break;
+ 
+ 		switch (c) {
+@@ -257,6 +260,9 @@
+ 		case 's':
+ 			client_config.script = optarg;
+ 			break;
++                case 'm':
++                        client_config.maxLease=strtoul(optarg, NULL, 0);
++                        break;
+ 		case 'v':
+ 			printf("udhcpcd, version %s\n\n", VERSION);
+ 			return 0;
+@@ -374,7 +380,7 @@
+ 					/* send a request packet */
+ 					send_renew(xid, server_addr, requested_ip); /* unicast */
+ 
+-					t1 = (t2 - t1) / 2 + t1;
++					t1 += (t2 - t1) / 2;
+ 					timeout = t1 + start;
+ 				}
+ 				break;
+@@ -392,7 +398,7 @@
+ 					/* send a request packet */
+ 					send_renew(xid, 0, requested_ip); /* broadcast */
+ 
+-					t2 = (lease - t2) / 2 + t2;
++					t2 += (lease - t2) / 2;
+ 					timeout = t2 + start;
+ 				}
+ 				break;
+@@ -419,6 +425,11 @@
+ 					(unsigned long) packet.xid, xid);
+ 				continue;
+ 			}
++			/* Ignore packets that aren't for us */
++			if (memcmp(packet.chaddr, client_config.arp, 6)) {
++				DEBUG(LOG_INFO, "packet does not have our chaddr -- ignoring");
++				continue;
++			}
+ 
+ 			if ((message = get_option(&packet, DHCP_MESSAGE_TYPE)) == NULL) {
+ 				DEBUG(LOG_ERR, "couldnt get option from packet -- ignoring");
+@@ -455,6 +466,8 @@
+ 						memcpy(&lease, temp, 4);
+ 						lease = ntohl(lease);
+ 					}
++                                        if (lease >= client_config.maxLease-1)  //to accelerate network probes
++                                          lease = client_config.maxLease;
+ 
+ 					/* enter bound state */
+ 					t1 = lease / 2;
+diff -ru busybox-1.00.original/networking/udhcp/dhcpc.h busybox-1.00/networking/udhcp/dhcpc.h
+--- busybox-1.00.original/networking/udhcp/dhcpc.h	2004-01-30 15:45:12.000000000 -0800
++++ busybox-1.00/networking/udhcp/dhcpc.h	2005-12-02 00:09:35.000000000 -0800
+@@ -28,6 +28,7 @@
+ 	uint8_t *clientid;		/* Optional client id to use */
+ 	uint8_t *hostname;		/* Optional hostname to use */
+ 	int ifindex;			/* Index number of the interface to use */
++        unsigned long maxLease;         /* reduce any offered lease duration */
+ 	uint8_t arp[6];			/* Our arp address */
+ };
+ 
+diff -ru busybox-1.00.original/networking/udhcp/socket.c busybox-1.00/networking/udhcp/socket.c
+--- busybox-1.00.original/networking/udhcp/socket.c	2004-03-15 00:29:01.000000000 -0800
++++ busybox-1.00/networking/udhcp/socket.c	2005-12-02 00:09:35.000000000 -0800
+@@ -116,8 +116,15 @@
+ 		close(fd);
+ 		return -1;
+ 	}
++        
++//	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
++{
++  char *dst = interface.ifr_ifrn.ifrn_name;
++  int len = IFNAMSIZ;
++  while (len-- && *inf && *inf != ':') *dst++=*inf++;
++  while (len--) *dst++ = 0;
++}
+ 
+-	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
+ 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {
+ 		close(fd);
+ 		return -1;
+diff -ru busybox-1.00.original/sysklogd/syslogd.c busybox-1.00/sysklogd/syslogd.c
+--- busybox-1.00.original/sysklogd/syslogd.c	2004-09-14 11:12:13.000000000 -0700
++++ busybox-1.00/sysklogd/syslogd.c	2005-12-02 00:09:35.000000000 -0800
 @@ -71,6 +71,9 @@
  /* interval between marks in seconds */
  static int MarkInterval = 20 * 60;
@@ -519,50 +666,3 @@ diff -ruP busybox-1.00/coreutils/nohup.c busybox-1.00.new/coreutils/nohup.c
 +	}
 +}
 +
-diff -u busybox-1.00/networking/udhcp/socket.c busybox-1.00.new/networking/udhcp/socket.c
---- busybox-1.00/networking/udhcp/socket.c	2005-11-14 23:15:08.000000000 -0800
-+++ busybox-1.00.new/networking/udhcp/socket.c	2005-11-14 23:44:44.000000000 -0800
-@@ -116,8 +116,15 @@
- 		close(fd);
- 		return -1;
- 	}
-+        
-+//	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
-+{
-+  char *dst = interface.ifr_ifrn.ifrn_name;
-+  int len = IFNAMSIZ;
-+  while (len-- && *inf && *inf != ':') *dst++=*inf++;
-+  while (len--) *dst++ = 0;
-+}
- 
--	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
- 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {
- 		close(fd);
- 		return -1;
-diff -ru busybox-1.00/networking/udhcp/Makefile.in busybox-1.01/networking/udhcp/Makefile.in
---- busybox-1.00/networking/udhcp/Makefile.in	2004-10-08 01:49:26.000000000 -0700
-+++ busybox-1.01/networking/udhcp/Makefile.in	2005-08-16 18:29:10.000000000 -0700
-@@ -47,7 +47,7 @@
- libraries-y+=$(UDHCP_DIR)$(UDHCP_AR)
- 
- $(UDHCP_DIR)$(UDHCP_AR): $(UDHCP_OBJS)
--	$(AR) -ro $@ $(UDHCP_OBJS)
-+	$(AR) $(ARFLAGS) $@ $(UDHCP_OBJS)
- 
- $(UDHCP_OBJS): $(UDHCP_DIR)%.o : $(srcdir)/%.c
- 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -DIN_BUSYBOX -c $< -o $@
-diff -ru busybox-1.00/networking/udhcp/dhcpc.c busybox-1.01/networking/udhcp/dhcpc.c
---- busybox-1.00/networking/udhcp/dhcpc.c	2004-05-19 01:29:05.000000000 -0700
-+++ busybox-1.01/networking/udhcp/dhcpc.c	2005-08-16 18:29:10.000000000 -0700
-@@ -419,6 +428,11 @@
- 					(unsigned long) packet.xid, xid);
- 				continue;
- 			}
-+			/* Ignore packets that aren't for us */
-+			if (memcmp(packet.chaddr, client_config.arp, 6)) {
-+				DEBUG(LOG_INFO, "packet does not have our chaddr -- ignoring");
-+				continue;
-+			}
- 
- 			if ((message = get_option(&packet, DHCP_MESSAGE_TYPE)) == NULL) {
- 				DEBUG(LOG_ERR, "couldnt get option from packet -- ignoring");
