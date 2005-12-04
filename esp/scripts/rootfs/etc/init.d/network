@@ -7,26 +7,33 @@ op="$1"
 shift
 case "$op" in 
    start)
+      . /usr/share/ifupfn.sh
       if [ "$1" ]; then
-        unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
 	for dev; do
-          ifup $dev
+          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+          unset NETWORK GATEWAY NSprepCmd
+	  . /etc/sysconfig/ifcfg-$dev
+          ifup_function
         done
       else
         > /etc/resolv.conf
+        > /etc/hosts
         fnspec='/etc/sysconfig/ifcfg-*'
         fns=`echo $fnspec`
-        [ "$fns" = "$fnspec" ] && exit
+        [ "$fns" = "$fnspec" ] && exit  #no network configs found
 	for defFn in $fns; do
-          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
-          export AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME NETWORK
-          . $defFn && [ "$AUTOSTART" = "yes" ] && ifup
+          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+          unset NETWORK GATEWAY NSprepCmd
+          . $defFn
+          [ "$AUTOSTART" = "yes" ] && ifup_function
         done
       fi
    ;;
    stop)
       devs=${@:-`sed -ne'/:/p' /proc/net/dev | cut -d: -f1`}
       for dev in $devs; do ifdown $dev; done
+      killall pppd  #in case we missed any ppp's that hadn't yet brought
+      sleep 1       #their links up
    ;;
 
    restart)
@@ -37,5 +44,3 @@ case "$op" in
    	echo "usage: start|stop|restart {interfaces}"
    ;;
 esac
-   
-	
