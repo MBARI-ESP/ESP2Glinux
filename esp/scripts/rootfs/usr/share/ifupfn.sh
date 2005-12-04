@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 11/10/05 brent@mbari.org
+# -- revised: 11/30/05 brent@mbari.org
 #
 HOSTS=/etc/hosts
 
@@ -7,21 +7,44 @@ usage ()
 {
     echo "usage:  ifup [netInterface|full path to definition file]"
     echo "  configure and enable the specified network interface"
-    exit 1
+    return 1
 }
 
 ifup_function ()
 {
-    [ "${DEVICE}" ] || {
+    [ "$DEVICE" ] || {
       echo "Network DEVICE to start was not specified"
       usage
+      return $?
+    }
+    ifconfig | grep -q ^$DEVICE && {
+      echo "$DEVICE is already UP"
+      return 0
+    }
+    fn=/var/run/*$DEVICE.pid
+    pidfns=`echo $fn`
+    [ "$pidfns" = "$fn" ] || {  #check for active locks...
+      unset owners
+      for pidfn in $pidfns; do  #while removing stale ones
+        owner=`cat $pidfn` && {
+          if kill -0 $owner 2>/dev/null; then
+            owners="$owners $owner"
+          else
+            rm $pidfn  #remove stale pidfile
+          fi
+        }
+      done
+      [ "$owners" ] && {
+        echo "$DEVICE is already in use by process: $owners"
+        return 0
+      }
     }
     echo "Bringing up interface $DEVICE ..."
     [ "$IPADDR" ] && {
       unset mask cast
       [ "$NETMASK" ] && mask="netmask $NETMASK"
       [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
-      ifconfig $DEVICE $IPADDR $mask $cast || exit 2
+      ifconfig $DEVICE $IPADDR $mask $cast || return 2
       [ "$NETWORK" ] && route add -net $NETWORK $mask dev $DEVICE
       [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $DEVICE
     }
@@ -51,4 +74,5 @@ ifup_function ()
         [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast"
       ;;
     esac
+    return 0
 }
