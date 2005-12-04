@@ -4,10 +4,9 @@ BOOTPROTO="dhcp-b -s /usr/share/udhcpc/aliases.script"   #dhcp in background
 DHCPNAME=`cat /etc/HOSTNAME`
 
 IPADDR=192.168.0.100   #use this configuration if dhcp fails
-GATEWAY=192.168.0.1   
+#GATEWAY=192.168.0.1   #no GATEWAY so pppd can configure one
 BROADCAST=192.168.0.255
 NETMASK=255.255.255.0
-unset resolv_conf #may be set to a shell function to write resolv.conf to stdout
 
 shortName=`echo $DCHPNAME | cut -d. -f1`
 [ "$shortName" = "$DHCPNAME" ] && unset shortName
@@ -19,4 +18,12 @@ $IPADDR  $DHCPNAME $shortName
 192.168.0.101  ESPbuoy	#default mooring IP if no DHCP
 EOS
 }
-NSprepCmd="hosts > $HOSTS && killall -q pppd"  #run after interface comes up
+
+resolv_conf() {
+ :  #clear resolv.conf on dhcp deconfig event
+}
+
+NSprepCmd="hosts > $HOSTS"  #run after interface comes up
+#if ppp is running, restart it so it will change IP addresses
+[ -r /var/run/ppp0.pid ] &&
+  NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
