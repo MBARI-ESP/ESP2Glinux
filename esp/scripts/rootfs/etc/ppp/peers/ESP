@@ -1,5 +1,5 @@
 # $Id$
-# pppd configuration for the shore-side ESP server - 10/27/05 brent@mbari.org
+# pppd configuration for the shore-side ESP server - 11/29/05 brent@mbari.org
 
 #connection
 linkname ESP
@@ -25,7 +25,8 @@ modem        #monitor carrier detect
 lock         #request exclusive access to the port
 
 #IP addressing
-:geno4       #set our local address so peer is on our network
+name .ESPbuoy.shore.mbari.org #ask remote system to change its hostname
+:ESPbuoy                      #set our local address so peer is on our network
 ms-dns 134.89.10.26	#use MBARI's DNS servers
 ms-dns 134.89.10.17  
 proxyarp     #make far end look like it is on our network
