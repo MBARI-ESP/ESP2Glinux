@@ -3,7 +3,7 @@ export daemons="syslogd klogd"
 cmd=$1
 shift
 [ "$1" ] && syslogOptions="$@"
-: ${syslogOptions:="-s0 -S -l6 -m60"}
+: ${syslogOptions:="-s0 -S -l5 -m60"}
 : ${klogOptions:=}
 
 action() {
