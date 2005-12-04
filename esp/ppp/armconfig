@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 3/15/05 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 12/2/05 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -10,5 +10,6 @@ export CC CFLAGS CXXFLAGS
 rm -rf $PPPVERS && tar xzf $PPPVERS.tar.gz && cd $PPPVERS &&
 cp ../Makefile.pppd pppd/Makefile.linux &&
 cp ../Makefile.rp-pppoe pppd/plugins/rp-pppoe/Makefile.linux &&
+patch -p1 <../pppd-2.4.2-quickpid.patch &&
 configure --host=arm-unknown-linux --prefix=$LIBTOP --includedir=$ARMGCC/include &&
 echo "Next, run arminstall here"
