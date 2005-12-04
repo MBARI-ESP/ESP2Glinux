@@ -13,7 +13,7 @@ case "$1" in
   */*) #assume anything with a / is the path to an interface definition file
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY NSprepCMD
-    . $1 || exit 2
+    . $1
     ifup_function
   ;;
   
@@ -24,7 +24,7 @@ case "$1" in
   *) #anything else must be the name of an interface
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY NSprepCmd
-    . /etc/sysconfig/ifcfg-$1 || exit 2
+    . /etc/sysconfig/ifcfg-$1
     ifup_function
   ;;
 esac
