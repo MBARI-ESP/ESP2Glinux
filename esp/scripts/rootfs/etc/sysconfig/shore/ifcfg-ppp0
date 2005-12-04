@@ -1,0 +1,3 @@
+DEVICE=ppp0
+AUTOSTART=yes
+NSprepCmd="pppd call ESP unit 0 logfile /dev/null"
