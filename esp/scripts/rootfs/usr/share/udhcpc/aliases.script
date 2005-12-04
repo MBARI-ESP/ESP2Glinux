@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpd script for ethernet to invoike aliases 
-# revised:  11/11/05 by brent@mbari.org
+# revised:  11/30/05 by brent@mbari.org
 
 `dirname $0`/default.script $@ && {
 
@@ -20,8 +20,14 @@
     ;;
 
     bound)
-      eachAlias ifup $interface
-      killall -q pppd  #because remote:local addresses likely changed
+      if [ -r /var/run/ppp0.pid ]; then
+        ifdown ppp0 #because remote:local addresses likely changed
+        eachAlias ifup $interface
+        sleep 2
+        ifup ppp0
+      else
+        eachAlias ifup $interface
+      fi
 
   esac
 }
