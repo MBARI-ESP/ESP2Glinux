@@ -24,11 +24,7 @@ case "$1" in
         [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $interface
       }
       hostname -F /etc/HOSTNAME  #revert back to original host name
-      if type resolv_conf >/dev/null 2>&1; then
-        resolv_conf > $RESOLV_CONF
-      else
-        realConf=`realpath $RESOLV_CONF 2>/dev/null` && rm -f $realConf
-      fi
+      type resolv_conf >/dev/null 2>&1 && resolv_conf > $RESOLV_CONF
       eval $NSprepCmd
       rm $leased
     else
@@ -60,12 +56,11 @@ case "$1" in
       echo "$newLeaseSpec" >$leased
     }    
     [ "$newDNSspec" = "$DNSspec" ] || { 
-      echo -n > $RESOLV_CONF
       unset dom
       [ "$domain" ] && dom=".$domain"
       [ "$hostname" ] && hostname $hostname$dom && \
         echo "hostname set to $hostname$dom"
-      echo search $domain mbari.org >> $RESOLV_CONF
+      echo search $domain mbari.org > $RESOLV_CONF
       for i in $dns ; do
 	echo adding dns $i
 	echo nameserver $i >> $RESOLV_CONF
