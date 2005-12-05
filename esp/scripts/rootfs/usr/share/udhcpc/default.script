@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  5/7/05 by brent@mbari.org
+# revised:  12/4/05 by brent@mbari.org
 
 [ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
 
@@ -57,9 +57,8 @@ case "$1" in
     }    
     [ "$newDNSspec" = "$DNSspec" ] || { 
       unset dom
-      [ "$domain" ] && dom=".$domain"
-      [ "$hostname" ] && hostname $hostname$dom && \
-        echo "hostname set to $hostname$dom"
+      [ "$hostname" ] && hostname $hostname && \
+        echo "hostname set to $hostname"
       echo search $domain mbari.org > $RESOLV_CONF
       for i in $dns ; do
 	echo adding dns $i
