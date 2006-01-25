@@ -2,11 +2,14 @@
 #  unpack, patch, build and install all MBARI embedded linux packages 
 #  for now, we get away without dealing with interpackage build
 #  dependencies.  This may change in future...  -- 5/28/05 brent@mbari.org
+#  This future is now... -- 1/25/06 brent@mbari.org
 
 if [ "$1" ]; then
   dirs="$*"
 else
-  dirs=`echo *`
+  dirs="
+   glibc zlib sysvinit busybox dropbear portmap ppp scripts setserial vsftpd 
+  "
 fi
 
 mksymlinks ~/armHost "rm -f" < symlinks
