@@ -19,10 +19,9 @@ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math
 HOSTCC  	= gcc
 HOSTCFLAGS	= -Wstrict-prototypes -Wall -O2 -fomit-frame-pointer
 #
-#  Use technologics gcc 3.3 toolchain for building the kernel
-#  gcc 3.4 builds a kernel that boots, but finds only 8MB of RAM
-#
-CROSS_COMPILE = /usr/local/opt/crosstool/arm-linux/gcc-3.3.4-glibc-2.3.2/bin/arm-linux-
+CROSS_COMPILE = /opt/crosstool/gcc-3.4.5-glibc-2.2.5/arm-9tdmi.softfloat-linux-gnu/bin/arm-9tdmi.softfloat-linux-gnu-
+CFLAGS_KERNEL	= -Wno-packed
+# -fno-unit-at-a-time
 INSTALL_MOD_PATH = $(HOME)/armHost
 
 #
@@ -42,7 +41,6 @@ MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
 DEPMOD		= $(TOPDIR)/../depmod.pl
 MODFLAGS	= -DMODULE
-CFLAGS_KERNEL	=
 PERL		= perl
 AWK		= awk
 RPM 		:= $(shell if [ -x "/usr/bin/rpmbuild" ]; then echo rpmbuild; \
