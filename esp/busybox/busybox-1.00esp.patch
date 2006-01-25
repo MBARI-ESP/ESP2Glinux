@@ -666,3 +666,69 @@ diff -ruP busybox-1.00/coreutils/nohup.c busybox-1.00.new/coreutils/nohup.c
 +	}
 +}
 +
+diff -ru busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
+--- busybox-1.00/editors/vi.c	2004-08-19 12:15:06.000000000 -0700
++++ busybox-1.00.new/editors/vi.c	2006-01-23 14:40:57.000000000 -0800
+@@ -19,7 +19,7 @@
+  */
+ 
+ static const char vi_Version[] =
+-	"$Id$";
++       "$Id$";
+ 
+ /*
+  * To compile for standalone use:
+@@ -285,6 +285,7 @@
+ static int mycmp(Byte *, Byte *, int);	// string cmp based in "ignorecase"
+ #endif							/* CONFIG_FEATURE_VI_SEARCH */
+ #ifdef CONFIG_FEATURE_VI_COLON
++static char *initialCmd = NULL;   //remember arg of -c on cmd line if specified
+ static void Hit_Return(void);
+ static Byte *get_one_address(Byte *, int *);	// get colon addr, if present
+ static Byte *get_address(Byte *, int *, int *);	// get two colon addrs, if present
+@@ -365,8 +366,14 @@
+ 	//  1-  process $HOME/.exrc file
+ 	//  2-  process EXINIT variable from environment
+ 	//  3-  process command line args
+-	while ((c = getopt(argc, argv, "hCR")) != -1) {
++	while ((c = getopt(argc, argv, "c:hCR")) != -1) {
+ 		switch (c) {
++#ifdef CONFIG_FEATURE_VI_COLON
++                case 'c':       // execute command first
++                        free (initialCmd);  //ignore any previous -c args
++                        initialCmd = strdup (optarg);
++                        break;
++#endif
+ #ifdef CONFIG_FEATURE_VI_CRASHME
+ 		case 'C':
+ 			crashme = 1;
+@@ -380,7 +387,6 @@
+ #endif							/* CONFIG_FEATURE_VI_READONLY */
+ 			//case 'r':	// recover flag-  ignore- we don't use tmp file
+ 			//case 'x':	// encryption flag- ignore
+-			//case 'c':	// execute command first
+ 			//case 'h':	// help -- just use default
+ 		default:
+ 			show_help();
+@@ -505,6 +511,9 @@
+ 	ioq = ioq_start = last_modifying_cmd = 0;
+ 	adding2q = 0;
+ #endif							/* CONFIG_FEATURE_VI_DOT_CMD */
++#ifdef CONFIG_FEATURE_VI_COLON
++        if (initialCmd) colon(initialCmd);  //run initial command just before main loop
++#endif
+ 	redraw(FALSE);			// dont force every col re-draw
+ 	show_status_line();
+ 
+@@ -1937,7 +1946,10 @@
+ #endif							/* CONFIG_FEATURE_VI_READONLY */
+ #ifdef CONFIG_FEATURE_VI_SET
+ 	"\n\tSome colon mode commands with \':\'"
+-#endif							/* CONFIG_FEATURE_VI_SET */
++#ifdef CONFIG_FEATURE_VI_COLON
++	"\n\t & after -c cmd line arg"
++#endif
++#endif                                                  /* CONFIG_FEATURE_VI_SET */
+ #ifdef CONFIG_FEATURE_VI_SETOPTS
+ 	"\n\tSettable options with \":set\""
+ #endif							/* CONFIG_FEATURE_VI_SETOPTS */
