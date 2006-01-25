@@ -666,7 +666,7 @@ diff -ruP busybox-1.00/coreutils/nohup.c busybox-1.00.new/coreutils/nohup.c
 +	}
 +}
 +
-diff -ru busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
+diff -ruP busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
 --- busybox-1.00/editors/vi.c	2004-08-19 12:15:06.000000000 -0700
 +++ busybox-1.00.new/editors/vi.c	2006-01-23 14:40:57.000000000 -0800
 @@ -19,7 +19,7 @@
