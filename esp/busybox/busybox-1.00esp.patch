@@ -672,9 +672,9 @@ diff -ruP busybox-1.00/editors/vi.c busybox-1.00.new/editors/vi.c
 @@ -19,7 +19,7 @@
   */
  
- static const char vi_Version[] =
--	"$Id$";
-+       "$Id$";
+ static const char vi_Version[] = "$"
+-	"Id: vi.c,v 1.35 2004/03/31 11:12:51 andersen Exp $";
++       "Id: vi.c,v 1.37-mbari 2006/01/27 07:59:52 brent Exp $";
  
  /*
   * To compile for standalone use:
