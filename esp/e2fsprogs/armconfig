@@ -1,0 +1,13 @@
+#!/bin/bash
+# unpack, patch and configure e2fsprogs-1.38 build for arm-linux 
+#  -- 11/30/05 brent@mbari.org
+: ${CFLAGS:="-Os -fomit-frame-pointer"}
+: ${CXXFLAGS:=$CFLAGS}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${E2FSVERS:=e2fsprogs-1.38}
+export PKG_CONFIG_PATH=$LIBTOP/lib/pkgconfig
+export CC CFLAGS CXXFLAGS
+rm -rf $E2FSVERS && tar xzf $E2FSVERS.tar.gz && cd $E2FSVERS &&
+configure --with-cc=/arm/bin/gcc --host=arm --prefix=`pwd`/arm --with-gnu-ld=yes &&
+echo "Next, run make in $E2FSVERS.  Don't forget to strip the binaries!"
