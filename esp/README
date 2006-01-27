@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  11/7/05 brent@mbari.org
+ -- revised:  12/25/06 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -77,13 +77,13 @@ H) Install the staging Compact Flash and boot the board
 
 power off board, install CF card, power on
 control-C to enter redboot
-RedBoot> %{bootHda2}
+RedBoot> %{bootHda1}
 
 
 I) Replace the jffs2 image with the one just built
 
 on ESPstage as root:
-# flash_eraseall /dev/mtd/1
+# flash_eraseall -j /dev/mtd/1
 
 on bufflehead:
 $ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
@@ -105,7 +105,12 @@ L) generate .ssh keys for users
   dropbearkey -t rsa -f id_rsa > id_rsa.pub
   scp user@bufflehead:.ssh/id_rsa.pub authorized_keys  #to add the first
   
+M) if you want some extra management utilities run armconfig && arminstall
+   in:
+    a) util-linux for for sfdisk,
+    b) e2fsprogs for mke2fs,
+    c) flashutil for flash_eraseall
 
-M)  What did I forget?!
+?)  What did I forget?!
   Oh, copy the esp application to the esp user's esp2local directory
   
