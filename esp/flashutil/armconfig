@@ -1,0 +1,6 @@
+#!/bin/bash
+# unpack, patch and configure the mtd (flash) utilities the for arm-linux 
+#  -- 1/25/06 brent@mbari.org
+: ${MTDVERS:=mtd-2004}
+rm -rf $MTDVERS && tar xzf $MTDVERS.tar.gz && cd $MTDVERS &&
+echo "Next, run arminstall or make in $MTDVERS"
