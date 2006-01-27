@@ -8,8 +8,8 @@ if [ "$1" ]; then
   dirs="$*"
 else
   dirs="
-   glibc zlib sysvinit busybox dropbear portmap ppp scripts setserial vsftpd 
-  "
+   glibc zlib sysvinit busybox dropbear portmap ppp scripts setserial vsftpd
+   util-linux e2fsprogs" # flashutil builds flash_eraseall
 fi
 
 mksymlinks ~/armHost "rm -f" < symlinks
