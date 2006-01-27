@@ -2,7 +2,8 @@
 # build the jffs2 image
 #  this will fail unless output is redirected to a file!
 : ${HOSTTOP:=${1-$HOME/armHost}}
-/usr/sbin/mkfs.jffs2 --pad --eraseblock=128 --squash-uids --root=$HOSTTOP && {
+/usr/sbin/mkfs.jffs2 --pad --eraseblock=128 --disable-compressor=rtime \
+  --squash-uids --root=$HOSTTOP && {
   echo "to install an image on a Technologics TS-7200"
   echo " cat [imageFile.jffs2] | ssh root@[ESPnode] dd of=/dev/mtd/1 bs=128k"
 } >&2
