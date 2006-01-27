@@ -1,0 +1,16 @@
+#!/bin/sh
+# build & install portmap daemon for arm-linux -- 1/25/06 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-/usr/sbin}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+: ${UTIL:=${3-fdisk/sfdisk}}
+baseUtil=`basename $UTIL`
+echo "Installing $baseUtil in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+cd ${UTILDIR-util-linux-2.12i} || exit 2
+make &&
+$ARMSTRIP $UTIL &&
+install -Dm 755 $UTIL $HOSTTOP/$baseUtil || exit 1
+echo "Done."
