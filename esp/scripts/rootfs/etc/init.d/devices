@@ -4,16 +4,23 @@ cd /dev
 #leave interrupts unmasked on IDE accesses so we don't lose serial input
 [ "hd[a-z]" = 'hd[a-z]' ] || hdparm -u1k1 hd[a-z] >null
 
-I2Cgate=null #ttyAM0   #serial port that talks to the I2C gateway
-[ -c $I2Cgate ] && {
+I2Cgate= #ttyAM0   #serial port that talks to the I2C gateway
+[ -c "$I2Cgate" ] && {
   ln -s $I2Cgate I2Cgate 
   chmod g+rw $I2Cgate
   chgrp tty $I2Cgate
 }
 
-freewave=ttyAM0  #tts/15 #serial port connected to the freewave radio modem
-[ -c $freewave ] && {
+freewave= #tts/15 #serial port connected to the freewave radio modem
+[ -c "$freewave" ] && {
   ln -s $freewave freewave
   stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
   modprobe ppp_async && modprobe ppp_deflate     #supprt for the ppp deamon
 }
+
+for port in $I2Cgate tts/* ; do
+  [ $port = "$freewave" ] && continue  #freewave may not be touched by users
+  chgrp tty $port && chmod g+rw $port
+ddone
+
+  
