@@ -1,24 +1,17 @@
 #!/bin/sh
-# unpack and configure linux24 for arm-linux -- 9/2/05 brent@mbari.org
+# unpack and configure linux24 for arm-linux -- 3/21/06 brent@mbari.org
 #  This is still not completely automated!
 #
 #  The patched kernel source from technologists can be downloaded with:
-# wget http://www.embeddedx86.com/downloads/Linux/ARM/linux24_ts8_src.tar.gz
+# wget http://www.embeddedarm.com/downloads/arm_sbc/linux24-ts9-ksrc.tar.gz
 
-# rm -rf linux24_ts8 linux24
+# rm -rf linux24
 
 # (update linux24 subdir from CVS)
-# mv linux24 linux24_ts8
-# ln -s linux24_ts8 linux24
 
 #  merge/untar source with:
-# tar --keep-old-files --exclude CVS -xzf linux24_ts8_src.tar.gz
+# tar --keep-old-files --exclude CVS -xzf linux24-ts9-ksrc.tar.gz
 
-[ ! -d linux24 ] && {
-  rm -rf linux24_ts8
-  tar xzf linux24_ts8_src.tar.gz &&
-  ln -s linux24_ts8 linux24 || exit
-}
 cp mbari.config linux24/.config
 #cd linux24 && make menuconfig #--simply save back the config to .config
 
