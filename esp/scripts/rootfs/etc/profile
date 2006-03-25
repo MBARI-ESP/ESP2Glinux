@@ -1,7 +1,6 @@
 # /etc/profile:
 umask 022
 PS1="\\u@\\h\:\\w\\$ "
-[ "$TZ" ] || export TZ=PST8PDT
 #export HOSTNAME=`/bin/hostname -s`
 if [ "$USER" = 'root' ]
 then
