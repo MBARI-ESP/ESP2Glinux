@@ -18,9 +18,9 @@ freewave= #tts/15 #serial port connected to the freewave radio modem
   modprobe ppp_async && modprobe ppp_deflate     #supprt for the ppp deamon
 }
 
-for port in $I2Cgate tts/* ; do
-  [ $port = "$freewave" ] && continue  #freewave may not be touched by users
-  chgrp tty $port && chmod g+rw $port
-ddone
-
-  
+[ -d tts ] && {
+  for port in $I2Cgate tts/* ; do
+    [ $port = "$freewave" ] && continue  #freewave may not be touched by users
+    chgrp tty $port && chmod g+rw $port
+  done
+}
