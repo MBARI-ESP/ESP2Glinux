@@ -1,0 +1,17 @@
+#!/bin/sh
+# unpack and patch wget for arm-linux -- 3/9/06 brent@mbari.org
+# note that wget requires librt, libdl and libpthread 
+# install our extracorelibs package to get these
+
+: ${CFLAGS:="-Os -fomit-frame-pointer"}
+: ${CXXFLAGS:=$CFLAGS}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${LIBTOP:=${1-$ARMGCC}}
+: ${WGETVERS:=wget-1.10.2}
+export CC CFLAGS
+rm -rf $WGETVERS && tar xzf $WGETVERS.tar.gz && cd $WGETVERS &&
+configure --host=arm-unknown-linux --disable-opie --disable-digest \
+  --disable-ntlm --disable-debug --disable-largefile --disable-rpath \
+  --disable-ipv6 --disable-nls &&  
+echo "Next, run arminstall here, or just make and install on target"

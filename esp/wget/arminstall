@@ -1,0 +1,10 @@
+#!/bin/sh
+# build wget for arm-linux -- 3/9/06 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${WGETVERS:=wget-1.10.2}
+: ${TARGETTOP:=${2-/usr/local/bin}}
+: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+cd $WGETVERS && make && 
+$ARMSTRIP -o $HOSTTOP/wget src/wget
