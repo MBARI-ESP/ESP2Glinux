@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
 SUBLEVEL = 26
-EXTRAVERSION =-vrs1-cirrus-ts8-mbari
+EXTRAVERSION =-ts9-mbari
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -19,7 +19,8 @@ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math
 HOSTCC  	= gcc
 HOSTCFLAGS	= -Wstrict-prototypes -Wall -O2 -fomit-frame-pointer
 #
-CROSS_COMPILE = /opt/crosstool/gcc-3.4.5-glibc-2.2.5/arm-9tdmi.softfloat-linux-gnu/bin/arm-9tdmi.softfloat-linux-gnu-
+# use whatever gcc cross compiler is installed at /arm
+CROSS_COMPILE = $(shell link=`readlink /arm`; echo `dirname $$link`/bin/`basename $$link`-)
 CFLAGS_KERNEL	= -Wno-packed
 # -fno-unit-at-a-time
 INSTALL_MOD_PATH = $(HOME)/armHost
