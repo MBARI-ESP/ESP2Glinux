@@ -2,7 +2,7 @@
 cd /dev
 
 #leave interrupts unmasked on IDE accesses so we don't lose serial input
-[ "hd[a-z]" = 'hd[a-z]' ] || hdparm -u1k1 hd[a-z] >null
+[ hd[a-z] = 'hd[a-z]' ] || hdparm -u1k1 hd[a-z] >null
 
 I2Cgate= #ttyAM0   #serial port that talks to the I2C gateway
 [ -c "$I2Cgate" ] && {
