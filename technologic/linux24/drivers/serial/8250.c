@@ -172,7 +172,7 @@ static const struct serial_uart_config uart_config[PORT_MAX_8250+1] = {
 	{ "XR16850",	128,	UART_CLEAR_FIFO | UART_USE_FIFO | UART_STARTECH },
 	{ "RSA",	2048,	UART_CLEAR_FIFO | UART_USE_FIFO },
         { "NS16550A",   16,     UART_CLEAR_FIFO | UART_USE_FIFO },
-        { "XR16788",    64,     UART_CLEAR_FIFO | UART_USE_FIFO }
+        { "XR16788",    64,     UART_CLEAR_FIFO | UART_USE_FIFO | UART_EXAR7 }
 };
 
 static _INLINE_ unsigned int serial_in(struct uart_8250_port *up, int offset)
@@ -996,7 +996,8 @@ serial8250_handle_port(struct uart_8250_port *up, struct pt_regs *regs)
 {
 
 	unsigned int status = serial_inp(up, UART_LSR);
-        
+
+#if 0        
   if (up->port.type == PORT_XR16788) {
         unsigned base = up->port.iobase & ~0xff;
         DEBUG_INTR("PORT %d INTSRC = 0x%08X, ", (up->port.iobase>>4) & 7,
@@ -1004,7 +1005,8 @@ serial8250_handle_port(struct uart_8250_port *up, struct pt_regs *regs)
           inb (base+0x81)<<16 |
           inb (base+0x82)<<8 |
           inb (base+0x83));
-  }          
+  }
+#endif        
 	DEBUG_INTR("status = %x\n", status);
 
 	if (status & UART_LSR_DR)
@@ -1466,19 +1468,6 @@ static void serial8250_change_speed(struct uart_port *port, unsigned int cflag, 
 	    up->rev == 0x5201)
 		quot ++;
 
-	if (up->capabilities & UART_USE_FIFO) {
-		if ((up->port.uartclk / quot) < (2400 * 16))
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_1;
-#ifdef CONFIG_SERIAL_8250_RSA
-		else if (up->port.type == PORT_RSA)
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_14;
-#endif
-		else
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_8;
-	}
-	if (up->port.type == PORT_16750)
-		fcr |= UART_FCR7_64BYTE;
-
 	/*
 	 * Ok, we're now changing the port state.  Do it with
 	 * interrupts disabled.
@@ -1522,32 +1511,61 @@ static void serial8250_change_speed(struct uart_port *port, unsigned int cflag, 
 
 	serial_out(up, UART_IER, up->ier);
 
-	if (up->capabilities & UART_MCRAFE) {
+        if (up->capabilities & UART_EXAR7) {
 		/*
-		 * TI16C750 hardware flow control
+		 * EXAR 7xx hardware flow control
 		 */
-		up->mcr &= ~UART_MCR_AFE;
+		up->efr &= ~(UART_EFR_CTS|UART_EFR_RTS);
 		if (cflag & CRTSCTS)
-			up->mcr |= UART_MCR_AFE;
-	}
-	if (up->capabilities & UART_EFRAFE) {
-		/*
-		 * TI16C752/Startech hardware flow control
-		 * FIXME:
-		 * - TI16C752 requires control thresholds
-		 *   to be set for auto-RTS.
-		 * - We only enable auto-CTS here.
-		 * Note: ST16C654 does not allow MCR bit 1
-		 * to override RTS when UART_EFR_RTS is set.
-		 */
-		up->efr &= ~UART_EFR_CTS;
-		if (cflag & CRTSCTS)
-			up->efr |= UART_EFR_CTS;
-		serial_outp(up, UART_LCR, 0xBF);
-		serial_outp(up, UART_EFR, up->efr);
-	}
+			up->efr |= UART_EFR_CTS|UART_EFR_RTS;
+                serial_outp(up, 9, up->efr);  //16 regs per channel!
+                //RXTRG and TXRTG registers to determine fifo trigger points
+                serial_outp(up, 11, 20);  //RX intr when fifo has >=20 bytes
+                serial_outp(up, 10, 10);  //refill TX fifo when <10 bytes
+                fcr = (up->efr & (UART_EFR_CTS|UART_EFR_RTS)) |
+                       UART_FCR_ENABLE_FIFO|2;  //+/- 6 byte auto-CTS hysterisis
+                
+        }else{
+          if (up->capabilities & UART_USE_FIFO) {
+		if ((up->port.uartclk / quot) < (2400 * 16))
+			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_1;
+#ifdef CONFIG_SERIAL_8250_RSA
+		else if (up->port.type == PORT_RSA)
+			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_14;
+#endif
+		else
+			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_8;
+	  }
+	  if (up->port.type == PORT_16750)
+		fcr |= UART_FCR7_64BYTE;
 
-	if (up->capabilities & UART_NATSEMI) {
+	  if (up->capabilities & UART_MCRAFE) {
+		  /*
+		   * TI16C750 hardware flow control
+		   */
+		  up->mcr &= ~UART_MCR_AFE;
+		  if (cflag & CRTSCTS)
+			  up->mcr |= UART_MCR_AFE;
+	  }else
+	  if (up->capabilities & UART_EFRAFE) {
+		  /*
+		   * TI16C752/Startech hardware flow control
+		   * FIXME:
+		   * - TI16C752 requires control thresholds
+		   *   to be set for auto-RTS.
+		   * - We only enable auto-CTS here.
+		   * Note: ST16C654 does not allow MCR bit 1
+		   * to override RTS when UART_EFR_RTS is set.
+		   */
+		  up->efr &= ~UART_EFR_CTS;
+		  if (cflag & CRTSCTS)
+			  up->efr |= UART_EFR_CTS;
+		  serial_outp(up, UART_LCR, 0xBF);
+		  serial_outp(up, UART_EFR, up->efr);
+	  }
+        }
+        
+       	if (up->capabilities & UART_NATSEMI) {
 		/* Switch to bank 2 not bank 1, to avoid resetting EXCR2 */
 		serial_outp(up, UART_LCR, 0xe0);
 	} else {

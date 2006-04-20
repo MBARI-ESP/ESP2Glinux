@@ -52,6 +52,7 @@ struct serial8250_config {
 #define UART_NATSEMI		0x08
 #define UART_MCRAFE		0x10	/* TI16C750-style auto-flow */
 #define UART_EFRAFE		0x20	/* TI16C752/startech auto-flow */
+#define UART_EXAR7              0x40    /* auto-flow for the EXAR (16L7xx) */
 
 #define UART_BAD_TX_ENABLE	0x80000000
 
