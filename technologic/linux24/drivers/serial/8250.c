@@ -201,6 +201,10 @@ static _INLINE_ unsigned int serial_in(struct uart_8250_port *up, int offset)
 static _INLINE_ void
 serial_out(struct uart_8250_port *up, int offset, int value)
 {
+#if 0  //trace writes to control ports
+  if (offset > 2)
+    printk ("8250@%x[%d]=0x%02x\n", up->port.iobase&0xffff, offset, value);
+#endif
 #ifdef  TS7XXX_IO8_BASE  //optimize for this hardware -- brent@mbari.org
   outb(value, up->port.iobase + offset);
 #else
@@ -230,8 +234,8 @@ serial_out(struct uart_8250_port *up, int offset, int value)
  * needed for certain old 386 machines, I've left these #define's
  * in....
  */
-#define serial_inp(up, offset)		serial_in(up, offset)
-#define serial_outp(up, offset, value)	serial_out(up, offset, value)
+#define serial_inp(up, offset)		(serial_in((up), (offset)))
+#define serial_outp(up, offset, value)	(serial_out((up), (offset), (value)))
 
 
 /*
@@ -561,12 +565,28 @@ static void autoconfig_16550a(struct uart_8250_port *up)
 		up->port.type = PORT_16750;
 		return;
 	}
-        
+        //we just need to distinguish between the 16550A and the XR167xx
         //the XR16788 always has at least a 64 byte deep fifo
-        if (size_fifo(up) >= 64) {
-          up->port.type = PORT_XR16788;
+        //however, we cannot check its size if the chip has already been
+        //setup.  So, we write a known value into the XR167xx's 
+        //scratchpad register to identify it on a reboot (without H/W reset)
+
+    {
+      unsigned breadcrumb = serial_inp(up, UART_SCR);
+      switch (breadcrumb) {
+        case 0xff:
+          if (size_fifo(up) >= 64) {
+            serial_outp(up, UART_SCR, 0x78);  //in case of warm reboot!
+        case 0x78:
+            up->port.type = PORT_XR16788;
+            return;
+          }else
+            serial_outp(up, UART_SCR, 0x55);  //so we don't size_fifo() again
+        case 0x55:
           return;
-        }        
+      }
+      printk (KERN_WARNING "Unexpected UART_SCR value 0x%02x\n", breadcrumb);
+    }
 }
 
 /*
@@ -997,16 +1017,6 @@ serial8250_handle_port(struct uart_8250_port *up, struct pt_regs *regs)
 
 	unsigned int status = serial_inp(up, UART_LSR);
 
-#if 0        
-  if (up->port.type == PORT_XR16788) {
-        unsigned base = up->port.iobase & ~0xff;
-        DEBUG_INTR("PORT %d INTSRC = 0x%08X, ", (up->port.iobase>>4) & 7,
-          inb (base+0x80)<<24 |
-          inb (base+0x81)<<16 |
-          inb (base+0x82)<<8 |
-          inb (base+0x83));
-  }
-#endif        
 	DEBUG_INTR("status = %x\n", status);
 
 	if (status & UART_LSR_DR)
@@ -1061,10 +1071,19 @@ static void serial8250_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 
 		if (l == i->head && pass_counter++ > PASS_LIMIT) {
 			/* If we hit this, we're dead. */
-			printk(KERN_ERR "serial8250: too much work for "
-				"irq%d\n", irq);
+  printk(KERN_ERR "serial8250: too much work for irq%d\n", irq);
+#if 1      
+  if (up->port.type == PORT_XR16788) {
+        unsigned base = up->port.iobase & ~0xff;
+        printk("PORT %d INTSRC = 0x%08X, ", (up->port.iobase>>4) & 7,
+          inb (base+0x80)<<24 |
+          inb (base+0x81)<<16 |
+          inb (base+0x82)<<8 |
+          inb (base+0x83));
+  }
+#endif        
 #if 0
-serial8250_stop_rx (up);  //in case an interrupt is stuck active
+serial8250_stop_rx (&up->port);  //in case an interrupt is stuck active
 #endif
 			break;
 		}
@@ -1468,10 +1487,21 @@ static void serial8250_change_speed(struct uart_port *port, unsigned int cflag, 
 	    up->rev == 0x5201)
 		quot ++;
 
+        if (up->capabilities & UART_USE_FIFO) {
+	      if ((up->port.uartclk / quot) < (2400 * 16))
+		      fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_1;
+#ifdef CONFIG_SERIAL_8250_RSA
+	      else if (up->port.type == PORT_RSA)
+		      fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_14;
+#endif
+	      else
+		      fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_8;
+	}
+
 	/*
 	 * Ok, we're now changing the port state.  Do it with
 	 * interrupts disabled.
-	 */
+	 */  
 	spin_lock_irqsave(&up->port.lock, flags);
 
 	up->port.read_status_mask = UART_LSR_OE | UART_LSR_THRE | UART_LSR_DR;
@@ -1512,30 +1542,19 @@ static void serial8250_change_speed(struct uart_port *port, unsigned int cflag, 
 	serial_out(up, UART_IER, up->ier);
 
         if (up->capabilities & UART_EXAR7) {
-		/*
-		 * EXAR 7xx hardware flow control
-		 */
-		up->efr &= ~(UART_EFR_CTS|UART_EFR_RTS);
-		if (cflag & CRTSCTS)
-			up->efr |= UART_EFR_CTS|UART_EFR_RTS;
-                serial_outp(up, 9, up->efr);  //16 regs per channel!
-                //RXTRG and TXRTG registers to determine fifo trigger points
-                serial_outp(up, 11, 20);  //RX intr when fifo has >=20 bytes
-                serial_outp(up, 10, 10);  //refill TX fifo when <10 bytes
-                fcr = (up->efr & (UART_EFR_CTS|UART_EFR_RTS)) |
-                       UART_FCR_ENABLE_FIFO|2;  //+/- 6 byte auto-CTS hysterisis
+	   /*
+	    * EXAR 7xx hardware flow control
+	    */
+           //RXTRG and TXRTG registers to determine fifo trigger points
+           serial_outp(up, 11,  20);  //RX interrupt when fifo has >=20 bytes
+           serial_outp(up, 10,  10);  //refill TX fifo when <10 bytes remain
+           serial_outp(up,  8,0xC2);  //+/- 6 byte auto-CTS hysterisis
+	   up->efr &= ~(UART_EFR_CTS|UART_EFR_RTS);
+	   if (cflag & CRTSCTS)
+		   up->efr |= UART_EFR_CTS|UART_EFR_RTS;
+           serial_outp(up, 9, up->efr);  //setup the EFR register
                 
         }else{
-          if (up->capabilities & UART_USE_FIFO) {
-		if ((up->port.uartclk / quot) < (2400 * 16))
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_1;
-#ifdef CONFIG_SERIAL_8250_RSA
-		else if (up->port.type == PORT_RSA)
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_14;
-#endif
-		else
-			fcr = UART_FCR_ENABLE_FIFO | UART_FCR_TRIGGER_8;
-	  }
 	  if (up->port.type == PORT_16750)
 		fcr |= UART_FCR7_64BYTE;
 
