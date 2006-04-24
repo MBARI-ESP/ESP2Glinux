@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  12/25/06 brent@mbari.org
+ -- revised:  3/17/06 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -45,19 +45,27 @@ alias name "string"  #remember to \escape all \" in strings
 
 cut and paste the following into redboot> one line at a time:
 
+alias/console: ttyAM1,115200
+n
+alias/root: /dev/mtdblock1
+n
+alias/kernel: fis load vmlinux
+n
+alias/exec: exec -c "console=%{console} root=%{root}"
+n
+alias/boot: %{kernel}; %{exec}
+n
+alias/nfsroot: 134.89.10.91:/nfsroot/ts7200  #or ts7260
+n
+alias/nfsexec: exec -c "console=%{console} ip=%{ip} root=%{nfsroot}"
+n
+alias/ip: dhcp
+n
+alias/nfsboot: %{kernel}; %{nfsexec}
+n
+alias/getKernel: load -r -b 0x218000
+n
 alias exec "exec -c \"console=ttyAM1,115200 root=/dev/mtdblock1\""
-n
-alias boot "fis load vmlinux; %{exec}"
-n
-alias bootHda1 "fis load vmlinux; %{execHda1}"
-n
-alias execHda1 "exec -c \"console=ttyAM1,115200 root=/dev/hda1\""
-n
-alias bootHda2 "fis load vmlinux; %{execHda2}"
-n
-alias execHda2 "exec -c \"console=ttyAM1,115200 root=/dev/hda2\""
-n
-alias getKernel "load -r -b 0x218000"
 y
 
 
