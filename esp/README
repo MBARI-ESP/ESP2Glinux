@@ -45,27 +45,25 @@ alias name "string"  #remember to \escape all \" in strings
 
 cut and paste the following into redboot> one line at a time:
 
-alias/console: ttyAM1,115200
+alias console "ttyAM1,115200"
 n
-alias/root: /dev/mtdblock1
+alias root "/dev/mtdblock1"
 n
-alias/kernel: fis load vmlinux
+alias kernel "fis load vmlinux"
 n
-alias/exec: exec -c "console=%{console} root=%{root}"
+alias exec "exec -c \"console=%{console} root=%{root}\""
 n
-alias/boot: %{kernel}; %{exec}
+alias boot "%{kernel}; %{exec}"
 n
-alias/nfsroot: 134.89.10.91:/nfsroot/ts7200  #or ts7260
+alias nfsroot "134.89.10.91:/nfsroot/ts7200"
 n
-alias/nfsexec: exec -c "console=%{console} ip=%{ip} root=%{nfsroot}"
+alias nfsexec "exec -c \"console=%{console} ip=%{ip} root=%{nfsroot}\""
 n
-alias/ip: dhcp
+alias ip "dhcp"
 n
-alias/nfsboot: %{kernel}; %{nfsexec}
+alias nfsboot "%{kernel}; %{nfsexec}"
 n
-alias/getKernel: load -r -b 0x218000
-n
-alias exec "exec -c \"console=ttyAM1,115200 root=/dev/mtdblock1\""
+alias getKernel "load -r -b 0x218000"
 y
 
 
