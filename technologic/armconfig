@@ -12,6 +12,6 @@
 #  merge/untar source with:
 # tar --keep-old-files --exclude CVS -xzf linux24-ts9-ksrc.tar.gz
 
-cp mbari.config linux24/.config
+cp ts7200.config linux24/.config
 #cd linux24 && make menuconfig #--simply save back the config to .config
 
