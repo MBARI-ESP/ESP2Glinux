@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  3/17/06 brent@mbari.org
+ -- revised:  5/1/06 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -64,6 +64,8 @@ n
 alias nfsboot "%{kernel}; %{nfsexec}"
 n
 alias getKernel "load -r -b 0x218000"
+n
+alias bootcf "%{kernel}; exec -c \"console=%{console} root=/dev/hda1\""
 y
 
 
@@ -83,7 +85,7 @@ H) Install the staging Compact Flash and boot the board
 
 power off board, install CF card, power on
 control-C to enter redboot
-RedBoot> %{bootHda1}
+RedBoot> %{bootcf}
 
 
 I) Replace the jffs2 image with the one just built
