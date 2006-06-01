@@ -19,6 +19,12 @@ ifAliasDown() {
     kill `cat $pidfn` 2>/dev/null
   done
   ifconfig $1 down 2>/dev/null
+
+  #Following moved from /etc/ppp/ip-down, 1jun2006, rah
+  if [ "`head -1 $resolv`" = "#$1" ]; then
+    > $resolv
+  fi
+
 }
 
 eachAlias() {
@@ -30,6 +36,9 @@ eachAlias() {
     done
   }
 }
+
+
+resolv=/etc/resolv.conf
 
 case "$1" in
   -*|*/*|'') #any flag is a request for help
