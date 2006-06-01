@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+
+# Turn off power to freewave here
+
+
+#Following is for testing, to seen when this script is called
+#echo "Disconnected `date`" >> /var/log/ppptest.log
