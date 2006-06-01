@@ -1,0 +1,40 @@
+# $Id$
+# pppd confiruration for the embedded ESP instrument - 10/27/05 brent@mbari.org
+
+#debugging options
+#debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+#logfile /var/log/pppd.log
+#dump
+
+#RS-232 port configuration
+freewave     #symlink /dev/freewave to the modem's serial port
+115200       #baud rate
+crtscts      #hardware RTS/CTS handshaking
+modem        #monitor carrier detect
+lock         #request exclusive access to the port
+
+#connection
+linkname shoreOnDemand
+auth        #require password authorization
+demand	    #dial on demand
+persist     #don't terminate if the link breaks
+idle 300    #hang up if idle 5 minutes
+maxfail 0   #never give up!
+
+#IP addressing
+10.2.2.10:10.2.2.9    #default local:remote address
+ipcp-accept-local   #let the peer override our default address
+usepeerdns    #ask shore to supply us  DNS server addresses
+defaultroute  #use PPP as the default route
+
+#compression
+deflate 12  #deflate in 4k byte blocks
+
+#scripts
+connect /etc/ppp/peers/connect-shore
+disconnect /etc/ppp/peers/disconnect-shore
+
