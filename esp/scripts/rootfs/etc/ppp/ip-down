@@ -7,7 +7,6 @@ oldHostname=/var/run/oldHostname.$IFNAME
 oldHosts=/var/run/oldHosts.$IFNAME
 
 if [ "$USEPEERDNS" -a "`head -1 $resolv`" = "#$IFNAME" ]; then
-  > $resolv
   [ -r $oldHosts ] && cp $oldHosts /etc/hosts
 fi
 
@@ -20,3 +19,5 @@ if [ -r $oldHostname ]; then
 fi
 
 rm -f $oldHostname $oldHosts
+
+[ -f /etc/ppp/ip-down.local ] && . /etc/ppp/ip-down.local "$@"
