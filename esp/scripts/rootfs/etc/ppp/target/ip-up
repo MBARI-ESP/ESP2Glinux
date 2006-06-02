@@ -1,0 +1,48 @@
+#!/bin/sh
+# $Id$
+# executed after connecting the ppp interface.
+
+resolv=/etc/resolv.conf
+oldHostname=/var/run/oldHostname.$IFNAME
+oldHosts=/var/run/oldHosts.$IFNAME
+peerName=/var/run/peername.$IFNAME
+
+if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
+
+  unset domain
+  
+  #if PEERNAME is prefixed with a dot, change our own hostname to it
+  if [ -n "$PEERNAME" ]; then
+
+    IFSold=$IFS
+    IFS=.
+    set $PEERNAME
+    IFS=$IFSold
+    if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
+      host=$2
+      echo $host >$peerName
+      [ -f $oldHostname ] || hostname >$oldHostname
+      if [ $# -gt 2 ]; then
+        domain=$3
+        shift 3
+        for component; do
+          domain=$domain.$component
+        done
+      fi
+      hostname $host
+    fi
+  fi
+
+  if [ "$USEPEERDNS" ]; then
+
+    echo "#$IFNAME" >$resolv
+    [ -n "$domain" ] && echo search $domain >>$resolv
+    cat /etc/ppp/resolv.conf >>$resolv
+    [ -f $oldHosts ] || cp /etc/hosts $oldHosts
+    echo "127.0.0.1 localhost" >/etc/hosts #clear any ad hoc DNS
+
+  fi
+  
+fi
+
+[ -f /etc/ppp/ip-up.local ] && . /etc/ppp/ip-up.local "$@"
