@@ -1,0 +1,6 @@
+#!/bin/sh
+#
+# Local ip-up script for ESP shore link
+#
+
+ruby /etc/ppp/sendLinkMail.rb "$@"
