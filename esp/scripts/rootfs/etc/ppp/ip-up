@@ -5,6 +5,7 @@
 resolv=/etc/resolv.conf
 oldHostname=/var/run/oldHostname.$IFNAME
 oldHosts=/var/run/oldHosts.$IFNAME
+peerName=/var/run/peername.$IFNAME
 
 if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
 
@@ -19,6 +20,7 @@ if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
     IFS=$IFSold
     if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
       host=$2
+      echo $host >$peerName
       [ -f $oldHostname ] || hostname >$oldHostname
       if [ $# -gt 2 ]; then
         domain=$3
