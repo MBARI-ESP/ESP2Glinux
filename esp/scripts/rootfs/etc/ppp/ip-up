@@ -43,3 +43,4 @@ if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
   
 fi
 
+[ -f /etc/ppp/ip-up.local ] && . /etc/ppp/ip-up.local "$@"

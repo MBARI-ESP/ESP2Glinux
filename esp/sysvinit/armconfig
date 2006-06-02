@@ -1,7 +1,0 @@
-#!/bin/sh
-# unpack and patch sysvinit for arm-linux -- 3/14/05 brent@mbari.org
-
-: ${SYSVVERS:=sysvinit-2.85}
-rm -rf $SYSVVERS && tar xzf $SYSVVERS.tar.gz && cd $SYSVVERS &&
-patch -p1 <../sysvinit-2.85ts1.0l.patch && 
-echo "Done."

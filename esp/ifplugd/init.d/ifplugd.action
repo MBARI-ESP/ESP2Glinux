@@ -1,3 +1,0 @@
-#!/bin/sh
-#trivial action script for ifplugd
-exec /usr/sbin/if$1 $2

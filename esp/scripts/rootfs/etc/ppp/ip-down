@@ -2,21 +2,4 @@
 # $Id$
 # executed after disconnecting the ppp interface.
 
-resolv=/etc/resolv.conf
-oldHostname=/var/run/oldHostname.$IFNAME
-oldHosts=/var/run/oldHosts.$IFNAME
-
-if [ "$USEPEERDNS" -a "`head -1 $resolv`" = "#$IFNAME" ]; then
-  > $resolv
-  [ -r $oldHosts ] && cp $oldHosts /etc/hosts
-fi
-
-if [ -r $oldHostname ]; then
-  IFSold=$IFS
-  IFS=.
-  set $PEERNAME
-  IFS=$IFSold
-  [ "$2" = "`hostname`" ] && hostname -F $oldHostname  #revert to old name
-fi
-
-rm -f $oldHostname $oldHosts
+[ -f /etc/ppp/ip-down.local ] && . /etc/ppp/ip-down.local "$@"
