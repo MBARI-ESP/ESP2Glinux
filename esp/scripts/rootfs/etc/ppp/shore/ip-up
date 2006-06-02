@@ -1,0 +1,5 @@
+#!/bin/sh
+# $Id$
+# executed after connecting the ppp interface.
+
+[ -f /etc/ppp/ip-up.local ] && . /etc/ppp/ip-up.local "$@"
