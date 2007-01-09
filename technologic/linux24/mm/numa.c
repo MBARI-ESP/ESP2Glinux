@@ -85,7 +85,7 @@ void __init free_area_init_node(int nid, pg_data_t *pgdat, struct page *pmap,
 static struct page * alloc_pages_pgdat(pg_data_t *pgdat, unsigned int gfp_mask,
 	unsigned int order)
 {
-	return __alloc_pages(gfp_mask, order, pgdat->node_zonelists + (gfp_mask & GFP_ZONEMASK));
+	return __alloc_pages(gfp_mask, order, pgdat->node_zonelists);
 }
 
 /*
@@ -95,31 +95,50 @@ static struct page * alloc_pages_pgdat(pg_data_t *pgdat, unsigned int gfp_mask,
 struct page * _alloc_pages(unsigned int gfp_mask, unsigned int order)
 {
 	struct page *ret = 0;
-	pg_data_t *start, *temp;
-#ifndef CONFIG_NUMA
+	pg_data_t *temp, *temp2;
+	int min, class_idx, retried = 0;
 	unsigned long flags;
 	static pg_data_t *next = 0;
-#endif
+
 
 	if (order >= MAX_ORDER)
 		return NULL;
-#ifdef CONFIG_NUMA
-	temp = NODE_DATA(numa_node_id());
-#else
 	spin_lock_irqsave(&node_lock, flags);
 	if (!next) next = pgdat_list;
-	temp = next;
+	temp2 = temp = next;
 	next = next->node_next;
 	spin_unlock_irqrestore(&node_lock, flags);
-#endif
-	start = temp;
+retry:
+	/* First attempt nodes with ample free pages */
 	while (temp) {
-		if ((ret = alloc_pages_pgdat(temp, gfp_mask, order)))
-			return(ret);
+		class_idx = zone_idx(temp->node_zonelists->zones[0]);
+		if ((temp->node_zonelists->zones[0]->free_pages - (1UL << order)) > 
+		  temp->node_zonelists->zones[0]->watermarks[class_idx].low) {
+			if ((ret = alloc_pages_pgdat(temp, gfp_mask, order)))
+				return(ret);
+		} 
 		temp = temp->node_next;
 	}
-	temp = pgdat_list;
-	while (temp != start) {
+	temp = temp2;
+	/* Next, try harder */
+	while (temp) {
+		class_idx = zone_idx(temp->node_zonelists->zones[0]);
+		min = temp->node_zonelists->zones[0]->watermarks[class_idx].min;
+		if (!(gfp_mask & __GFP_WAIT)) min >>= 2;
+		if ((temp->node_zonelists->zones[0]->free_pages - (1UL << order)) > min) {
+			if ((ret = alloc_pages_pgdat(temp, gfp_mask, order)))
+				return(ret);
+		}
+		temp = temp->node_next;
+	}
+	if (!retried) {
+		temp2 = temp = pgdat_list;
+		retried = 1;
+		goto retry;
+	}
+	temp = temp2;
+	/* Last chance for success */
+	while (temp) {
 		if ((ret = alloc_pages_pgdat(temp, gfp_mask, order)))
 			return(ret);
 		temp = temp->node_next;
