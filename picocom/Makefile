@@ -2,11 +2,15 @@
 VERSION=1.4
 
 # CC = gcc
+# Set CC to your target's 'C' compiler to build for it
+# Example:
+#       make CC=/arm/bin/gcc clean picocom
+DEBUG=
 CPPFLAGS=-DVERSION_STR=\"$(VERSION)\" -DUUCP_LOCK_DIR=\"/var/lock\"
-CFLAGS = -Wall -g
+CFLAGS = -Wall -Os $(DEBUG)
 
 # LD = gcc
-LDFLAGS = -g
+LDFLAGS = $(DEBUG)
 LDLIBS =
 
 picocom : picocom.o term.o
