@@ -1603,7 +1603,6 @@ static int  ep9213Eth_close(struct net_device *pD) {
 
     _PRTK_ENTRY(("ep9213Eth_close(pD:0x%x)\n", (unsigned int)pD));
 
-    disable_irq(pD->irq);  /*request system to disable INT*/
 
     netif_stop_queue(pD);
     eth_shutDown(pD);  /*shut device down*/
@@ -1639,7 +1638,6 @@ static int  ep9213Eth_open(struct net_device *pD) {
 
     /*turn on INT, turn on Rx*/
     eth_enable(pD);
-    enable_irq(pD->irq);  /*ask system to enable INT*/
 
 
 #if 0  /*@*/
