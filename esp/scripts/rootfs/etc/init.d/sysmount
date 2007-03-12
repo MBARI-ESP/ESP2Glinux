@@ -74,7 +74,9 @@ case "$1" in
              "rm -rf $run/* $run/.[^.]* && mkdir -p $run && touch $run"
           lock=`realPath $var/lock` &&
             redoIfRO $lock \
-             "rm -rf $lock/* $lock/.[^.]* && mkdir -p $lock && chgrp tty $lock"
+             "rm -rf $lock/* $lock/.[^.]* && {
+               mkdir -p $lock && chgrp tty $lock && chmod g+rwx $lock
+             }"
         }
       }
        ;;
