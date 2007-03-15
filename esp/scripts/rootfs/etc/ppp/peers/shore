@@ -1,5 +1,5 @@
 # $Id$
-# pppd confiruration for the embedded ESP instrument - 10/27/05 brent@mbari.org
+# pppd configuration for the embedded ESP instrument - 10/27/05 brent@mbari.org
 
 #debugging options
 #debug
