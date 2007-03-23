@@ -16,11 +16,15 @@ ifAliasDown() {
   fn=/var/run/*$1.pid
   pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || for pidfn in $pidfns; do
-    dhcpcd=`cat $pidfn`
-    kill -HUP $dhcpcd 2>/dev/null  #relinquish any DHCP lease
-    for t in 1 2 3 4 5 6 7 8; do  #wait for DHCP client daemon to die
+    daemon=`cat $pidfn`
+    case $1 in
+      ppp*)  signal=TERM ;;
+      *)     signal=HUP  ;;
+    esac
+    kill -$signal $daemon 2>/dev/null  #relinquish any lease
+    for t in 1 2 3 4 5 6 7 8 9; do  #wait for daemon to die
       sleep 1
-      kill -0 $dhcpcd 2>/dev/null || {
+      kill -0 $daemon 2>/dev/null || {
         rm -f $pidfn
         break
       }
