@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  5/1/06 brent@mbari.org
+ -- revised:  3/13/07 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -57,7 +57,7 @@ alias boot "%{kernel}; %{exec}"
 n
 alias nfsroot "134.89.10.91:/nfsroot/ts7200"
 n
-alias nfsexec "exec -c \"console=%{console} ip=%{ip} root=%{nfsroot}\""
+alias nfsexec "exec -c \"console=%{console} ip=%{ip} root=/dev/nfs nfsroot=%{nfsroot}\""
 n
 alias ip "dhcp"
 n
@@ -113,12 +113,7 @@ L) generate .ssh keys for users
   dropbearkey -t rsa -f id_rsa > id_rsa.pub
   scp user@bufflehead:.ssh/id_rsa.pub authorized_keys  #to add the first
   
-M) if you want some extra management utilities run armconfig && arminstall
-   in:
-    a) util-linux for for sfdisk,
-    b) e2fsprogs for mke2fs,
-    c) flashutil for flash_eraseall
-
+  
 ?)  What did I forget?!
   Oh, copy the esp application to the esp user's esp2local directory
   
