@@ -7,6 +7,7 @@
 #one can also select mounts of the specified type:
 ##  mount="#mbari" service nfsmount start
 #mounts all (nfs) entries containing the string #mbari
+#lines in /etc/fstab after any starting with #END are ignored
 
 
 [ -s /etc/resolv.conf ] || {
