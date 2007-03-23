@@ -6,13 +6,13 @@ none /dev devfs remount,rw    #for case of sysmount restart
 
 /cf/.SWAP swap swap #optional swapfile on compact flash disk
 
+
+#END nfsmount service ignores entries below this line END#
+
 tempest:/users /u nfs bg,intr,nosuid,nodev,noauto	#mbari
 tempest:/tempbox /tempbox nfs bg,intr,nosuid,nodev,noauto	#mbari
 tornado:/Engineering /engineering nfs bg,intr,nosuid,nodev,noauto #mbari
 tornado:/vol/vol1/ProjectLibrary /project bg,nfs intr,nosuid,nodev,noauto #mbari
-
-
-#END nfsmount service ignores entries below this line END#
 
 tornado:/ESP /ESP nfs bg,intr,nosuid,nodev,noauto #mbari
 
@@ -20,4 +20,4 @@ bufflehead:/etc /bufflehead/etc nfs intr,noauto
 bufflehead:/home /bufflehead/home nfs intr,noauto
 bufflehead:/var/log/ESPhost /var/log nfs intr,nolock,noauto
 
-ESPlapcow:/home /lapcow/home nfs intr,noauto
+ESPbook:/home /book/home nfs intr,noauto
