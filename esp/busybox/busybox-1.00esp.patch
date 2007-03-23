@@ -379,6 +379,20 @@ diff -ru busybox-1.00.original/networking/udhcp/dhcpc.c busybox-1.00/networking/
  
  					/* enter bound state */
  					t1 = lease / 2;
+@@ -501,8 +514,12 @@
+ 			case SIGUSR2:
+ 				perform_release();
+ 				break;
++                        case SIGHUP:
++				LOG(LOG_INFO, "Exiting on SIGHUP after releasing lease");
++				perform_release();
++                                return 0;
+ 			case SIGTERM:
+-				LOG(LOG_INFO, "Received SIGTERM");
++				LOG(LOG_INFO, "Exiting on SIGTERM");
+ 				return 0;
+ 			}
+ 		} else if (retval == -1 && errno == EINTR) {
 diff -ru busybox-1.00.original/networking/udhcp/dhcpc.h busybox-1.00/networking/udhcp/dhcpc.h
 --- busybox-1.00.original/networking/udhcp/dhcpc.h	2004-01-30 15:45:12.000000000 -0800
 +++ busybox-1.00/networking/udhcp/dhcpc.h	2005-12-02 00:09:35.000000000 -0800
@@ -389,6 +403,17 @@ diff -ru busybox-1.00.original/networking/udhcp/dhcpc.h busybox-1.00/networking/
 +        unsigned long maxLease;         /* reduce any offered lease duration */
  	uint8_t arp[6];			/* Our arp address */
  };
+ 
+diff -ru busybox-1.00.original/networking/udhcp/signalpipe.c busybox-1.00/networking/udhcp/signalpipe.c
+--- busybox-1.00.original/networking/udhcp/signalpipe.c	2004-04-14 10:51:26.000000000 -0700
++++ busybox-1.00/networking/udhcp/signalpipe.c	2007-03-15 17:35:49.000000000 -0700
+@@ -45,6 +45,7 @@
+ 	socketpair(AF_UNIX, SOCK_STREAM, 0, signal_pipe);
+ 	signal(SIGUSR1, signal_handler);
+ 	signal(SIGUSR2, signal_handler);
++	signal(SIGHUP, signal_handler);
+ 	signal(SIGTERM, signal_handler);
+ }
  
 diff -ru busybox-1.00.original/networking/udhcp/socket.c busybox-1.00/networking/udhcp/socket.c
 --- busybox-1.00.original/networking/udhcp/socket.c	2004-03-15 00:29:01.000000000 -0800
