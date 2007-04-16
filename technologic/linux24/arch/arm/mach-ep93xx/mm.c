@@ -65,4 +65,6 @@ void __init ep93xx_map_io(void)
 	stat = inb(TS7XXX_STATUS);
 	if ((stat & 0x1) != 0x1) console_loglevel = 4;
 	outw(0x4, TS7XXX_ENIO);
+	outw(0x5, TS7XXX_WATCHDOG_FEED);
+	outw(0x0, TS7XXX_WATCHDOG_CTRL);
 }
