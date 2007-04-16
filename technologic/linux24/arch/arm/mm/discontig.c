@@ -15,7 +15,7 @@
 #include <linux/init.h>
 #include <linux/bootmem.h>
 
-#if NR_NODES > 16
+#if NR_NODES > 24
 #error Fix Me Please
 #endif
 
@@ -69,6 +69,30 @@ pg_data_t discontig_node_data[NR_NODES] = {
 #endif
 #if NR_NODES > 15
   { bdata: &node_bootmem_data[15] },
+#endif
+#if NR_NODES > 16 
+  { bdata: &node_bootmem_data[16] },
+#endif
+#if NR_NODES > 17 
+  { bdata: &node_bootmem_data[17] },
+#endif
+#if NR_NODES > 18 
+  { bdata: &node_bootmem_data[18] },
+#endif
+#if NR_NODES > 19
+  { bdata: &node_bootmem_data[19] },
+#endif
+#if NR_NODES > 20 
+  { bdata: &node_bootmem_data[20] },
+#endif
+#if NR_NODES > 21 
+  { bdata: &node_bootmem_data[21] },
+#endif
+#if NR_NODES > 22 
+  { bdata: &node_bootmem_data[22] },
+#endif
+#if NR_NODES > 23
+  { bdata: &node_bootmem_data[23] },
 #endif
 };
 
