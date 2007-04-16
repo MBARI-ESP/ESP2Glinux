@@ -102,7 +102,7 @@
  * arch/arm/mm/init.c to be 1.
  */
 #ifdef CONFIG_DISCONTIGMEM
-#define NR_NODES 							16
+#define NR_NODES 							24
 #endif
 
 /*
@@ -147,34 +147,46 @@ static inline unsigned long __virt_to_phys(unsigned long vpage) {
 	unsigned long offset = vpage & 0x00ffffffUL;
 
 	switch(block) {
-	case 0xc6:
-		return (0xc0000000UL + offset);
-	case 0xc7:
-		return (0xc1000000UL + offset);
 	case 0xc8:
-		return (0xc4000000UL + offset);
+		return (0xc0000000UL + offset);
 	case 0xc9:
-		return (0xc5000000UL + offset);
+		return (0xc1000000UL + offset);
 	case 0xca:
-		return (0xd0000000UL + offset);
+		return (0xc4000000UL + offset);
 	case 0xcb:
-		return (0xd1000000UL + offset);
+		return (0xc5000000UL + offset);
 	case 0xcc:
-		return (0xd4000000UL + offset);
+		return (0xd0000000UL + offset);
 	case 0xcd:
-		return (0xd5000000UL + offset);
+		return (0xd1000000UL + offset);
 	case 0xce:
-		return (0xe0000000UL + offset);
+		return (0xd4000000UL + offset);
 	case 0xcf:
-		return (0xe1000000UL + offset);
+		return (0xd5000000UL + offset);
 	case 0xd0:
-		return (0xe4000000UL + offset);
+		return (0xe0000000UL + offset);
 	case 0xd1:
+		return (0xe1000000UL + offset);
+	case 0xd2:
+		return (0xe4000000UL + offset);
+	case 0xd3:
 		return (0xe5000000UL + offset);
+	case 0xd4:
+		return (0xe2000000UL + offset);
+	case 0xd5:
+		return (0xe3000000UL + offset);
+	case 0xd6:
+		return (0xe6000000UL + offset);
+	case 0xd7:
+		return (0xe7000000UL + offset);
 	case 0xc0:
 	case 0xc1:
+	case 0xc2:
+	case 0xc3:
 	case 0xc4:
 	case 0xc5:
+	case 0xc6:
+	case 0xc7:
 	default:
 		return (vpage - 0xc0000000UL);
 	}
@@ -186,33 +198,45 @@ static inline unsigned long __phys_to_virt(unsigned long ppage) {
 
 	switch(block) {
 	case 0xc0:
-		return (0xc6000000UL + offset);
-	case 0xc1:
-		return (0xc7000000UL + offset);
-	case 0xc4:
 		return (0xc8000000UL + offset);
-	case 0xc5:
+	case 0xc1:
 		return (0xc9000000UL + offset);
-	case 0xd0:
+	case 0xc4:
 		return (0xca000000UL + offset);
-	case 0xd1:
+	case 0xc5:
 		return (0xcb000000UL + offset);
-	case 0xd4:
+	case 0xd0:
 		return (0xcc000000UL + offset);
-	case 0xd5:
+	case 0xd1:
 		return (0xcd000000UL + offset);
-	case 0xe0:
+	case 0xd4:
 		return (0xce000000UL + offset);
-	case 0xe1:
+	case 0xd5:
 		return (0xcf000000UL + offset);
-	case 0xe4:
+	case 0xe0:
 		return (0xd0000000UL + offset);
-	case 0xe5:
+	case 0xe1:
 		return (0xd1000000UL + offset);
+	case 0xe4:
+		return (0xd2000000UL + offset);
+	case 0xe5:
+		return (0xd3000000UL + offset);
+	case 0xe2:
+		return (0xd4000000UL + offset);
+	case 0xe3:
+		return (0xd5000000UL + offset);
+	case 0xe6:
+		return (0xd6000000UL + offset);
+	case 0xe7:
+		return (0xd7000000UL + offset);
 	case 0x0:
 	case 0x1:
+	case 0x2:
+	case 0x3:
 	case 0x4:
 	case 0x5:
+	case 0x6:
+	case 0x7:
 	default:
 		return (ppage + 0xc0000000UL);
 	}
@@ -229,34 +253,50 @@ static inline unsigned long PFN_TO_NID(unsigned long pfn) {
 		return 0;
 	case 0x1:
 		return 1;
-	case 0x4:
+	case 0x2:
 		return 2;
-	case 0x5:
+	case 0x3:
 		return 3;
-	case 0xc0:
+	case 0x4:
 		return 4;
-	case 0xc1:
+	case 0x5:
 		return 5;
-	case 0xc4:
+	case 0x6:
 		return 6;
-	case 0xc5:
+	case 0x7:
 		return 7;
-	case 0xd0:
+	case 0xc0:
 		return 8;
-	case 0xd1:
+	case 0xc1:
 		return 9;
-	case 0xd4:
+	case 0xc4:
 		return 10;
-	case 0xd5:
+	case 0xc5:
 		return 11;
-	case 0xe0:
+	case 0xd0:
 		return 12;
-	case 0xe1:
+	case 0xd1:
 		return 13;
-	case 0xe4:
+	case 0xd4:
 		return 14;
-	case 0xe5:
+	case 0xd5:
 		return 15;
+	case 0xe0:
+		return 16;
+	case 0xe1:
+		return 17;
+	case 0xe4:
+		return 18;
+	case 0xe5:
+		return 19;
+	case 0xe2:
+		return 20;
+	case 0xe3:
+		return 21;
+	case 0xe6:
+		return 22;
+	case 0xe7:
+		return 23;
 	default:
 		return 0xff;
 	}
