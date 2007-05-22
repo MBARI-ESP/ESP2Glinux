@@ -29,7 +29,10 @@ r7:7:wait:/etc/rc.d/rc 7
 # Start console logins on both COM Ports
 #
 #lgn0:12345:respawn:/sbin/getty -L 115200 ttyAM0 
-lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1 
+lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1
+
+# Keep the ppp interface up
+ppp0:12345:respawn:/usr/sbin/keepup ppp0
 
 # Trap CTRL-ALT-DELETE
 ca::ctrlaltdel:/sbin/init 6
