@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+#  keepup [interface name] {polling interval in seconds}
+#
+interval=${2-180}  #default to checking once every 3 minutes
+interface=$1
+
+[ $interface ] || {
+  logger -st keepup "Missing interface name"
+  exit 1
+}
+
+while :; do
+  sleep $interval
+  read pid < /var/run/$interface.pid && kill -0 $pid || {
+    logger -t keepup "Bringing up $interface..."
+    ifup $interface
+  }
+done
