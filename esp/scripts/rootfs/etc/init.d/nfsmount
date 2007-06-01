@@ -24,7 +24,7 @@ mntpts=`grep "$mount" /etc/fstab |
       [ "$fs" = "$fstype" ] && echo $mntpt
     done`
     
-[ -z "$mntpts" ] && {
+[ -z "$mntpts" -a -n "$mount" ] && {
   echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
   exit 1
 }
