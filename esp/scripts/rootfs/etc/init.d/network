@@ -30,10 +30,29 @@ case "$op" in
       fi
    ;;
    stop)
-      devs=${@:-`sed -ne'/:/p' /proc/net/dev | cut -d: -f1`}
-      for dev in $devs; do ifdown $dev; done
-      killall pppd  #in case we missed any ppp's that hadn't yet brought
-      sleep 1       #their links up
+      devs=$@
+      [ "$devs" ] || {
+        pppSpec='/var/run/ppp[0-9]*.pid'
+        pidfns=`echo $pppSpec`
+set -f
+        if [ $pidfns != $pppSpec ]; then
+          for pidFn in $pidfns; do  #stop ppp links that are "down"
+            ppp=`basename $pidFn`
+            devs="$devs ${ppp%.pid}"
+          done
+        fi  #now add in everything but ppp interfaces
+set +f
+        devs="$devs `grep -v '^ *ppp[0-9][0-9]*:' /proc/net/dev |
+              sed -ne'/:/p' | cut -d: -f1`"
+      }
+      for dev in $devs; do
+        defFn=/etc/sysconfig/ifcfg-$dev
+        if [ -r "$defFn" ]; then
+          . $defFn  #don't try to stop interfaces respawned by init process
+          [ "$AUTOSTART" = "init" ] && continue
+        fi
+        ifdown $dev
+      done
    ;;
 
    restart)
