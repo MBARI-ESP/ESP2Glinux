@@ -21,12 +21,18 @@ ifAliasDown() {
       ppp*)  signal=TERM ;;
       *)     signal=HUP  ;;
     esac
-    kill -$signal $daemon 2>/dev/null  #relinquish any lease
-    for t in 1 2 3 4 5 6 7 8 9; do  #wait for daemon to die
-      sleep 1
-      kill -0 $daemon 2>/dev/null || {
-        rm -f $pidfn
-        break
+    for try in 1 2 last; do
+      kill -$signal $daemon 2>/dev/null  #relinquish any lease
+      for t in 1 2 3 4 5; do  #wait for daemon to die
+        sleep 1
+        kill -0 $daemon 2>/dev/null || {
+          rm -f $pidfn
+          break 2
+        }
+      done
+      [ "$try" = "last" ] && {
+        echo "Forcing $1 (PID $daemon) to terminate" >&2
+        kill -9 $daemon && rm -f $pidfn
       }
     done
   done
