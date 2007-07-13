@@ -1,5 +1,5 @@
 # $Id$
-# pppd configuration for the embedded ESP instrument - 10/27/05 brent@mbari.org
+# pppd configuration for the embedded ESP instrument - 6/2/07 brent@mbari.org
 
 #debugging options
 #debug
@@ -23,7 +23,7 @@ auth        #require password authorization
 passive     #wait passively
 silent      #and silently
 persist     #don't terminate if the link breaks
-holdoff 15  #try to reestablish link 15 seconds after it terminates
+holdoff 2   #try to reestablish link a few seconds after it terminates
 maxfail 0   #never give up!
 
 #IP addressing
@@ -35,4 +35,5 @@ defaultroute  #use PPP as the default route
 #compression
 deflate 12  #deflate in 4k byte blocks
 
-
+#uncomment to switch freewave to master mode if it is in operating mode #6
+#connect "sleep 2; exec chat -t 20 '' 'ATDT0' 'CONNECT' ''"
