@@ -56,19 +56,23 @@ chklog() {
 
 mnt() {
   echo "Mounting network filesystems ..."
-  set $mntpts
-  for mntpt; do
-    mounted $mntpt
-    [ $? = 1 ] && chklog mount $mntpt
-  done
+  [ "$mntpts" ] && {
+    set $mntpts
+    for mntpt; do
+      mounted $mntpt
+      [ $? = 1 ] && chklog mount $mntpt
+    done
+  }
 }
 
 umnt() {
   echo "Unmounting network filesystems ..."
-  set $mntpts
-  for mntpt; do
-    mounted $mntpt && chklog umount $mntpt
-  done
+  [ "$mntpts" ] && {
+    set $mntpts
+    for mntpt; do
+      mounted $mntpt && chklog umount $mntpt
+    done
+  }
 }
 
 case "$op" in
