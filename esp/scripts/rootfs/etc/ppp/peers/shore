@@ -36,4 +36,4 @@ defaultroute  #use PPP as the default route
 deflate 12  #deflate in 4k byte blocks
 
 #uncomment to switch freewave to master mode if it is in operating mode #6
-#connect "sleep 2; exec chat -t 20 '' 'ATDT0' 'CONNECT' ''"
+connect "sleep 2"  #; exec chat -t 20 '' 'ATDT0' 'CONNECT' ''"
