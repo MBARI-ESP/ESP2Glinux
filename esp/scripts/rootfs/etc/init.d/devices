@@ -4,14 +4,14 @@ cd /dev
 #leave interrupts unmasked on IDE accesses so we don't lose serial input
 [ hd[a-z] = 'hd[a-z]' ] || hdparm -u1k1 hd[a-z] >null
 
-i2cGate()
+ttyPort()
 {
   name=$1; port=$2
   ln -s $port $name 
   chgrp tty $port && chmod g+rw $port
 }
 
-freewave= #tts/15 #serial port connected to the freewave radio modem
+freewave=tts/15 	#serial port connected to the freewave radio modem
 [ -c "$freewave" ] && {
   ln -s $freewave freewave
   stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
@@ -25,6 +25,8 @@ freewave= #tts/15 #serial port connected to the freewave radio modem
   done
 }
 
-#i2cGate I2Cgate tts/11   #core ESP gateway
-#i2cGate DWSMgate tts/14  #Deep Water Sampler
+ttyPort I2Cgate  tts/11   #core ESP gateway
+ttyPort DWSMgate tts/14   #Deep Water Sampler
+ttyPort ctd      tts/8    #CTD contextual sensor
+ttyPort isus     tts/9    #ISUS sensor
 
