@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  3/13/07 brent@mbari.org
+ -- revised:  7/18/07 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -18,7 +18,26 @@ $ cd ../ruby
 $ armconfig && arminstall
 
 
-C) Build the kernel
+C) Add Tiff libraries and snap application
+
+$ cd ~/ESP/gen2/software/libtiff
+$ armconfig && arminstall
+
+$ cd ../camera/starlight
+$ make clean arm/snap
+$ /arm/bin/strip arm/snap
+$ cp arm/snap ~/armHost/usr/local/bin
+
+
+D) Add picocom
+
+$ cd ~/linux/picocom
+$ make CC=/arm/bin/gcc clean picocom
+$ /arm/bin/strip picocom
+$ cp picocom ~/armHost/usr/local/bin
+
+
+E) Build the kernel
 
 Build the kernel source if necessary
 $ cd ~/linux/technologic
@@ -26,14 +45,20 @@ $ armconfig  #see comments in armconfig for downloading the latest
 $ cd linux24
 $ make dep clean bzImage modules modules_install
 
+Note that if the kernel is already up to date, you may
+save time but just installing the kernel modules:
 
-D) Create the JFFS2 filesystem image
+$ cd ~/linux/technologic/linux24
+$ make modules_install
+
+
+F) Create the JFFS2 filesystem image
 
 $ cd ../../esp
 $ buildjffs2 > armHost.jffs2
 
 
-E) Configure Redboot
+G) Configure Redboot
 
 Bring up minicom
 Reset the board and press Control-C to enter redboot
@@ -69,27 +94,23 @@ alias bootcf "%{kernel}; exec -c \"console=%{console} root=/dev/hda1\""
 y
 
 
-E) Install JP 4 to use COM2 as the console port
+H) Install JP 4 to use COM2 as the console port
    (move the serial connection to COM2)
    reset the board and press Control-C to enter redboot
    
 
-G) Replace the kernel with the one last build on Bufflehead
+I) Replace the kernel with the one last build on Bufflehead
 
 RedBoot>  %{getKernel} zImage  #assumes zImage installed at root of tftp server
 RedBoot>  fis delete vmlinux
 RedBoot>  fis create vmlinux
 
 
-H) Install the staging Compact Flash and boot the board
+J) Install the staging Compact Flash and boot the board
 
 power off board, install CF card, power on
 control-C to enter redboot
 RedBoot> %{bootcf}
-
-
-I) Replace the jffs2 image with the one just built
-
 on ESPstage as root:
 # flash_eraseall -j /dev/mtd/1
 
@@ -97,16 +118,28 @@ on bufflehead:
 $ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
 
 
-J) reboot and let the board start normally
+-- or --
+
+J) Boot from NFS root (on bufflehead)
+
+RedBoot> %{nfsboot}
+# mount bufflehead:/home /bufflehead/home
+#  flash_eraseall -j /dev/mtd/1
+# dd of=/dev/mtd/1 bs=128k < /bufflehead/home/brent/linux/esp/armHost.jffs2
+# sync; sync
+
+
+
+K) reboot and let the board start normally
 
   login as root, RNAprobe
 
 
-K) Change the /etc/HOSTNAME and corresponding entry for /var/log in /etc/fstab
+L) Change the /etc/HOSTNAME and corresponding entry for /var/log in /etc/fstab
     reboot
-    
+   Change /etc/fstab to be consistent with this unit's hostname 
 
-L) generate .ssh keys for users
+M) generate .ssh keys for users
 
   for each user, login
   mkdir .ssh; cd .ssh
