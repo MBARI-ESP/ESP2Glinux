@@ -5,8 +5,12 @@ HOSTS=/etc/hosts
 
 usage ()
 {
-    echo "usage:  ifup [netInterface|full path to definition file]"
-    echo "  configure and enable the specified network interface"
+    echo "
+usage:  ifup [netInterface|full path to definition file] {mode}
+        configure and enable the specified network interface
+        only bring up DEVICE if its AUTOSTART = {mode}
+        or unless AUTOSTART = init if {mode} omitted
+"
     return 1
 }
 
@@ -15,8 +19,19 @@ ifup_function ()
     [ "$DEVICE" ] || {
       echo "Network DEVICE to start was not specified"
       usage
-      return $?
+      return 200
     }
+    if [ -n "$1" ]; then
+      [ "$AUTOSTART" != "$1" ] && {
+#        echo "Skipping $DEVICE because its AUTOSTART mode is not '$1'"
+        return 201
+      }
+    else
+      [ "$AUTOSTART" = "init" ] && {
+#        echo "Skipping $DEVICE in inittab"
+        return 202
+      }
+    fi
     ifconfig | grep -q ^$DEVICE && {
       echo "$DEVICE is already UP"
       return 0

@@ -25,7 +25,7 @@ case "$op" in
           unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
           unset NETWORK GATEWAY NSprepCmd
           . $defFn
-          [ "$AUTOSTART" = "yes" ] && ifup_function
+          ifup_function yes
         done
       fi
    ;;
