@@ -1,8 +1,15 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  12/4/05 by brent@mbari.org
+# revised:  3/21/08 by brent@mbari.org
 
 [ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
+
+tracefn=/tmp/udhcpc.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
 
 RESOLV_CONF="/etc/resolv.conf"
 HOSTS="/etc/hosts"

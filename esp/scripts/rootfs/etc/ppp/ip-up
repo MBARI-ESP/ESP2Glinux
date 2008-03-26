@@ -2,6 +2,13 @@
 # $Id$
 # executed after connecting the ppp interface.
 
+tracefn=/tmp/ip-updown.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
+
 resolv=/etc/resolv.conf
 oldHostname=/var/run/oldHostname.$IFNAME
 oldHosts=/var/run/oldHosts.$IFNAME
