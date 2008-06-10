@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 3/13/07 BAR
+Configuration symlinks for ESP embedded linux - 5/19/08 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -15,6 +15,7 @@ proc ->
 mnt ->
 bufflehead/etc ->
 bufflehead/home ->
+bufflehead/home2 ->
 book/home ->
 cf ->
 engineering ->
@@ -70,12 +71,21 @@ etc/resolv.conf -> /var/etc/resolv.conf
 
 root/.profile -> /etc/profile
 usr/bin/ssh2 -> ssh
+
 home/brent/bin/su -> /usr/bin/be
 home/brent/.profile -> /etc/esp/profile
 home/brent/.irbrc -> /etc/esp/irbrc
+
 home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
 home/esp/.irbrc -> /etc/esp/irbrc
-home/esp/
+
+home/everlove/bin/su -> /usr/bin/be
+home/everlove/.profile -> /etc/esp/profile
+home/everlove/.irbrc -> /etc/esp/irbrc
+
+home/preston/bin/su -> /usr/bin/be
+home/preston/.profile -> /etc/esp/profile
+home/preston/.irbrc -> /etc/esp/irbrc
 
 etc/localtime -> /usr/share/zoneinfo/PST8PDT
