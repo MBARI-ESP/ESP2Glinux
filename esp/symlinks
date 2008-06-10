@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 5/19/08 BAR
+Configuration symlinks for ESP embedded linux - 6/10/08 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -87,5 +87,9 @@ home/everlove/.irbrc -> /etc/esp/irbrc
 home/preston/bin/su -> /usr/bin/be
 home/preston/.profile -> /etc/esp/profile
 home/preston/.irbrc -> /etc/esp/irbrc
+
+home/sjensen/bin/su -> /usr/bin/be
+home/sjensen/.profile -> /etc/esp/profile
+home/sjensen/.irbrc -> /etc/esp/irbrc
 
 etc/localtime -> /usr/share/zoneinfo/PST8PDT
