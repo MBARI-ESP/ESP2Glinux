@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  7/18/07 brent@mbari.org
+ -- revised:  5/8/08 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -26,6 +26,7 @@ $ armconfig && arminstall
 $ cd ../camera/starlight
 $ make clean arm/snap
 $ /arm/bin/strip arm/snap
+$ mkdir -p ~/armHost/usr/local/bin
 $ cp arm/snap ~/armHost/usr/local/bin
 
 
