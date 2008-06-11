@@ -7,7 +7,7 @@ mount -oremount,rw / && {
   chmod u+s /bin/suidbox
   cd /home
   for user in *; do
-    echo chown -R $user:users $user
+    chown -R $user:users $user
   done
 
   rm $0  #this script will self-destruct...
