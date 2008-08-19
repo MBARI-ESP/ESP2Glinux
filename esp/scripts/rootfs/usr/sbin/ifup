@@ -5,19 +5,19 @@
 . /usr/share/ifupfn.sh
 
 devfn=$1
-[ $# -gt 0 ] && shift
+mode=${2-yes}
 
 case "$devfn" in
   "")  #take the interface definitions from the environment
     [ "${DEVICE}" ] || usage
-    ifup_function
+    ifup_function $mode
   ;;
   
   */*) #assume anything with a / is the path to an interface definition file
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY NSprepCMD
+    unset NETWORK GATEWAY NSprepCMD MTU AUTOSTART
     . $devfn
-    ifup_function "$@"
+    ifup_function $mode
   ;;
   
   -*)  #any flag is a request for help
@@ -26,8 +26,8 @@ case "$devfn" in
   
   *) #anything else must be the name of an interface
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY NSprepCmd
+    unset NETWORK GATEWAY NSprepCmd MTU AUTOSTART
     . /etc/sysconfig/ifcfg-$devfn
-    ifup_function "$@"
+    ifup_function $mode
   ;;
 esac
