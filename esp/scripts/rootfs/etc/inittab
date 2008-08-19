@@ -34,5 +34,8 @@ lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1
 # Keep the freewave ppp interface up
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null
 
+# Keep the freewave slip interface up
+#sl0:12345:respawn:/sbin/slattach -P /var/run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
+
 # Trap CTRL-ALT-DELETE
 ca::ctrlaltdel:/sbin/init 6
