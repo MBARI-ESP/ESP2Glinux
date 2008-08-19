@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 11/30/05 brent@mbari.org
+# -- revised: 8/13/08 brent@mbari.org
 #
 HOSTS=/etc/hosts
 
@@ -21,20 +21,15 @@ ifup_function ()
       usage
       return 200
     }
-    if [ -n "$1" ]; then
-      [ "$AUTOSTART" != "$1" ] && {
-#        echo "Skipping $DEVICE because its AUTOSTART mode is not '$1'"
-        return 201
+    [ "$AUTOSTART" != "$1" ] && {
+#      echo "Skipping $DEVICE because its AUTOSTART mode is not '$1'"
+      return 201
+    }
+    [ "${1#init}" = "$1" ] && { #if mode starts with init, skip dev up check
+      ifconfig | grep -q ^$DEVICE && {
+        echo "$DEVICE is already UP"
+        return 0
       }
-    else
-      [ "$AUTOSTART" = "init" ] && {
-#        echo "Skipping $DEVICE in inittab"
-        return 202
-      }
-    fi
-    ifconfig | grep -q ^$DEVICE && {
-      echo "$DEVICE is already UP"
-      return 0
     }
     fn=/var/run/*$DEVICE.pid
     pidfns=`echo $fn`
@@ -55,15 +50,9 @@ ifup_function ()
       }
     }
     echo "Bringing up interface $DEVICE ..."
-    [ "$IPADDR" ] && {
-      unset mask cast
-      [ "$NETMASK" ] && mask="netmask $NETMASK"
-      [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
-      ifconfig $DEVICE $IPADDR $mask $cast || return 2
-      [ "$NETWORK" ] && route add -net $NETWORK $mask dev $DEVICE
-      [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $DEVICE
-    }
+    export DEVICE IPADDR MTU BROADCAST GATEWAY NETWORK NETMASK
     eval $NSprepCmd    #do config's name service preparations  
+    [ "$IPADDR" ] && . /usr/share/ipinit.sh
     case "$BOOTPROTO" in
       dhcp*)
         daemon=/sbin/udhcpc  #only use this dhcp client
