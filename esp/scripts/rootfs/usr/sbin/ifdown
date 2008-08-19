@@ -31,8 +31,10 @@ ifAliasDown() {
         echo "Forcing $1 (PID $daemon) to terminate" >&2
         rm -f $pidfn
         kill -9 $daemon
+        sleep 2
       }
     done
+    rm -f $pidfn
   done
   ifconfig $1 down 2>/dev/null
 }
