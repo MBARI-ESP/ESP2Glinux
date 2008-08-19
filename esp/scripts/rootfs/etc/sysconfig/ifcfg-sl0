@@ -1,0 +1,13 @@
+DEVICE=sl0
+AUTOSTART=inittab
+BOOTPROTO=none
+
+SLIPADDR=10.9.1.2    #assign each slave a unique ip address!!
+GATEWAY=10.9.1.1     #master and gateway
+BROADCAST=10.9.1.255
+NETMASK=255.255.255.0
+MTU=1500
+
+#start up SLIP for freewave slave
+NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lp slip \
+-i \"IPADDR=$SLIPADDR; . /usr/share/ipinit.sh\" -s 115200 /dev/freewave &"
