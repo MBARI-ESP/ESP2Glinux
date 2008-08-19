@@ -1,5 +1,5 @@
 DEVICE=sl0
-AUTOSTART=yes
+AUTOSTART=no
 BOOTPROTO=none
 
 SLIPADDR=10.9.1.1      #master freewave
