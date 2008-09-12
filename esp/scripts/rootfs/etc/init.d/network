@@ -10,8 +10,8 @@ case "$op" in
       . /usr/share/ifupfn.sh
       if [ "$1" ]; then
 	for dev; do
-          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY NSprepCmd
+          unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+          unset NETWORK GATEWAY NSprepCmd NSpostCmd MTU AUTOSTART
 	  . /etc/sysconfig/ifcfg-$dev
           ifup_function
         done
@@ -22,8 +22,8 @@ case "$op" in
         fns=`echo $fnspec`
         [ "$fns" = "$fnspec" ] && exit  #no network configs found
 	for defFn in $fns; do
-          unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY NSprepCmd
+          unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+          unset NETWORK GATEWAY NSprepCmd NSpostCmd MTU AUTOSTART
           . $defFn
           ifup_function 'yes|Y|Yes|YES'
         done
