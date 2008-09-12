@@ -23,7 +23,14 @@ resolv_conf() {
  :  #clear resolv.conf on dhcp deconfig event
 }
 
-NSprepCmd="hosts > $HOSTS"  #run after interface comes up
+#run after interface comes up
+NSprepCmd="hosts > $HOSTS"
+
 #if ppp is running, restart it so it will change IP addresses
 [ -r /var/run/ppp0.pid ] &&
   NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
+
+#shore stations route traffic via proxy arps for their clients
+NSpostCmd="echo 1 > /proc/sys/net/ipv4/ip_forward &&
+           echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
+           echo "$DEVICE started proxy_arp and IP forwarding"
