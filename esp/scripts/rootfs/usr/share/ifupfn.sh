@@ -55,7 +55,7 @@ set +f
       }
     }
     echo "Bringing up interface $DEVICE ..."
-    export DEVICE IPADDR MTU BROADCAST GATEWAY NETWORK NETMASK
+    export DEVICE IPADDR MTU BROADCAST GATEWAY NETWORK NETMASK NSpostCmd
     eval $NSprepCmd    #do config's name service preparations  
     [ "$IPADDR" ] && . /usr/share/ipinit.sh
     case "$BOOTPROTO" in
@@ -83,5 +83,4 @@ set +f
         [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast"
       ;;
     esac
-    eval $NSpostCmd    #do config's special routing preparations  
 }

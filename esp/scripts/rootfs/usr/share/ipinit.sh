@@ -13,4 +13,5 @@ unset mask cast
 ifconfig $DEVICE $IPADDR $mask $cast $mtu || return 2
 [ "$NETWORK" ] && route add -net $NETWORK $mask dev $DEVICE
 [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $DEVICE
+eval $NSpostCmd    #do config's special routing preparations  
 :
