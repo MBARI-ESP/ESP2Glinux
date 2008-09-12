@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 8/13/08 brent@mbari.org
+# -- revised: 9/11/08 brent@mbari.org
 #
 HOSTS=/etc/hosts
 
@@ -8,8 +8,8 @@ usage ()
     echo "
 usage:  ifup [netInterface|full path to definition file] {mode}
         configure and enable the specified network interface
-        only bring up DEVICE if its AUTOSTART = {mode}
-        or unless AUTOSTART = init if {mode} omitted
+        only bring up DEVICE if its AUTOSTART mode matches regex {mode}
+        or Yes or No if the mode parameter is omitted
 "
     return 1
 }
@@ -21,16 +21,21 @@ ifup_function ()
       usage
       return 200
     }
-    [ "$AUTOSTART" != "$1" ] && {
-#      echo "Skipping $DEVICE because its AUTOSTART mode is not '$1'"
+set -f
+    startMode=${1-n|N|no|No|NO|yes|y|Y|Yes|YES}  #yes, no, or missing
+    while :; do
+      eval "
+        case "$AUTOSTART" in
+          $startMode)
+            break
+        esac
+      "
+#      echo -e "Skipping $DEVICE because its AUTOSTART mode does not match
+#         $startMode" >&2
+set +f
       return 201
-    }
-    [ "${1#init}" = "$1" ] && { #if mode starts with init, skip dev up check
-      ifconfig | grep -q ^$DEVICE && {
-        echo "$DEVICE is already UP"
-        return 0
-      }
-    }
+    done
+set +f
     fn=/var/run/*$DEVICE.pid
     pidfns=`echo $fn`
     [ "$pidfns" = "$fn" ] || {  #check for active locks...
