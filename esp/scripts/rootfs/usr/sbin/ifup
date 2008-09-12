@@ -5,7 +5,7 @@
 . /usr/share/ifupfn.sh
 
 devfn=$1
-mode=${2-yes}
+mode=$2
 
 case "$devfn" in
   "")  #take the interface definitions from the environment
