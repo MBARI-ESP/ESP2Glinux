@@ -16,7 +16,7 @@ NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lp slip \
 #if out resolv.conf is blank, try to ftp over the gateway's
 resolv=/etc/resolv.conf
 NSpostCmd="
-  [ -s $resolv ] || {
+  [ ! -s $resolv -o \"`head -1 $resolv`\" = "#$DEVICE" ] && {
     route | grep ^default | {
       read dest gate x;
       [ "\$gate" ] && {
