@@ -31,6 +31,7 @@ NSprepCmd="hosts > $HOSTS"  #run just before interface comes up
   NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
 
 #shore stations route traffic via proxy arps for their clients
-NSpostCmd="echo 1 > /proc/sys/net/ipv4/ip_forward &&
+NSpostCmd="echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind;
+           echo 1 > /proc/sys/net/ipv4/ip_forward &&
            echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
            echo "$DEVICE started proxy_arp and IP forwarding"
