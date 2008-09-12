@@ -25,7 +25,7 @@ case "$op" in
           unset AUTOSTART DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
           unset NETWORK GATEWAY NSprepCmd
           . $defFn
-          ifup_function yes
+          ifup_function 'yes|Y|Yes|YES'
         done
       fi
    ;;
@@ -49,7 +49,8 @@ set +f
         defFn=/etc/sysconfig/ifcfg-$dev
         if [ -r "$defFn" ]; then
           . $defFn  #don't try to stop interfaces respawned by init process
-          [ "$AUTOSTART" = "init" ] && continue
+           #if autostart mode missing or it starts with init, skip dev up check
+          [ -z "$AUTOSTART" -o "${AUTOSTART#init}" = "$AUTOSTART" ] && continue
         fi
         ifdown $dev
       done
