@@ -23,8 +23,8 @@ resolv_conf() {
  :  #clear resolv.conf on dhcp deconfig event
 }
 
-#run after interface comes up
-NSprepCmd="hosts > $HOSTS"
+
+NSprepCmd="hosts > $HOSTS"  #run just before interface comes up
 
 #if ppp is running, restart it so it will change IP addresses
 [ -r /var/run/ppp0.pid ] &&
