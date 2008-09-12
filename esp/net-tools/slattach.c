@@ -73,7 +73,7 @@
 
 
 const char *Release = RELEASE,
-	   *Version = "@(#) slattach 1.21-mbari (2008-08-19)",
+	   *Version = "@(#) slattach 1.21-mbari2 (2008-09-11)",
 	   *Signature = "net-tools, Fred N. van Kempen et al.";
 
 
@@ -125,6 +125,7 @@ int		opt_d = 0;		/* debug flag			*/
 int		opt_v = 0;		/* Verbose flag			*/
 
 char           *pidfn = NULL;          /* name of pid file */
+const char *extcmd = NULL;             /* command to run on exit */
 
 /* Disable any messages to the input channel of this process. */
 static int
@@ -550,6 +551,8 @@ static void
 sig_catch(int sig)
 {
 /*  (void) signal(sig, sig_catch); */
+  if(extcmd)	/* external command on exit */
+    system(extcmd);
   tty_close();
   if (pidfn) remove(pidfn);
   exit(0);
@@ -590,7 +593,6 @@ main(int argc, char *argv[])
   char buff[128];
   const char *speed = NULL;
   const char *proto = DEF_PROTO;
-  const char *extcmd = NULL;
   const char *initcmd = NULL;
   int s;
   static struct option longopts[] = {
@@ -759,11 +761,7 @@ main(int argc, char *argv[])
 		}
 		else
 			sleep(60);
-	};
-
-	tty_close();
-	if(extcmd)	/* external command on exit */
-		system(extcmd);
+	}
   }
-  exit(0);
+  sig_catch(0);
 }
