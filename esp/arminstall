@@ -9,7 +9,7 @@ if [ "$1" ]; then
 else
   dirs="
    glibc zlib sysvinit busybox dropbear portmap ppp scripts setserial vsftpd
-   util-linux e2fsprogs" # flashutil builds flash_eraseall
+   util-linux e2fsprogs net-tools" # flashutil builds flash_eraseall
 fi
 
 mksymlinks ~/armHost "rm -f" < symlinks
