@@ -11,3 +11,17 @@ MTU=1500
 #start up SLIP for freewave slave
 NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lp slip \
 -i \"IPADDR=$SLIPADDR; . /usr/share/ipinit.sh\" -s 115200 /dev/freewave &"
+
+fetchResolv()
+#if out resolv.conf is blank, try to ftp over the gateway's
+{
+  resolv=/etc/resolv.conf
+  [ -s $resolv ] || {
+    route | grep ^default | {
+      read dest gate x
+      [ "$gate" ] && ftpget -u guest -p resolvMe $gate $resolv $resolv
+    }
+  }
+}
+
+NSpostCmd="fetchResolv"
