@@ -83,5 +83,5 @@ set +f
         [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast"
       ;;
     esac
-    return 0
+    eval $NSpostCmd    #do config's special routing preparations  
 }
