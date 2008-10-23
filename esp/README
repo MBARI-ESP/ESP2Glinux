@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  5/8/08 brent@mbari.org
+ -- revised:  9/17/08 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -100,7 +100,7 @@ H) Install JP 4 to use COM2 as the console port
    reset the board and press Control-C to enter redboot
    
 
-I) Replace the kernel with the one last build on Bufflehead
+I) Replace the kernel with the one last built on Bufflehead
 
 RedBoot>  %{getKernel} zImage  #assumes zImage installed at root of tftp server
 RedBoot>  fis delete vmlinux
@@ -123,10 +123,13 @@ $ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
 
 J) Boot from NFS root (on bufflehead)
 
+On bufflehead:
+# cp ~/linux/esp/armHost.jff2 /nfsroot/ts7200/flash
+
 RedBoot> %{nfsboot}
-# mount bufflehead:/home /bufflehead/home
-#  flash_eraseall -j /dev/mtd/1
-# dd of=/dev/mtd/1 bs=128k < /bufflehead/home/brent/linux/esp/armHost.jffs2
+# 
+#  flash_eraseall -j /dev/mtd/1  #BEWARE:  other mtd partitions will BRICK board!
+# dd of=/dev/mtd/1 bs=128k < /flash/armHost.jffs2
 # sync; sync
 
 
