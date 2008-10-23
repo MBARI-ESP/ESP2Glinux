@@ -1,15 +1,14 @@
 #!/bin/bash
-# unpack, patch and configure dropbear-0.45 build for arm-linux 
-#  -- 3/15/05 brent@mbari.org
+# unpack, patch and configure dropbear-0.51 build for arm-linux 
+#  -- 10/2/08 brent@mbari.org
 : ${CFLAGS:=-Os}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
 : ${CC:=$ARMGCC/bin/gcc}
 : ${LIBTOP:=${1-$ARMGCC/usr}}
-: ${DBVERS:=dropbear-0.45}
+: ${DBVERS:=dropbear-0.51}
 export CC CFLAGS CXXFLAGS
 rm -rf $DBVERS && tar xzf $DBVERS.tar.gz && cd $DBVERS && 
-patch < ../restore-all-fd.patch &&
 cp -f ../options.embedded options.h && ac_cv_func_logout=no \
 configure --host=arm-unknown-linux --prefix=$LIBTOP \
  --disable-lastlog --disable-utmp --disable-utmpx \

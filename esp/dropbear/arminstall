@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install dropbear-0.45 for arm-linux -- 3/15/05 brent@mbari.org
+# build & install dropbear-0.51 for arm-linux -- 10/2/08 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -7,7 +7,7 @@
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
-cd ${DBVERS-dropbear-0.45} || exit 2
+cd ${DBVERS-dropbear-0.51} || exit 2
 make PROGRAMS="dropbear dbclient dropbearkey scp" MULTI=1 || exit 1
 set -x
 install -d -m 755 $HOSTTOP/bin $HOSTTOP/sbin &&
