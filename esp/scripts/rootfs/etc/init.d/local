@@ -1,3 +1,6 @@
 # one time local configuration
 #echo 1 > /proc/sys/net/ipv4/ip_forward &&
 #echo started forwarding IP packets
+
+# set-up to dump core to /cf
+echo /tmp/%e-SIG%s.%p >/proc/sys/kernel/core_pattern
