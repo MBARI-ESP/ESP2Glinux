@@ -1,7 +1,7 @@
 proc /proc proc noauto	      #noauto as 1st option causes mountall to skip
 none /dev devfs remount,rw    #for case of sysmount restart
  
-/dev/root / auto remount,noatime #noauto as 1st option for r/o root
+/dev/root / auto remount,rw,noatime #add noauto for r/o root
 /dev/hda1 /cf auto noatime       #try to mount /cf at boot time
 
 /cf/.SWAP swap swap #optional swapfile on compact flash disk
