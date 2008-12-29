@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  9/17/08 brent@mbari.org
+ -- revised:  12/2/08 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -73,7 +73,7 @@ cut and paste the following into redboot> one line at a time:
 
 alias console "ttyAM1,115200"
 n
-alias root "/dev/mtdblock1"
+alias root "/dev/mtdblock1 ro"
 n
 alias kernel "fis load vmlinux"
 n
@@ -133,8 +133,7 @@ RedBoot> %{nfsboot}
 # sync; sync
 
 
-
-K) reboot and let the board start normally
+K) reboot and let the board start normally after disconnecting network
 
   login as root, RNAprobe
 
@@ -143,13 +142,29 @@ L) Change the /etc/HOSTNAME and corresponding entry for /var/log in /etc/fstab
     reboot
    Change /etc/fstab to be consistent with this unit's hostname 
 
-M) generate .ssh keys for users
+M) If flash is new format it:
+
+  # sfdisk -N1 /dev/hda
+  ,,L,*
+  
+  # mke2fs -j -L`hostname` /dev/hda1
+
+  # reboot
+  
+N) create a .SWAP file on the compact flash
+
+  # dd if=/dev/zero bs=1M count=100 >/cf/.SWAP
+  # mkswap /cf/.SWAP
+  
+
+O) generate .ssh keys for users
 
   for each user, login
-  mkdir .ssh; cd .ssh
+  mkdir .ssh && cd .ssh &&
   dropbearkey -t rsa -f id_rsa > id_rsa.pub
-  scp user@bufflehead:.ssh/id_rsa.pub authorized_keys  #to add the first
-  
+  scp user@bufflehead:.ssh/id_rsa.pub authorized_keys  #option to add the first
+
+
   
 ?)  What did I forget?!
   Oh, copy the esp application to the esp user's esp2local directory
