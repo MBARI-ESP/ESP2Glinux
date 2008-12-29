@@ -1,0 +1,29 @@
+--- dropbear-0.51-original/dbutil.c	2008-10-27 15:31:08.000000000 -0700
++++ dropbear-0.51/dbutil.c	2008-10-27 15:38:01.000000000 -0700
+@@ -694,8 +694,10 @@
+ 	TRACE(("leave setnonblocking"))
+ }
+ 
++#ifndef ALLOW_COREDUMPS
+ void disallow_core() {
+ 	struct rlimit lim;
+ 	lim.rlim_cur = lim.rlim_max = 0;
+ 	setrlimit(RLIMIT_CORE, &lim);
+ }
++#endif
+--- dropbear-0.51-original/dbutil.h	2008-10-27 17:32:04.000000000 -0700
++++ dropbear-0.51/dbutil.h	2008-10-27 17:32:43.000000000 -0700
+@@ -63,7 +63,13 @@
+ void __m_free(void* ptr);
+ void m_burn(void* data, unsigned int len);
+ void setnonblocking(int fd);
++
++#ifdef ALLOW_COREDUMPS
++#define disallow_core()
++#else
+ void disallow_core();
++#endif
++
+ 
+ /* Used to force mp_ints to be initialised */
+ #define DEF_MP_INT(X) mp_int X = {0, 0, 0, NULL}
