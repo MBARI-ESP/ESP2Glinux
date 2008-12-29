@@ -1,6 +1,6 @@
 #!/bin/bash
 # unpack, patch and configure dropbear-0.51 build for arm-linux 
-#  -- 10/2/08 brent@mbari.org
+#  -- 10/27/08 brent@mbari.org
 : ${CFLAGS:=-Os}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -9,6 +9,7 @@
 : ${DBVERS:=dropbear-0.51}
 export CC CFLAGS CXXFLAGS
 rm -rf $DBVERS && tar xzf $DBVERS.tar.gz && cd $DBVERS && 
+patch < ../allowcore.patch &&
 cp -f ../options.embedded options.h && ac_cv_func_logout=no \
 configure --host=arm-unknown-linux --prefix=$LIBTOP \
  --disable-lastlog --disable-utmp --disable-utmpx \

@@ -10,6 +10,8 @@
  * parts are to allow for commandline -DDROPBEAR_XXX options etc.
  ******************************************************************/
 
+#define ALLOW_COREDUMPS
+
 #ifndef DROPBEAR_DEFPORT
 #define DROPBEAR_DEFPORT "22"
 #endif
@@ -242,7 +244,7 @@ be overridden at runtime with -K. 0 disables keepalives */
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "0.51-mbari"
+#define DROPBEAR_VERSION "0.51-mbari2"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
