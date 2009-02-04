@@ -13,7 +13,7 @@ bufflehead:/home /bufflehead/home nfs intr,noauto
 bufflehead:/home2 /bufflehead/home2 nfs intr,noauto
 
 tempest:/vol/vol0/users /u nfs bg,intr,nosuid,nodev,noauto         #mbari
-tempest:/vol/vol0/tempbox /tempbox nfs bg,intr,nosuid,nodev,noauto #mbari
+tempest:/vol/tempbox /tempbox nfs bg,intr,nosuid,nodev,noauto #mbari
 tornado:/vol/vol0/Engineering /engineering nfs bg,intr,nosuid,nodev,noauto  #mbari
 tornado:/vol/vol0/ProjectLibrary /project bg,nfs intr,nosuid,nodev,noauto #mbari
 tornado:/vol/vol0/ESP /ESP nfs bg,intr,nosuid,nodev,noauto #mbari
