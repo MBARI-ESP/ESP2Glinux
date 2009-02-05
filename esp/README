@@ -61,7 +61,17 @@ $ buildjffs2 > armHost.jffs2
 
 G) Configure Redboot
 
-Bring up minicom
+Automatic method:
+Bring up picocom
+
+$ picocom --baud=115200 /dev/ttyS0  #or ttyS1
+# reset board, press control-C to stay in Redboot
+
+redboot>  #<cntrl-A><cntrl-S>  to sent ASCII file
+file:  ts7200.cfg  #in this directory
+
+Manual Method:
+Bring up picocom
 Reset the board and press Control-C to enter redboot
 redboot> fconfig  #to configure
 follow example redboot.cfg
@@ -102,7 +112,7 @@ H) Install JP 4 to use COM2 as the console port
 
 I) Replace the kernel with the one last built on Bufflehead
 
-RedBoot>  %{getKernel} zImage  #assumes zImage installed at root of tftp server
+RedBoot>  %{getKernel} ts7200-mbari4
 RedBoot>  fis delete vmlinux
 RedBoot>  fis create vmlinux
 
@@ -138,9 +148,12 @@ K) reboot and let the board start normally after disconnecting network
   login as root, RNAprobe
 
 
-L) Change the /etc/HOSTNAME and corresponding entry for /var/log in /etc/fstab
-    reboot
-   Change /etc/fstab to be consistent with this unit's hostname 
+L) Change the /etc/HOSTNAME
+
+# echo ESPname > /etc/HOSTNAME
+
+    and use vi to change corresponding entry for /var/log in /etc/fstab, then
+# reboot
 
 M) If flash is new format it:
 
