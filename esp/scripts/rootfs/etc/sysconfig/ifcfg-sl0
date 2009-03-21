@@ -1,11 +1,11 @@
 DEVICE=sl0
-AUTOSTART=inittab
+AUTOSTART=no
 BOOTPROTO=none
 
-SLIPADDR=10.9.1.2    #assign each slave a unique ip address!!
-GATEWAY=10.9.1.1     #master and gateway
-BROADCAST=10.9.1.255
-NETMASK=255.255.255.0
+SLIPADDR=192.168.1.28   #assign each slave a unique ip address!!
+GATEWAY=192.168.1.20    #master and gateway
+BROADCAST=192.168.1.31
+NETMASK=255.255.255.240
 MTU=1500
 
 #start up SLIP for freewave slave
@@ -13,16 +13,14 @@ NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lp slip \
 -i \"IPADDR=$SLIPADDR; . /usr/share/ipinit.sh\" -c \". /usr/share/ipdown.sh\" \
 -s 115200 /dev/freewave &"
 
-#if out resolv.conf is blank, try to ftp over the gateway's
+#if our resolv.conf is blank, try to ftp over the gateway's
 resolv=/etc/resolv.conf
+hosts=/etc/hosts
 NSpostCmd="
   [ ! -s $resolv -o \"`head -1 $resolv`\" = \"#$DEVICE\" ] && {
-    route | grep ^default | {
-      read dest gate x;
-      [ "\$gate" ] && {
-        echo \"#$DEVICE\" >$resolv;
-        ftpget -u guest -p resolvMe \$gate - $resolv >>$resolv;
-      }
-    }
-  }
+    echo \"#$DEVICE\" >$resolv &&
+    ftpget $GATEWAY - $resolv >>$resolv;
+  };
+  echo \"#$DEVICE\" >$hosts &&
+  ftpget $GATEWAY - $hosts >>$hosts
 "
