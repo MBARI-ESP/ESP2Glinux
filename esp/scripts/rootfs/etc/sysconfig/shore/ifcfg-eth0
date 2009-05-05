@@ -14,8 +14,10 @@ shortName=`echo $DCHPNAME | cut -d. -f1`
 hosts() {
   cat <<EOS #add IP addresses for LAN neighbors to this table
 127.0.0.1   localhost
-$IPADDR  $DHCPNAME $shortName
-192.168.0.101  ESPbuoy	#default mooring IP if no DHCP
+$IPADDR  $DHCPNAME $shortName  shore.radio
+192.168.1.21  ESPmack.radio   mack
+192.168.1.22  ESPbruce.radio  bruce
+192.168.1.23  ESPneo.radio    neo
 EOS
 }
 
