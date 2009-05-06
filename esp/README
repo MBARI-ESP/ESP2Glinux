@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  12/2/08 brent@mbari.org
+ -- revised:  5/5/09 brent@mbari.org
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -40,14 +40,14 @@ $ cp picocom ~/armHost/usr/local/bin
 
 E) Build the kernel
 
-Build the kernel source if necessary
+Build the kernel from source if necessary (see note below)
 $ cd ~/linux/technologic
 $ armconfig  #see comments in armconfig for downloading the latest
 $ cd linux24
 $ make dep clean bzImage modules modules_install
 
 Note that if the kernel is already up to date, you may
-save time but just installing the kernel modules:
+save time by just installing the kernel modules:
 
 $ cd ~/linux/technologic/linux24
 $ make modules_install
