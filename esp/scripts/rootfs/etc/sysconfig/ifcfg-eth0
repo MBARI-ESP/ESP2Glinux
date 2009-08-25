@@ -18,11 +18,11 @@ $IPADDR  $DHCPNAME $shortName
 EOS
 }
 
-resolv_conf() {
- :  #clear resolv.conf on dhcp deconfig event
-}
-
 NSprepCmd="hosts > $HOSTS"  #run after interface comes up
 #if ppp is running, restart it
 [ -r /var/run/ppp0.pid ] &&
   NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
+
+resolv_conf() {
+ :  #clear resolv.conf on dhcp deconfig event
+}
