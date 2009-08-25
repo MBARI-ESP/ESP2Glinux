@@ -1,0 +1,17 @@
+DEVICE=wlan0
+AUTOSTART=no
+BOOTPROTO="dhcp-b -s /usr/share/udhcpc/aliases.script"  #dhcp in background
+DHCPNAME=`cat /etc/HOSTNAME`
+
+NSprepCmd="
+  modprobe at76c503-rfmd &&
+  ifconfig wlan0 down &&
+  iwconfig wlan0 nick $DHCPNAME essid '' &&
+  ifconfig wlan0 up &&
+  sleep 10
+"
+
+resolv_conf() {
+ :  #clear resolv.conf on dhcp deconfig event
+}
+
