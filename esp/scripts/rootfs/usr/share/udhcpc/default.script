@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  3/21/08 by brent@mbari.org
+# revised:  8/19/09 by brent@mbari.org
 
 [ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
 
@@ -14,6 +14,7 @@ fi
 RESOLV_CONF="/etc/resolv.conf"
 HOSTS="/etc/hosts"
 leased=/var/run/leased-$interface
+homeDomain=shore.mbari.org
 
 case "$1" in
   deconfig|leasefail)
@@ -28,10 +29,13 @@ case "$1" in
       ifconfig $interface $IPADDR $mask $cast && {
         echo "IP=$IPADDR $mask $cast"
         [ "$NETWORK" ] && route add -net $NETWORK $mask dev $interface
-        [ "$GATEWAY" ] && route add default gateway $GATEWAY dev $interface
+        [ "$GATEWAY" ] && route -n | grep -q '^0\.0\.0\.0' && 
+          route add default gateway $GATEWAY dev $interface
       }
-      hostname -F /etc/HOSTNAME  #revert back to original host name
-      type resolv_conf >/dev/null 2>&1 && resolv_conf > $RESOLV_CONF
+      [ ! -s $RESOLV_CONF -o "`head -1 $RESOLV_CONF`" = "#$interface" ] && {
+        hostname -F /etc/HOSTNAME  #revert back to original host name
+        type resolv_conf >/dev/null 2>&1 && resolv_conf > $RESOLV_CONF
+      }
       eval $NSprepCmd
       rm $leased
     else
@@ -44,6 +48,9 @@ case "$1" in
     newDNSspec="$domain DNS:$dns"
     leaseSpec=
     DNSspec=
+    ownResolv=
+    [ ! -s $RESOLV_CONF -o "`head -1 $RESOLV_CONF`" = "#$interface" ] && 
+      ownResolv=$interface
     [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
     [ "$newLeaseSpec" = "$leaseSpec" ] || { 
       [ "$broadcast" ] && BROADCAST="broadcast $broadcast"
@@ -51,22 +58,27 @@ case "$1" in
       ifconfig $interface $ip $BROADCAST $NETMASK &&
         echo "DHCP $1 $interface to $ip $NETMASK $BROADCAST"
 
-      if [ "$router" ] ; then
-	while route del default gw 0.0.0.0 dev $interface 2>/dev/null; do
+      if [ "$ownResolv" -a "$router" ]; then  #replace all default routes
+	while route del default gw 0.0.0.0 2>/dev/null; do
           :
 	done
-
         for i in $router ; do
 	   route add default gw $i dev $interface
+        done
+      else  #delete only this interface's default routes
+        while route del default gw 0.0.0.0 dev $interface 2>/dev/null; do
+          :
         done
       fi
       echo "$newLeaseSpec" >$leased
     }    
-    [ "$newDNSspec" = "$DNSspec" ] || { 
+    [ "$ownResolv" -a "$newDNSspec" != "$DNSspec" ] && { 
       unset dom
+      echo "#$interface" >$RESOLV_CONF
       [ "$hostname" ] && hostname $hostname && \
         echo "hostname set to $hostname"
-      echo search $domain mbari.org > $RESOLV_CONF
+      [ $domain = $homeDomain ] && unset domain
+      echo search $domain $homeDomain >> $RESOLV_CONF
       for i in $dns ; do
 	echo adding dns $i
 	echo nameserver $i >> $RESOLV_CONF
@@ -74,5 +86,4 @@ case "$1" in
       echo "127.0.0.1 localhost" >$HOSTS #clear any ad hoc DNS
       echo "$newDNSspec" >>$leased
     }
-
 esac
