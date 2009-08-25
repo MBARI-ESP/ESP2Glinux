@@ -1,0 +1,63 @@
+#!/bin/sh
+tracefn=/tmp/hotplug.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
+
+case "$1" in
+  usb)
+    case "$ACTION" in
+      add)
+        case "$PRODUCT" in
+          77b/2219/*)  #Linksys WUSB11-VN v2.6
+            modprobe at76c503-rfmd
+          ;;
+          67b/2303/*)  #PL-2303 based serial dongle
+            modprobe pl2303
+          ;;
+          1278/*)  #any StarLight Xpress CCD camera
+            modprobe sx_usb &&  #preload starlight CCD camera driver
+              rm -f /dev/ccd[a,A,b,B]* &&
+              mknod -m0666 /dev/ccda  c 127 0   &&
+              mknod -m0666 /dev/ccda1 c 127 16  &&
+              mknod -m0666 /dev/ccda2 c 127 32  &&
+              mknod -m0666 /dev/ccdA  c 127 128 &&
+              mknod -m0666 /dev/ccdA1 c 127 144 &&
+              mknod -m0666 /dev/ccdA2 c 127 160 &&
+              mknod -m0666 /dev/ccdb  c 127 1   &&
+              mknod -m0666 /dev/ccdb1 c 127 17  &&
+              mknod -m0666 /dev/ccdb2 c 127 33  &&
+              mknod -m0666 /dev/ccdB  c 127 129 &&
+              mknod -m0666 /dev/ccdB1 c 127 145 &&
+              mknod -m0666 /dev/ccdB2 c 127 161
+           ;;
+           *)
+            case "$INTERFACE" in
+              8/*)  #mass storage device?
+                modprobe sd_mod && modprobe usb-storage && modprobe vfat
+            esac
+        esac
+    esac
+  ;;
+  firmware)
+    case "$ACTION" in
+      add)
+        HOTPLUG_FW_DIR=/lib/firmware
+        SYSFS=/proc
+
+        echo 1 > $SYSFS/$DEVPATH/loading
+        cat $HOTPLUG_FW_DIR/$FIRMWARE > $SYSFS/$DEVPATH/data
+        echo 0 > $SYSFS/$DEVPATH/loading
+    esac
+  ;;    
+  net)
+    case "$ACTION" in
+      register)
+        ifup $INTERFACE
+      ;;
+      unregister)
+        ifdown $INTERFACE
+    esac
+esac
