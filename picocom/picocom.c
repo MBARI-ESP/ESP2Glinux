@@ -639,16 +639,13 @@ loop(void)
 					run_cmd(tty_fd, opts.send_cmd, fname, NULL);
 					break;
 				case KEY_RECEIVE:
-					fd_printf(STO, "*** file: ");
+					fd_printf(STO, "*** options: ");
 					r = fd_readline(STI, STO, fname, sizeof(fname));
 					fd_printf(STO, "\r\n");
 					if ( r < -1 && errno == EINTR ) break;
 					if ( r <= -1 )
 						fatal("cannot read filename: %s", strerror(errno));
-					if ( fname[0] )
-						run_cmd(tty_fd, opts.send_cmd, fname, NULL);
-					else
-						run_cmd(tty_fd, opts.receive_cmd, NULL);
+					run_cmd(tty_fd, opts.receive_cmd, fname, NULL);
 					break;
 				case KEY_BREAK:
 					term_break(tty_fd);
