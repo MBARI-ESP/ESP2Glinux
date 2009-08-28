@@ -53,11 +53,14 @@ case "$1" in
     esac
   ;;    
   net)
-    case "$ACTION" in
-      register)
-        ifup $INTERFACE
-      ;;
-      unregister)
-        ifdown $INTERFACE
+    case "$INTERFACE" in
+      wlan*)
+        case "$ACTION" in
+          register)
+            ifup $INTERFACE
+          ;;
+          unregister)
+            ifdown $INTERFACE
+        esac
     esac
 esac
