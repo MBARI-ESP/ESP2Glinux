@@ -1,0 +1,25 @@
+#!/bin/sh
+# build & install portmap daemon for arm-linux -- 8/28/09 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-usr/local/bin}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+cd ${LRZSZVERS-lrzsz-0.12.20} || exit 2
+make CC=/arm/bin/gcc || exit 1
+mkdir -p $TOP || exit 4
+for prog in lrz lsz; do
+  $ARMSTRIP src/$prog -o $TOP/$prog || exit 3
+done
+cd $TOP || exit 4
+for direction in r s; do
+  ln -sf l${direction}z ${direction}z || exit 5
+  for proto in b x; do
+    ln -sf l${direction}z l${direction}${proto} &&
+    ln -sf l${direction}z ${direction}${proto} || exit 5
+  done
+done
+echo "Done."

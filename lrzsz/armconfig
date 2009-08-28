@@ -1,0 +1,9 @@
+#!/bin/sh
+# unpack and patch portmap daemon for arm-linux -- 8/28/09 brent@mbari.org
+
+: ${LRZSZVERS:=lrzsz-0.12.20}
+rm -rf $LRZSZVERS && 
+tar xzf $LRZSZVERS.tar.gz && 
+cd $LRZSZVERS &&
+CFLAGS="-Os -g" CC=/arm/bin/gcc configure --disable-nls &&
+echo Done.
