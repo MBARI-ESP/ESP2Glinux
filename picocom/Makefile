@@ -1,5 +1,5 @@
 
-VERSION=1.4
+VERSION=1.4-mbari
 
 # CC = gcc
 # Set CC to your target's 'C' compiler to build for it
