@@ -30,12 +30,15 @@ $ mkdir -p ~/armHost/usr/local/bin
 $ cp arm/snap ~/armHost/usr/local/bin
 
 
-D) Add picocom
+D) Add picocom and lrzsz
 
 $ cd ~/linux/picocom
 $ make CC=/arm/bin/gcc clean picocom
 $ /arm/bin/strip picocom
 $ cp picocom ~/armHost/usr/local/bin
+
+$ cd ~/linux/lrzsz
+$ armconfig && arminstall
 
 
 E) Build the kernel
