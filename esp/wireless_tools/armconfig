@@ -1,0 +1,7 @@
+#!/bin/sh
+# unpack and patch portmap daemon for arm-linux -- 8/28/09 brent@mbari.org
+
+: ${WITOOLS:=wireless_tools.29}
+rm -rf $WITOOLS && 
+tar xzf $WITOOLS.tar.gz &&
+echo Done.

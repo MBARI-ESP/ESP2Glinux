@@ -1,0 +1,19 @@
+#!/bin/sh
+# build & install portmap daemon for arm-linux -- 8/28/09 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-usr/sbin}}
+: ${TARGETLIB:=${3-usr/lib}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+LIB=$HOSTTOP/$TARGETLIB
+cd ${WITOOLS-wireless_tools.29} || exit 2
+make CC=/arm/bin/gcc || exit 1
+mkdir -p $TOP && mkdir -p $LIB || exit 4
+for prog in iwconfig iwevent iwgetid iwlist iwpriv iwspy; do
+  $ARMSTRIP $prog -o $TOP/$prog || exit 3
+done
+cp libiw.so.29 $LIB && echo "Done."
