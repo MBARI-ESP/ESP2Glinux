@@ -7,6 +7,18 @@ BROADCAST=192.168.1.31
 NETMASK=255.255.255.240
 MTU=1500
 
+hosts() {
+  cat <<EOS #add IP addresses for LAN neighbors to this table
+#$DEVICE
+$SLIPADDR  shore.radio shore
+192.168.1.21  ESPmack.radio   mack
+192.168.1.22  ESPbruce.radio  bruce
+192.168.1.23  ESPneo.radio    neo
+EOS
+}
+
 #start up SLIP for freewave master
-NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lLp slip \
--i \"IPADDR=$SLIPADDR; . /usr/share/ipinit.sh\" -s 115200 /dev/freewave &"
+ifPrep() {
+  /sbin/slattach -P /var/run/$DEVICE.pid -lLp slip -i slinit \
+    -s 115200 /dev/freewave &
+}

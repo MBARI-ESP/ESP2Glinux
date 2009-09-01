@@ -1,40 +1,23 @@
 DEVICE=eth0
 AUTOSTART=yes
 BOOTPROTO=static  #force static IP config
-#BOOTPROTO="dhcp-b -s /usr/share/udhcpc/aliases.script"   #dhcp in background
 DHCPNAME=`cat /etc/HOSTNAME`
 
-IPADDR=192.168.1.20    #use this configuration if dhcp fails
-GATEWAY=192.168.1.1    #no GATEWAY so pppd can configure one
+IPADDR=192.168.1.20    #use this configuration
+GATEWAY=192.168.1.1
 BROADCAST=192.168.1.255
 NETMASK=255.255.255.0
 
-shortName=`echo $DCHPNAME | cut -d. -f1`
-[ "$shortName" = "$DHCPNAME" ] && unset shortName
-
-hosts() {
-  cat <<EOS #add IP addresses for LAN neighbors to this table
-127.0.0.1   localhost
-$IPADDR  $DHCPNAME $shortName
-192.168.1.21  ESPmack.radio   mack
-192.168.1.22  ESPbruce.radio  bruce
-192.168.1.23  ESPneo.radio    neo
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $DEVICE) $DHCPNAME-$DEVICE $DHCPNAME-ether
 EOS
 }
 
-resolv_conf() {
- :  #clear resolv.conf on dhcp deconfig event
-}
-
-NSprepCmd="cp /etc/resolv.static /etc/resolv.conf;
-           hosts > $HOSTS"  #run after interface comes up
-           
-#if ppp is running, restart it so it will change IP addresses
-[ -r /var/run/ppp0.pid ] &&
-  NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
-
 #shore stations route traffic via proxy arps for their clients
-NSpostCmd="echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind;
-           echo 1 > /proc/sys/net/ipv4/ip_forward &&
-           echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
-           echo $DEVICE started proxy_arp and IP forwarding"
+ifStart() {
+  echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
+  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
+  echo "$DEVICE started proxy_arp and IP forwarding"
+}

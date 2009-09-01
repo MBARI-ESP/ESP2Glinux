@@ -1,17 +1,18 @@
 DEVICE=wlan0
 AUTOSTART=no
-BOOTPROTO="dhcp-b -s /usr/share/udhcpc/aliases.script"  #dhcp in background
-DHCPNAME=`cat /etc/HOSTNAME`
+BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
+DHCPNAME=`cat /etc/HOSTNAME`-wifi
 
-NSprepCmd="
+ifPrep() {
   modprobe at76c503-rfmd &&
   ifconfig wlan0 down &&
   iwconfig wlan0 nick $DHCPNAME essid '' &&
   ifconfig wlan0 up &&
-  sleep 10
-"
-
-resolv_conf() {
- :  #clear resolv.conf on dhcp deconfig event
+  sleep 5
 }
 
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $DEVICE) $DHCPNAME
+EOS
+}

@@ -1,3 +1,11 @@
 DEVICE=ppp0
 AUTOSTART=inittab
-NSprepCmd="pppd call shore unit 0 logfile /dev/null"
+ifPrep() {
+  pppd call shore unit 0 logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $DEVICE) $(hostname)-$DEVICE $(hostname)-ppp
+EOS
+}

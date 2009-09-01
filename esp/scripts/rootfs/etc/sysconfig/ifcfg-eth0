@@ -8,21 +8,8 @@ IPADDR=192.168.0.50    #use this configuration if dhcp fails
 BROADCAST=192.168.0.255
 NETMASK=255.255.255.0
 
-shortName=`echo $DCHPNAME | cut -d. -f1`
-[ "$shortName" = "$DHCPNAME" ] && unset shortName
-
-hosts() {
-  cat <<EOS #add IP addresses for LAN neighbors to this table
-127.0.0.1   localhost
-$IPADDR  $DHCPNAME $shortName
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $DEVICE) $DHCPNAME-$DEVICE $DHCPNAME-ether
 EOS
-}
-
-NSprepCmd="hosts > $HOSTS"  #run after interface comes up
-#if ppp is running, restart it
-[ -r /var/run/ppp0.pid ] &&
-  NSprepCmd="ifdown ppp0; $NSprepCmd; sleep 2; ifup ppp0"
-
-resolv_conf() {
- :  #clear resolv.conf on dhcp deconfig event
 }

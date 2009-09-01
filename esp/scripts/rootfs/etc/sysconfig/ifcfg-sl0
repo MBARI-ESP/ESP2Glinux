@@ -2,25 +2,26 @@ DEVICE=sl0
 AUTOSTART=no
 BOOTPROTO=none
 
-SLIPADDR=192.168.1.28   #assign each slave a unique ip address!!
-GATEWAY=192.168.1.20    #master and gateway
-BROADCAST=192.168.1.31
+SLIPADDR=192.168.8.28   #assign each slave a unique ip address!!
+GATEWAY=192.168.8.20    #master and gateway
+BROADCAST=192.168.8.31
 NETMASK=255.255.255.240
 MTU=1500
 
 #start up SLIP for freewave slave
-NSprepCmd="/sbin/slattach -P /var/run/$DEVICE.pid -lp slip \
--i \"IPADDR=$SLIPADDR; . /usr/share/ipinit.sh\" -c \". /usr/share/ipdown.sh\" \
--s 115200 /dev/freewave &"
+ifPrep() {
+  /sbin/slattach -P /var/run/$DEVICE.pid -lp slip -i slinit -c ipdown \
+    -s 115200 /dev/freewave &
+}
 
-#if our resolv.conf is blank, try to ftp over the gateway's
-resolv=/etc/resolv.conf
-hosts=/etc/hosts
-NSpostCmd="
-  [ ! -s $resolv -o \"`head -1 $resolv`\" = \"#$DEVICE\" ] && {
-    echo \"#$DEVICE\" >$resolv &&
-    ftpget $GATEWAY - $resolv >>$resolv;
-  };
-  echo \"#$DEVICE\" >$hosts &&
-  ftpget $GATEWAY - $hosts >>$hosts
-"
+#try to ftp over the gateway's resolv.conf and hosts
+hosts() {
+  cat <<EOS 
+$SLIPADDR $(hostname)-$DEVICE $(hostname)-slip
+EOS
+  ftpget $GATEWAY - /etc/hosts
+}
+
+resolv_conf() {
+  ftpget $GATEWAY - /etc/resolv.conf
+}
