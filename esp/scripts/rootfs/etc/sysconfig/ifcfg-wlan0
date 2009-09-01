@@ -3,6 +3,8 @@ AUTOSTART=no
 BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
 DHCPNAME=`cat /etc/HOSTNAME`-wifi
 
+IPADDR=0.0.0.0    #no wifi without dhcp
+
 ifPrep() {
   modprobe at76c503-rfmd &&
   ifconfig wlan0 down &&
@@ -13,6 +15,6 @@ ifPrep() {
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE) $DHCPNAME
+$(netIfIP $DEVICE $DHCPNAME)
 EOS
 }

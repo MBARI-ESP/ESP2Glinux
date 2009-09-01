@@ -9,7 +9,7 @@ NETMASK=255.255.255.0
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE) $DHCPNAME-$DEVICE
+$(netIfIP $DEVICE $DHCPNAME-$DEVICE)
 EOS
 }
 

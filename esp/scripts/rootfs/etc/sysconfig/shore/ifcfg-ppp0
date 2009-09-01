@@ -6,6 +6,6 @@ ifPrep() {
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE) $(hostname)-$DEVICE 
+$(netIfIP $DEVICE $(hostname)-$DEVICE) 
 EOS
 }
