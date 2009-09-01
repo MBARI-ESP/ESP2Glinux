@@ -15,7 +15,7 @@ case "$devfn" in
   
   */*) #assume anything with a / is the path to an interface definition file
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY NSprepCmd NSpostCmd MTU AUTOSTART
+    unset NETWORK GATEWAY MTU AUTOSTART
     . $devfn
     ifup_function $mode
   ;;
@@ -26,7 +26,7 @@ case "$devfn" in
   
   *) #anything else must be the name of an interface
     unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY NSprepCmd NSpostCmd MTU AUTOSTART
+    unset NETWORK GATEWAY MTU AUTOSTART
     . /etc/sysconfig/ifcfg-$devfn
     ifup_function $mode
   ;;

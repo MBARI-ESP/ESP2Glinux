@@ -1,8 +1,11 @@
 #!/bin/sh
 #initialize slip link's ip parameters
 
-unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-unset NETWORK GATEWAY NSprepCmd MTU AUTOSTART
-. /etc/sysconfig/ifcfg-$1
-IPADDR=$SLIPADDR
-. /usr/share/ipinit.sh
+. /usr/share/netutils.sh
+
+[ "$1" ] && DEVICE=$1
+unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+unset NETWORK GATEWAY MTU AUTOSTART
+. /etc/sysconfig/ifcfg-$DEVICE
+IPADDR=$SLIPADDR ipUp
+:

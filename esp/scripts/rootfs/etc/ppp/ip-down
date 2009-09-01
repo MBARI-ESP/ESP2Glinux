@@ -2,28 +2,6 @@
 # $Id$
 # executed after disconnecting the ppp interface.
 
-tracefn=/tmp/ip-updown.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
+. /usr/share/netutils.sh
 
-resolv=/etc/resolv.conf
-oldHostname=/var/run/oldHostname.$IFNAME
-oldHosts=/var/run/oldHosts.$IFNAME
-
-if [ "$USEPEERDNS" -a "`head -1 $resolv`" = "#$IFNAME" ]; then
-  > $resolv
-  [ -r $oldHosts ] && cp $oldHosts /etc/hosts
-fi
-
-if [ -r $oldHostname ]; then
-  IFSold=$IFS
-  IFS=.
-  set $PEERNAME
-  IFS=$IFSold
-  [ "$2" = "`hostname`" ] && hostname -F $oldHostname  #revert to old name
-fi
-
-rm -f $oldHostname $oldHosts
+ipDown $IFNAME

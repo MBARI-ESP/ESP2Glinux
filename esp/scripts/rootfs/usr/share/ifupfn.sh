@@ -1,7 +1,8 @@
 #Common functions for bringing up network interfaces
-# -- revised: 9/11/08 brent@mbari.org
+# -- revised: 8/30/09 brent@mbari.org
 #
-HOSTS=/etc/hosts
+
+. /usr/share/netutils.sh  #networking utilities
 
 usage ()
 {
@@ -55,9 +56,8 @@ set +f
       }
     }
     echo "Bringing up interface $DEVICE ..."
-    export DEVICE IPADDR MTU BROADCAST GATEWAY NETWORK NETMASK NSpostCmd
-    eval $NSprepCmd    #do config's name service preparations  
-    [ "$IPADDR" ] && . /usr/share/ipinit.sh
+    type ifPrep >/dev/null 2>&1 && ifPrep
+    [ "$IPADDR" ] && ipUp
     case "$BOOTPROTO" in
       dhcp*)
         daemon=/sbin/udhcpc  #only use this dhcp client
@@ -80,7 +80,8 @@ set +f
         fi
       ;;
       *)
-        [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast"
+        [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast $GATEWAY"
       ;;
     esac
 }
+

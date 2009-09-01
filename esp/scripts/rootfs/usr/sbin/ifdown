@@ -10,6 +10,8 @@ usage ()
     exit 1
 }
 
+. /usr/share/ifupfn.sh
+
 
 ifAliasDown() {
   echo "Shutting down interface $1 ..."
@@ -37,6 +39,8 @@ ifAliasDown() {
     rm -f $pidfn
   done
   ifconfig $1 down 2>/dev/null
+  hostDown $1
+  gateDown $1
 }
 
 eachAlias() {
@@ -61,5 +65,7 @@ case "$1" in
     else
       ifAliasDown $1
     fi
+    gateUp
+    hostsUp
   ;;
 esac

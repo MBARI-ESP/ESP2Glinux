@@ -2,51 +2,52 @@
 # $Id$
 # executed after connecting the ppp interface.
 
-tracefn=/tmp/ip-updown.trace
+. /usr/share/netutils.sh
+
+tracefn=/tmp/ip-up.trace
 if [ -w $tracefn ]; then
   (date; echo "$@"; env) >>$tracefn
   exec 2>>$tracefn
   set -x
 fi
 
-resolv=/etc/resolv.conf
-oldHostname=/var/run/oldHostname.$IFNAME
-oldHosts=/var/run/oldHosts.$IFNAME
+[ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
+gateUp $IFNAME $gateway
+hostsUp
 
-if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
+unset domain
 
-  unset domain
-  
-  #if PEERNAME is prefixed with a dot, change our own hostname to it
-  if [ -n "$PEERNAME" ]; then
-
-    IFSold=$IFS
-    IFS=.
-    set $PEERNAME
-    IFS=$IFSold
-    if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
-      host=$2
-      [ -f $oldHostname ] || hostname >$oldHostname
-      if [ $# -gt 2 ]; then
-        domain=$3
-        shift 3
-        for component; do
-          domain=$domain.$component
-        done
-      fi
-      hostname $host
+#if PEERNAME is prefixed with a dot, change our own hostname to it
+if [ -n "$PEERNAME" ]; then
+  IFSold=$IFS
+  IFS=.
+  set $PEERNAME
+  IFS=$IFSold
+  if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
+    host=$2
+#    [ -f $oldHostname ] || hostname >$oldHostname
+    if [ $# -gt 2 ]; then
+      domain=$3
+      shift 3
+      for component; do
+        domain=$domain.$component
+      done
     fi
+#      hostname $host  #disable changing hostname
   fi
-
-  if [ "$USEPEERDNS" ]; then
-
-    echo "#$IFNAME" >$resolv
-    [ -n "$domain" ] && echo search $domain >>$resolv
-    cat /etc/ppp/resolv.conf >>$resolv
-    [ -f $oldHosts ] || cp /etc/hosts $oldHosts
-    echo "127.0.0.1 localhost" >/etc/hosts #clear any ad hoc DNS
-
-  fi
-  
 fi
 
+resolv_conf() {
+  echo "#$IFNAME$gateway"
+  echo "search `searchDomains $domain`"
+  for ip in $DNS1 $DNS2 ; do
+    echo "nameserver $ip"
+  done
+}
+
+if [ "$USEPEERDNS" ]; then
+  hostsUp $IFNAME
+else
+  hostsUp
+fi
+:

@@ -1,0 +1,7 @@
+#!/bin/sh
+#shutdown network link in $DEVICE or $1
+
+. /usr/share/netutils.sh
+
+ipDown $1
+:
