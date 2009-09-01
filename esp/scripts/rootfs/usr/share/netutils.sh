@@ -156,11 +156,13 @@ searchDomains() {
 
 netIfIP() {
   #output the IP address of the specified network interface
+  #if there's a valid IP, any addition args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip
     read ignore
     read inet addr ip ignore
-    echo $ip
+    shift
+    [ "$addr" = "addr" ] && echo $ip $*
   }
 }
 
