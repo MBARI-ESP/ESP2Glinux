@@ -1,0 +1,100 @@
+--- ppp-2.4.2/pppd/ipcp.c.original	2009-08-31 15:53:05.000000000 -0700
++++ ppp-2.4.2/pppd/ipcp.c	2009-09-01 03:05:12.000000000 -0700
+@@ -241,7 +241,6 @@
+ static void ip_check_options __P((void));
+ static int  ip_demand_conf __P((int));
+ static int  ip_active_pkt __P((u_char *, int));
+-static void create_resolv __P((u_int32_t, u_int32_t));
+ 
+ struct protent ipcp_protent = {
+     PPP_IPCP,
+@@ -1610,6 +1609,14 @@
+     ask_for_local = wo->ouraddr != 0 || !disable_defaultip;
+ }
+ 
++static int setdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
++/*
++  try to set default route
++*/
++{
++    script_setenv("DEFAULTROUTE", "1", 0);
++    return default_route_set[unit] = sifdefaultroute(unit, ouraddr, gateway);
++}
+ 
+ /*
+  * ip_demand_conf - configure the interface as though
+@@ -1639,8 +1646,7 @@
+     if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
+ 	return 0;
+     if (wo->default_route)
+-	if (sifdefaultroute(u, wo->ouraddr, wo->hisaddr))
+-	    default_route_set[u] = 1;
++	setdefaultroute(u, wo->ouraddr, wo->hisaddr);
+     if (wo->proxy_arp)
+ 	if (sifproxyarp(u, wo->hisaddr))
+ 	    proxy_arp_set[u] = 1;
+@@ -1691,10 +1697,8 @@
+ 	script_setenv("DNS1", ip_ntoa(go->dnsaddr[0]), 0);
+     if (go->dnsaddr[1])
+ 	script_setenv("DNS2", ip_ntoa(go->dnsaddr[1]), 0);
+-    if (usepeerdns && (go->dnsaddr[0] || go->dnsaddr[1])) {
++    if (usepeerdns && (go->dnsaddr[0] || go->dnsaddr[1]))
+ 	script_setenv("USEPEERDNS", "1", 0);
+-	create_resolv(go->dnsaddr[0], go->dnsaddr[1]);
+-    }
+ 
+     /*
+      * Check that the peer is allowed to use the IP address it wants.
+@@ -1740,8 +1744,7 @@
+ 
+ 	    /* assign a default route through the interface if required */
+ 	    if (ipcp_wantoptions[f->unit].default_route) 
+-		if (sifdefaultroute(f->unit, go->ouraddr, ho->hisaddr))
+-		    default_route_set[f->unit] = 1;
++		setdefaultroute(f->unit, go->ouraddr, ho->hisaddr);
+ 
+ 	    /* Make a proxy ARP entry if requested. */
+ 	    if (ipcp_wantoptions[f->unit].proxy_arp)
+@@ -1787,8 +1790,7 @@
+ 
+ 	/* assign a default route through the interface if required */
+ 	if (ipcp_wantoptions[f->unit].default_route) 
+-	    if (sifdefaultroute(f->unit, go->ouraddr, ho->hisaddr))
+-		default_route_set[f->unit] = 1;
++	    setdefaultroute(f->unit, go->ouraddr, ho->hisaddr);
+ 
+ 	/* Make a proxy ARP entry if requested. */
+ 	if (ipcp_wantoptions[f->unit].proxy_arp)
+@@ -1955,32 +1957,6 @@
+     ipcp_script_pid = run_program(script, argv, 0, ipcp_script_done, NULL);
+ }
+ 
+-/*
+- * create_resolv - create the replacement resolv.conf file
+- */
+-static void
+-create_resolv(peerdns1, peerdns2)
+-    u_int32_t peerdns1, peerdns2;
+-{
+-    FILE *f;
+-
+-    f = fopen(_PATH_RESOLV, "w");
+-    if (f == NULL) {
+-	error("Failed to create %s: %m", _PATH_RESOLV);
+-	return;
+-    }
+-
+-    if (peerdns1)
+-	fprintf(f, "nameserver %s\n", ip_ntoa(peerdns1));
+-
+-    if (peerdns2)
+-	fprintf(f, "nameserver %s\n", ip_ntoa(peerdns2));
+-
+-    if (ferror(f))
+-	error("Write failed to %s: %m", _PATH_RESOLV);
+-
+-    fclose(f);
+-}
+ 
+ /*
+  * ipcp_printpkt - print the contents of an IPCP packet.
