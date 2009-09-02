@@ -3,6 +3,8 @@
 # executed after connecting the ppp interface.
 
 . /usr/share/netutils.sh
+configfn=/etc/sysconfig/ifcfg-$IFNAME
+[ -r $configfn ] && . $configfn
 
 tracefn=/tmp/ip-up.trace
 if [ -w $tracefn ]; then
@@ -13,7 +15,6 @@ fi
 
 [ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
 gateUp $IFNAME $gateway
-hostsUp
 
 unset domain
 
@@ -37,17 +38,14 @@ if [ -n "$PEERNAME" ]; then
   fi
 fi
 
-resolv_conf() {
-  echo "#$IFNAME$gateway"
-  echo "search `searchDomains $domain`"
-  for ip in $DNS1 $DNS2 ; do
-    echo "nameserver $ip"
-  done
+[ "$USEPEERDNS" ] && {
+  resolv_conf() {
+    echo "#$IFNAME$gateway"
+    echo "search `searchDomains $domain`"
+    for ip in $DNS1 $DNS2 ; do
+      echo "nameserver $ip"
+    done
+  }
 }
 
-if [ "$USEPEERDNS" ]; then
-  hostsUp $IFNAME
-else
-  hostsUp
-fi
-:
+hostsUp $IFNAME

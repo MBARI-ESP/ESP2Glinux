@@ -1,4 +1,4 @@
-DEVICE=wlan0
+IFNAME=wlan0
 AUTOSTART=no
 BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
 DHCPNAME=`cat /etc/HOSTNAME`-wifi
@@ -15,6 +15,6 @@ ifPrep() {
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE $DHCPNAME)
+$(netIfIP $IFNAME $DHCPNAME)
 EOS
 }

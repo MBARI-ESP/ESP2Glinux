@@ -1,5 +1,5 @@
 #!/bin/sh
-# udhcpd script for ethernet aliases revised:  11/10/05 by brent@mbari.org
+# udhcpd script for ethernet aliases revised:  9/1/09 by brent@mbari.org
 
 [ -z "$1" ] && echo "Error: should be called from udhcpc" && exit 1
 
@@ -8,7 +8,7 @@ leased=/var/run/leased-$interface
 case "$1" in
   deconfig|leasefail)
     if [ -f $leased ]; then
-      unset DEVICE IPADDR NETMASK BROADCAST NETWORK
+      unset IFNAME IPADDR NETMASK BROADCAST NETWORK
       . /etc/sysconfig/ifcfg-$interface || IPADDR=0.0.0.0
       unset mask cast
       rm $leased

@@ -9,12 +9,12 @@ mode=$2
 
 case "$devfn" in
   "")  #take the interface definitions from the environment
-    [ "${DEVICE}" ] || usage
+    [ "${IFNAME}" ] || usage
     ifup_function $mode
   ;;
   
   */*) #assume anything with a / is the path to an interface definition file
-    unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+    unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY MTU AUTOSTART
     . $devfn
     ifup_function $mode
@@ -25,7 +25,7 @@ case "$devfn" in
   ;;
   
   *) #anything else must be the name of an interface
-    unset DEVICE BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+    unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY MTU AUTOSTART
     . /etc/sysconfig/ifcfg-$devfn
     ifup_function $mode

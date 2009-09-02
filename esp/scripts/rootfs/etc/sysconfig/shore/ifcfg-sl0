@@ -1,4 +1,4 @@
-DEVICE=sl0
+IFNAME=sl0
 AUTOSTART=no
 BOOTPROTO=none
 
@@ -9,7 +9,7 @@ MTU=1500
 
 hosts() {
   cat <<EOS #add IP addresses for LAN neighbors to this table
-#$DEVICE
+#$IFNAME
 $SLIPADDR  shore.radio shore
 192.168.8.21  ESPmack.radio   mack
 192.168.8.22  ESPbruce.radio  bruce
@@ -19,6 +19,6 @@ EOS
 
 #start up SLIP for freewave master
 ifPrep() {
-  /sbin/slattach -P /var/run/$DEVICE.pid -lLp slip -i slinit \
+  /sbin/slattach -P /var/run/$IFNAME.pid -lLp slip -i slinit \
     -s 115200 /dev/freewave &
 }

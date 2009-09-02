@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 8/30/09 brent@mbari.org
+# -- revised: 9/1/09 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -9,7 +9,7 @@ usage ()
     echo "
 usage:  ifup [netInterface|full path to definition file] {mode}
         configure and enable the specified network interface
-        only bring up DEVICE if its AUTOSTART mode matches regex {mode}
+        only bring up IFNAME if its AUTOSTART mode matches regex {mode}
         or Yes or No if the mode parameter is omitted
 "
     return 1
@@ -17,8 +17,8 @@ usage:  ifup [netInterface|full path to definition file] {mode}
 
 ifup_function ()
 {
-    [ "$DEVICE" ] || {
-      echo "Network DEVICE to start was not specified"
+    [ "$IFNAME" ] || {
+      echo "Network IFNAME to start was not specified"
       usage
       return 200
     }
@@ -31,13 +31,13 @@ set -f
             break
         esac
       "
-#      echo -e "Skipping $DEVICE because its AUTOSTART mode does not match
+#      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2
 set +f
       return 201
     done
 set +f
-    fn=/var/run/*$DEVICE.pid
+    fn=/var/run/*$IFNAME.pid
     pidfns=`echo $fn`
     [ "$pidfns" = "$fn" ] || {  #check for active locks...
       unset owners
@@ -51,36 +51,36 @@ set +f
         }
       done
       [ "$owners" ] && {
-        echo "$DEVICE is already in use by process: $owners"
+        echo "$IFNAME is already in use by process: $owners"
         return 0
       }
     }
-    echo "Bringing up interface $DEVICE ..."
+    echo "Bringing up interface $IFNAME ..."
     type ifPrep >/dev/null 2>&1 && ifPrep
     [ "$IPADDR" ] && ipUp
     case "$BOOTPROTO" in
       dhcp*)
         daemon=/sbin/udhcpc  #only use this dhcp client
         if test -x $daemon  ; then
-          pidfn=/var/run/udhcpc-$DEVICE.pid
+          pidfn=/var/run/udhcpc-$IFNAME.pid
           if [ -r $pidfn ]; then
             kill `cat $pidfn` 2>/dev/null
           else
             mkdir -p `dirname $pidfn`
           fi
-          echo -n "Determining IP configuration for $DEVICE...."
+          echo -n "Determining IP configuration for $IFNAME...."
 	  insmod af_packet >/dev/null 2>&1
           mode=${BOOTPROTO#dhcp-}
           [ "$mode" = "$BOOTPROTO" ] && mode=n
           [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
-          $daemon -p $pidfn $DHCPNAME -$mode -i $DEVICE ||
+          $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
             echo "DHCP failed:  $interface IP=$IPADDR $mask $cast"
         else
             echo "No $daemon client daemon installed!"
         fi
       ;;
       *)
-        [ "$IPADDR" ] && echo "$DEVICE IP=$IPADDR $mask $cast $GATEWAY"
+        [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR $mask $cast $GATEWAY"
       ;;
     esac
 }

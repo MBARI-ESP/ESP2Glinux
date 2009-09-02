@@ -1,10 +1,10 @@
 #Common networking utilities
-# -- revised: 8/29/09 brent@mbari.org
+# -- revised: 9/1/09 brent@mbari.org
 #
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
-#  DEVICE = network device
+#  IFNAME = network device
 #  IPADDR = internet address
 #  BROADCAST = LAN broadcast IP address
 #  NETWORK = LAN IP subnet
@@ -15,16 +15,16 @@ ipUp() {
   [ "$NETMASK" ] && mask="netmask $NETMASK"
   [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
   [ "$MTU" ] && mtu="mtu $MTU"
-  ifconfig $DEVICE $IPADDR $mask $cast $mtu || return 2
-  [ "$NETWORK" ] && route add -net $NETWORK $mask dev $DEVICE
-  gateUp $DEVICE $GATEWAY
-  hostsUp $DEVICE
+  ifconfig $IFNAME $IPADDR $mask $cast $mtu || return 2
+  [ "$NETWORK" ] && route add -net $NETWORK $mask dev $IFNAME
+  gateUp $IFNAME $GATEWAY
+  hostsUp $IFNAME
 }
 
 ipDown() {
 # tear down IP interface per shell environment variables:
-#  DEVICE = network device
-  local netIface=${1:-$DEVICE}
+#  IFNAME = network device
+  local netIface=${1:-$IFNAME}
   hostDown $netIface
   gateDown $netIface
   gateUp

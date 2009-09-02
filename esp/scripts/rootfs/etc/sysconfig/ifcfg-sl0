@@ -1,4 +1,4 @@
-DEVICE=sl0
+IFNAME=sl0
 AUTOSTART=no
 BOOTPROTO=none
 
@@ -10,14 +10,14 @@ MTU=1500
 
 #start up SLIP for freewave slave
 ifPrep() {
-  /sbin/slattach -P /var/run/$DEVICE.pid -lp slip -i slinit -c ipdown \
+  /sbin/slattach -P /var/run/$IFNAME.pid -lp slip -i slinit -c ipdown \
     -s 115200 /dev/freewave &
 }
 
 #try to ftp over the gateway's resolv.conf and hosts
 hosts() {
   cat <<EOS 
-$SLIPADDR $(hostname)-$DEVICE $(hostname)-slip
+$SLIPADDR $(hostname)-$IFNAME $(hostname)-slip
 EOS
   ftpget $GATEWAY - /etc/hosts
 }

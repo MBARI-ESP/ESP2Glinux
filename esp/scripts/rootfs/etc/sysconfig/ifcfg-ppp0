@@ -1,4 +1,4 @@
-DEVICE=ppp0
+IFNAME=ppp0
 AUTOSTART=inittab
 ifPrep() {
   pppd call shore unit 0 logfile /dev/null
@@ -6,6 +6,6 @@ ifPrep() {
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE $(hostname)-$DEVICE $(hostname)-ppp)
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
 EOS
 }

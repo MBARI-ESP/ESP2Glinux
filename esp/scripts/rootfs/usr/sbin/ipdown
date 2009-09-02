@@ -1,5 +1,5 @@
 #!/bin/sh
-#shutdown network link in $DEVICE or $1
+#shutdown network link in $IFNAME or $1
 
 . /usr/share/netutils.sh
 

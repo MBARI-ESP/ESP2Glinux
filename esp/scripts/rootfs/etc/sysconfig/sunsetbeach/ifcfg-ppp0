@@ -1,4 +1,4 @@
-DEVICE=ppp0
+IFNAME=ppp0
 AUTOSTART=no
 ifPrep() {
   pppd call ESP unit 0 logfile /dev/null
@@ -6,6 +6,6 @@ ifPrep() {
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE $(hostname)-$DEVICE)
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
 EOS
 }

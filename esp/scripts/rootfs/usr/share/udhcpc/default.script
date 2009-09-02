@@ -1,12 +1,13 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  8/30/09 by brent@mbari.org
+# revised:  9/1/09 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
 
-. /etc/sysconfig/ifcfg-$interface
 . /usr/share/netutils.sh
+configfn=/etc/sysconfig/ifcfg-$interface
+[ -r $configfn ] && . $configfn
 
 tracefn=/tmp/udhcpc.trace
 if [ -w $tracefn ]; then
@@ -20,9 +21,7 @@ leased=/var/run/$interface.lease
 case "$1" in
   deconfig|leasefail)
     if [ -f $leased ]; then
-      unset DEVICE IPADDR NETMASK BROADCAST NETWORK
       . /etc/sysconfig/ifcfg-$interface
-      unset mask cast
       [ "$NETMASK" ] && mask="netmask $NETMASK"
       [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
       echo -n "$interface DHCP failed: "
@@ -44,7 +43,6 @@ case "$1" in
   renew|bound)
     newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
     newDNSspec="$domain DNS:$dns"
-    unset leaseSpec DNSspec
     [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
     [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
       [ "$broadcast" ] && BROADCAST="broadcast $broadcast"

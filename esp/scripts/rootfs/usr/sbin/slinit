@@ -3,9 +3,9 @@
 
 . /usr/share/netutils.sh
 
-[ "$1" ] && DEVICE=$1
+[ "$1" ] && IFNAME=$1
 unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
 unset NETWORK GATEWAY MTU AUTOSTART
-. /etc/sysconfig/ifcfg-$DEVICE
+. /etc/sysconfig/ifcfg-$IFNAME
 IPADDR=$SLIPADDR ipUp
 :

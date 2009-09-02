@@ -1,4 +1,4 @@
-DEVICE=eth0
+IFNAME=eth0
 AUTOSTART=yes
 BOOTPROTO=static  #force static IP config
 DHCPNAME=`cat /etc/HOSTNAME`
@@ -10,7 +10,7 @@ NETMASK=255.255.255.0
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $DEVICE) $DHCPNAME-$DEVICE $DHCPNAME-ether
+$(netIfIP $IFNAME) $DHCPNAME-$IFNAME $DHCPNAME-ether
 EOS
 }
 
@@ -19,5 +19,5 @@ ifStart() {
   echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
   echo 1 > /proc/sys/net/ipv4/ip_forward &&
   echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
-  echo "$DEVICE started proxy_arp and IP forwarding"
+  echo "$IFNAME started proxy_arp and IP forwarding"
 }
