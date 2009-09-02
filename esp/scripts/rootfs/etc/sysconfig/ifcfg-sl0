@@ -10,6 +10,7 @@ MTU=1500
 
 #start up SLIP for freewave slave
 ifPrep() {
+  export IFNAME
   /sbin/slattach -P /var/run/$IFNAME.pid -lp slip -i slinit -c ipdown \
     -s 115200 /dev/freewave &
 }

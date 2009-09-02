@@ -19,6 +19,7 @@ EOS
 
 #start up SLIP for freewave master
 ifPrep() {
+  export IFNAME
   /sbin/slattach -P /var/run/$IFNAME.pid -lLp slip -i slinit \
     -s 115200 /dev/freewave &
 }
