@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  9/1/09 by brent@mbari.org
+# revised:  9/2/09 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
@@ -17,7 +17,6 @@ if [ -w $tracefn ]; then
 fi
 
 leased=/var/run/$interface.lease
-unset mask cast
 
 case "$1" in
   deconfig|leasefail)
@@ -25,7 +24,7 @@ case "$1" in
       ifconfig $interface down  #purge old routes
       echo -n "$interface DHCP failed: "
       . /etc/sysconfig/ifcfg-$interface
-      [ "$IPADDR" ] && ipUp && echo "IP=$IPADDR $mask"
+      [ "$IPADDR" ] && ipUp && echo "IP=$IPADDR"
       rm -f $leased
     else
       ifconfig $interface up  #so dhcp can use it
@@ -38,8 +37,8 @@ case "$1" in
     [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
     [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
       IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
-        echo "DHCP $1 $interface to $ip $mask"
-        [ "$dns" ] && echo "with DNS $dns"
+        [ "$dns" ] && dnsMsg=" with DNS $dns"
+        echo "DHCP $1 $interface to $ip$dnsMsg"
         resolv_conf() {
           echo "search `searchDomains $domain`"
           for ip in $dns ; do

@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 9/1/09 brent@mbari.org
+# -- revised: 9/2/09 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -74,13 +74,13 @@ set +f
           [ "$mode" = "$BOOTPROTO" ] && mode=n
           [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
           $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
-            echo "DHCP failed:  $interface IP=$IPADDR $mask $cast"
+            echo "DHCP failed:  $interface IP=$IPADDR"
         else
             echo "No $daemon client daemon installed!"
         fi
       ;;
       *)
-        [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR $mask $cast $GATEWAY"
+        [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR"
       ;;
     esac
 }
