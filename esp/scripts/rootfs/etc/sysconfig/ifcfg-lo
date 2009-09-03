@@ -2,6 +2,7 @@ IFNAME=lo
 AUTOSTART=yes
 NETWORK=127.0.0.0
 IPADDR=127.0.0.1
+NETMASK=255.0.0.0
 
 hosts() {    #must be in every hosts file
   cat <<EOS 
