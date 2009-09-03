@@ -11,15 +11,15 @@ ipUp() {
 #  NETWORK = IP subnet (to add explicit route)
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
-  local mask=+ cast=+  #let ifconfig derive these by default
-  [ "$NETMASK" ] && mask="$NETMASK"
+  local mask= cast=+  #let ifconfig derive these by default
+  [ "$NETMASK" ] && mask=" netmask $NETMASK"
   [ "$BROADCAST" ] && cast="$BROADCAST"
-  [ "$MTU" ] && mtu="mtu $MTU"
-  ifconfig $IFNAME $IPADDR netmask $mask broadcast $cast $mtu || {
-    echo "FAILED:  ifconfig $IFNAME $IPADDR netmask $mask broadcast $cast $mtu"
+  [ "$MTU" ] && mtu=" mtu $MTU"
+  ifconfig $IFNAME $IPADDR$mask broadcast $cast$mtu || {
+    echo "FAILED:  ifconfig $IFNAME $IPADDR$mask broadcast $cast$mtu"
     return 2
   }
-  [ "$NETWORK" ] && route add -net $NETWORK netmask $mask dev $IFNAME
+  [ "$NETWORK" ] && route add -net $NETWORK $mask dev $IFNAME
   gateUp $IFNAME $GATEWAY
   hostsUp $IFNAME
 }
