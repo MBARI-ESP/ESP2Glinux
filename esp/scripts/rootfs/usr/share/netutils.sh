@@ -6,13 +6,16 @@ ipUp() {
 # set up basic internet protocol items per shell environment variables:
 #  IFNAME = network device
 #  IPADDR = internet address
-#  BROADCAST = LAN broadcast IP address
-#  NETWORK = LAN IP subnet
+#  BROADCAST = broadcast IP address
+#  NETMASK = subnetwork mask
+#  NETWORK = IP subnet (to add explicit route)
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
-  local mask cast
   unset mask cast
-  [ "$NETMASK" ] && mask="netmask $NETMASK"
+  [ "$NETMASK" ] && {
+    mask="netmask $NETMASK"
+    cast="broadcast +"  #derive from netmask by default
+  }
   [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
   [ "$MTU" ] && mtu="mtu $MTU"
   ifconfig $IFNAME $IPADDR $mask $cast $mtu || return 2
