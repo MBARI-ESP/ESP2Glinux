@@ -15,8 +15,11 @@ ipUp() {
   [ "$NETMASK" ] && mask="$NETMASK"
   [ "$BROADCAST" ] && cast="$BROADCAST"
   [ "$MTU" ] && mtu="mtu $MTU"
-  ifconfig $IFNAME $IPADDR netmask $mask broadcast $cast $mtu || return 2
-  [ "$NETWORK" ] && route add -net $NETWORK $mask dev $IFNAME
+  ifconfig $IFNAME $IPADDR netmask $mask broadcast $cast $mtu || {
+    echo "FAILED:  ifconfig $IFNAME $IPADDR netmask $mask broadcast $cast $mtu"
+    return 2
+  }
+  [ "$NETWORK" ] && route add -net $NETWORK netmask $mask dev $IFNAME
   gateUp $IFNAME $GATEWAY
   hostsUp $IFNAME
 }
