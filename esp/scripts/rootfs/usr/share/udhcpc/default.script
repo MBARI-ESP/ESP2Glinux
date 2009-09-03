@@ -17,23 +17,15 @@ if [ -w $tracefn ]; then
 fi
 
 leased=/var/run/$interface.lease
+unset mask cast
 
 case "$1" in
   deconfig|leasefail)
     if [ -f $leased ]; then
-      . /etc/sysconfig/ifcfg-$interface
-      [ "$NETMASK" ] && mask="netmask $NETMASK"
-      [ "$BROADCAST" ] && cast="broadcast $BROADCAST"
-      echo -n "$interface DHCP failed: "
       ifconfig $interface down  #purge old routes
-      [ "$IPADDR" ] && ifconfig $interface $IPADDR $mask $cast && {
-        echo "IP=$IPADDR $mask $cast"
-        [ "$NETWORK" ] && route add -net $NETWORK $mask dev $interface
-        [ "$GATEWAY" ] && route -n | grep -q '^0\.0\.0\.0' && 
-          route add default gateway $GATEWAY dev $interface
-      }
-      gateUp $interface $GATEWAY
-      hostsUp $interface
+      echo -n "$interface DHCP failed: "
+      . /etc/sysconfig/ifcfg-$interface
+      [ "$IPADDR" ] && ipUp && echo "IP=$IPADDR $mask"
       rm -f $leased
     else
       ifconfig $interface up  #so dhcp can use it
@@ -45,21 +37,16 @@ case "$1" in
     newDNSspec="$domain DNS:$dns"
     [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
     [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
-      [ "$broadcast" ] && BROADCAST="broadcast $broadcast"
-      [ "$subnet" ] && NETMASK="netmask $subnet"
-      ifconfig $interface $ip $BROADCAST $NETMASK || return 99
-
-      echo "DHCP $1 $interface to $ip $NETMASK $BROADCAST"
-      [ "$dns" ] && echo "     dns $dns"
-      resolv_conf() {
-        echo "search `searchDomains $domain`"
-        for ip in $dns ; do
-          echo "nameserver $ip"
-        done
+      IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
+        echo "DHCP $1 $interface to $ip $mask"
+        [ "$dns" ] && echo "with DNS $dns"
+        resolv_conf() {
+          echo "search `searchDomains $domain`"
+          for ip in $dns ; do
+            echo "nameserver $ip"
+          done
+        }
+        echo -e "$newLeaseSpec\n$newDNSspec" >$leased
       }
-      gateUp $interface $router
-      hostsUp $interface
-
-      echo -e "$newLeaseSpec\n$newDNSspec" >$leased
     }    
 esac
