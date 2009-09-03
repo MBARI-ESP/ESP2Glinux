@@ -57,31 +57,32 @@ set +f
     }
     echo "Bringing up interface $IFNAME ..."
     type ifPrep >/dev/null 2>&1 && ifPrep
-    [ "$IPADDR" ] && ipUp
-    case "$BOOTPROTO" in
-      dhcp*)
-        daemon=/sbin/udhcpc  #only use this dhcp client
-        if test -x $daemon  ; then
-          pidfn=/var/run/udhcpc-$IFNAME.pid
-          if [ -r $pidfn ]; then
-            kill `cat $pidfn` 2>/dev/null
+    [ "$IPADDR" ] && ipUp && {
+      case "$BOOTPROTO" in
+        dhcp*)
+          daemon=/sbin/udhcpc  #only use this dhcp client
+          if test -x $daemon  ; then
+            pidfn=/var/run/udhcpc-$IFNAME.pid
+            if [ -r $pidfn ]; then
+              kill `cat $pidfn` 2>/dev/null
+            else
+              mkdir -p `dirname $pidfn`
+            fi
+            echo -n "Determining IP configuration for $IFNAME...."
+	    insmod af_packet >/dev/null 2>&1
+            mode=${BOOTPROTO#dhcp-}
+            [ "$mode" = "$BOOTPROTO" ] && mode=n
+            [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
+            $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
+              echo "DHCP failed:  $interface IP=$IPADDR"
           else
-            mkdir -p `dirname $pidfn`
+              echo "No $daemon client daemon installed!"
           fi
-          echo -n "Determining IP configuration for $IFNAME...."
-	  insmod af_packet >/dev/null 2>&1
-          mode=${BOOTPROTO#dhcp-}
-          [ "$mode" = "$BOOTPROTO" ] && mode=n
-          [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
-          $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
-            echo "DHCP failed:  $interface IP=$IPADDR"
-        else
-            echo "No $daemon client daemon installed!"
-        fi
-      ;;
-      *)
-        [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR"
-      ;;
-    esac
+        ;;
+        *)
+          [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR"
+        ;;
+      esac
+    }
 }
 
