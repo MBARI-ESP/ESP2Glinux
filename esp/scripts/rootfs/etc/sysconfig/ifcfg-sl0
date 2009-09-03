@@ -4,7 +4,6 @@ BOOTPROTO=none
 
 SLIPADDR=192.168.8.28   #assign each slave a unique ip address!!
 GATEWAY=192.168.8.20    #master and gateway
-BROADCAST=192.168.8.31
 NETMASK=255.255.255.240
 MTU=1500
 
