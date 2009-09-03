@@ -4,8 +4,6 @@ BOOTPROTO="dhcp-b -m180 -s /usr/share/udhcpc/aliases.script" #dhcp in background
 DHCPNAME=`cat /etc/HOSTNAME`
 
 IPADDR=192.168.0.50    #use this configuration if dhcp fails
-#GATEWAY=192.168.0.1   #no GATEWAY so pppd can configure one
-NETMASK=255.255.255.0
 
 hosts() {    #add lines before EOS
   cat <<EOS 

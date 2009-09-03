@@ -5,7 +5,6 @@ DHCPNAME=`cat /etc/HOSTNAME`
 
 IPADDR=192.168.1.20    #use this configuration
 GATEWAY=192.168.1.1
-NETMASK=255.255.255.0
 
 hosts() {    #add lines before EOS
   cat <<EOS 
