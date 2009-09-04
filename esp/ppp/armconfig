@@ -12,6 +12,7 @@ cp ../Makefile.pppd pppd/Makefile.linux &&
 cp ../Makefile.rp-pppoe pppd/plugins/rp-pppoe/Makefile.linux &&
 patch -p1 <../pppd-2.4.2-quickpid.patch &&
 patch -p1 <../pppd-2.4.2-gateway.patch &&
-cp patchlevel.h pppd-2.4.2/pppd &&
+pwd &&
+cp ../patchlevel.h pppd &&
 configure --host=arm-unknown-linux --prefix=$LIBTOP --includedir=$ARMGCC/include &&
 echo "Next, run arminstall here"
