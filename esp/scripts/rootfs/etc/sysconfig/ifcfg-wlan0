@@ -3,8 +3,6 @@ AUTOSTART=no
 BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
 DHCPNAME=`cat /etc/HOSTNAME`-wifi
 
-IPADDR=0.0.0.0    #no wifi without dhcp
-
 ifPrep() {
   key=off
   essid="any"  #quoted access point name here (or any)

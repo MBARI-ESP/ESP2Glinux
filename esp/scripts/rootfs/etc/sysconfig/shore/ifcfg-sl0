@@ -1,15 +1,14 @@
 IFNAME=sl0
 AUTOSTART=no
-BOOTPROTO=none
 
-SLIPADDR=192.168.8.20      #master freewave
+IPADDR=192.168.8.20      #master freewave
 NETMASK=255.255.255.240
 MTU=1500
 
 hosts() {
   cat <<EOS #add IP addresses for LAN neighbors to this table
 #$IFNAME
-$SLIPADDR  shore.radio shore
+$IPADDR  shore.radio shore
 192.168.8.21  ESPmack.radio   mack
 192.168.8.22  ESPbruce.radio  bruce
 192.168.8.23  ESPneo.radio    neo
@@ -22,4 +21,5 @@ ifPrep() {
   export IFNAME
   /sbin/slattach -P /var/run/$IFNAME.pid -lLp slip -i slinit \
     -s 115200 /dev/freewave &
+  sleep 1
 }

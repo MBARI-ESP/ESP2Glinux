@@ -17,49 +17,51 @@ usage:  ifup [netInterface|full path to definition file] {mode}
 
 ifup_function ()
 {
-    [ "$IFNAME" ] || {
-      echo "Network IFNAME to start was not specified"
-      usage
-      return 200
-    }
+  [ "$IFNAME" ] || {
+    echo "Network IFNAME to start was not specified"
+    usage
+    return 200
+  }
 set -f
-    startMode=${1-n|N|no|No|NO|yes|y|Y|Yes|YES}  #yes, no, or missing
-    while :; do
-      eval "
-        case "$AUTOSTART" in
-          $startMode)
-            break
-        esac
-      "
+  startMode=${1-n|N|no|No|NO|yes|y|Y|Yes|YES}  #yes, no, or missing
+  while :; do
+    eval "
+      case "$AUTOSTART" in
+        $startMode)
+          break
+      esac
+    "
 #      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2
 set +f
-      return 201
-    done
+    return 201
+  done
 set +f
-    fn=/var/run/*$IFNAME.pid
-    pidfns=`echo $fn`
-    [ "$pidfns" = "$fn" ] || {  #check for active locks...
-      unset owners
-      for pidfn in $pidfns; do  #while removing stale ones
-        owner=`cat $pidfn` && {
-          if kill -0 $owner 2>/dev/null; then
-            owners="$owners $owner"
-          else
-            rm $pidfn  #remove stale pidfile
-          fi
-        }
-      done
-      [ "$owners" ] && {
-        echo "$IFNAME is already in use by process: $owners"
-        return 0
+  fn=/var/run/*$IFNAME.pid
+  pidfns=`echo $fn`
+  [ "$pidfns" = "$fn" ] || {  #check for active locks...
+    unset owners
+    for pidfn in $pidfns; do  #while removing stale ones
+      owner=`cat $pidfn` && {
+        if kill -0 $owner 2>/dev/null; then
+          owners="$owners $owner"
+        else
+          rm $pidfn  #remove stale pidfile
+        fi
       }
+    done
+    [ "$owners" ] && {
+      echo "$IFNAME is already in use by process: $owners"
+      return 0
     }
-    echo "Bringing up interface $IFNAME ..."
-    type ifPrep >/dev/null 2>&1 && ifPrep
-    [ "$IPADDR" ] && ipUp && {
-      case "$BOOTPROTO" in
-        dhcp*)
+  }
+  echo "Bringing up interface $IFNAME ..."
+  ! type ifPrep >/dev/null 2>&1 || ifPrep && {
+    case "$BOOTPROTO" in 
+      "")  #unspecified BOOTPROTO defers ipUp
+      ;;
+      dhcp*)
+        [ -z "$IPADDR" ] || ipUp && {
           daemon=/sbin/udhcpc  #only use this dhcp client
           if test -x $daemon  ; then
             pidfn=/var/run/udhcpc-$IFNAME.pid
@@ -77,12 +79,18 @@ set +f
               echo "DHCP failed:  $interface IP=$IPADDR"
           else
               echo "No $daemon client daemon installed!"
+              false
           fi
-        ;;
-        *)
-          [ "$IPADDR" ] && echo "$IFNAME IP=$IPADDR"
-        ;;
-      esac
-    }
+        }
+      ;;
+      static)
+        ipUp && echo "$IFNAME IP=$IPADDR"
+      ;;
+      *)
+        echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
+        false
+      ;;
+    esac && type ifPost >/dev/null 2>&1 && ifPost
+  }
 }
 

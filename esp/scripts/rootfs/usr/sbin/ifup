@@ -27,7 +27,6 @@ case "$devfn" in
   *) #anything else must be the name of an interface
     unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY MTU AUTOSTART
-    . /etc/sysconfig/ifcfg-$devfn
-    ifup_function $mode
+    . /etc/sysconfig/ifcfg-$devfn && ifup_function $mode
   ;;
 esac

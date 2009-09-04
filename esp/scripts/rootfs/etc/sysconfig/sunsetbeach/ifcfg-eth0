@@ -13,9 +13,9 @@ EOS
 }
 
 #shore stations route traffic via proxy arps for their clients
-ifStart() {
+ifPost() {
   echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
   echo 1 > /proc/sys/net/ipv4/ip_forward &&
-  echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp &&
-  echo "$IFNAME started proxy_arp and IP forwarding"
+  echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp &&
+  echo "Started proxy_arp and IP forwarding"
 }

@@ -1,8 +1,7 @@
 IFNAME=sl0
 AUTOSTART=no
-BOOTPROTO=none
 
-SLIPADDR=192.168.8.28   #assign each slave a unique ip address!!
+IPADDR=192.168.8.28     #assign each slave a unique ip address!!
 GATEWAY=192.168.8.20    #master and gateway
 NETMASK=255.255.255.240
 MTU=1500
@@ -12,12 +11,13 @@ ifPrep() {
   export IFNAME
   /sbin/slattach -P /var/run/$IFNAME.pid -lp slip -i slinit -c ipdown \
     -s 115200 /dev/freewave &
+  sleep 1
 }
 
 #try to ftp over the gateway's resolv.conf and hosts
 hosts() {
   cat <<EOS 
-$SLIPADDR $(hostname)-$IFNAME $(hostname)-slip
+$IPADDR $(hostname)-$IFNAME $(hostname)-slip
 EOS
   ftpget $GATEWAY - /etc/hosts
 }

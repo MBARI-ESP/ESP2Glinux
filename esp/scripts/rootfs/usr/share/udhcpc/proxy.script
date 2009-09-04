@@ -9,7 +9,7 @@ case "$1" in
   deconfig|leasefail)
     if [ -f $leased ]; then
       unset IFNAME IPADDR NETMASK BROADCAST NETWORK
-      . /etc/sysconfig/ifcfg-$interface || IPADDR=0.0.0.0
+      . /etc/sysconfig/ifcfg-$interface || IPADDR=0
       unset mask cast
       rm $leased
     fi

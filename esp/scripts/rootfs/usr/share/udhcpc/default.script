@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  9/2/09 by brent@mbari.org
+# revised:  9/3/09 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
@@ -23,8 +23,7 @@ case "$1" in
     if [ -f $leased ]; then
       ifconfig $interface down  #purge old routes
       echo -n "$interface DHCP failed: "
-      . /etc/sysconfig/ifcfg-$interface
-      [ "$IPADDR" ] && ipUp && echo "IP=$IPADDR"
+      . /etc/sysconfig/ifcfg-$interface && ipUp && echo "IP=$IPADDR"
       rm -f $leased
     else
       ifconfig $interface up  #so dhcp can use it
@@ -36,15 +35,15 @@ case "$1" in
     newDNSspec="$domain DNS:$dns"
     [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
     [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
+      resolv_conf() {
+        echo "search `searchDomains $domain`"
+        for ip in $dns ; do
+          echo "nameserver $ip"
+        done
+      }
       IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
         [ "$dns" ] && dnsMsg=" with DNS $dns"
         echo "DHCP $1 $interface to $ip$dnsMsg"
-        resolv_conf() {
-          echo "search `searchDomains $domain`"
-          for ip in $dns ; do
-            echo "nameserver $ip"
-          done
-        }
         echo -e "$newLeaseSpec\n$newDNSspec" >$leased
       }
     }    

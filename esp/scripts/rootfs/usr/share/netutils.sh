@@ -1,11 +1,11 @@
 #Common networking utilities
-# -- revised: 9/1/09 brent@mbari.org
+# -- revised: 9/2/09 brent@mbari.org
 #
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
-#  IFNAME = network device
-#  IPADDR = internet address
+#  IFNAME = network device (required)
+#  IPADDR = internet address (required)
 #  BROADCAST = broadcast IP address
 #  NETMASK = subnetwork mask
 #  NETWORK = IP subnet (to add explicit route)
