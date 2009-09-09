@@ -1,3 +1,4 @@
+#!/bin/bash -e
 rm -rf ~/armHost
 cd ~/linux/esp
 arminstall  #this builds the filesystem tree rooted at ~/armHost
@@ -44,4 +45,3 @@ make modules_install
 
 cd ../../esp
 buildjffs2 > armHost.jffs2
-
