@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 6/10/08 BAR
+Configuration symlinks for ESP embedded linux - 9/8/08 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -65,7 +65,6 @@ var -> /cf/var
 
 etc/hosts -> /var/etc/hosts
 etc/mtab -> /proc/mounts
-etc/ppp/resolv.conf -> /var/etc/ppp/resolv.conf
 etc/issue.net -> issue
 etc/resolv.conf -> /var/etc/resolv.conf
 
