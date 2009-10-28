@@ -50,7 +50,7 @@ set +f
         if [ -r "$defFn" ]; then
           . $defFn  #don't try to stop interfaces respawned by init process
            #if autostart mode missing or it starts with init, skip dev up check
-          [ -z "$AUTOSTART" -o "${AUTOSTART#init}" = "$AUTOSTART" ] && continue
+          [ -z "$AUTOSTART" -o "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
         fi
         ifdown $dev
       done
