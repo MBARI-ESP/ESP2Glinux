@@ -73,7 +73,7 @@
 
 
 const char *Release = RELEASE,
-	   *Version = "@(#) slattach 1.21-mbari2 (2008-09-11)",
+	   *Version = "@(#) slattach 1.21-mbari3 (2009-10-27)",
 	   *Signature = "net-tools, Fred N. van Kempen et al.";
 
 
@@ -735,17 +735,17 @@ main(int argc, char *argv[])
   (void) signal(SIGQUIT, sig_catch);
   (void) signal(SIGTERM, sig_catch);
 
-  if (initcmd && system(initcmd)) {
-    perror("slattach init cmd failed");
-    sig_catch(0);
-  }
-  
   if (pidfn) {
     FILE *pidf = fopen(pidfn, "w");
     if (!pidf || fprintf(pidf, "%u\n", getpid()) <= 0 || fclose(pidf)) {
       perror(pidfn);
       sig_catch(0);
     }
+  }
+  
+  if (initcmd && system(initcmd)) {
+    perror("slattach init cmd failed");
+    sig_catch(0);
   }
   
   /* Wait until we get killed if hanging on a terminal. */
