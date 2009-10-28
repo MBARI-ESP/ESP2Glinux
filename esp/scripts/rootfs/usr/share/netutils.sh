@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 9/2/09 brent@mbari.org
+# -- revised: 10/27/09 brent@mbari.org
 #
 
 ipUp() {
@@ -23,8 +23,7 @@ ipUp() {
     return 2
   }
   [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME
-  gateUp $IFNAME $GATEWAY
-  hostsUp $IFNAME
+  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME
 }
 
 ipDown() {
@@ -48,7 +47,9 @@ gateUp() {
   local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
   [ "$1" ] && {
     echo "#$*"  #store device and gateway in leading comment of its resolv.conf
-    type resolv_conf >/dev/null 2>&1 && resolv_conf
+    type resolv_conf >/dev/null 2>&1 && {
+      resolv_conf || return $?
+    }
   } > $newIface
   local priorityFn=/etc/sysconfig/gateway.priority
   unset topIface
@@ -85,7 +86,7 @@ gateUp() {
       if [ "$topIface" ]; then
         setGateways $topIface $gateways
       else
-        echo "No prioritized net interfaces up -- gateway unchanged" 2>&1
+:       echo "No prioritized net interfaces up -- gateway unchanged" 2>&1
       fi
     else
       echo "Blank or missing $priorityFn" 2>&1
@@ -103,7 +104,9 @@ gateDown() {
 hostsUp() {
   #update iface specific hosts file and merge with those of other ifaces
   #first adds interface specific hosts file if current iface specified
-  [ "$1" ] && type hosts 2>&1 >/dev/null && hosts > /var/run/$1.hosts
+  [ "$1" ] && type hosts 2>&1 >/dev/null && {
+    hosts > /var/run/$1.hosts || return $?
+  }
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
     cat /var/run/*.hosts
