@@ -34,7 +34,7 @@ set -f
 #      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2
 set +f
-    return 201
+    return 0
   done
 set +f
   fn=/var/run/*$IFNAME.pid
