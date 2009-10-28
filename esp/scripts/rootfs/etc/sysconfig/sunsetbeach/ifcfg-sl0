@@ -8,10 +8,13 @@ MTU=1500
 hosts() {
   cat <<EOS #add IP addresses for LAN neighbors to this table
 #$IFNAME
-$IPADDR  shore.radio shore
+$IPADDR  shore.radio  shore  #mail  #for SSH tunnel
 192.168.1.21  ESPmack.radio   mack
 192.168.1.22  ESPbruce.radio  bruce
 192.168.1.23  ESPneo.radio    neo
+192.168.1.24  ESPmoe.radio    moe
+192.168.1.25  ESPbetty.radio  betty
+192.168.1.26  ESPgordon.radio gordon
 #---
 EOS
 }

@@ -1,5 +1,5 @@
 IFNAME=sl0
-AUTOSTART=no
+AUTOSTART=yes
 
 IPADDR=192.168.8.20      #master freewave
 NETMASK=255.255.255.240
@@ -8,10 +8,13 @@ MTU=1500
 hosts() {
   cat <<EOS #add IP addresses for LAN neighbors to this table
 #$IFNAME
-$IPADDR  shore.radio shore
+$IPADDR  shore.radio  shore  #mail  #for SSH tunnel
 192.168.8.21  ESPmack.radio   mack
 192.168.8.22  ESPbruce.radio  bruce
 192.168.8.23  ESPneo.radio    neo
+192.168.8.24  ESPmoe.radio    moe
+192.168.8.25  ESPbetty.radio  betty
+192.168.8.26  ESPgordon.radio gordon
 #---
 EOS
 }
