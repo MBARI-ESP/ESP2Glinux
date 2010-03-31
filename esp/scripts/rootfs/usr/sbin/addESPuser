@@ -1,0 +1,35 @@
+#!/bin/sh
+#  add a new ESP user account $1 with name "$2"
+espUser=$1
+[ -z "$espUser" ] && {
+  prog=`basename $0`
+  cat <<END
+Add ESP user account
+usage:  $prog newUser  "real name"    #real name is optional
+example:  $prog  sam  "Samuel Adams"
+Afterwards, newUser must be added to the users,tty and log groups
+END
+  exit 1
+}
+[ -n "$3" ] && {
+  echo Remember to enclose user\'s real name in quotes
+  exit
+}
+realName=${2-"ESP user"}
+
+echo Adding $realName named $espUser
+adduser -Gusers -g"$realName" $espUser &&
+su $espUser -c sh << END &&
+cd ~$espUser
+  ln -s /etc/esp/irbrc .irbrc
+  ln -s /etc/esp/profile .profile
+  mkdir .ssh bin
+  ln -s /usr/bin/be bin/su
+  cd .ssh
+  dropbearkey -t rsa -f id_rsa >id_rsa.pub
+END
+mkdir /var/log/$espUser &&
+chown $espUser:users /var/log/$espUser && {
+echo "==> To finish adding user $espUser, "
+echo "==> edit the file /etc/group to add them to the users, tty and log groups"
+}
