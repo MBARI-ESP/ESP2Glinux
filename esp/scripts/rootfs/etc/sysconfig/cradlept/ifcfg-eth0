@@ -1,0 +1,24 @@
+IFNAME=eth0
+AUTOSTART=yes
+BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/aliases.script"   #in background
+DHCPNAME=`cat /etc/HOSTNAME`
+
+#BOOTPROTO=static  #uncomment these to force static IP config
+IPADDR=192.168.1.20    #use this configuration if dhcp fails
+#GATEWAY=192.168.1.1    #no GATEWAY so pppd can configure one
+#BROADCAST=192.168.1.255
+#NETMASK=255.255.255.0
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
+EOS
+}
+
+#shore stations route traffic via proxy arps for their clients
+ifPost() {
+  echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
+  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp &&
+  echo "Started proxy_arp and IP forwarding"
+}
