@@ -375,6 +375,3 @@ lmtp		2003/tcp			# Local Mail Transfer Protocol
 fud		4201/udp			# finger support
 
 # Local services
-
-ssh2            2525/tcp    #2nd Secure Shell
-
