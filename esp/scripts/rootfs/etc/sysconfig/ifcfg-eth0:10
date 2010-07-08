@@ -1,0 +1,12 @@
+#last resort method of contacting host if network is misbehaving
+#is to configure another host on the same physical LAN
+#with the address 10.10.10.11
+#Then, from that host,
+#  telnet to the IPADDR configured below.
+#NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
+
+DEVICE=eth0:10
+AUTOSTART=yes
+BOOTPROTO=static
+
+IPADDR=10.10.10.10
