@@ -6,18 +6,19 @@ NETMASK=255.255.255.240
 MTU=1500
 
 hosts() {
-  cat <<EOS #add IP addresses for LAN neighbors to this table
-#$IFNAME
-$IPADDR  shore.radio  shore  #mail  #for SSH tunnel
+  echo "#$IFNAME"  #add IP addresses for LAN neighbors to this table
+#$IPADDR mail  #include in hosts only if there is an ssh SMTP tunnel
+  tee ~ftp/etc/hosts <<EOS   #copy entries to ftp our server for slip clients
+$IPADDR  shore.radio     shore
+192.168.8.17  ESPship.radio   ship
 192.168.8.21  ESPmack.radio   mack
 192.168.8.22  ESPbruce.radio  bruce
 192.168.8.23  ESPneo.radio    neo
 192.168.8.24  ESPmoe.radio    moe
 192.168.8.25  ESPbetty.radio  betty
 192.168.8.26  ESPgordon.radio gordon
-192.168.8.30  ESPship.radio   ship
-#---
 EOS
+  echo "#---"
 }
 
 #start up SLIP for freewave master
