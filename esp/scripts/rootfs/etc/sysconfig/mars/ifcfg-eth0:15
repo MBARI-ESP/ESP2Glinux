@@ -1,0 +1,9 @@
+#configure and interface on the MARS subnet to allow app to contact
+#the Web Relay at 10.1.15.3
+#NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
+
+IFNAME=eth0:15
+AUTOSTART=yes
+BOOTPROTO=static
+
+IPADDR=10.1.15.2

@@ -1,0 +1,25 @@
+# configuration for DWSM deployment on MARS starting 9/09
+#
+IFNAME=eth0
+AUTOSTART=yes
+BOOTPROTO="dhcp-b -m180 -s /usr/share/udhcpc/aliases.script"
+ #dhcp in background, renew every 3 min
+
+DHCPNAME=`cat /etc/HOSTNAME`
+
+IPADDR=10.1.15.2  #or 15.3 if no dhcp server found, assume we're on MARS net
+GATEWAY=10.1.15.1
+NETMASK=255.255.255.0
+resolv_conf() {
+  cat <<EOS
+search shore.mbari.org
+nameserver  10.91.128.62
+EOS
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $DHCPNAME-$IFNAME $DHCPNAME-ether)
+10.1.15.3  webrelay
+EOS
+}
