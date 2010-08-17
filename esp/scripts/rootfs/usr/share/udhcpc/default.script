@@ -37,8 +37,8 @@ case "$1" in
     [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
       resolv_conf() {
         echo "search `searchDomains $domain`"
-        for ip in $dns ; do
-          echo "nameserver $ip"
+        for dnsip in $dns ; do
+          echo "nameserver $dnsip"
         done
       }
       IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
