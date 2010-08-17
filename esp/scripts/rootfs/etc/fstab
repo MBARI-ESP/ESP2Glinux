@@ -8,7 +8,6 @@ none /dev devfs remount,rw    #for case of sysmount restart
 
 #END nfsmount service ignores entries below this line END#
 
-bufflehead:/var/log/ESPnode /var/log nfs rsize=2048,intr,nolock,noauto
 bufflehead:/home /bufflehead/home nfs rsize=2048,intr,noauto
 bufflehead:/home2 /bufflehead/home2 nfs rsize=2048,intr,noauto
 
