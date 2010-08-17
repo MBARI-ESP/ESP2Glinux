@@ -5,7 +5,7 @@
 #  telnet to the IPADDR configured below.
 #NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
 
-DEVICE=eth0:10
+IFNAME=eth0:10
 AUTOSTART=yes
 BOOTPROTO=static
 
