@@ -15,6 +15,6 @@ EOS
 ifPost() {
   echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
   echo 1 > /proc/sys/net/ipv4/ip_forward &&
-  echo 1 > /proc/sys/net/ipv4/conf/$IFNAME/proxy_arp &&
+  echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp &&
   echo "Started proxy_arp and IP forwarding"
 }
