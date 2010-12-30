@@ -10,7 +10,7 @@
 #lines in /etc/fstab after any starting with #END are ignored
 
 
-[ -s /etc/resolv.conf ] || {
+grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
   echo "Missing Network -- skipping NFS mounts"
   exit 1
 }
