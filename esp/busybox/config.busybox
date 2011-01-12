@@ -31,7 +31,7 @@ EXTRA_CFLAGS_OPTIONS=""
 # Installation Options
 #
 # CONFIG_INSTALL_NO_USR is not set
-PREFIX="/home/brent/armHost"
+PREFIX="${HOME}/armHost"
 
 #
 # Archival Utilities
