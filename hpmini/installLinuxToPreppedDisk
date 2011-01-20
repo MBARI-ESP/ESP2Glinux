@@ -23,7 +23,7 @@ cd /mnt/root
 tar -pzxf $archive/root.tgz .
 mkdir -p media  #forgot this on root.tgz
 powerbtn=$archive/powerbtn-acpi-support.sh
-[ -r $powerbtn ] && cp -af $powerbtn /etc/acpi
+[ -r $powerbtn ] && cp -af $powerbtn etc/acpi
 [ "$1" ] && echo "$1" > etc/hostname 
 
 echo "Populating HOME partition"
