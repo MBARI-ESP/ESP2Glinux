@@ -2,7 +2,7 @@
 #  This script assumes that empty, formatted partitions
 #labeled BOOT, ROOT and HOME have been
 #created on the main disk drive to receive the Linux system image.
-#  revised:  1/19/11 brent@mbari.org
+#  revised:  1/24/11 brent@mbari.org
 #
 set -e  #abort on error
 
@@ -13,14 +13,16 @@ mount LABEL=BOOT /boot
 mount LABEL=ROOT /mnt/root
 mount LABEL=HOME /mnt/home
 
+xtract="--numeric-owner -zxf"
+
 echo "Configuring BOOT partition"
 cd /boot
-tar -pzxf $archive/boot.tgz .
+tar $xtract $archive/boot.tgz .
 lilo -C lilo.conf
 
 echo "Populating ROOT partition"
 cd /mnt/root
-tar -pzxf $archive/root.tgz .
+tar $xtract $archive/root.tgz .
 mkdir -p media  #forgot this on root.tgz
 powerbtn=$archive/powerbtn-acpi-support.sh
 [ -r $powerbtn ] && cp -af $powerbtn etc/acpi
@@ -28,6 +30,6 @@ powerbtn=$archive/powerbtn-acpi-support.sh
 
 echo "Populating HOME partition"
 cd /mnt/home
-tar -pzxf $archive/home.tgz .
+tar $xtract $archive/home.tgz .
 
 echo "Linux successfully loaded on host $1"
