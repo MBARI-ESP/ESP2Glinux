@@ -1,0 +1,7 @@
+#!/bin/sh
+# $Id$
+# executed after disconnecting the ppp interface.
+
+. /usr/share/netutils.sh
+
+ipDown $IFNAME

@@ -1,0 +1,18 @@
+#!/bin/sh
+if [ "$1" ]; then
+  if [ -z "$3" ]; then
+    /bin/cat "usage:  [reboot|halt|poweroff]  {runlevel gerand noun}" >&2
+    exit 1
+  fi
+  runlevel=$1
+  gerand=$2
+  noun=$3
+else
+  runlevel=6
+  gerand=Rebooting
+  noun=reboot
+fi
+/bin/echo "$gerand System Now!" | /usr/bin/wall 
+sleep 1
+/sbin/init $runlevel && /bin/sleep 20 && 
+  /bin/echo "Still trying to $3 ..." | /usr/bin/wall 

@@ -1,0 +1,13 @@
+#!/bin/sh
+: ${haltOptions:=$2}
+
+case "$1" in
+    start)
+       echo "Halting..."
+       /bin/busybox halt $haltOptions
+       ;;
+                         
+     *)
+       echo "usage: start"
+       ;;
+esac

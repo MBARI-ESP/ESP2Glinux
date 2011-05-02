@@ -1,0 +1,3 @@
+#/!bin/sh
+[ -z "$DEV_IMAGE" ] && . `dirname $0`/ltibenv
+cd $KERNELDIR && exec ltibMake "$@"

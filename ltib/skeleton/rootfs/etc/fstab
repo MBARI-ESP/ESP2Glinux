@@ -1,0 +1,32 @@
+#
+# /etc/fstab: static file system information.
+#
+# file sys  mount           type    options   
+proc        /proc           proc    defaults
+devpts      /dev/pts        devpts  gid=5,mode=620
+usbfs       /proc/bus/usb   usbfs   defaults
+shm         /dev/shm        tmpfs   defaults
+
+#change rw to ro for a read/only root filesystem
+/dev/root   /               auto    rw
+
+#try to mount /sd at boot time
+/dev/mmcblk0p2 /sd          auto    defaults
+tmpfs       /sd/var/run     tmpfs   defaults
+tmpfs       /sd/var/lock    tmpfs   defaults
+
+/dev/mmcblk0p1 /windows     vfat    noauto
+
+#optional swapfile on sd card
+/sd/.SWAP   swap            swap 
+
+#END nfsmount service ignores entries below this line END#
+
+bufflehead:/home /bufflehead/home nfs proto=udp,intr,noauto
+bufflehead:/home2 /bufflehead/home2 nfs proto=udp,intr,noauto
+
+tempest:/vol/vol0/users /u nfs proto=udp,intr,nosuid,nodev,noauto
+tempest:/vol/tempbox /tempbox nfs proto=udp,intr,nosuid,nodev,noauto
+tornado:/vol/vol0/Engineering /engineering nfs proto=udp,intr,nosuid,nodev,noauto
+tornado:/vol/ProjectLibrary /project nfs proto=udp,intr,nosuid,nodev,noauto
+tornado:/vol/vol0/ESP /ESP nfs proto=udp,intr,nosuid,nodev,noauto

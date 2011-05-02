@@ -1,0 +1,23 @@
+#!/bin/sh
+#local configuration catch all
+
+PATH=/usr/sbin:/sbin:/bin
+
+case "$1" in
+    start)
+      # set-up to dump core to log dir
+      coredir=/var/tmp/crash
+      mkdir -p -m 1777 $coredir
+      echo $coredir/%e-SIG%s.%p >/proc/sys/kernel/core_pattern
+      rm -f /var/crash && ln -s tmp/crash /var/crash
+       ;;
+                         
+    stop)
+       :
+       ;;
+
+     *)
+       echo "usage: local {start|stop}"
+       ;;
+esac
+

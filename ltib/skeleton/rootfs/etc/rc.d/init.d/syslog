@@ -1,0 +1,66 @@
+#!/bin/sh
+export daemons="syslogd klogd"
+cmd=$1
+shift
+[ "$1" ] && syslogOptions="$@"
+: ${syslogOptions:="-s0 -S -l5 -m60"}
+: ${klogOptions:=}
+
+action() {
+  service=$1
+  shift
+  start-stop-daemon -u root -n $service -x /sbin/$service "$@"
+}
+
+actions() {
+  for daemon in $daemons; do
+    action $daemon "$@"
+  done
+}
+
+mkdirs() {
+# try to cd to /var/log
+# if path does not exist, create it with appropriate permissions and ownership
+  cd /var 2>/dev/null || {
+    mkdir /var && cd /var
+  } && cd log 2>/dev/null || {
+    mkdir -m660 log && {
+      chgrp log log
+      cd log
+    }
+  }
+}
+
+startem() {
+   action syslogd -b -S -- $syslogOptions
+   action klogd -b -S -- $klogOptions
+}
+
+case "$cmd" in
+    start)
+       echo "Starting $daemons..."
+       if mkdirs; then
+         logread >>/var/log/messages 2>/dev/null
+       else
+         syslogOptions="-C 16 -m 0" #fall back to circular buffer
+       fi
+       actions -K >/dev/null 2>&1
+       startem
+       ;;
+                         
+    restart)
+       echo "Restarting $daemons"
+       mkdirs || syslogOptions="-C 16 -m 0" #fall back to circular buffer
+       actions -K
+       startem
+       ;;
+       
+    stop)
+       echo "Stopping $daemons"
+       actions -K
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

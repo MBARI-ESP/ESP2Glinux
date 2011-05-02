@@ -1,0 +1,19 @@
+# set up environment for ESP gen2 target -- 5/6/05 Brent@mbari.org
+export PATH=.:$HOME/bin:${PATH#.:$HOME/bin:}
+if [ ! \( -e esp2 \) -o -L esp2 ]; then
+  for home in esp2@* esp2local; do
+    if [ -r $home/bin/ESPenv ]; then
+      rm -f esp2
+      ln -s $home esp2
+      echo -n "Using $home, "
+      break
+    fi
+  done
+fi 
+[ -r esp2/bin/ESPenv ] && . esp2/bin/ESPenv
+if [ "$ESPhome" ]; then
+  echo ESPhome=$ESPhome
+else
+  echo 'WARNING:  ESPhome is undefined!'
+fi
+unset home

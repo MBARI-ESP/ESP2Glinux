@@ -1,0 +1,6 @@
+#/!bin/sh
+# set up to run make for the current ltib environment -- 5/2/11 brent@mbari.org
+
+[ -z "$DEV_IMAGE" ] && . `dirname $0`/ltibenv
+exec /usr/bin/make -j4 INSTALL_MOD_PATH=${INSTALL_MOD_PATH:-$DEV_IMAGE} \
+  ARCH=arm  HOSTCC="ccache /usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR "$@"

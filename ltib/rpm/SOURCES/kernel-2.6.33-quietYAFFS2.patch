@@ -1,0 +1,12 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_guts.c linux-2.6.33.modified/fs/yaffs2/yaffs_guts.c
+--- linux-2.6.33/fs/yaffs2/yaffs_guts.c	2011-04-21 16:04:04.300001771 -0700
++++ linux-2.6.33.modified/fs/yaffs2/yaffs_guts.c	2011-04-21 16:03:19.048001771 -0700
+@@ -6665,7 +6665,7 @@
+ 							 * the current allocation block.
+ 							 */
+ 
+-							 T(YAFFS_TRACE_ALWAYS,
++							 T(YAFFS_TRACE_SCAN,  //was YAFFS_TRACE_ALWAYS
+ 							 (TSTR("Partially written block %d detected" TENDSTR),
+ 							 blk));
+ 						}

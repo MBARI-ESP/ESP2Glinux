@@ -1,0 +1,11 @@
+IFNAME=ppp0
+AUTOSTART=inittab
+ifPrep() {
+  pppd call shore unit 0 logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+EOS
+}

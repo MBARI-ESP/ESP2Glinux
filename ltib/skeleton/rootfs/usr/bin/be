@@ -1,0 +1,29 @@
+#!/bin/sh
+# "be" specified user
+# similar to su, but sets up PATH more conveniently
+args="$@"
+root=yes
+unset skip
+for word; do
+  [ "$skip" ] || case "$word" in
+    -c*|-s*|--s*|--c*)
+      skip=yes
+      continue
+      ;;
+    -)
+      exec /bin/su "$@"
+      ;;
+    -*)
+      ;;
+    root)
+      break
+      ;;
+    *)
+      unset root
+      break
+      ;;
+  esac
+  unset skip
+done
+[ "$root" ] && export PATH=/sbin:/usr/sbin:$PATH
+exec /bin/su "$@" -p

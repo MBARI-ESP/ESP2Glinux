@@ -1,0 +1,17 @@
+diff --exclude CVS --exclude .git -uNr nfs-utils-1.1.0/utils/mount/mount.c nfs-utils-1.1.0.modified/utils/mount/mount.c
+--- nfs-utils-1.1.0/utils/mount/mount.c	2007-05-10 20:40:57.000000000 -0700
++++ nfs-utils-1.1.0.modified/utils/mount/mount.c	2011-04-30 01:33:07.774543050 -0700
+@@ -196,13 +196,6 @@
+ 		return 1;
+ 	}
+ 
+-        if (fchmod(fileno(mtab), 0644) == -1) {
+-		endmntent(mtab);
+-		unlock_mtab();
+-		fprintf(stderr, "Can't set perms on " MOUNTED);
+-		return 1;
+-	}
+-
+ 	endmntent(mtab);
+ 
+ 	unlock_mtab();

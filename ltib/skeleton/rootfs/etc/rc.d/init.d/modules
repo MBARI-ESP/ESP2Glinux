@@ -1,0 +1,29 @@
+#!/bin/sh
+PATH=$PATH:/sbin:/bin
+
+modlist=/etc/modules
+
+case "$1" in
+    start)
+       echo "Loading kernel modules"
+       [ -r $modlist ] || {
+         echo "cannot read $modlist" >&2
+         exit 2
+       }
+       while IFS='#'; read args comment; do
+         unset IFS
+         [ -n "$args" ] && {
+           set $args
+           modprobe "$@"
+         }
+       done < $modlist
+       :
+       ;;                         
+    stop)
+       :
+       ;;
+
+     *)
+       echo "usage: modules {start|stop}"
+       ;;
+esac

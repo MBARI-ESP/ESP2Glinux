@@ -1,0 +1,9 @@
+#!/bin/sh
+#initialize slip link's ip parameters
+
+. /usr/share/netutils.sh
+
+[ "$1" ] && IFNAME=$1
+unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+unset NETWORK GATEWAY MTU AUTOSTART
+. /etc/sysconfig/ifcfg-$IFNAME && ipUp && echo $IFNAME IP=$IPADDR

@@ -1,0 +1,5 @@
+#!/bin/sh
+# $Id$
+# executed after disconnecting the ppp interface.
+
+[ -f /etc/ppp/ip-down.local ] && . /etc/ppp/ip-down.local "$@"

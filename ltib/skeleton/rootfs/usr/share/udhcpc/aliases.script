@@ -1,0 +1,32 @@
+#!/bin/sh
+# udhcpd script for ethernet to invoke aliases 
+# revised:  10/18/10 by brent@mbari.org
+
+eachAlias() {
+  cfg=/etc/sysconfig/ifcfg-
+  aliases=`echo $cfg$2:*`
+  [ "$aliases" = $cfg$2:\* ] || {
+    for alias in $aliases; do
+       $1 ${alias#$cfg}
+    done
+  }
+}
+
+
+case "$1" in
+  leasefail)
+    eachAlias ifdown $interface
+   `dirname $0`/default.script $@ 
+;;
+  bound)
+   `dirname $0`/default.script $@ && {
+      if [ -r /var/run/ppp0.pid ]; then
+        ifdown ppp0 #because remote:local addresses likely changed
+        eachAlias ifup $interface
+        ifup ppp0
+      else
+        eachAlias ifup $interface
+      fi
+    }
+
+esac

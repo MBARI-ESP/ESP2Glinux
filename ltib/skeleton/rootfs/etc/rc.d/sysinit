@@ -1,0 +1,31 @@
+#!/bin/sh
+# /etc/rc.d/sysinit	
+# This file is used by inittab and init. Place here all the stuff you want
+# to be done before any other system startup scripts are executed
+# that will affect the system as a whole or are needed by the system
+
+# Ingore CTRL+C
+trap ":" INT QUIT TSTP
+
+# Set our Path
+PATH='/bin:/sbin:/usr/bin:/usr/sbin'
+export PATH
+
+echo "MBARI ESP Embedded Linux    http://www.mbari.org   mailto:brent@mbari.org"
+hostname -F /etc/HOSTNAME
+hostname
+
+
+echo "Mounting /proc and /sys"
+mount -n -t proc proc /proc
+mount -n -t sysfs sys /sys
+
+if  test -x /sbin/dmesg  ; then
+   if  test -f /etc/consolelog.level  ; then
+	   . /etc/consolelog.level
+   else
+	   LOGLEVEL=1
+   fi
+   /sbin/dmesg -n $LOGLEVEL
+fi
+

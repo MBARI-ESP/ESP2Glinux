@@ -1,0 +1,13 @@
+#!/bin/sh
+: ${poweroffOptions:=$2}
+
+case "$1" in
+    start)
+       echo "Powering Off..."
+       /bin/busybox poweroff $poweroffOptions
+       ;;
+                         
+     *)
+       echo "usage: start"
+       ;;
+esac

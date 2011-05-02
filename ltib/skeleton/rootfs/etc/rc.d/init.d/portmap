@@ -1,0 +1,19 @@
+#!/bin/sh
+PATH=$PATH:/sbin:/bin
+
+OPTIONS=""
+
+case "$1" in
+    start)
+       echo "Starting portmap..."
+       /sbin/portmap $OPTIONS
+       ;;
+                         
+    stop)
+       :
+       ;;
+
+     *)
+       echo "usage: portmap {start|stop}"
+       ;;
+esac

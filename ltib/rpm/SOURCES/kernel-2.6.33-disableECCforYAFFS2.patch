@@ -1,0 +1,218 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mtd/nand/Kconfig linux-2.6.33.modified/drivers/mtd/nand/Kconfig
+--- linux-2.6.33/drivers/mtd/nand/Kconfig	2011-04-23 11:06:56.428001772 -0700
++++ linux-2.6.33.modified/drivers/mtd/nand/Kconfig	2011-04-23 11:05:50.512001772 -0700
+@@ -494,4 +494,12 @@
+ 	  This enables the driver for the NAND Flash on evaluation board based
+ 	  on w90p910.
+ 
++config HARDWARE_ECC
++  bool "Use Hardware ECC for LPC313x nand flash controller"
++  depends on MTD_NAND_LPC313X
++  default n
++  help
++      This enables the hardware ECC on Nand Flash controller,
++       YOU MUST disable it for use with the yaffs filesystem!
++
+ endif # MTD_NAND
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mtd/nand/lpc313x_nand.c linux-2.6.33.modified/drivers/mtd/nand/lpc313x_nand.c
+--- linux-2.6.33/drivers/mtd/nand/lpc313x_nand.c	2011-04-23 11:06:56.428001772 -0700
++++ linux-2.6.33.modified/drivers/mtd/nand/lpc313x_nand.c	2011-04-23 11:05:50.512001772 -0700
+@@ -56,20 +56,20 @@
+  * */
+ #include <mach/dma.h>
+ 
+-/*  Enable DMA transfer for better throughput
++/*  Enable DMA transfer for better throughput (only when EEC is enabled)
+  * */
++#ifdef CONFIG_HARDWARE_ECC
+ #define USE_DMA
++#define NAND_DMA_MAX_DESC 4  /* Maximum number of DMA descritpors in SG table */
++#define OOB_FREE_OFFSET 4
++#endif
+ 
+-/* Maximum number of DMA descritpors in SG table
+- * */
+-#define NAND_DMA_MAX_DESC 4
+ 
+ /* Register access macros */
+ #define nand_readl(reg)		__raw_readl(&NAND_##reg)
+ #define nand_writel(reg,value)	__raw_writel((value),&NAND_##reg)
+ #define sys_writel(reg,value)	__raw_writel((value),&SYS_##reg)
+ 
+-#define OOB_FREE_OFFSET 4
+ 
+ /* Enable for polling support only. Polling support will compile the
+    code without interrupts during read and write cycles. Device ready
+@@ -124,6 +124,7 @@
+ static const u32 nand_buff_wr_mask[2] = {NAND_NANDIRQSTATUS1_WR_RAM0,
+ 	NAND_NANDIRQSTATUS1_WR_RAM1};
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ /* Decode buffer addresses */
+ static const void *nand_buff_addr[2] = {
+ 	(void *) &NAND_BUFFER_ADRESS, (void *) (&NAND_BUFFER_ADRESS + 256)};
+@@ -201,6 +202,17 @@
+ };
+ #endif
+ 
++// Dummy bytes for bad block ( just for HARDWARE ECC: inaccurate )
++static uint8_t scan_ff_pattern[] = { 0xff, 0xff };
++
++static struct nand_bbt_descr lpc313x_largepage_flashbased = {
++	.options = NAND_BBT_SCAN2NDPAGE,
++	.offs = 50,
++	.len = 2,
++	.pattern = scan_ff_pattern
++};
++#endif  //CONFIG_HARDWARE_ECC
++
+ /*
+  *
+  * Bad block descriptors for small/large/huge block FLASH
+@@ -232,15 +244,6 @@
+ 	.pattern = mirror_pattern
+ };
+ 
+-// Dummies bytes for bad block ( just for HARDWARE ECC: inaccurate )
+-static uint8_t scan_ff_pattern[] = { 0xff, 0xff };
+-
+-static struct nand_bbt_descr lpc313x_largepage_flashbased = {
+-	.options = NAND_BBT_SCAN2NDPAGE,
+-	.offs = 50,
+-	.len = 2,
+-	.pattern = scan_ff_pattern
+-};
+ 
+ #ifdef USE_DMA
+ /*
+@@ -682,6 +685,7 @@
+ 	return nand_readl(CHECKSTS) & rdymasks[host->current_cs];
+ }
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ /*
+  * MTD hardware ECC enable callback
+  */
+@@ -808,6 +812,7 @@
+ 
+ 	return status;
+ }
++#endif  /* CONFIG_HARDWARE_ECC */
+ 
+ /*
+  * 8-bit direct NAND interface read callback
+@@ -849,6 +854,8 @@
+ 	__raw_writesw(chip->IO_ADDR_W, buf, len);
+ }
+ 
++
++#ifdef CONFIG_HARDWARE_ECC
+ /*
+  * Read the payload and OOB data from the device in the hardware storage format
+  */
+@@ -1178,6 +1185,7 @@
+ 
+ 	return status & NAND_STATUS_FAIL ? -EIO : 0;
+ }
++#endif  /* CONFIG_HARDWARE_ECC */
+ 
+ /*
+  * Add MTD partitions and a single MTD device
+@@ -1248,7 +1256,9 @@
+ 	nmtd->host = host;
+ 	nmtd->mtd.priv = chip;
+ 	nmtd->mtd.owner = THIS_MODULE;
++	chip->options |= NAND_USE_FLASH_BBT;
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ 	chip->ecc.mode = NAND_ECC_HW_SYNDROME;
+ 	chip->ecc.read_page_raw = lpc313x_nand_read_page_syndrome;
+ 	chip->ecc.read_page = lpc313x_nand_read_page_syndrome;
+@@ -1260,13 +1270,15 @@
+ 	chip->ecc.hwctl = lpc313x_nand_enable_hwecc;
+ 
+ 	chip->verify_buf = lpc313x_nand_verify_hwecc;
+-	chip->options |= NAND_USE_FLASH_BBT;
+-	if (host->platform->support_16bit) {
+-		chip->options |= NAND_BUSWIDTH_16;
+-	}
+ 
+ 	/* Assume large block FLASH for now, will adjust after detection */
+ 	chip->ecc.layout = &nand_hw_eccoob_64;
++#else
++	chip->ecc.mode = NAND_ECC_SOFT;
++#endif		
++	if (host->platform->support_16bit) {
++		chip->options |= NAND_BUSWIDTH_16;
++	}
+ }
+ 
+ /*
+@@ -1281,24 +1293,23 @@
+ 	chip->bbt_md = &lpc313x_bbt_mirror_descr;
+ 
+ 	/* Select bad block algorithm and ECC layout based on whether
+-	   small, large, or hig block FLASH is used */
++	   small, large, or huge block FLASH is used */
++#ifdef CONFIG_HARDWARE_ECC
+ 	if (chip->page_shift <= 10) {
+ 		/* Small block FLASH */
+ 		chip->ecc.layout = &nand_hw_eccoob_16;
+ 		// FIXME unknown if this works
+-	}
++	} else
+ #ifdef HUGE_BLOCK_SUPPORT
+-	else if (chip->page_shift >= 13) {
++	if (chip->page_shift >= 13) {
+ 		/* Huge block FLASH */
+ 		chip->ecc.layout = &nand_hw_eccoob_128;
+ 		// FIXME bad block descriptors for huge block FLASH not done
+-	}
++	} else
+ #endif
+-	else {
++	{
+ 		/* Large block FLASH */
+ 		chip->ecc.layout = &nand_hw_eccoob_64;
+-		chip->bbt_td = &lpc313x_bbt_main_descr;
+-		chip->bbt_md = &lpc313x_bbt_mirror_descr;
+ 		chip->badblock_pattern = &lpc313x_largepage_flashbased;
+ 	}
+ 
+@@ -1306,6 +1317,7 @@
+ 	chip->ecc.size = 512;
+ 	chip->ecc.bytes = 16;
+ 	chip->ecc.prepad = 0;
++#endif
+ }
+ 
+ /*
+@@ -1365,6 +1377,8 @@
+ 	/* check NAND mux signals */
+ 	sys_writel(MUX_NAND_MCI, 0);
+ 
++
++#ifdef CONFIG_HARDWARE_ECC
+ 	/* Setup NAND configuration */
+ 	if (plat->support_16bit) {
+ 		/* 16-bit mode */
+@@ -1376,6 +1390,7 @@
+ 		host->nandconfig = NAND_NANDCONFIG_DC | NAND_NANDCONFIG_ECGC |
+ 			NAND_NANDCONFIG_EC;
+ 	}
++#endif
+ 
+ 	/* Initialize the hardware */
+ 	err = lpc313x_nand_inithw(host);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/Kconfig linux-2.6.33.modified/fs/yaffs2/Kconfig
+--- linux-2.6.33/fs/yaffs2/Kconfig	2011-04-23 11:06:56.452001772 -0700
++++ linux-2.6.33.modified/fs/yaffs2/Kconfig	2011-04-23 11:06:10.180001772 -0700
+@@ -5,7 +5,7 @@
+ config YAFFS_FS
+ 	tristate "YAFFS2 file system support"
+ 	default n
+-	depends on MTD_BLOCK
++	depends on MTD_BLOCK && !HARDWARE_ECC
+ 	select YAFFS_YAFFS1
+ 	select YAFFS_YAFFS2
+ 	help

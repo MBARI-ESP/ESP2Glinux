@@ -1,0 +1,51 @@
+#!/bin/sh
+# $Id$
+# executed after connecting the ppp interface.
+
+. /usr/share/netutils.sh
+configfn=/etc/sysconfig/ifcfg-$IFNAME
+[ -r $configfn ] && . $configfn
+
+tracefn=/tmp/ip-up.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
+
+[ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
+gateUp $IFNAME $gateway
+
+unset domain
+
+#if PEERNAME is prefixed with a dot, change our own hostname to it
+if [ -n "$PEERNAME" ]; then
+  IFSold=$IFS
+  IFS=.
+  set $PEERNAME
+  IFS=$IFSold
+  if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
+    host=$2
+#    [ -f $oldHostname ] || hostname >$oldHostname
+    if [ $# -gt 2 ]; then
+      domain=$3
+      shift 3
+      for component; do
+        domain=$domain.$component
+      done
+    fi
+#      hostname $host  #disable changing hostname
+  fi
+fi
+
+[ "$USEPEERDNS" ] && {
+  resolv_conf() {
+    echo "#$IFNAME$gateway"
+    echo "search `searchDomains $domain`"
+    for ip in $DNS1 $DNS2 ; do
+      echo "nameserver $ip"
+    done
+  }
+}
+
+hostsUp $IFNAME

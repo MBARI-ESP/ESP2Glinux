@@ -1,0 +1,127 @@
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/include/usage.h busybox-1.11.2.modified/include/usage.h
+--- busybox-1.11.2/include/usage.h	2008-08-21 12:40:12.000000000 -0700
++++ busybox-1.11.2.modified/include/usage.h	2011-04-28 21:58:39.560000219 -0700
+@@ -4223,13 +4223,14 @@
+        "Adjust filesystem options on ext[23] filesystems"
+ 
+ #define udhcpc_trivial_usage \
+-       "[-Cfbnqtvo] [-c CID] [-V VCLS] [-H HOSTNAME] [-i INTERFACE]\n" \
++       "[-Cfbnqtvo] [-c CID] [-V VCLS] [-H HOSTNAME] [-i INTERFACE] [-m duration]\n" \
+        "	[-p pidfile] [-r IP] [-s script] [-O dhcp-option]..." USE_FEATURE_UDHCP_PORT(" [-P N]")
+ #define udhcpc_full_usage "\n\n" \
+ 	USE_GETOPT_LONG( \
+        "	-V,--vendorclass=CLASSID	Vendor class identifier" \
+      "\n	-i,--interface=INTERFACE	Interface to use (default eth0)" \
+      "\n	-H,-h,--hostname=HOSTNAME	Client hostname" \
++     "\n	-m,--maxlease=seconds\tLongest lease to accept (accelerates probes)" \
+      "\n	-c,--clientid=CLIENTID	Client identifier" \
+      "\n	-C,--clientid-none	Suppress default client identifier" \
+      "\n	-p,--pidfile=file	Create pidfile" \
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/dhcpc.c busybox-1.11.2.modified/networking/udhcp/dhcpc.c
+--- busybox-1.11.2/networking/udhcp/dhcpc.c	2008-06-25 05:51:14.000000000 -0700
++++ busybox-1.11.2.modified/networking/udhcp/dhcpc.c	2011-04-28 22:02:09.164000219 -0700
+@@ -154,6 +154,7 @@
+ 		"hostname\0"       Required_argument "H"
+ 		"fqdn\0"           Required_argument "F"
+ 		"interface\0"      Required_argument "i"
++		"maxLease\0"       Required_argument "m"
+ 		"now\0"            No_argument       "n"
+ 		"pidfile\0"        Required_argument "p"
+ 		"quit\0"           No_argument       "q"
+@@ -194,9 +195,10 @@
+ 		OPT_A = 1 << 17,
+ 		OPT_O = 1 << 18,
+ 		OPT_o = 1 << 19,
+-		OPT_f = 1 << 20,
++		OPT_m = 1 << 20,
++		OPT_f = 1 << 21,
+ /* The rest has variable bit positions, need to be clever */
+-		OPTBIT_f = 20,
++		OPTBIT_f = 21,
+ 		USE_FOR_MMU(              OPTBIT_b,)
+ 		USE_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+ 		USE_FEATURE_UDHCP_PORT(   OPTBIT_P,)
+@@ -215,7 +217,7 @@
+ 	/* Cc: mutually exclusive; O: list; -T,-t,-A take numeric param */
+ 	opt_complementary = "c--C:C--c:O::T+:t+:A+";
+ 	USE_GETOPT_LONG(applet_long_options = udhcpc_longopts;)
+-	opt = getopt32(argv, "c:CV:H:h:F:i:np:qRr:s:T:t:vSA:O:of"
++	opt = getopt32(argv, "c:CV:H:h:F:i:np:qRr:s:T:t:vSA:O:om:f"
+ 		USE_FOR_MMU("b")
+ 		USE_FEATURE_UDHCPC_ARPING("a")
+ 		USE_FEATURE_UDHCP_PORT("P:")
+@@ -224,6 +226,7 @@
+ 		, &client_config.script /* s */
+ 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
+		, &list_O
++		, &client_config.maxLease
+		USE_FEATURE_UDHCP_PORT(, &str_P)
+ 		);
+ 	if (opt & OPT_c)
+@@ -545,6 +548,8 @@
+ 						}
+ 					}
+ #endif
++                    if (lease_seconds >= client_config.maxLease-1)  //accelerate probes
++                      lease_seconds = client_config.maxLease;
+ 					/* enter bound state */
+ 					timeout = lease_seconds / 2;
+ 					{
+@@ -611,10 +616,15 @@
+ 				timeout = INT_MAX;
+ 				break;
+ 			case SIGTERM:
+-				bb_info_msg("Received SIGTERM");
+-				if (opt & OPT_R) /* release on quit */
+-					perform_release(requested_ip, server_addr);
++				bb_info_msg("Got SIGTERM");
++				if (opt & OPT_R) goto retAfterReleasingLease; /* release on quit */
+ 				goto ret0;
++            case SIGHUP:
++				bb_info_msg("Got SIGHUP");
++retAfterReleasingLease: ;
++				bb_info_msg("Releasing lease");
++				perform_release(requested_ip, server_addr);
++                goto ret0;
+ 			}
+ 		}
+ 	} /* for (;;) - main loop ends */
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/dhcpc.h busybox-1.11.2.modified/networking/udhcp/dhcpc.h
+--- busybox-1.11.2/networking/udhcp/dhcpc.h	2008-06-25 05:51:14.000000000 -0700
++++ busybox-1.11.2.modified/networking/udhcp/dhcpc.h	2011-04-28 21:58:39.560000219 -0700
+@@ -15,6 +15,7 @@
+ 	char no_default_options;        /* Do not include default optins in request */
+ 	USE_FEATURE_UDHCP_PORT(uint16_t port;)
+ 	int ifindex;                    /* Index number of the interface to use */
++        uint32_t maxLease;              /* reduce any offered lease duration */
+ 	uint8_t opt_mask[256 / 8];      /* Bitmask of options to send (-O option) */
+ 	const char *interface;          /* The name of the interface to use */
+ 	char *pidfile;                  /* Optionally store the process ID */
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/signalpipe.c busybox-1.11.2.modified/networking/udhcp/signalpipe.c
+--- busybox-1.11.2/networking/udhcp/signalpipe.c	2008-06-25 05:51:14.000000000 -0700
++++ busybox-1.11.2.modified/networking/udhcp/signalpipe.c	2011-04-28 21:58:39.560000219 -0700
+@@ -46,6 +46,7 @@
+ 		+ (1 << SIGUSR1)
+ 		+ (1 << SIGUSR2)
+ 		+ (1 << SIGTERM)
++		+ (1 << SIGHUP)
+ 		, signal_handler);
+ }
+ 
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/socket.c busybox-1.11.2.modified/networking/udhcp/socket.c
+--- busybox-1.11.2/networking/udhcp/socket.c	2008-06-25 05:51:14.000000000 -0700
++++ busybox-1.11.2.modified/networking/udhcp/socket.c	2011-04-28 21:58:39.560000219 -0700
+@@ -98,7 +98,12 @@
+ 	if (setsockopt_broadcast(fd) == -1)
+ 		bb_perror_msg_and_die("SO_BROADCAST");
+ 
+-	strncpy(interface.ifr_name, inf, IFNAMSIZ);
++{  //don't be confused by aliased interfaces -- 4/28/11  brent@mbari.org 
++  char *dst = interface.ifr_name;
++  int len = IFNAMSIZ;
++  while (len-- && *inf && *inf != ':') *dst++=*inf++;
++  while (len--) *dst++ = 0;
++}
+ 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &interface, sizeof(interface)) == -1)
+ 		bb_perror_msg_and_die("SO_BINDTODEVICE");
+ 

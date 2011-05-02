@@ -1,0 +1,39 @@
+# Template = kernel-common.tmpl
+
+%define pfx /opt/nxp/rootfs/%{_target_cpu}
+%define dversion 2.6.33
+%define pkg_name linux
+
+Summary         : Linux kernel (core of the Linux operating system)
+Name            : kernel
+Version         : 2.6.33
+Release         : 1
+License         : GPL
+Vendor          : Kernel.org + NXP lpc313x patches
+Packager        : Kevin Wells
+Group           : System Environment/Kernel
+Source          : %{pkg_name}-%{dversion}.tar.bz2
+Patch1		: linux-2.6.33_lpc313x.patch
+Patch2		: linux-2.6.33-lpc313x-v1.01.patch
+Patch3          : kernel-2.6.33-yaffs2.patch
+Patch4          : kernel-2.6.33-disableECCforYAFFS2.patch
+Patch5          : kernel-2.6.33-quietYAFFS2.patch
+Patch6          : kernel-2.6.33-mmc_nand_softirq_v2.patch
+Patch7          : kernel-2.6.33-restoreMMCtimeout.patch
+BuildRoot       : %{_tmppath}/%{name}
+Prefix          : %{pfx}
+
+%Description
+%{summary}
+
+Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
+
+%Prep
+%setup -n %{pkg_name}-%{dversion}
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1

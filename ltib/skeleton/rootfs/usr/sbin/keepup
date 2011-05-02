@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+#  keepup [interface name] {serialPort} {polling interval in seconds}
+#   example:  keepup ppp0 freewave
+#
+export interface=$1
+
+[ $interface ] || {
+  logger -st keepup "Missing interface name"
+  exit 1
+}
+export ifaceFn=/var/run/$interface.pid
+
+export port=$2
+export lockFn=/var/lock/LCK..$port
+export interval=${3-180}  #default to checking once every 3 minutes
+
+checkPPP ()
+{  #true if specified PPPd link looks to be already up
+  read pid < $ifaceFn && kill -0 $pid && return 0
+  # only check the serial port lock if it's specified and pppd looks lost
+  [ "$port" ] && read pid < $lockFn && kill -0 $pid && {
+    logger -t keepup "$interface looks dead, but pid $pid is locking $port"
+  }
+}
+
+while :; do
+  sleep $interval
+  checkPPP || {
+    logger -t keepup "$interface deamon appears to have died, retesting..."
+    sleep 5
+    checkPPP || {
+      sleep 5
+      checkPPP || {
+        logger -t keepup "Bringing up $interface..."
+        ifup $interface
+      }
+    }
+  }
+done

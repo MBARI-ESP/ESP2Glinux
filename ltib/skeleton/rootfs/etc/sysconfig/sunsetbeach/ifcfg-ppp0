@@ -1,0 +1,11 @@
+IFNAME=ppp0
+AUTOSTART=no
+ifPrep() {
+  pppd call ESP unit 0 logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
+EOS
+}

@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+#  ifdown [interface name]
+#
+
+usage ()
+{
+    echo "usage:  ifdown [netInterface]"
+    echo "  deconfigure and disable the specified network interface"
+    exit 1
+}
+
+. /usr/share/ifupfn.sh
+
+
+ifAliasDown() {
+  echo "Shutting down interface $1 ..."
+  fn=/var/run/*$1.pid
+  pidfns=`echo $fn`
+  [ "$pidfns" = "$fn" ] || for pidfn in $pidfns; do
+    daemon=`cat $pidfn`
+    case $1 in
+      ppp*)  signal=TERM ;;
+      *)     signal=HUP  ;;
+    esac
+    for try in 1 2 last; do
+      kill -$signal $daemon 2>/dev/null  #relinquish any lease
+      for t in 1 2 3 4 5; do  #wait for daemon to die
+        sleep 1
+        kill -0 $daemon 2>/dev/null || break 2
+      done
+      [ "$try" = "last" ] && {
+        echo "Forcing $1 (PID $daemon) to terminate" >&2
+        rm -f $pidfn
+        kill -9 $daemon
+        sleep 2
+      }
+    done
+    rm -f $pidfn
+  done
+  ifconfig $1 down 2>/dev/null
+  hostDown $1
+  gateDown $1
+}
+
+eachAlias() {
+  cfg=/etc/sysconfig/ifcfg-
+  aliases=`echo $cfg$2:*`
+  [ "$aliases" = $cfg$2:\* ] || {
+    for alias in $aliases; do
+       $1 ${alias#$cfg}
+    done
+  }
+}
+
+case "$1" in
+  -*|*/*|'') #any flag is a request for help
+    usage    
+  ;;
+  
+  *) #anything else must be the name of an interface or alias
+    if [ "$1" = "${1%:*}" ]; then  #if not an alias
+      eachAlias ifAliasDown $1
+      ifAliasDown $1
+    else
+      ifAliasDown $1
+    fi
+    gateUp
+    hostsUp
+  ;;
+esac

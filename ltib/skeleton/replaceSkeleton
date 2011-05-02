@@ -1,0 +1,69 @@
+#!/bin/bash
+[ -z $1 ] && { 
+  cat <<EOS >&2
+Replace ltib skeleton in the rootfs the directory given as an argument
+with the MBARI one for the ea31xx base board  -- 4/26/11 brent@mbari.org
+EOS
+  exit 2
+}
+
+dst=$1
+etc=$1/etc
+rcd=$etc/rc.d
+rm $2 $rcd/rc.conf $rcd/rcS $rcd/rc.serial $rcd/rc.modules $rcd/init.d/* || {
+  cat <<EOS >&2
+Looks like $dst was not written by ltib or has already had its skeleton replaced
+Invoke with -f as 2nd argument to force replacement anyway (this is dangerous!)
+EOS
+  exit 2
+}
+rm -rf $dst/home/* $dst/lost+found $dst/mnt/*  #remove ltib's users & mount pts
+
+
+here=`dirname $0`
+
+mksymlinks() {
+  [ -z "$1" -o "$1" = "--help" ] && {
+cat <<EOS >&2
+    Usage: mksymlinks base_directory {precmd}
+Make symbolic links specified on stdin relative to specified base directory
+Each line of stdin is of the form:
+"symlink Name" -> "symlink Target"
+Lines that lack the " -> " are ignored.  They may function as comments.
+If the "symlink Target" is omitted, a directory called "symlink Name is created"
+precmd is an optional preparation command.
+Commonly, it is "rm -f" to remove any existing link beforehand
+EOS
+  exit 1
+  }
+
+  mkdir -p $1 && cd $1 || exit 4
+
+  while read linkName arrow linkTarget; do
+    [ "$arrow" = '->' ] && {
+      if [ "$linkTarget" ]; then
+        dir=`dirname $linkName`
+        [ "$2" ] && eval $2 $linkName
+        [ -d $dir ] || mkdir -p $dir || exit 2
+        rm -rf $linkName &&
+        ln -s $linkTarget $linkName || exit 3
+      else
+        mkdir -p $linkName || exit 4
+      fi
+    }
+  done
+}
+
+rm -f $dst/sbin/{halt,reboot,poweroff}
+
+# preserve the initial state of the /var dir so new sd cards can be initialized
+initial=etc/initial
+log=$initial/var/log
+mkdir $dst/$initial &&
+mv $dst/var $dst/$initial &&
+cp -r --preserve=mode $here/rootfs/.  $dst &&
+mksymlinks $dst < $here/symlinks && mkdir -p $log && cd $log && {
+      d=`date  -uIseconds` &&
+      echo ${d%+*}UTC > birth &&
+      echo "Image Built at  `date`"
+}

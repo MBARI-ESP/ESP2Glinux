@@ -1,0 +1,71 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/mtd/nand/lpc313x_nand.c u-boot-2009.11.modified/drivers/mtd/nand/lpc313x_nand.c
+--- u-boot-2009.11/drivers/mtd/nand/lpc313x_nand.c	2011-05-02 11:22:27.142301392 -0700
++++ u-boot-2009.11.modified/drivers/mtd/nand/lpc313x_nand.c	2011-04-23 10:16:34.336001772 -0700
+@@ -48,6 +48,8 @@
+ 	.ns_twp		= 36
+ };
+ 
++
++#ifdef CONFIG_HARDWARE_ECC
+ /*
+  * Autoplacement pattern for 2048+64 bytes large block NAND FLASH
+  */
+@@ -67,6 +69,7 @@
+ 		{48, 4}
+ 	}
+ };
++#endif
+ 
+ /*
+  * Bad block descriptors for small/large/huge block FLASH
+@@ -97,6 +100,7 @@
+ 	.pattern = mirror_pattern
+ };
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ /* Decode and encode buffer ECC status masks */
+ static const u32 nand_buff_dec_mask[2] =
+ {
+@@ -116,6 +120,7 @@
+ {
+ 	(void *) NANDFLASH_CTRL_S0_BASE, (void *) (NANDFLASH_CTRL_S0_BASE + 0x400)
+ };
++#endif
+ 
+ /*
+  * Dummies bytes for bad block ( just for HARDWARE ECC: inaccurate )
+@@ -172,6 +177,7 @@
+ 	}
+ }
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ /*
+  * MTD hardware ECC enable callback
+  */
+@@ -400,6 +406,7 @@
+ 
+ 	return tmpStatus;
+ }
++#endif  //CONFIG_HARDWARE_ECC
+ 
+ /*
+  * Returns NAND busy(0)/ready(!0) status callback
+@@ -554,6 +561,7 @@
+ 	nand->cmd_ctrl = nand_lpc313x_hwcontrol;
+ 	nand->dev_ready = nand_lpc313x_dev_ready;
+ 
++#ifdef CONFIG_HARDWARE_ECC
+ 	/* Configuration ECC related stuff */
+ 	nand->ecc.mode = NAND_ECC_HW_SYNDROME;
+ 	nand->ecc.read_page_raw = lpc313x_nand_read_page_syndrome;
+@@ -576,7 +584,9 @@
+ 	nand->ecc.size = 512;
+ 	nand->ecc.bytes = 16;
+ 	nand->ecc.prepad = 0;
+-
++#else
++	nand->ecc.mode = NAND_ECC_SOFT;
++#endif
+ 	nand_lpc313x_inithw();
+ 
+ 	return(0);

@@ -1,0 +1,37 @@
+OPTIONS=""
+daemon=inetd
+action="start-stop-daemon -x /usr/sbin/$daemon -p /var/run/$daemon.pid"
+
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       $action -S -- $OPTIONS
+
+       dropdir=/etc/dropbear
+       mkdir -p $dropdir
+       for key in rsa dss; do
+         keyfn=dropbear_${key}_host_key
+         if [ ! -r $dropdir/$keyfn ]; then
+           echo "Generating $key key for the dropbear ssh server... "
+           dropbearkey -t $key -f $dropdir/$keyfn >$dropdir/$keyfn.pub
+         fi
+       done
+
+       mkdir -m600 -p /usr/share/empty  #for vsftpd
+       ;;
+                         
+    restart)
+       echo "Sending SIGHUP to inetd"
+       $action -K -s 1 | grep -q "none killed" && 
+         $action -S -- $OPTIONS
+       ;;
+       
+    stop)
+       echo "Stopping inetd"
+       $action -K
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

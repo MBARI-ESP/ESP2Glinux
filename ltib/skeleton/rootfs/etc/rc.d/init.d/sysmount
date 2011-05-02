@@ -1,0 +1,102 @@
+#!/bin/sh
+#mount all filesystems in /etc/fstab not marked "noauto"
+#create /var and /tmp directories and ensure that they are on
+#writable filesystems.
+
+prunePath() {
+#prune non-existant components from the specified filesystem path
+  path=$1
+  until [ -e "$path" ]; do
+    newPath=`dirname $path` || return 2
+    [ "$newPath" = "$path" ] && return 1
+    path=$newPath
+  done
+  echo $path
+}
+
+redoIfRO() {
+#try command $2 writing to directory $1
+#retry cmd after remounting fs rw if command $2 reports read-only filesystem
+  dir=$1; shift
+  err=`eval "$@" 2>&1` || {  #test for cmd trying to write to r/o fs 
+    echo $err | grep -q Read-only && target=`prunePath $dir` && {
+      df $target | {
+        read header && read dev blks used avail use mntpt extra &&
+          echo "Making $mntpt writable because it will contain $dir" >&2 &&
+          mount -oremount,rw,noatime $dev $mntpt
+      } && eval "$@"
+    }
+  }
+}
+
+realPath() {
+#like busybox realpath,
+# but return name of non-existent path at end of a symlink chain
+#beware: this may change $PWD
+  firstPath=$1
+  path=$1
+  maxLinks=100
+  while newPath=`readlink $path 2>/dev/null`; do 
+    let maxLinks=$maxLinks-1
+    [ $maxLinks -lt 0 ] && {
+      echo "sysmount: Too many levels of symbolic links for $firstPath" >&2
+      return 1
+    }
+    [ $newPath = ${newPath#/} ] && {
+      cd `dirname $path`      
+      newPath=$PWD/$newPath
+    }
+    path=$newPath
+  done
+  echo $path
+}
+
+
+case "$1" in
+    start)
+      echo "Mounting filesystems and adding swapfiles listed in /etc/fstab"
+      mount -o remount /
+      mount -a
+      swapon -a 2>/dev/null
+      #Set up temporary directories, preserves existing symlinks
+      tmp=`realPath /tmp` &&
+        redoIfRO "$tmp" "rm -rf $tmp && mkdir -p $tmp && chmod 1777 $tmp"
+      var=`realPath /var` && {
+        cd $var 2>/dev/null || {
+          redoIfRO "$var" "mkdir -p $var && touch $var" && cd $var
+        } && {
+          log=`realPath $var/log` &&
+            redoIfRO $log "mkdir -p $log && chgrp log $log && chmod g+w $log"
+          etc=`realPath $var/etc/ppp` &&
+            redoIfRO $etc "mkdir -p $etc && touch $etc"
+          #preserve utmp to retain initial runlevel event
+          r=`realPath $var/run` &&
+            redoIfRO $r "rm -rf $r/[^u]* $r/u[^t]* $r/ut[^m]* $r/utm[^p]* $r/.[^.]* && mkdir -p $r && touch $r"
+          lock=`realPath $var/lock` &&
+            redoIfRO $lock \
+             "rm -rf $lock/* $lock/.[^.]* && {
+               mkdir -p $lock && chgrp tty $lock && chmod g+rwx $lock
+             }"
+        }
+      }
+      birth=var/log/birth
+      initial=/etc/initial
+      sd=`realPath /sd` && 
+         [ ! -r $sd/$birth -a -r $initial/$birth -a -d $sd ] &&
+         redoIfRO $sd "cp -af $initial/. $sd"
+       ;;
+                         
+    stop)
+      echo -n "Unmounting file systems ... "
+      rm -f /var/run/utmp /var/log/wtmp
+      swapoff -a 2>/dev/null
+      umount -ar 2>&1 | grep -vE "(tmpfs|devpts) busy"
+      echo "Done!"
+       ;;
+       
+    *)
+       echo "usage: start|stop"
+       echo "on start:  mount all filesystems in fstab not marked \"noauto\""
+       echo "on stop:  umount all filesystems (except proc and root)"
+       ;;
+esac

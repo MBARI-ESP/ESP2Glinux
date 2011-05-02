@@ -1,0 +1,39 @@
+# $Id$
+# pppd configuration for the embedded ESP instrument - 6/2/07 brent@mbari.org
+
+#debugging options
+#debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+#logfile
+#dump
+
+#RS-232 port configuration
+freewave     #symlink /dev/freewave to the modem's serial port
+115200       #baud rate
+crtscts      #hardware RTS/CTS handshaking
+modem        #monitor carrier detect
+lock         #request exclusive access to the port
+
+#connection
+linkname shore
+auth        #require password authorization
+passive     #wait passively
+silent      #and silently
+persist     #don't terminate if the link breaks
+holdoff 2   #try to reestablish link a few seconds after it terminates
+maxfail 0   #never give up!
+
+#IP addressing
+10.2.2.10:    #default local address
+ipcp-accept-local   #let the peer override our default address
+usepeerdns    #ask shore to supply us  DNS server addresses
+defaultroute  #use PPP as the default route
+
+#compression
+deflate 12  #deflate in 4k byte blocks
+
+#uncomment to switch freewave to master mode if it is in operating mode #6
+connect "sleep 2"  #; exec chat -t 20 '' 'ATDT0' 'CONNECT' ''"

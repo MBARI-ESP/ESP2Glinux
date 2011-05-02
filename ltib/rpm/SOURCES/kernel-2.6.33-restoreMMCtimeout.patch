@@ -1,0 +1,12 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c
+--- linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c	2011-04-25 19:16:24.248001772 -0700
++++ linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c	2011-04-25 19:15:01.864001772 -0700
+@@ -287,7 +287,7 @@
+ 	/* the standard response timeout value (Ncr) is 64 clocks.
+ 	 * Let give 4 additional clocks for response.
+ 	 */
+-	mci_writel(TMOUT, /*0xffffffff); */ (timeout << 8) | (70));
++	mci_writel(TMOUT, (timeout << 8) | (70));
+ }
+ 
+ static u32 lpc313x_mci_prepare_command(struct mmc_host *mmc,

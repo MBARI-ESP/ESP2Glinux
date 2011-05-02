@@ -1,0 +1,701 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/dma.c linux-2.6.33.modified/arch/arm/mach-lpc313x/dma.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/dma.c	2011-04-22 17:08:57.776001772 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/dma.c	2011-04-22 17:07:49.380001772 -0700
+@@ -94,7 +94,7 @@
+ 	if ((chn >= DMA_MAX_CHANNELS) || !dma_channels[chn].name ||
+ 		dma_valid_config(dma_setup) )
+ 		return -EINVAL;
+-	
++
+ 	DMACH_SRC_ADDR(chn) = dma_setup->src_address;
+ 	DMACH_DST_ADDR(chn) = dma_setup->dest_address;
+ 	DMACH_LEN(chn) = dma_setup->trans_length;
+@@ -117,9 +117,9 @@
+ 
+ 	memset(&dma_setup, 0, sizeof(dma_setup));
+ 
+-	for (chn = 0, mask = 1; chn < DMA_MAX_CHANNELS; chn++) 
++	for (chn = 0, mask = 1; chn < DMA_MAX_CHANNELS; chn++)
+ 	{
+-		if (!dma_channels[chn].name) 
++		if (!dma_channels[chn].name)
+ 		{
+ 			dma_increment_usage();
+ 			dma_channels[chn].name = name;
+@@ -150,7 +150,7 @@
+ 	if (chn >= DMA_MAX_CHANNELS || !name)
+ 		return -EINVAL;
+ 
+-	if (dma_channels[chn].name) 
++	if (dma_channels[chn].name)
+ 		return -EBUSY;
+ 
+ 	lpc313x_dma_lock();
+@@ -243,7 +243,7 @@
+ 	}
+ 
+ 	lpc313x_dma_lock();
+-	
++
+ 	local_irq_save(flags);
+ 
+ 	/* Otherwise an unexpected interrupt can occur when the channel is reallocated for another purpose */
+@@ -260,7 +260,7 @@
+ 
+ 	lpc313x_dma_unlock();
+ 	dma_decrement_usage();
+-	
++
+ 	return 0;
+ }
+ 
+@@ -277,20 +277,20 @@
+ 		if (dma_irq_status & mask) {
+ 			DMACH_IRQ_STATUS = mask;
+ 			if (dma_channels[chn].callback_handler)
+-				(dma_channels[chn].callback_handler) 
++				(dma_channels[chn].callback_handler)
+ 					(chn, DMA_IRQ_FINISHED, dma_channels[chn].data);
+ 		}
+ 		mask = mask << 1;
+ 		if (dma_irq_status & mask) {
+ 			DMACH_IRQ_STATUS = mask;
+ 			if (dma_channels[chn].callback_handler)
+-				(dma_channels[chn].callback_handler) 
++				(dma_channels[chn].callback_handler)
+ 					(chn, DMA_IRQ_HALFWAY, dma_channels[chn].data);
+ 		}
+ 		mask = mask << 1;
+ 	}
+ 
+-	if (dma_irq_status & DMA_IRQS_SOFT) { /* Soft int */ 
++	if (dma_irq_status & DMA_IRQS_SOFT) { /* Soft int */
+ 		DMACH_IRQ_STATUS = DMA_IRQS_SOFT;
+ 		for (chn = 0; chn < DMA_MAX_CHANNELS; chn++) {
+ 			if (sg_higher_channel[chn] && softirqmask[chn] &&
+@@ -306,7 +306,7 @@
+ 		DMACH_IRQ_STATUS = DMA_IRQS_ABORT;
+ 		for (chn = 0; chn < DMA_MAX_CHANNELS; chn++)
+ 			if (dma_channels[chn].callback_handler)
+-				(dma_channels[chn].callback_handler) 
++				(dma_channels[chn].callback_handler)
+ 					(chn, DMA_IRQ_DMAABORT, dma_channels[chn].data);
+ 	}
+ 
+@@ -353,7 +353,8 @@
+ 	return 0;
+ }
+ 
+-int dma_request_sg_channel (char *name, dma_cb_t cb, void *data, int usesoftirq)
++int dma_request_sg_channel (char *name, dma_cb_t cb, void *data,
++		dma_cb_t cb1, void *data1, int usesoftirq)
+ {
+ 	unsigned int chn;
+ 	unsigned long flags;
+@@ -367,7 +368,7 @@
+ 
+ 	lpc313x_dma_lock();
+ 
+-	for (chn = 0; chn < DMA_MAX_CHANNELS - 1; chn++) 
++	for (chn = 0; chn < DMA_MAX_CHANNELS - 1; chn++)
+ 		if (!dma_channels[chn].name && !dma_channels[chn + 1].name) {
+ 			sg_higher_channel[chn] = chn + 1;
+ 			break;
+@@ -388,6 +389,10 @@
+ 		dma_channels[sg_higher_channel[chn]].callback_handler = cb;
+ 		dma_channels[sg_higher_channel[chn]].data = data;
+ 	}
++	if(cb1) {
++		dma_channels[sg_higher_channel[chn] - 1].callback_handler = cb1;
++		dma_channels[sg_higher_channel[chn] - 1].data = data1;
++	}
+ 	dma_prog_channel (sg_higher_channel[chn], &dma_setup);
+ 
+ 	if (usesoftirq) {
+@@ -404,7 +409,8 @@
+ 	return sg_higher_channel[chn];
+ }
+ 
+-int dma_request_specific_sg_channel (int chn, char *name, dma_cb_t cb, void *data, int usesoftirq)
++int dma_request_specific_sg_channel (int chn, char *name, dma_cb_t cb,
++		void *data, dma_cb_t cb1, void *data1, int usesoftirq)
+ {
+ 	unsigned long flags;
+ 	dma_setup_t  dma_setup;
+@@ -419,7 +425,7 @@
+ 		return -EBUSY;
+ 
+ 	lpc313x_dma_lock();
+-	
++
+ 	sg_higher_channel[chn] = chn;
+ 
+ 	memset(&dma_setup, 0, sizeof(dma_setup));
+@@ -432,6 +438,10 @@
+ 		dma_channels[sg_higher_channel[chn]].callback_handler = cb;
+ 		dma_channels[sg_higher_channel[chn]].data = data;
+ 	}
++	if(cb1) {
++		dma_channels[sg_higher_channel[chn] - 1].callback_handler = cb1;
++		dma_channels[sg_higher_channel[chn] - 1].data = data1;
++	}
+ 	dma_prog_channel (sg_higher_channel[chn], &dma_setup);
+ 
+ 	if (usesoftirq) {
+@@ -507,16 +517,16 @@
+ 		DMACH_IRQ_MASK = dma_irq_mask;
+ 		local_irq_restore(flags);
+ 	}
+-	
++
+ 	dma_channels[chn].name = NULL;
+ 	dma_channels[chn].callback_handler = NULL;
+ 	dma_channels[chn].data = NULL;
+-	
++
+ 	chn--;
+ 	dma_channels[chn].name = NULL;
+ 	dma_channels[chn].callback_handler = NULL;
+ 	dma_channels[chn].data = NULL;
+-	
++
+ 	sg_higher_channel[chn] = 0;
+ 
+ 	lpc313x_dma_unlock();
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/include/mach/dma.h linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/dma.h
+--- linux-2.6.33/arch/arm/mach-lpc313x/include/mach/dma.h	2011-04-22 17:08:57.780001772 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/dma.h	2011-04-22 17:07:49.380001772 -0700
+@@ -1,5 +1,5 @@
+ /*  linux/arch/arm/mach-lpc313x/include/mach/dma.h
+- *  
++ *
+  *  Author:	Durgesh Pattamatta
+  *  Copyright (C) 2009 NXP semiconductors
+  *
+@@ -100,14 +100,14 @@
+ /*
+  * Type of interrupt
+  */
+-typedef enum 
++typedef enum
+ {
+ 	DMA_IRQ_FINISHED = 0,
+ 	DMA_IRQ_HALFWAY,
+ 	DMA_IRQ_SOFTINT,
+ 	DMA_IRQ_DMAABORT
+ } dma_irq_type_t;
+- /* 
++ /*
+  * DMA IRQ channel callback function
+  * parameters:
+  * 1st parameter - channel number for which an IRQ occured
+@@ -149,7 +149,7 @@
+ } dma_setup_t;
+ 
+ /*
+- * SDMA scatter-gather list structure 
++ * SDMA scatter-gather list structure
+  */
+ typedef struct dma_sg_ll
+ {
+@@ -170,7 +170,7 @@
+  * 1st parameter - channel number, obtained from dma_request_channel()
+  * 2nd parameter - ptr to the structure containing setup info for the channel
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_prog_channel (unsigned int, dma_setup_t   *);
+ 
+@@ -184,7 +184,7 @@
+  * 3rd parameter - additional data (callback-specific context) to be passed
+  *                 to the callback function when it's invoked
+  *
+- * Returns: channel number on success, otherwise (negative) failure 
++ * Returns: channel number on success, otherwise (negative) failure
+  */
+ int dma_request_channel (char *, dma_cb_t cb, void *);
+ 
+@@ -200,7 +200,7 @@
+  *                 to the callback function when it's invoked
+  *
+  *
+- * Returns: channel number on success, otherwise (negative) failure 
++ * Returns: channel number on success, otherwise (negative) failure
+  */
+ int dma_request_specific_channel (int, char *, dma_cb_t cb, void *);
+ 
+@@ -223,7 +223,7 @@
+  * Function parameters:
+  * 1st parameter - SDMA channel number
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_start_channel (unsigned int);
+ 
+@@ -233,7 +233,7 @@
+  * Function parameters:
+  * 1st parameter - SDMA channel number
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_stop_channel (unsigned int);
+ 
+@@ -243,7 +243,7 @@
+  * Function parameters:
+  * 1st parameter - SDMA channel number
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_release_channel (unsigned int);
+ 
+@@ -254,7 +254,7 @@
+  * 1st parameter - SDMA channel number
+  * 2nd parameter - ptr to the counter variable to be filled
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_read_counter (unsigned int, unsigned int *);
+ 
+@@ -265,7 +265,7 @@
+  * 1st parameter - SDMA channel number
+  * 2nd parameter - value to be written
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_write_counter (unsigned int, u32);
+ 
+@@ -281,7 +281,7 @@
+  * 6th parameter - ptr to the enable flag variable to be filled
+  * 7th parameter - ptr to the address counter variable to be filled
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_current_state    (unsigned int, unsigned int *, unsigned int *, unsigned int *, unsigned int  *, unsigned int  *, unsigned int  *);
+ 
+@@ -292,10 +292,14 @@
+  * Function parameters:
+  * 1st parameter - free-form string identifier of channel.
+  * 2nd parameter - callback function to be invoked when an interrupt
+- *                 occurs for this channel
++ *                 occurs for the first channel
+  * 3rd parameter - additional data (callback-specific context) to be passed
+- *                 to the callback function when it's invoked
+- * 4th parameter - flag to enable soft IRQ for this channel. Only 1 channel
++ *                 to the callback function of first channel when it's invoked
++ * 4th parameter - callback function to be invoked when an interrupt
++ *                 occurs for the second channel
++ * 5th parameter - additional data (callback-specific context) to be passed
++ *                 to the callback function of second channel when it's invoked
++ * 6th parameter - flag to enable soft IRQ for this channel. Only 1 channel
+  *                 may be enabled with soft-irq.
+  *
+  * Callback parameters:
+@@ -306,7 +310,8 @@
+  *
+  * Returns: bigger channel number on success, otherwise negative error code
+  */
+-int dma_request_sg_channel (char *, dma_cb_t cb, void *, int);
++int dma_request_sg_channel (char *, dma_cb_t cb1, void *,
++		dma_cb_t cb2, void *, int);
+ 
+ /*
+  * Request specific SDMA SG channel (actually pair of channels)
+@@ -314,12 +319,15 @@
+  *
+  * Function parameters:
+  * 1st parameter - SDMA channel number
+- * 2nd parameter - free-form string identifier of channel.
+- * 3rd parameter - callback function to be invoked when an interrupt
+- *                 occurs for this channel
+- * 4th parameter - additional data (callback-specific context) to be passed
+- *                 to the callback function when it's invoked
+- * 5th parameter - flag to enable soft IRQ for this channel. Only 1 channel
++ * 2nd parameter - callback function to be invoked when an interrupt
++ *                 occurs for the first channel
++ * 3rd parameter - additional data (callback-specific context) to be passed
++ *                 to the callback function of first channel when it's invoked
++ * 4th parameter - callback function to be invoked when an interrupt
++ *                 occurs for the second channel
++ * 5th parameter - additional data (callback-specific context) to be passed
++ *                 to the callback function of second channel when it's invoked
++ * 6th parameter - flag to enable soft IRQ for this channel. Only 1 channel
+  *                 may be enabled with soft-irq.
+  *
+  * Callback parameters:
+@@ -330,20 +338,21 @@
+  *
+  * Returns: bigger channel number on success, otherwise negative error code
+  */
+-int dma_request_specific_sg_channel (int, char *, dma_cb_t cb, void *, int);
++int dma_request_specific_sg_channel (int, char *, dma_cb_t cb1, void *,
++		dma_cb_t cb2, void *, int);
+ 
+ /*
+  * Prepare SG list for programming into the SDMA controller
+  * This function is intended to set right companion channel for each
+- * entry in the list except the last one and to set the last entry of 
+- * the scatter-gather list according to one of the methods to define 
++ * entry in the list except the last one and to set the last entry of
++ * the scatter-gather list according to one of the methods to define
+  * the last entry described.
+  *
+  * Function parameters:
+  * 1st parameter - channel number returned by dma_request_sg_channel()
+  * 2nd parameter - ptr to the first scatter gather list entry
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_prepare_sg_list(int, dma_sg_ll_t *);
+ 
+@@ -353,10 +362,10 @@
+  * the user has to supply only the linked-list address
+  *
+  * Function parameters:
+- * 1st parameter - channel number returned by dma_request_sg_channel() 
++ * 1st parameter - channel number returned by dma_request_sg_channel()
+  * 2nd parameter - physical ptr to the first entry in the linked list
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_prog_sg_channel(int, u32 );
+ 
+@@ -366,7 +375,7 @@
+  * Function parameters:
+  * 1st parameter - channel number returned by dma_request_sg_channel()
+  *
+- * Returns: 0 on success, otherwise failure 
++ * Returns: 0 on success, otherwise failure
+  */
+ int dma_release_sg_channel (unsigned int);
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c
+--- linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c	2011-04-22 17:08:57.792001772 -0700
++++ linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c	2011-04-22 17:07:49.380001772 -0700
+@@ -282,9 +282,9 @@
+ 
+ 	timeout = ns_to_clocks(slot->clock, data->timeout_ns) + data->timeout_clks;
+ 
+-	dev_vdbg(&slot->mmc->class_dev, "tmo req:%d + %d reg:%d clk:%d\n", 
++	dev_vdbg(&slot->mmc->class_dev, "tmo req:%d + %d reg:%d clk:%d\n",
+ 		data->timeout_ns, data->timeout_clks, timeout, slot->clock);
+-	/* the standard response timeout value (Ncr) is 64 clocks. 
++	/* the standard response timeout value (Ncr) is 64 clocks.
+ 	 * Let give 4 additional clocks for response.
+ 	 */
+ 	mci_writel(TMOUT, /*0xffffffff); */ (timeout << 8) | (70));
+@@ -295,36 +295,36 @@
+ {
+ 	struct mmc_data	*data;
+ 	u32		cmdr;
+-	
++
+ 	cmd->error = -EINPROGRESS;
+ 	cmdr = cmd->opcode;
+ 
+-	if(cmdr == 12) 
++	if(cmdr == 12)
+ 		cmdr |= SDMMC_CMD_STOP;
+-	else 
++	else
+ 		cmdr |= SDMMC_CMD_PRV_DAT_WAIT;
+ 
+ 	if (cmd->flags & MMC_RSP_PRESENT) {
+ 		cmdr |= SDMMC_CMD_RESP_EXP; // expect the respond, need to set this bit
+-		if (cmd->flags & MMC_RSP_136) 
++		if (cmd->flags & MMC_RSP_136)
+ 			cmdr |= SDMMC_CMD_RESP_LONG; // expect long respond
+-		
+-		if(cmd->flags & MMC_RSP_CRC) 
++
++		if(cmd->flags & MMC_RSP_CRC)
+ 			cmdr |= SDMMC_CMD_RESP_CRC;
+ 	}
+ 
+ 	data = cmd->data;
+ 	if (data) {
+ 		cmdr |= SDMMC_CMD_DAT_EXP;
+-		if (data->flags & MMC_DATA_STREAM) 
++		if (data->flags & MMC_DATA_STREAM)
+ 			cmdr |= SDMMC_CMD_STRM_MODE; //  set stream mode
+-		if (data->flags & MMC_DATA_WRITE) 
++		if (data->flags & MMC_DATA_WRITE)
+ 		    cmdr |= SDMMC_CMD_DAT_WR;
+-		
++
+ #if 0 /* Jerry, need to confirm the specification does we need to set this bit if blocks > 1 */
+-		if(data->blocks > 1) 
++		if(data->blocks > 1)
+ 		    cmdr |= SDMMC_CMD_SEND_STOP;
+-		
++
+ #endif
+ 	}
+ 	return cmdr;
+@@ -343,7 +343,7 @@
+ 	mci_writel(CMD, cmd_flags | SDMMC_CMD_START); // write to CMD register
+ 
+ 	/* wait until CIU accepts the command */
+-	while (--tmo && (mci_readl(CMD) & SDMMC_CMD_START)) 
++	while (--tmo && (mci_readl(CMD) & SDMMC_CMD_START))
+ 		cpu_relax();
+ }
+ 
+@@ -359,7 +359,7 @@
+ {
+ 	struct mmc_data			*data = host->data;
+ 
+-	if (data) 
++	if (data)
+ 		dma_unmap_sg(&host->pdev->dev, data->sg, data->sg_len,
+ 		     ((data->flags & MMC_DATA_WRITE)
+ 		      ? DMA_TO_DEVICE : DMA_FROM_DEVICE));
+@@ -464,9 +464,15 @@
+ #endif
+ 
+ 			if (trans_len > DMA_MAX_TRANSFERS) {
++#ifdef BURST_DMA
++				trans_len = DMA_MAX_TRANSFERS;
++				length -= (DMA_MAX_TRANSFERS + 1) << 4;
++				mem_addr += ((DMA_MAX_TRANSFERS + 1) << 4);
++#else
+ 				trans_len = DMA_MAX_TRANSFERS;
+ 				length -= (DMA_MAX_TRANSFERS + 1) << 2;
+ 				mem_addr += ((DMA_MAX_TRANSFERS + 1) << 2);
++#endif
+ 			}
+ 			else {
+ 				length = 0;
+@@ -524,7 +530,7 @@
+ 		host->pio_offset = 0;
+ 		if (data->flags & MMC_DATA_READ)
+ 			host->dir_status = LPC313x_MCI_RECV_STATUS;
+-		else 
++		else
+ 			host->dir_status = LPC313x_MCI_SEND_STATUS;
+ 
+ 		//SDMMC_INTMASK |= (SDMMC_INT_RXDR | SDMMC_INT_TXDR);
+@@ -549,7 +555,7 @@
+ 
+ 		dev_dbg(&slot->mmc->class_dev, "Bus speed (slot %d) = %dHz div:%d (actual %dHz)\n",
+ 			slot->id, slot->clock, div, (host->bus_hz / div) >> 1);
+-		
++
+ 		/* store the actual clock for calculations */
+ 		slot->clock = (host->bus_hz / div) >> 1;
+ 		/* disable clock */
+@@ -606,17 +612,17 @@
+ 	cmd = mrq->cmd;
+ 	cmdflags = lpc313x_mci_prepare_command(slot->mmc, cmd);
+ 
+-	if (unlikely(test_and_clear_bit(LPC313x_MMC_CARD_NEED_INIT, &slot->flags))) 
++	if (unlikely(test_and_clear_bit(LPC313x_MMC_CARD_NEED_INIT, &slot->flags)))
+ 	    cmdflags |= SDMMC_CMD_INIT; //this is the first command, let set send the initializtion clock
+-	
++
+ 	if (data) //we may need to move this code to mci_start_command
+ 		lpc313x_mci_submit_data(host, data);
+ 
+ 	lpc313x_mci_start_command(host, cmd, cmdflags);
+ 
+-	if (mrq->stop) 
++	if (mrq->stop)
+ 		host->stop_cmdr = lpc313x_mci_prepare_command(slot->mmc, mrq->stop);
+-	
++
+ }
+ 
+ 
+@@ -805,15 +811,15 @@
+ 	if (cmd->error) {
+ 		dev_vdbg(&host->pdev->dev,
+ 			"command error: status=0x%08x resp=0x%08x\n"
+-			"cmd=0x%08x arg=0x%08x flg=0x%08x err=%d\n", 
+-			status, cmd->resp[0], 
++			"cmd=0x%08x arg=0x%08x flg=0x%08x err=%d\n",
++			status, cmd->resp[0],
+ 			cmd->opcode, cmd->arg, cmd->flags, cmd->error);
+ 
+ 		if (cmd->data) {
+ 			host->data = NULL;
+ 			lpc313x_mci_stop_dma(host);
+ 		}
+-	} 
++	}
+ }
+ 
+ static void lpc313x_mci_tasklet_func(unsigned long priv)
+@@ -948,7 +954,7 @@
+ {
+     u32* pData = (u32*)buf;
+ 
+-    if (cnt % 4 != 0) 
++    if (cnt % 4 != 0)
+ 	    printk("error not align 4\n");
+ 
+     cnt = cnt >> 2;
+@@ -962,7 +968,7 @@
+ {
+     u32* pData = (u32*)buf;
+ 
+-    if (cnt % 4 != 0) 
++    if (cnt % 4 != 0)
+ 	    printk("error not align 4\n");
+     cnt = cnt >> 2;
+     while (cnt > 0) {
+@@ -982,7 +988,7 @@
+ 
+ 	do {
+ 		len = SDMMC_GET_FCNT(mci_readl(STATUS)) << 2;
+-		if(count == 0) 
++		if(count == 0)
+ 			old_len = len;
+ 		if (likely(offset + len <= sg->length)) {
+ 			lpc313x_mci_pull_data((void *)(buf + offset),len);
+@@ -1103,7 +1109,7 @@
+ 
+ static void lpc313x_mci_cmd_interrupt(struct lpc313x_mci *host, u32 status)
+ {
+-	if(!host->cmd_status) 
++	if(!host->cmd_status)
+ 		host->cmd_status = status;
+ 
+ 	smp_wmb();
+@@ -1146,7 +1152,7 @@
+ 			host->data_status = status;
+ 		    smp_wmb();
+ 		    if(host->dir_status == LPC313x_MCI_RECV_STATUS) {
+-			if(host->sg != NULL) 
++			if(host->sg != NULL)
+ 				lpc313x_mci_read_data_pio(host);
+ 		    }
+ 		    lpc313x_mci_set_pending(host, EVENT_DATA_COMPLETE);
+@@ -1155,7 +1161,7 @@
+ 
+ 		if (pending & SDMMC_INT_RXDR) {
+ 		    mci_writel(RINTSTS,SDMMC_INT_RXDR);  //  clear interrupt
+-		    if(host->sg) 
++		    if(host->sg)
+ 			    lpc313x_mci_read_data_pio(host);
+ 		}
+ 
+@@ -1171,7 +1177,7 @@
+ 		    lpc313x_mci_cmd_interrupt(host, status);
+ 		}
+ 	} while (pass_count++ < 5);
+-	
++
+ 	spin_unlock(&host->lock);
+ 
+ 	return pass_count ? IRQ_HANDLED : IRQ_NONE;
+@@ -1225,7 +1231,7 @@
+ 				host->pdata->setpower(slot->id, 0);
+ 
+ 			clear_bit(LPC313x_MMC_CARD_PRESENT, &slot->flags);
+-		}			
++		}
+ 
+ 
+ 		/* Clean up queue if present */
+@@ -1439,11 +1445,20 @@
+ 	CGU_CFG->resetn_soft[SD_MMC_PNRES_SOFT] = CGU_CONFIG_SOFT_RESET;
+ 
+ #ifdef USE_DMA
+-	host->dma_chn = dma_request_sg_channel("MCI",  lpc313x_mci_dma_complete, host, 1);
++	host->dma_chn = dma_request_sg_channel("MCI",  lpc313x_mci_dma_complete, host,
++			0, 0, 1);
++	if(host->dma_chn < 0) {
++		dev_err(&pdev->dev, "Failed to allocate DMA SG channel\n");
++		printk(KERN_CRIT "Failed to allocate DMA SG channel\n");
++		ret = host->dma_chn;
++		goto err_freemap;
++	}
++
+ 	host->sg_cpu = dma_alloc_coherent(&pdev->dev, PAGE_SIZE, &host->sg_dma, GFP_KERNEL);
+ 	if (host->sg_cpu == NULL) {
+ 		dev_err(&pdev->dev,
+ 			 "%s: could not alloc dma memory \n", __func__);
++		ret = -ENOMEM;
+ 		goto err_freemap;
+ 	}
+ #endif
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mtd/nand/lpc313x_nand.c linux-2.6.33.modified/drivers/mtd/nand/lpc313x_nand.c
+--- linux-2.6.33/drivers/mtd/nand/lpc313x_nand.c	2011-04-22 17:08:57.844001772 -0700
++++ linux-2.6.33.modified/drivers/mtd/nand/lpc313x_nand.c	2011-04-22 17:07:49.384001772 -0700
+@@ -258,7 +258,7 @@
+ 	struct lpc313x_nand_info *host = (struct lpc313x_nand_info *)arg;
+ 
+ 	/* SG Table ended */
+-	if (type == DMA_IRQ_SOFTINT)
++	if (type == DMA_IRQ_FINISHED)
+ 	{
+ 		/* Flag event and wakeup */
+ 		host->dmapending = 1;
+@@ -363,16 +363,8 @@
+ 	host->sg_cpu[1].setup.dest_address = rd ? oob_data :
+ 			(nand_buff_phys_addr[bufrdy] + eccsize);
+ 	host->sg_cpu[1].setup.trans_length = (oob_size >> 2) - 1;
+-	host->sg_cpu[1].setup.cfg = DMA_CFG_CMP_CH_EN |
+-		      DMA_CFG_CMP_CH_NR(host->dma_chn) | DMA_CFG_TX_WORD;
+-	host->sg_cpu[1].next_entry = host->sg_dma + (sizeof(dma_sg_ll_t) * 2);
+-
+-	/* SG entry to transfer OOB data */
+-	host->sg_cpu[2].setup.src_address = host->sg_dma;
+-	host->sg_cpu[2].setup.dest_address = DMACH_SOFT_INT_PHYS;
+-	host->sg_cpu[2].setup.trans_length = 1;
+-	host->sg_cpu[2].setup.cfg = DMA_CFG_TX_WORD;
+-	host->sg_cpu[2].next_entry = 0;
++	host->sg_cpu[1].setup.cfg = DMA_CFG_TX_WORD;
++	host->sg_cpu[1].next_entry = 0;
+ 
+ 	/* Program the SG channel */
+ 	dma_prog_sg_channel(host->dma_chn, host->sg_dma);
+@@ -1420,8 +1412,8 @@
+ 
+ #ifdef USE_DMA
+ 	/* Allocate sg channel for DMA transfers */
+-	host->dma_chn = dma_request_sg_channel("NAND", lpc313x_nand_dma_irq,
+-			host, 1);
++	host->dma_chn = dma_request_sg_channel("NAND", 0, 0,
++			lpc313x_nand_dma_irq, host, 0);
+ 	if(host->dma_chn < 0) {
+ 		dev_err(&pdev->dev, "Failed to allocate DMA SG channel\n");
+ 		err = host->dma_chn;
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/sound/soc/lpc313x/lpc313x-pcm.c linux-2.6.33.modified/sound/soc/lpc313x/lpc313x-pcm.c
+--- linux-2.6.33/sound/soc/lpc313x/lpc313x-pcm.c	2011-04-22 17:08:57.812001772 -0700
++++ linux-2.6.33.modified/sound/soc/lpc313x/lpc313x-pcm.c	2011-04-22 17:07:49.384001772 -0700
+@@ -202,7 +202,7 @@
+ 		dma_release_sg_channel(prtd->dmach);
+ 
+ 		/* Return the linked list area */
+-		dma_free_coherent(substream->pcm->card->dev, 
++		dma_free_coherent(substream->pcm->card->dev,
+ 			DMA_LIST_SIZE, prtd->p_sg_cpu, (dma_addr_t)prtd->p_sg_dma);
+ #else
+ 		dma_release_channel((unsigned int) prtd->dmach);
+@@ -223,7 +223,7 @@
+ 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ #if defined (CONFIG_SND_USE_DMA_LINKLIST)
+ 			prtd->dmach = dma_request_sg_channel("I2STX",
+-				lpc313x_pcm_dma_irq, substream, 0);
++				lpc313x_pcm_dma_irq, substream, 0, 0, 0);
+ 			prtd->dma_cfg_base = DMA_CFG_TX_WORD |
+ 				DMA_CFG_RD_SLV_NR(0) | DMA_CFG_CMP_CH_EN |
+ 				DMA_CFG_WR_SLV_NR(TX_DMA_CHCFG) |
+@@ -240,7 +240,7 @@
+ 		else {
+ #if defined (CONFIG_SND_USE_DMA_LINKLIST)
+ 			prtd->dmach = dma_request_sg_channel("I2SRX",
+-				lpc313x_pcm_dma_irq, substream, 0);
++				lpc313x_pcm_dma_irq, substream, 0, 0, 0);
+ 			prtd->dma_cfg_base = DMA_CFG_TX_WORD |
+ 				DMA_CFG_WR_SLV_NR(0) | DMA_CFG_CMP_CH_EN |
+ 				DMA_CFG_RD_SLV_NR(RX_DMA_CHCFG) |

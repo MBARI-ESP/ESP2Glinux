@@ -1,0 +1,100 @@
+#!/bin/sh
+#mount or umount filesystems of the specified type
+#and start logging to a file via nfs if /var/log is mounted
+#default is to mount all nfs entries
+#this can be overridden.  For example:
+##  fstype=vfat service nfsmount start
+#one can also select mounts of the specified type:
+##  mount="#mbari" service nfsmount start
+#mounts all (nfs) entries containing the string #mbari
+#lines in /etc/fstab after any starting with #END are ignored
+
+
+grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
+  echo "Missing Network -- skipping NFS mounts"
+  exit 1
+}
+
+op=$1;shift
+: ${fstype:=nfs}
+: ${mount:="$@"}
+mntpts=`grep "$mount" /etc/fstab | 
+    while read device mntpt fs rest; do
+      [ "$device" = "#END" ] && break
+      [ "$fs" = "$fstype" ] && echo $mntpt
+    done`
+    
+[ -z "$mntpts" -a -n "$mount" ] && {
+  echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
+  exit 1
+}
+
+mounted() {
+#returns true if $1 is mounted, false if not, 2 if it does not exist
+  realmnt=`realpath $1` || return 2
+  cat /proc/mounts | 
+    while read device mntpt rest; do
+      [ "$realmnt" = "$mntpt" ] && return
+    done
+}
+
+chklog() {
+#stop logging monentarily of mntpt is /var or /var/log
+  act=$1
+  mntpt=$2
+  echo "  ${act}ing $mntpt " 
+    case $mntpt in
+      /var|/var/log)
+        pidof syslogd >/dev/null && /etc/init.d/syslog stop >/dev/null
+          $act $mntpt
+        /etc/init.d/syslog start >/dev/null
+      ;;
+      *)  
+        $act $mntpt
+    esac
+}
+
+mnt() {
+  echo "Mounting network filesystems ..."
+  [ "$mntpts" ] && {
+    set $mntpts
+    for mntpt; do
+      mounted $mntpt
+      [ $? = 1 ] && chklog mount $mntpt
+    done
+  }
+}
+
+umnt() {
+  echo "Unmounting network filesystems ..."
+  [ "$mntpts" ] && {
+    set $mntpts
+    for mntpt; do
+      mounted $mntpt && chklog umount $mntpt
+    done
+  }
+}
+
+case "$op" in
+    start)
+      mnt
+       ;;
+                         
+    restart)
+      umnt
+      mnt
+       ;;
+       
+    stop)
+      if [ -z "$mount" ]; then
+        echo "Unmounting all network filesystems ..."
+        umount -aflt nfs
+      else
+        umnt
+      fi
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

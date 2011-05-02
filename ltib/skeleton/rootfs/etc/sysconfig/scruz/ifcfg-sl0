@@ -1,0 +1,30 @@
+IFNAME=sl0
+AUTOSTART=yes
+
+IPADDR=192.168.8.20      #master freewave
+NETMASK=255.255.255.240
+MTU=1500
+
+hosts() {
+  echo "#$IFNAME"  #add IP addresses for LAN neighbors to this table
+#$IPADDR mail  #include in hosts only if there is an ssh SMTP tunnel
+  tee ~ftp/etc/hosts <<EOS   #copy entries to ftp our server for slip clients
+$IPADDR  shore.radio     shore
+192.168.8.17  ESPship.radio   ship
+192.168.8.21  ESPmack.radio   mack
+192.168.8.22  ESPbruce.radio  bruce
+192.168.8.23  ESPneo.radio    neo
+192.168.8.24  ESPmoe.radio    moe
+192.168.8.25  ESPbetty.radio  betty
+192.168.8.26  ESPgordon.radio gordon
+EOS
+  echo "#---"
+}
+
+#start up SLIP for freewave master
+ifPrep() {
+  export IFNAME
+  /sbin/slattach -P /var/run/$IFNAME.pid -lLp slip -i slinit \
+    -s 115200 /dev/freewave &
+  sleep 1
+}

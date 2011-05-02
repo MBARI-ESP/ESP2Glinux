@@ -1,0 +1,21 @@
+IFNAME=wlan0
+AUTOSTART=no
+BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
+DHCPNAME=`cat /etc/HOSTNAME`-wifi
+
+ifPrep() {
+  key=off
+  essid="any"  #quoted access point name here (or any)
+  key="restricted FF42896D680E8DF7B2FE29BECB" #comment out for open wifi access
+  modprobe at76c503-rfmd &&
+  ifconfig wlan0 down &&
+  iwconfig wlan0 nick $DHCPNAME essid $essid key $key &&
+  ifconfig wlan0 up &&
+  sleep 7
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $DHCPNAME)
+EOS
+}
