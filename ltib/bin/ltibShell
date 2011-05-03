@@ -1,0 +1,5 @@
+#/bin/sh
+
+export __PWD=`pwd`
+cd ~/ltib
+echo "cd $__PWD && $@" | exec ltib -m shell
