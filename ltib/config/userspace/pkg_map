@@ -79,6 +79,7 @@ PKG_HDPARM                       = hdparm
 PKG_POPT                         = popt
 PKG_LIBELF                       = libelf
 PKG_LIBUSB                       = libusb
+PKG_LIBUSB_V1                    = libusb-v1
 PKG_USBUTILS                     = usbutils
 PKG_ETHTOOL                      = ethtool
 PKG_PCIUTILS                     = pciutils

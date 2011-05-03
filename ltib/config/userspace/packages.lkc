@@ -1603,6 +1603,14 @@ config PKG_LIBUSB
     bool "libusb"
     help
       This package provides a way for applications to access USB devices.
+      (lagacy libusb v0.1)
+
+config PKG_LIBUSB_V1
+    depends CAP_HAS_MMU
+    bool "libusb-v1"
+    help
+      This package provides a better way for applications to access USB devices.
+      (libusb v1.0.x)
 
 config PKG_LIBV4L
     depends CAP_HAS_MMU
