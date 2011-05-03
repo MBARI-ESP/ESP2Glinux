@@ -1,10 +1,11 @@
-export LTIB=~/ltib
+home=`eval echo ~${SUDO_USER}`
+export LTIB=$home/ltib
 export DEV_IMAGE=$LTIB/rootfs
 export TOOLCHAIN_PATH=/opt/freescale/usr/local/gcc-4.1.2-glibc-2.5-nptl-3/arm-none-linux-gnueabi
 export LTIB_HOST=arm-none-linux-gnueabi
 export TOOLCHAIN_PREFIX=${LTIB_HOST}-
 export TOOLCHAIN_CFLAGS="-O2 -fsigned-char -msoft-float"
 export TOOLCHAIN=tc-fsl-x86lnx-armeabi-nptl-4.1.2-3.i386.rpm
-export CCACHE_DIR=~/.ccache
+export CCACHE_DIR=$home/.ccache
 export KERNELDIR=$LTIB/rpm/BUILD/linux
 PATH=$LTIB/bin:/opt/ltib/usr/spoof:/opt/ltib/usr/bin:$TOOLCHAIN_PATH/bin:$PATH

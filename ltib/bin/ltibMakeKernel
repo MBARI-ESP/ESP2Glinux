@@ -1,5 +1,5 @@
-#/!bin/sh
-[ -z "$DEV_IMAGE" ] && . `dirname $0`/ltibenv
+#!/bin/sh
+[ -z "$DEV_IMAGE" ] && . `dirname $(readlink -mn $0)`/ltibenv
 cd $KERNELDIR && {
   case "$1" in
     *config)
