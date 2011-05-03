@@ -1,0 +1,3 @@
+#/!bin/sh
+[ -z "$DEV_IMAGE" ] && . `dirname $0`/ltibenv
+exec ./configure --host=$LTIB_HOST --prefix=$DEV_IMAGE "$@"
