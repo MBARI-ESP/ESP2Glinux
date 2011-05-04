@@ -2,7 +2,7 @@
 [ -z $1 ] && { 
   cat <<EOS >&2
 Replace ltib skeleton in the rootfs the directory given as an argument
-with the MBARI one for the ea31xx base board  -- 4/26/11 brent@mbari.org
+with the MBARI one for the ea31xx base board  -- 5/3/11 brent@mbari.org
 EOS
   exit 2
 }
@@ -54,7 +54,7 @@ EOS
   done
 }
 
-rm -f $dst/sbin/{halt,reboot,poweroff}
+rm -f $dst/sbin/{halt,reboot,poweroff} `find $dst -name "*ip6t*"`
 
 # preserve the initial state of the /var dir so new sd cards can be initialized
 initial=etc/initial
