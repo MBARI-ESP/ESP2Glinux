@@ -26,7 +26,7 @@ case $ENDIAN in
    *)   conf_opts="ac_cv_c_bigendian=no"  ;;
 esac
 
-./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} --disable-static --disable-log --disable-timerfd  $conf_opts
+./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} --disable-static --disable-timerfd  $conf_opts
 make
 
 %Install
