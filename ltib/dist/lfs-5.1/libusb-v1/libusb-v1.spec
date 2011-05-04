@@ -1,7 +1,7 @@
 %define pfx /opt/freescale/rootfs/%{_target_cpu}
 
 Summary         : A newer library which allows userspace access to USB devices 
-Name            : libusb
+Name            : libusb-v1
 Version         : 1.0.8
 Release         : 1
 License         : LGPL
@@ -17,7 +17,6 @@ Prefix          : %{pfx}
 
 %Prep
 %setup 
-libtoolize --copy --force
 
 %Build
 # configure can't figure this out in my environment (cross)
@@ -27,7 +26,7 @@ case $ENDIAN in
    *)   conf_opts="ac_cv_c_bigendian=no"  ;;
 esac
 
-./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} --disable-build-docs  $conf_opts
+./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} --disable-static --disable-log --disable-timerfd  $conf_opts
 make
 
 %Install
