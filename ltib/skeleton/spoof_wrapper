@@ -44,10 +44,10 @@ if($ENV{LIBC_HACKING} && ($fname eq 'gcc' || $fname eq 'g++') ) {
 }
 if($fname eq 'gcc' || $fname eq 'g++') {
     @srch  = ('-B', "$ENV{DEV_IMAGE}/usr/lib/",
-      	      '-B', "$ENV{DEV_IMAGE}/usr/lib/local/",
-               '-idirafter', "$ENV{DEV_IMAGE}/usr/include",
-               '-idirafter', "$ENV{DEV_IMAGE}/usr/local/include",
-               '-iwithprefixbefore', 'include',
+      	      '-B', "$ENV{DEV_IMAGE}/usr/local/lib/",
+              '-idirafter', "$ENV{DEV_IMAGE}/usr/include",
+              '-idirafter', "$ENV{DEV_IMAGE}/usr/local/include",
+              '-iwithprefixbefore', 'include',
              );
     $link = 1;
     foreach $opt (@ARGV) {
