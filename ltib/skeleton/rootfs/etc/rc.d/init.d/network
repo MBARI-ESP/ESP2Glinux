@@ -6,7 +6,7 @@
 op="$1"
 shift
 [ -z "$1" ] && grep -q ^"/dev/root / nfs " /proc/mounts && {
-  echo "Skipped network configuration so as not to disturb nfs root filesystem"
+  echo "Skipping network configuration so as not to disturb nfs root filesystem"
   exit 4
 }
 case "$op" in 

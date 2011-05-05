@@ -86,7 +86,7 @@ case "$op" in
        ;;
        
     stop)
-      if [ -z "$mount" ]; then
+      if [ -z "$mount" ] && ! grep -q ^"/dev/root / nfs " /proc/mounts; then
         echo "Unmounting all network filesystems ..."
         umount -aflt nfs
       else
