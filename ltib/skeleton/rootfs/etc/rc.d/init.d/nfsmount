@@ -10,31 +10,34 @@
 #lines in /etc/fstab after any starting with #END are ignored
 
 
-grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
-  echo "Missing Network -- skipping NFS mounts"
-  exit 1
-}
-
 op=$1;shift
 : ${fstype:=nfs}
 : ${mount:="$@"}
-mntpts=`grep "$mount" /etc/fstab | 
+
+allFsAuto() {
+#outputs all mounts in /etc/fstab before the #END mark of specified type
+    grep "$2" /etc/fstab | 
     while read device mntpt fs rest; do
       [ "$device" = "#END" ] && break
-      [ "$fs" = "$fstype" ] && echo $mntpt
-    done`
-    
-[ -z "$mntpts" -a -n "$mount" ] && {
-  echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
-  exit 1
+      [ "$fs" = "$1" ] && echo $mntpt
+    done
 }
-
+    
 mounted() {
 #returns true if $1 is mounted, false if not, 2 if it does not exist
   realmnt=`realpath $1` || return 2
   cat /proc/mounts | 
     while read device mntpt rest; do
       [ "$realmnt" = "$mntpt" ] && return
+    done
+}
+
+allFsMounts() {
+#outputs all mounts of specified file system type $1 except those mounted on 
+#the specified path $2
+  cat /proc/mounts | 
+    while read device mntpt fs rest; do
+      [ "$fs" = "$1" -a "$mntpt" != "$2" ] && echo "$mntpt "
     done
 }
 
@@ -55,7 +58,7 @@ chklog() {
 }
 
 mnt() {
-  echo "Mounting network filesystems ..."
+  echo "Mounting $fstype filesystems ..."
   [ "$mntpts" ] && {
     set $mntpts
     for mntpt; do
@@ -66,7 +69,7 @@ mnt() {
 }
 
 umnt() {
-  echo "Unmounting network filesystems ..."
+  echo "Unmounting $fstype filesystems ..."
   [ "$mntpts" ] && {
     set $mntpts
     for mntpt; do
@@ -77,19 +80,34 @@ umnt() {
 
 case "$op" in
     start)
+      mntpts=`allFsAuto $fstype $mount`
+      [ -z "$mntpts" -a -n "$mount" ] && {
+        echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
+        exit 1
+      }
+
+      grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
+        echo "Missing Network -- skipping $fstype mounts"
+        exit 1
+      }
       mnt
        ;;
                          
     restart)
+      mntpts=`allFsAuto $fstype $mount`
       umnt
       mnt
        ;;
        
     stop)
-      if [ -z "$mount" ] && ! grep -q ^"/dev/root / nfs " /proc/mounts; then
-        echo "Unmounting all network filesystems ..."
-        umount -aflt nfs
+      if [ -z "$mount" ]; then
+        nonRootNFS=`allFsMounts $fstype /`
+        if [ -n "$nonRootNFS" ]; then
+          echo "Unmounting all $fstype filesystems"
+          umount -l $nonRootNFS 2>&1 | grep -v ": not mounted$"
+        fi
       else
+        mntpts=`allFsAuto $fstype $mount`
         umnt
       fi
        ;;
