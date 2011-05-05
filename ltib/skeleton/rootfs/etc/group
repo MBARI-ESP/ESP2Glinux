@@ -2,6 +2,7 @@ root::0:root
 mbari:x:20:esp,brent
 uucp:x:4:esp,brent
 log:x:96:esp,brent
+labjack:x:492:esp,brent
 guest:x:666:
 bin::1:root,bin,daemon
 daemon::2:root,bin,daemon
