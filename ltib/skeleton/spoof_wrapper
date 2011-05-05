@@ -3,6 +3,8 @@
 # Copyright © Freescale Semiconductor, Inc. 2004-2006. All rights reserved.
 #
 # Stuart Hughes, stuarth@freescale.com
+#  brent@mbari.org added /usr/local/include and /usr/local/lib  
+# ---> copy this file over the standard one at:  /opt/ltib/usr/spoof
 #
 # This file is part of LTIB.
 #
