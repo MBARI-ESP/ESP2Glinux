@@ -64,7 +64,7 @@ initial=etc/initial
 log=$initial/var/log
 mkdir $dst/$initial &&
 mv $dst/var $dst/$initial &&
-cp -a $here/rootfs/.  $dst && chown -R root:root $dst &&
+cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst && 
 mksymlinks $dst < $here/symlinks && 
 ldconfig -r . &&   
 mkdir -p $log && cd $log && { 
