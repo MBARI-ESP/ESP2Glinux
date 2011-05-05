@@ -14,8 +14,9 @@ Patch1          : busybox-1.11.2-getty-nobaud-1.patch
 Patch3          : busybox-1.11.2-loop-24-compat.patch
 Patch4          : busybox-1.11.2-msh-signals.patch
 Patch5          : busybox-1.11.2-msh-alias-1.patch
-Patch6          : busybox-1.11.2-mbari-1.patch
-Patch7          : busybox-1.11.2-dhcpc-maxlease.patch
+Patch6          : busybox-1.11.2-makefile-implicit-rules.patch
+Patch7          : busybox-1.11.2-mbari-1.patch
+Patch8          : busybox-1.11.2-dhcpc-maxlease.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -30,6 +31,7 @@ Prefix          : %{pfx}
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %Build
 PKG_BUSYBOX_PRECONFIG=${PKG_BUSYBOX_PRECONFIG:-busybox.config}
