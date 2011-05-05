@@ -1,0 +1,22 @@
+#!/bin/bash
+here=`dirname $0`
+home=`eval echo ~${SUDO_USER}`
+LTIB=$home/ltib
+IMAGE=${2-$LTIB/rootfs.tmp}
+[ -z $1 ] && { 
+  cat <<EOS >&2
+Create new ltib root filesystem  -- 5/4/11 brent@mbari.org
+Usage: 
+  `basename $0` newRootDir  {templateDir}
+templateDir defaults to $IMAGE
+EOS
+  exit 2
+}
+
+[ -e $1 ] && {
+  echo "Destination directory \"$1\" must first be removed." >&2
+  exit 2
+}
+
+cp -r --preserve=mode --no-preserve=ownership $IMAGE $1 && 
+exec `dirname $0`/replaceSkeleton $1
