@@ -1,0 +1,80 @@
+#!/usr/bin/perl -w
+#
+# Copyright © Freescale Semiconductor, Inc. 2004-2006. All rights reserved.
+#
+# Stuart Hughes, stuarth@freescale.com
+#
+# This file is part of LTIB.
+#
+# LTIB is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# LTIB is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with LTIB; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+# Note: unless the correct links in dev_image have been made, we cannot
+#       do library/include spoofing.
+#       These links are:
+#       dev_image/usr/lib/include -> dev_image/usr/include
+#
+# Also, if the compiler was has been moved from it's original
+# installation path, setting GCC_EXEC_PREFIX will break it
+# 
+# need 2 slashed for gcc-2.9x.x
+# see http://gcc.gnu.org/ml/gcc-patches/2000-07/msg00046.html
+#
+die("$0: cannot spoof, '$ENV{DEV_IMAGE}/' (dev_image) does not exist")
+                                 unless $ENV{DEV_IMAGE} && -d $ENV{DEV_IMAGE};
+
+$fname = substr($0, rindex($0, '/') + 1);
+$fname = 'gcc' if $fname eq 'cc';
+$fname = 'g++' if $fname eq 'c++';
+if($ENV{LIBC_HACKING} && ($fname eq 'gcc' || $fname eq 'g++') ) {
+   $prog = 'tc_wrapper';
+   warn join(', ', $prog, $fname, @ARGV), "\n" if $ENV{FS_DEBUG};;
+   exec($prog $fname, @ARGV) or die("exec $prog $fname, @ARGV");
+}
+if($fname eq 'gcc' || $fname eq 'g++') {
+    @srch  = ('-B', "$ENV{DEV_IMAGE}/usr/lib/",
+      	      '-B', "$ENV{DEV_IMAGE}/usr/lib/local/",
+               '-idirafter', "$ENV{DEV_IMAGE}/usr/include",
+               '-idirafter', "$ENV{DEV_IMAGE}/usr/local/include",
+               '-iwithprefixbefore', 'include',
+             );
+    $link = 1;
+    foreach $opt (@ARGV) {
+        $link = 0, last if $opt eq '-c' || $opt eq '-S' 
+                        || $opt eq '-E' || $opt eq '-M' || $opt eq '-MM';
+    }
+    $link = 0 if $#ARGV == -1;
+    $link = 0 if $#ARGV == 0 && $ARGV[0]  eq '-v';
+    $link = 0 if $#ARGV >= 0 && $ARGV[-1] eq '-v';
+    push @srch, "-Wl,-rpath-link,$ENV{DEV_IMAGE}/lib:$ENV{DEV_IMAGE}/usr/lib" 
+                                                                      if $link;
+
+    if($ENV{TOOLCHAIN_CFLAGS}) {
+        @cflags = split(/\s+/, $ENV{TOOLCHAIN_CFLAGS});
+        push(@srch, @cflags);
+    }
+}
+unshift(@ARGV, @srch) if @srch;
+if($ENV{DISTCC_HOSTS} && $ENV{TOOLCHAIN_PATH}) {
+    unshift(@ARGV, 
+             "distcc", "$ENV{TOOLCHAIN_PATH}/bin/$ENV{TOOLCHAIN_PREFIX}$fname");
+} else {
+    unshift(@ARGV, "$ENV{TOOLCHAIN_PREFIX}$fname");
+}
+if($ENV{CCACHE_DIR} && $ENV{TOOLCHAIN_PATH}) {
+    unshift(@ARGV, "ccache");
+}
+warn join(" ", @ARGV), "\n" if $ENV{FS_DEBUG};
+exec(@ARGV) or die("exec(@ARGV)");
+
