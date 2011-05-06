@@ -57,7 +57,12 @@ EOS
   done
 }
 
-rm -f $dst/sbin/{halt,reboot,poweroff} `find $dst -name "*ip6t*"`
+rm $dst/sbin/{halt,reboot,poweroff} `find $dst -name "*ip6t*"`
+rm $dst/usr/bin/{ubi*,*jffs2*}  #remove support for ubi and jffs2 filesystems
+rm $dst/usr/lib/{*.so.bak,*.so_orig,e2initrd*}
+rm $dst/usr/sbin/tunelp
+rm $dst/usr/bin/{unubi,pddcustomize,chkdupexe,*ftl_*,setarch,linux{32,64}}
+rm $dst/usr/bin/{recv_image,rfd{dump,format},cytune}  #ubi + cyclades serial
 
 # preserve the initial state of the /var dir so new sd cards can be initialized
 initial=etc/initial
@@ -65,8 +70,9 @@ log=$initial/var/log
 mkdir $dst/$initial &&
 mv $dst/var $dst/$initial &&
 cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst && 
+rm -rf `find $dst -name CVS` &&
 mksymlinks $dst < $here/symlinks && 
-ldconfig -r . &&   
+ldconfig -r . &&
 mkdir -p $log && cd $log && { 
       d=`date  -uIseconds` &&
       echo ${d%+*}UTC > birth &&
