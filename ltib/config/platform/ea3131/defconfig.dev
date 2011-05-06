@@ -247,9 +247,9 @@ CONFIG_PKG_LESS=y
 # CONFIG_PKG_LIBNETFILTER_CONNTRACK is not set
 # CONFIG_PKG_LIBNFNETLINK is not set
 CONFIG_PKG_LIBJPEG=y
-# CONFIG_PKG_LIBELF is not set
+CONFIG_PKG_LIBELF=y
 # CONFIG_PKG_LIBFAKEKEY is not set
-# CONFIG_PKG_LIBNET is not set
+CONFIG_PKG_LIBNET=y
 CONFIG_PKG_LIBPCAP=y
 # CONFIG_PKG_LIBPNG is not set
 # CONFIG_PKG_LIBOGG is not set
@@ -544,8 +544,8 @@ CONFIG_DEPLOYMENT_RM_BOOT=y
 CONFIG_DEPLOYMENT_RM_USR_SRC=y
 CONFIG_DEPLOYMENT_RM_USR_INCLUDE=y
 CONFIG_DEPLOYMENT_RM_LOCALES=y
-CONFIG_DEPLOYMENT_RM_USER_DIRS="/usr/share/doc /usr/share/man /etc/xinetd.d /usr/share/zoneinfo-posix /usr/share/zoneinfo-leaps /share /include /usr/man /usr/local/man /usr/src /usr/share/man /include /var/lib/rpm"
-CONFIG_DEPLOYMENT_RM_USER_FILES="/sbin/insmod.static /etc/mdev.conf /etc/devsd.conf /var/log/lastlog"
+CONFIG_DEPLOYMENT_RM_USER_DIRS="/usr/share/doc /usr/share/man /etc/xinetd.d /usr/share/zoneinfo-posix /usr/share/zoneinfo-leaps /share /include /usr/man /usr/local/man /usr/src /usr/share/man /include /var/lib/rpm /usr/share/info /usr/share/locate /usr/lib/pkgconfig /usr/share/sounds"
+CONFIG_DEPLOYMENT_RM_USER_FILES="/sbin/insmod.static /etc/mdev.conf /etc/devsd.conf /var/log/lastlog /usr/bin/run /usr/bin/tack /usr/bin/locate /usr/bin/updatedb /usr/bin/strace-graph /usr/bin/startx"
 CONFIG_DEPLOYMENT_RM_STATIC_LIBS=y
 CONFIG_DEPLOYMENT_RM_RPMDB="/var/lib/rpm"
 CONFIG_DEPLOYMENT_STRIP=y
