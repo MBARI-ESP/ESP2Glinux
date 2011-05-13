@@ -17,6 +17,7 @@ $IPADDR  shore.radio     shore
 192.168.1.24  ESPmoe.radio    moe
 192.168.1.25  ESPbetty.radio  betty
 192.168.1.26  ESPgordon.radio gordon
+192.168.1.27  ESPchris.radio  chris
 EOS
   echo "#---"
 }
