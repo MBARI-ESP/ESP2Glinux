@@ -33,7 +33,8 @@ then
     perl -pi -e 's,^(#define ENABLE_X11FWD),//\1,; ' options.h
 fi
 
-LD=gcc ./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} --disable-lastlog
+LD=gcc ./configure --prefix=%{_prefix} --host=$CFGHOST --build=%{_build} \
+--disable-lastlog --disable-utmp --disable-utmpx --disable-wtmpx
 make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" MULTI=1 SCPPROGRESS=1
 
 %Install
