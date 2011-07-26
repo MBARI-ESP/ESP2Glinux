@@ -12,6 +12,7 @@ Source          : %{name}-%{version}.tar.bz2
 Patch0		: u-boot-2009.11_lpc313x.patch
 Patch1		: u-boot-2009.11_lpc313x_v1.01.patch
 Patch2          : u-boot-2009.11-disable_NAND_hardware_ecc.patch
+Patch3          : u-boot-2009.11-spansionSPIflash.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -26,6 +27,7 @@ needed for boards using u-boot and the LPC31XX.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %Build
 : ${PKG_U_BOOT_CONFIG_TYPE:?must be set, e.g. MPC8548CDS_config}
