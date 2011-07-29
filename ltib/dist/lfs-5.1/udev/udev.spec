@@ -14,6 +14,7 @@ Patch1		: udev-imx-input-rules-3.patch
 Patch2		: udev-automount-v3.patch
 Patch3		: udev-117-init_script.patch
 Patch4		: udev-117-mount.patch
+Patch5          : udev-117-serial.patch
 BuildRoot	: %{_tmppath}/%{name}
 Prefix		: %{pfx}
 
@@ -33,6 +34,7 @@ Prefix		: %{pfx}
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %Build
 make EXTRAS=%{extras}
