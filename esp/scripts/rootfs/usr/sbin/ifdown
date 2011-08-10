@@ -38,7 +38,7 @@ ifAliasDown() {
     done
     rm -f $pidfn
   done
-  ifconfig $1 down 2>/dev/null
+  ifconfig $* 2>/dev/null
   hostDown $1
   gateDown $1
 }
@@ -46,9 +46,11 @@ ifAliasDown() {
 eachAlias() {
   cfg=/etc/sysconfig/ifcfg-
   aliases=`echo $cfg$2:*`
+  arg1=$1
   [ "$aliases" = $cfg$2:\* ] || {
+    shift
     for alias in $aliases; do
-       $1 ${alias#$cfg}
+       $arg1 ${alias#$cfg} $*
     done
   }
 }
@@ -58,14 +60,17 @@ case "$1" in
     usage    
   ;;
   
-  *) #anything else must be the name of an interface or alias
-    if [ "$1" = "${1%:*}" ]; then  #if not an alias
-      eachAlias ifAliasDown $1
-      ifAliasDown $1
-    else
-      ifAliasDown $1
-    fi
+  *:*) #an interface alias
+    ifAliasDown $1 down
     gateUp
     hostsUp
   ;;
+  
+  *) #anything else must be the name of an interface
+    [ "$2" = "force" ] && eachAlias ifAliasDown $1 down
+    op=0
+    ifconfig | grep -q ^$1: || op=down  #force only if no aliases remain
+    ifAliasDown $1 $op
+    gateUp
+    hostsUp
 esac
