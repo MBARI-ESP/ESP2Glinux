@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  9/3/09 by brent@mbari.org
+# revised:  7/9/11 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
@@ -18,33 +18,29 @@ fi
 
 leased=/var/run/$interface.lease
 
-case "$1" in
-  deconfig|leasefail)
-    if [ -f $leased ]; then
-      ifconfig $interface down  #purge old routes
-      echo -n "$interface DHCP failed: "
-      . /etc/sysconfig/ifcfg-$interface && ipUp && echo "IP=$IPADDR"
-      rm -f $leased
+case "$1" in  #ignore leasefail and renew
+  deconfig|nak)
+    [ -f $leased ] && echo -n "$interface DHCP failed: "
+    if . /etc/sysconfig/ifcfg-$interface && ipUp; then
+      [ -f $leased ] && echo "IP=$IPADDR"
     else
-      ifconfig $interface up  #so dhcp can use it
+      ifconfig $interface 0
     fi
+    rm -f $leased
   ;;
 
-  renew|bound)
+  bound)
     newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
     newDNSspec="$domain DNS:$dns"
-    [ -f $leased ] && { read leaseSpec && read DNSspec; } < $leased
-    [ "$newDNSspec" != "$DNSspec" -o "$newLeaseSpec" != "$leaseSpec" ] && {
-      resolv_conf() {
-        echo "search `searchDomains $domain`"
-        for dnsip in $dns ; do
-          echo "nameserver $dnsip"
-        done
-      }
-      IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
-        [ "$dns" ] && dnsMsg=" with DNS $dns"
-        echo "DHCP $1 $interface to $ip$dnsMsg"
-        echo -e "$newLeaseSpec\n$newDNSspec" >$leased
-      }
-    }    
+    resolv_conf() {
+      echo "search `searchDomains $domain`"
+      for dnsip in $dns ; do
+        echo "nameserver $dnsip"
+      done
+    }
+    IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
+      [ "$dns" ] && dnsMsg=" with DNS $dns"
+      echo "DHCP $1 $interface to $ip$dnsMsg"
+      echo -e "$newLeaseSpec\n$newDNSspec" >$leased
+    }
 esac
