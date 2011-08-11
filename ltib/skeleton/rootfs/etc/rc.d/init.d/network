@@ -62,7 +62,7 @@ set +f
            #if autostart mode missing or it starts with init, skip dev up check
           [ -z "$AUTOSTART" -o "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
         fi
-        ifdown $dev
+        ifdown $dev force
       done
    ;;
 
