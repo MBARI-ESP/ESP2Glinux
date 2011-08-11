@@ -42,7 +42,7 @@ set +f
   [ "$pidfns" = "$fn" ] || {  #check for active locks...
     unset owners
     for pidfn in $pidfns; do  #while removing stale ones
-      owner=`cat $pidfn` && {
+      owner=`cat $pidfn` 2>/dev/null && {
         if kill -0 $owner 2>/dev/null; then
           owners="$owners $owner"
         else
