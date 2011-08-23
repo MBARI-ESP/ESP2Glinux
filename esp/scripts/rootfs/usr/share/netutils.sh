@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/27/09 brent@mbari.org
+# -- revised: 8/22/11 brent@mbari.org
 #
 
 ipUp() {
@@ -18,9 +18,12 @@ ipUp() {
   }
   [ "$BROADCAST" ] && cast=" broadcast $BROADCAST"
   [ "$MTU" ] && mtu=" mtu $MTU"
-  ifconfig $IFNAME $IPADDR$mask$cast$mtu || {
-    echo "FAILED:  ifconfig $IFNAME $IPADDR$mask$cast$mtu"
-    return 2
+  ipopts="$IPADDR$mask$cast$mtu"
+  [ "$ipopts" ] && {
+    ifconfig $IFNAME $ipopts || {
+      echo "FAILED:  ifconfig $IFNAME $IPADDR$mask$cast$mtu"
+      return 2
+    }
   }
   [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME
