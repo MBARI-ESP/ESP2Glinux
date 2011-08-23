@@ -71,7 +71,7 @@ set +f
               mkdir -p `dirname $pidfn`
             fi
             echo -n "Determining IP configuration for $IFNAME...."
-	    insmod af_packet >/dev/null 2>&1
+            insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
             [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
