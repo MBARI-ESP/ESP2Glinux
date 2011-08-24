@@ -5,13 +5,18 @@
 
 op="$1"
 shift
+[ -z "$1" ] && grep -q ^"/dev/root / nfs " /proc/mounts && {
+  echo "Skipping network configuration so as not to disturb nfs root filesystem"
+  exit 4
+}
 case "$op" in 
    start)
       . /usr/share/ifupfn.sh
       if [ "$1" ]; then
 	for dev; do
           unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART resolv_conf hosts
+          unset NETWORK GATEWAY MTU AUTOSTART
+          unset resolv_conf hosts ifPrep ifPost
 	  . /etc/sysconfig/ifcfg-$dev
           ifup_function
         done
@@ -23,11 +28,16 @@ case "$op" in
         [ "$fns" = "$fnspec" ] && exit  #no network configs found
 	for defFn in $fns; do
           unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART resolv_conf hosts
+          unset NETWORK GATEWAY MTU AUTOSTART
+          unset resolv_conf hosts ifPrep ifPost
           . $defFn
           ifup_function 'yes|Y|Yes|YES'
         done
       fi
+      # netowrking stack tweaks
+ #     echo 1 > /proc/sys/net/ipv4/ip_forward &&
+ #     echo Packet forwarding enabled
+
    ;;
    stop)
       devs=$@
@@ -35,7 +45,7 @@ case "$op" in
         pppSpec='/var/run/ppp[0-9]*.pid'
         pidfns=`echo $pppSpec`
 set -f
-        if [ $pidfns != $pppSpec ]; then
+        if [ "$pidfns" != "$pppSpec" ]; then
           for pidFn in $pidfns; do  #stop ppp links that are "down"
             ppp=`basename $pidFn`
             devs="$devs ${ppp%.pid}"
