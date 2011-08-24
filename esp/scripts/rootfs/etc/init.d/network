@@ -34,9 +34,6 @@ case "$op" in
           ifup_function 'yes|Y|Yes|YES'
         done
       fi
-      # netowrking stack tweaks
- #     echo 1 > /proc/sys/net/ipv4/ip_forward &&
- #     echo Packet forwarding enabled
 
    ;;
    stop)
