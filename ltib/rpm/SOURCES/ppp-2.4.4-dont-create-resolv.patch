@@ -105,7 +105,6 @@ diff --exclude CVS --exclude .git -uNr ppp-2.4.4/pppd/patchlevel.h ppp-2.4.4.mod
 @@ -1,4 +1,4 @@
  /* $Id$ */
  
--#define VERSION		"2.4.4"
+ #define VERSION		"2.4.4"
 -#define DATE		"28 June 2006"
-+#define VERSION		"2.4.4-mbari"
 +#define DATE		"24 August 2011"
