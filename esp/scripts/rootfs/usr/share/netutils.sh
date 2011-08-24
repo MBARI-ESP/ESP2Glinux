@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 8/22/11 brent@mbari.org
+# -- revised: 8/23/11 brent@mbari.org
 #
 
 ipUp() {
@@ -44,7 +44,7 @@ gateUp() {
   # add any specified device with gateways
   # then activate the appropriate gateway with its associated resolv.conf
   mkdir -p /var/run/resolv && cd /var/run/resolv || {
-    echo "Cannot access /var/run/resolv directory" 2>&1
+    echo "Cannot access /var/run/resolv directory" >&2
     return 1
   }
   local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
@@ -67,7 +67,7 @@ gateUp() {
               topIface=$interface; break
             }
           else
-            echo "$RESOLV_IF -- should begin with #$interface" 2>&1
+            echo "$RESOLV_IF -- should begin with #$interface" >&2
           fi
         }
       done
@@ -81,7 +81,7 @@ gateUp() {
             [ "$resolvDev" = "#$interface" ] && {
               topIface=$interface; break
             }
-            echo "$RESOLV_IF should begin with #$interface" 2>&1
+            echo "$RESOLV_IF should begin with #$interface" >&2
           }
         done
       }
@@ -89,10 +89,10 @@ gateUp() {
       if [ "$topIface" ]; then
         setGateways $topIface $gateways
       else
-:       echo "No prioritized net interfaces up -- gateway unchanged" 2>&1
+:       echo "No prioritized net interfaces up -- gateway unchanged" >&2
       fi
     else
-      echo "Blank or missing $priorityFn" 2>&1
+      echo "Blank or missing $priorityFn" >&2
       return 3
     fi
   } <$priorityFn
@@ -107,7 +107,7 @@ gateDown() {
 hostsUp() {
   #update iface specific hosts file and merge with those of other ifaces
   #first adds interface specific hosts file if current iface specified
-  [ "$1" ] && type hosts 2>&1 >/dev/null && {
+  [ "$1" ] && type hosts >/dev/null 2>&1 && {
     hosts > /var/run/$1.hosts || return $?
   }
   {
