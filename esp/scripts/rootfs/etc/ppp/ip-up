@@ -13,10 +13,8 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
+unset domain gateway
 [ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
-gateUp $IFNAME $gateway
-
-unset domain
 
 #if PEERNAME is prefixed with a dot, change our own hostname to it
 if [ -n "$PEERNAME" ]; then
@@ -40,7 +38,6 @@ fi
 
 [ "$USEPEERDNS" ] && {
   resolv_conf() {
-    echo "#$IFNAME$gateway"
     echo "search `searchDomains $domain`"
     for ip in $DNS1 $DNS2 ; do
       echo "nameserver $ip"
@@ -48,4 +45,5 @@ fi
   }
 }
 
+gateUp $IFNAME $gateway
 hostsUp $IFNAME
