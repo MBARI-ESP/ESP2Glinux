@@ -9,8 +9,8 @@ hosts() {
   echo "#$IFNAME"  #add IP addresses for LAN neighbors to this table
 #$IPADDR mail  #include in hosts only if there is an ssh SMTP tunnel
   tee ~ftp/etc/hosts <<EOS   #copy entries to ftp our server for slip clients
-$IPADDR  shore.radio     shore
-192.168.1.17  ESPship.radio   ship
+$IPADDR  shore.radio     shore  mail
+192.168.1.17  ESPextra.radio  extra
 192.168.1.21  ESPmack.radio   mack
 192.168.1.22  ESPbruce.radio  bruce
 192.168.1.23  ESPneo.radio    neo
@@ -18,6 +18,8 @@ $IPADDR  shore.radio     shore
 192.168.1.25  ESPbetty.radio  betty
 192.168.1.26  ESPgordon.radio gordon
 192.168.1.27  ESPchris.radio  chris
+192.168.1.28  scicenter chat
+192.168.1.30  ESPship.radio   ship
 EOS
   echo "#---"
 }
