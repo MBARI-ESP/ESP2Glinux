@@ -1,0 +1,5 @@
+#!/bin/sh
+#bring down a PPP interface
+#first arg is the interface to bring down, defaults to drifter
+interface=${1-drifter}
+exec ifdown $interface

@@ -1,0 +1,37 @@
+#!/bin/sh
+#bring up a ppp interface, watching the log until connected.
+#first arg is the interface to bring up, defaults to drifter
+#returns true when interface is up and ready
+#false if call failed
+
+interface=${1-drifter}
+[ -s /var/run/$interface.pid ] && {
+  echo "$interface interface is already up" >&2
+  exit 0
+}
+export tailPidFn=/tmp/tail$$.pid
+#trap "ifdown $interface" INT HUP QUIT TERM
+unset lockingPID
+ifup $interface &
+sh -c 'echo $$ >$tailPidFn; exec tail -f -n0 /var/log/messages' | (
+  while :; do
+    read line
+    echo $line
+    maybePID=${line#*evice*locked* pid }
+    [ "$maybePID" != "$line" ] && lockingPID=$maybePID 
+    echo $line | egrep -q \
+      ".* pppd\[.*(remote IP address)|(Exit\.$)|(terminated\.$)" && break
+  done
+  kill -PIPE `cat $tailPidFn`
+  rm -f $tailPidFn
+  echo $line | grep -q 'remote IP address' && return 0
+  [ "$lockingPID" -a ! \( \
+    -s /var/run/$interface.pid -o \
+    -s /var/run/ppp-$interface.pid \) ] && {
+# try to kill orphaned PPPd that is probably stuck opening a modem serial port
+      kill -KILL $lockingPID &&
+      sleep 2  &&
+      exec $0 $interface  #retry
+  }
+)
+
