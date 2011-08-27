@@ -18,7 +18,7 @@ ifAliasDown() {
   fn=/var/run/*$1.pid
   pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || for pidfn in $pidfns; do
-    daemon=`cat $pidfn`
+    daemon=`head -n1 $pidfn`
     case $1 in
       ppp*)  signal=TERM ;;
       *)     signal=HUP  ;;
