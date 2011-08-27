@@ -10,25 +10,29 @@ interface=${1-drifter}
   exit 0
 }
 export tailPidFn=/tmp/tail$$.pid
-#trap "ifdown $interface" INT HUP QUIT TERM
 unset lockingPID
-ifup $interface &
+ifup $interface || {
+  [ -r $tailPidFn ] || sleep 1
+  tailPid=`cat $tailPidFn`
+  rm -f $tailPidFn
+  kill -PIPE $tailPid
+} &
 sh -c 'echo $$ >$tailPidFn; exec tail -f -n0 /var/log/messages' | (
-  while :; do
-    read line
+  while read line; do
     echo $line
     maybePID=${line#*evice*locked* pid }
     [ "$maybePID" != "$line" ] && lockingPID=$maybePID 
     echo $line | egrep -q \
       ".* pppd\[.*(remote IP address)|(Exit\.$)|(terminated\.$)" && break
   done
+  [ -r $tailPidFn ] || exit 1
   kill -PIPE `cat $tailPidFn`
   rm -f $tailPidFn
   echo $line | grep -q 'remote IP address' && return 0
   [ "$lockingPID" -a ! \( \
     -s /var/run/$interface.pid -o \
     -s /var/run/ppp-$interface.pid \) ] && {
-# try to kill orphaned PPPd that is probably stuck opening a modem serial port
+# try to kill orphaned PPPd that is likely stuck opening a modem serial port
       kill -KILL $lockingPID &&
       sleep 2  &&
       exec $0 $interface  #retry
