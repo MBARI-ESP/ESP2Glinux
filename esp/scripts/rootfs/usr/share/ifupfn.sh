@@ -51,8 +51,8 @@ set +f
       }
     done
     [ "$owners" ] && {
-      echo "$IFNAME is already in use by process: $owners"
-      return 0
+      echo "$IFNAME is already in use by process: $owners" >&2
+      return 7
     }
   }
   echo "Bringing up interface $IFNAME ..."
