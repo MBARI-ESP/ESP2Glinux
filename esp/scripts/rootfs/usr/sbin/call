@@ -5,7 +5,9 @@
 #false if call failed
 
 interface=${1-drifter}
-[ -s /var/run/$interface.pid ] && {
+realIfaceFn=`readlink /etc/sysconfig/ifcfg-$interface`
+realIface=${realIfaceFn#ifcfg-}
+[ -s /var/run/$realIface.pid ] && {
   echo "$interface interface is already up" >&2
   exit 0
 }
@@ -17,6 +19,7 @@ ifup $interface || {
   rm -f $tailPidFn
   kill -PIPE $tailPid
 } &
+trap "ifdown $interface" INT HUP TERM
 sh -c 'echo $$ >$tailPidFn; exec tail -f -n0 /var/log/messages' | (
   while read line; do
     echo $line
