@@ -5,15 +5,20 @@
 #false if call failed
 
 interface=${1-drifter}
-realIfaceFn=`readlink /etc/sysconfig/ifcfg-$interface`
-realIface=${realIfaceFn#ifcfg-}
-[ -s /var/run/$realIface.pid ] && {
+. /usr/share/ifupfn.sh
+
+unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+unset NETWORK GATEWAY MTU AUTOSTART
+. /etc/sysconfig/ifcfg-$interface
+
+[ -s /var/run/$IFNAME.pid ] && {
   echo "$interface interface is already up" >&2
   exit 0
 }
+
 export tailPidFn=/tmp/tail$$.pid
 unset lockingPID
-ifup $interface || {
+ifup_function $2 || {
   [ -r $tailPidFn ] || sleep 1
   tailPid=`cat $tailPidFn`
   rm -f $tailPidFn
