@@ -1,0 +1,6 @@
+# Hang up the modem if in use
+# needed for modems (like the iridium 9555) that don't hand up automatically
+ABORT "NO CARRIER"
+TIMEOUT 5
+"" "AT\r+++\d\p\p\c"
+"OK\r" ATH0
