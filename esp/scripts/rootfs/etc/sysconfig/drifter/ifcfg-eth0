@@ -1,17 +1,18 @@
 IFNAME=eth0
 AUTOSTART=yes
-BOOTPROTO="dhcp-b -m180" 
+BOOTPROTO=static  #force static IP config
 DHCPNAME=`cat /etc/HOSTNAME`
 
-IPADDR=192.168.0.50    #use this configuration if dhcp fails
+IPADDR=192.168.1.20    #use this configuration
+GATEWAY=192.168.1.1
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $IFNAME $DHCPNAME-$IFNAME $DHCPNAME-ether)
+$(netIfIP $IFNAME) $DHCPNAME-$IFNAME $DHCPNAME-ether
 EOS
 }
 
-#route traffic via proxy arps our clients
+#shore stations route traffic via proxy arps for their clients
 ifPost() {
   echo 1 > /proc/sys/net/ipv4/ip_nonlocal_bind
   echo 1 > /proc/sys/net/ipv4/ip_forward &&

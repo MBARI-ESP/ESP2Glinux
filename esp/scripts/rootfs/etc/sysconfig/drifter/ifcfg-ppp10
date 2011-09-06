@@ -1,29 +1,26 @@
 IFNAME=ppp10
-AUTOSTART=yes
-link=answer
+AUTOSTART=no
+link=drifter
 
 ifPrep() {
-  pidfn=/var/run/$IFNAME.pid  #symlink only if interface not already up
-  kill -0 `head -n1 $pidfn 2>/dev/null` 2>/dev/null ||                          
-    ln -sf /var/run/ppp-$link.pid $pidfn                
-  modprobe ppp_async  #not automatically loaded -- FIXME
+#  rm -f /var/run/$IFNAME.pid
+#  ln -s /var/run/ppp-$link.pid /var/run/$IFNAME.pid
   modem=/dev/serial/by-id/usb-Iridium_Iridium_9555_Handset-if00
   [ -L /dev/iridium ] || ln -s $modem /dev/iridium
-  pppd call $link linkname $link unit 10 logfile /var/log/$link.pppdlog
+  pppd call $link linkname $link unit 10 logfile /var/log/drifter.pppdlog
 }
 
-resolv_conf() {
-  echo "search `searchDomains $domain`"
-  echo "nameserver 10.10.10.1"
+#shore stations route traffic via proxy arps for their clients
+ifPost() {
+  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp &&
+  echo "enabled ip packet forwarding"
 }
-                      
-hosts() {
-cat <<EOS 
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
 10.10.10.200 drifter.iridium
-10.10.10.201 ship.iridium
+10.10.10.201 ship.iridium ship
 EOS
-#route 10.10.10.0 through .95 via ppp link
-route add -net 10.10.10.0/26 dev $IFNAME
-route add -net 10.10.10.64/27 dev $IFNAME
 }
