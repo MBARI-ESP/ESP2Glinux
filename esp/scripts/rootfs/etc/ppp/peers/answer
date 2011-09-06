@@ -1,0 +1,42 @@
+# $Id$
+# pppd configuration for answering a generic AT modem - 8/7/07 brent@mbari.org
+
+#connection
+linkname answer
+noauth        #require password authorization
+persist     #don't terminate if the link breaks
+holdoff 2   #try to reestablish link waiting this many seconds
+maxfail 0   #never give up!
+passive     #wait passively
+silent      #and silently
+
+#debugging options
+#debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+#logfile /tmp/answer.pppdlog
+#dump
+
+#RS-232 port configuration
+iridium      #symlink /dev/freewave to the modem's serial port
+19200        #baud rate
+crtscts      #hardware RTS/CTS handshaking
+modem        #monitor carrier detect
+lock         #request exclusive access to the port
+
+#IP addressing
+10.10.10.200:   
+ipcp-accept-local   #let the peer override our default address
+#usepeerdns    #ask shore to supply us  DNS server addresses
+#defaultroute  #use PPP as the default route
+
+#compression
+deflate 12  #deflate in 4k byte blocks
+
+# answer incomming call when phone rings
+connect "exec chat -v -f /etc/ppp/answer.chat"
+
+#hang up on disconnect (suppress errors)
+disconnect "chat -v -f /etc/ppp/hangup.chat; true"

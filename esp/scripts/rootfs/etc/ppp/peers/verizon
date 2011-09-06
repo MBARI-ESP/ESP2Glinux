@@ -1,0 +1,23 @@
+ttyUSB0
+115200
+linkname verizon
+ipparam verizon
+logfile /var/log/verizon.log
+holdoff 10 
+persist
+maxfail 5
+
+dump
+debug
+noauth
+defaultroute
+usepeerdns
+connect-delay 10000
+user 8317136414@vzw3g.com
+show-password
+crtscts
+lock
+lcp-echo-failure 0
+lcp-echo-interval 0
+
+connect '/usr/sbin/chat -v -t3 -f /etc/ppp/verizon.chat'
