@@ -1,0 +1,29 @@
+daemon=thttpd
+pidFile=/var/run/$daemon.pid
+OPTIONS="-i $pidFile -d /var/log"
+
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       $daemon $OPTIONS
+       ;;
+                         
+    restart)
+      $0 stop 
+      $0 start
+       ;;
+       
+    stop)
+       echo "Stopping $daemon"
+       if [ -s $pidFile ]; then
+         kill `cat $pidFile`
+       else
+         killall $daemon
+       fi
+       rm -f $pidFile
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac
