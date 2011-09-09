@@ -7,7 +7,7 @@ MTU=1500
 
 hosts() {
   echo "#$IFNAME"  #add IP addresses for LAN neighbors to this table
-#$IPADDR mail  #include in hosts only if there is an ssh SMTP tunnel
+  mkdir -p ~ftp/etc                                                          
   tee ~ftp/etc/hosts <<EOS   #copy entries to ftp our server for slip clients
 $IPADDR  shore.radio     shore  mail
 192.168.1.17  ESPextra.radio  extra
