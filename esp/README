@@ -1,7 +1,11 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  9/2/09 brent@mbari.org
+ -- revised:  9/8/11 brent@mbari.org
 
 0) delete or save any existing ~/armHost rootfs directory
+
+** Note:
+     Steps A - F are now automated by running the script:
+        $  buildAll
 
 A) Build the Flash Filesystem if its not up to date
 
@@ -115,7 +119,7 @@ H) Install JP 4 to use COM2 as the console port
    reset the board and press Control-C to enter redboot
    
 
-I) Replace the kernel with the one last built on Bufflehead
+I) Replace the kernel with the one last built
 
 RedBoot>  %{getKernel} ts7200-mbari4
 RedBoot>  fis delete vmlinux
