@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install libzlib-1.2.2 for arm-linux -- 5/28/05 brent@mbari.org
+# build & install libzlib-1.2.2 for arm-linux -- 9/8/11 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -9,7 +9,7 @@
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 cd ${ZLIB-zlib-1.2.2} || exit 2
-make install || exit 1
+make || exit 1
 mkdir -p $HOSTTOP || exit 3
 for lib in libz; do
   cp -af $LIBTOP$TARGETTOP/$lib.so* $HOSTTOP &&
