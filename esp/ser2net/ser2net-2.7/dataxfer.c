@@ -217,10 +217,12 @@ static void shutdown_port(port_info_t *port, char *reason);
 
 /* The init sequence we use. */
 static unsigned char telnet_init_seq[] = {
-    TN_IAC, TN_WILL, TN_OPT_SUPPRESS_GO_AHEAD,
-    TN_IAC, TN_WILL, TN_OPT_ECHO,
-    TN_IAC, TN_DONT, TN_OPT_ECHO,
+    TN_IAC, TN_WILL, TN_OPT_BINARY_TRANSMISSION,
     TN_IAC, TN_DO,   TN_OPT_BINARY_TRANSMISSION,
+    TN_IAC, TN_WILL, TN_OPT_ECHO,
+    TN_IAC, TN_WILL, TN_OPT_SUPPRESS_GO_AHEAD,
+    TN_IAC, TN_DO,   TN_OPT_SUPPRESS_GO_AHEAD,
+    TN_IAC, TN_DO,   TN_OPT_COM_PORT  //brent@mbari.org 11/11/11
 };
 
 /* Our telnet command table. */
@@ -230,10 +232,10 @@ static int com_port_will(void *cb_data);
 static struct telnet_cmd telnet_cmds[] = 
 {
     /*                        I will,  I do,  sent will, sent do */
-    { TN_OPT_SUPPRESS_GO_AHEAD,	   0,     1,          1,       0, },
-    { TN_OPT_ECHO,		   0,     1,          1,       1, },
-    { TN_OPT_BINARY_TRANSMISSION,  1,     1,          0,       1, },
-    { TN_OPT_COM_PORT,		   1,     0,          0,       0, 0, 0,
+    { TN_OPT_BINARY_TRANSMISSION,  1,     1,          1,       1, },
+    { TN_OPT_ECHO,		   1,     1,          1,       0, },
+    { TN_OPT_SUPPRESS_GO_AHEAD,	   1,     1,          1,       1, },
+    { TN_OPT_COM_PORT,		   1,     1,          0,       1, 0, 0,
       com_port_handler, com_port_will },
     { 255 }
 };
@@ -2497,23 +2499,24 @@ get_baud_rate(int rate, int *val)
     return 0;
 }
 
-void
-get_rate_from_baud_rate(int baud_rate, int *val)
+static uint32_t
+  rate_from_baud_rate(uint32_t baud_rate)
 {
     int i;
+    uint32_t val;
     for (i=0; i<BAUD_RATES_LEN; i++) {
 	if (baud_rate == baud_rates[i].val) {
 	    if (cisco_ios_baud_rates) {
 		if (baud_rates[i].cisco_ios_val < 0)
 		    /* We are at a baud rate unsopported by the
 		       enumeration, just return zero. */
-		    *val = 0;
+		    val = 0;
 		else
-		    *val = baud_rates[i].cisco_ios_val;
+		    val = baud_rates[i].cisco_ios_val;
 	    } else {
-		*val = baud_rates[i].real_rate;
+		val = baud_rates[i].real_rate;
 	    }
-	    return;
+	    return val;
 	}
     }
 }
@@ -2558,9 +2561,9 @@ static void
 com_port_handler(void *cb_data, unsigned char *option, int len)
 {
     port_info_t *port = cb_data;
-    unsigned char outopt[16];
+    unsigned char outopt[32];
     struct termios termio;
-    int val;
+    uint32_t val;
     
     if (len < 2) 
 	return;
@@ -2569,8 +2572,8 @@ com_port_handler(void *cb_data, unsigned char *option, int len)
     case 0: /* SIGNATURE? */
 	outopt[0] = 44;
 	outopt[1] = 100;
-	strcpy((char *) outopt+2, "ser2net");
-	telnet_send_option(&port->tn_data, outopt, 9);
+	strcpy((char *) outopt+2, "ser2net-" VERSION);
+	telnet_send_option(&port->tn_data, outopt, 9+sizeof(VERSION));
 	break;
 
     case 1: /* SET-BAUDRATE */
@@ -2596,14 +2599,15 @@ com_port_handler(void *cb_data, unsigned char *option, int len)
 	} else {
 	    val = 0;
 	}
-	get_rate_from_baud_rate(val, &val);
+	val = rate_from_baud_rate(val);
 	outopt[0] = 44;
 	outopt[1] = 101;
 	if (cisco_ios_baud_rates) {
 	    outopt[2] = val;
 	    telnet_send_option(&port->tn_data, outopt, 3);
 	} else {
-	    *((uint32_t *) (outopt+2)) = htonl(val);
+            val = htonl(val);
+            memcpy(outopt+2, &val, 4);
 	    telnet_send_option(&port->tn_data, outopt, 6);
 	}
 	break;
