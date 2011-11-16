@@ -218,11 +218,9 @@ static void shutdown_port(port_info_t *port, char *reason);
 /* The init sequence we use. */
 static unsigned char telnet_init_seq[] = {
     TN_IAC, TN_WILL, TN_OPT_BINARY_TRANSMISSION,
-    TN_IAC, TN_DO,   TN_OPT_BINARY_TRANSMISSION,
     TN_IAC, TN_WILL, TN_OPT_ECHO,
     TN_IAC, TN_WILL, TN_OPT_SUPPRESS_GO_AHEAD,
-    TN_IAC, TN_DO,   TN_OPT_SUPPRESS_GO_AHEAD,
-    TN_IAC, TN_DO,   TN_OPT_COM_PORT  //brent@mbari.org 11/11/11
+    TN_IAC, TN_WILL, TN_OPT_COM_PORT  //brent@mbari.org 11/18/11
 };
 
 /* Our telnet command table. */
@@ -232,43 +230,41 @@ static int com_port_will(void *cb_data);
 static struct telnet_cmd telnet_cmds[] = 
 {
     /*                        I will,  I do,  sent will, sent do */
-    { TN_OPT_BINARY_TRANSMISSION,  1,     1,          1,       1, },
+    { TN_OPT_BINARY_TRANSMISSION,  1,     1,          1,       0, },
     { TN_OPT_ECHO,		   1,     1,          1,       0, },
-    { TN_OPT_SUPPRESS_GO_AHEAD,	   1,     1,          1,       1, },
-    { TN_OPT_COM_PORT,		   1,     1,          0,       1, 0, 0,
+    { TN_OPT_SUPPRESS_GO_AHEAD,	   1,     1,          1,       0, },
+    { TN_OPT_COM_PORT,		   1,     1,          1,       0, 0, 0,
       com_port_handler, com_port_will },
     { 255 }
 };
 
 
 #ifdef USE_UUCP_LOCKING
+
+#define DEVprefix  "/dev/"
+#define DEVprefixLen  (sizeof(DEVprefix)-1)
+
 static int
 uucp_fname_lock_size(char *devname)
-{
-    char *ptr;
-
-    (ptr = strrchr(devname, '/'));
-    if (ptr == NULL) {
-	ptr = devname;
-    } else {
-	ptr = ptr + 1;
-    }
-
-    return 7 + strlen(uucp_lck_dir) + strlen(ptr);
+{ //forget kermit compatibility -- try, instead, to mimic everything else :-)
+    size_t devlen = strlen(devname);
+    if (devlen >= DEVprefixLen)  //remove /dev/ prefix unless pathname too short
+      devlen -= DEVprefixLen;
+    return strlen(uucp_lck_dir) + 7 + devlen;
 }
 
 static void
 uucp_fname_lock(char *buf, char *devname)
 {
-    char *ptr;
-
-    (ptr = strrchr(devname, '/'));
-    if (ptr == NULL) {
-	ptr = devname;
-    } else {
-	ptr = ptr + 1;
-    }
+    char *ptr = devname;
+    if (strlen(ptr) >= DEVprefixLen)
+      ptr += DEVprefixLen;
     sprintf(buf, "%s/LCK..%s", uucp_lck_dir, ptr);
+    ptr = buf+ strlen(uucp_lck_dir) + 7;
+    while (*ptr) {
+      if (*ptr == '/')  *ptr='_';
+      ptr++;
+    }
 }
 
 static void
