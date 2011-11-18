@@ -475,7 +475,7 @@ handle_dev_fd_read(int fd, void *data)
 	return;
     } else if (port->dev_to_tcp_buf_count == 0) {
 	/* The port got closed somehow, shut it down. */
-	shutdown_port(port, "closed port");
+        shutdown_port(port, "closed port");
 	return;
     }
 
@@ -627,7 +627,8 @@ handle_tcp_fd_read(int fd, void *data)
 	return;
     } else if (port->tcp_to_dev_buf_count == 0) {
 	/* The other end closed the port, shut it down. */
-	shutdown_port(port, "tcp read close");
+	if (port->enabled != PORT_UDP)
+	  shutdown_port(port, "tcp read close");
 	return;
     }
 
@@ -1573,11 +1574,11 @@ handle_initial_UDP_port_read(int fd, void *data)
       syslog(LOG_ERR, "UDP recvfrom %s:%s failed -- %m", 
              inet_ntoa(port->remote.sin_addr), port->portname);
       return;
-    }          
-    port->tcpfd = port->acceptfd;
+    }
+    port->tcpfd = fd;
     if (!setup_net_port2(port)) { 
-      connect (port->tcpfd, (struct sockaddr *)&port->remote, len);
-      handle_tcp_fd_read (fd, data);         //now we can read the initial msg
+      connect (fd, (struct sockaddr *)&port->remote, len);
+      handle_tcp_fd_read (fd, data);     //now we can read the initial msg
     }
 }
 
@@ -1697,6 +1698,7 @@ free_port(port_info_t *port)
 static void
 shutdown_port(port_info_t *port, char *reason)
 {
+    syslog(LOG_INFO, "shutdown port %s because %s", port->portname, reason);
     if (port->wt_file != -1) {
 	close(port->wt_file);
 	if (port->rt_file == port->wt_file)
