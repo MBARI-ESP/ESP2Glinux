@@ -72,13 +72,14 @@ static char *progname = "ser2net";
 char *state_str[] = { "unconnected", "waiting input", "waiting output" };
 
 #define PORT_DISABLED		0 /* The port is not open. */
-#define PORT_RAW		1 /* Port will not do telnet negotiation. */
-#define PORT_RAWLP		2 /* Port will not do telnet negotiation and
+#define PORT_UDP		1 /* raw via a UDP rather than TCP port */
+#define PORT_RAW		2 /* Port will not do telnet negotiation. */
+#define PORT_RAWLP		3 /* Port will not do telnet negotiation and
                                      termios setting, open for output only. */
-#define PORT_TELNET		3 /* Port will do telnet negotiation. */
-char *enabled_str[] = { "off", "raw", "rawlp", "telnet" };
+#define PORT_TELNET		4 /* Port will do telnet negotiation. */
+char *enabled_str[] = { "off", "udp", "raw", "rawlp", "telnet" };
 
-#define PORT_BUFSIZE	1024
+#define PORT_BUFSIZE	2048
 
 typedef struct port_info
 {
@@ -95,7 +96,11 @@ typedef struct port_info
 					   to redirect /dev/lpX devices If
 					   PORT_TELNET, the port is
 					   enabled and it will do
-					   telnet negotiations. */
+					   telnet negotiations. 
+                                           PORT_UDP is a PORT_RAW on a UDP
+                                           (rather than TCP) port.  
+                                           A non-zero time-out value
+                                           should always be used in this case */
 
     int            timeout;		/* The number of seconds to
 					   wait without any I/O before
@@ -797,6 +802,7 @@ handle_tcp_fd_except(int fd, void *data)
     shutdown_port(port, "tcp fd exception");
 }
 
+
 static void
 telnet_cmd_handler(void *cb_data, unsigned char cmd)
 {
@@ -818,7 +824,7 @@ telnet_output_ready(void *cb_data)
 }
 
 /* Checks to see if some other port has the same device in use. */
-static int
+static port_info_t *
 is_device_already_inuse(port_info_t *check_port)
 {
     port_info_t *port = ports;
@@ -828,13 +834,13 @@ is_device_already_inuse(port_info_t *check_port)
 	    if ((strcmp(port->devname, check_port->devname) == 0) 
 		&& (port->tcp_to_dev_state != PORT_UNCONNECTED))
 	    {
-		return 1;
+		return port;
 	    }
 	}    
 	port = port->next;
     }
 
-    return 0;
+    return NULL;
 }
 
 static void
@@ -1354,60 +1360,25 @@ setup_trace(port_info_t *port)
     return;
 }
 
-/* Called to set up a new connection's file descriptor. */
+
+/* Called to set up serial device associated with connection */
 static int
-setup_tcp_port(port_info_t *port)
+setup_net_port2(port_info_t *port)
 {
     int options;
     struct timeval then;
-
-    if (fcntl(port->tcpfd, F_SETFL, O_NONBLOCK) == -1) {
-	close(port->tcpfd);
-	syslog(LOG_ERR, "Could not fcntl the tcp port %s: %m", port->portname);
-	return -1;
-    }
-    options = 1;
-    if (setsockopt(port->tcpfd, IPPROTO_TCP, TCP_NODELAY,
-		   (char *) &options, sizeof(options)) == -1) {
-	close(port->tcpfd);
-	syslog(LOG_ERR, "Could not enable TCP_NODELAY tcp port %s: %m",
-	       port->portname);
-	return -1;
-    }
-
-#ifdef HAVE_TCPD_H
-    {
-	struct request_info req;
-	
-	request_init(&req, RQ_DAEMON, progname, RQ_FILE, port->tcpfd, NULL);
-	fromhost(&req);
-
-	if (!hosts_access(&req)) {
-	    char *err = "Access denied\n\r";
-	    write(port->tcpfd, err, strlen(err));
-	    close(port->tcpfd);
-	    return -1;
-	}
-    }
-#endif /* HAVE_TCPD_H */
-
+    
 #ifdef USE_UUCP_LOCKING
     {
 	int rv;
 
 	rv = uucp_mk_lock(port->devname);
 	if (rv > 0 ) {
-	    char *err;
-
-	    err = "Port already in use by another process\n\r";
-	    write(port->tcpfd, err, strlen(err));
+            syslog(LOG_ERR, "%s already in use by PID %d", port->devname, rv);
 	    close(port->tcpfd);
 	    return -1;
 	} else if (rv < 0) {
-	    char *err;
-
-	    err = "Error creating port lock file\n\r";
-	    write(port->tcpfd, err, strlen(err));
+            syslog(LOG_ERR, "Error creating port lock file: %m");
 	    close(port->tcpfd);
 	    return -1;
 	}
@@ -1511,6 +1482,45 @@ setup_tcp_port(port_info_t *port)
     return 0;
 }
 
+
+/* Called to set up a new connection's file descriptor and device. */
+static int
+setup_tcp_port(port_info_t *port)
+{
+    int options;
+
+    if (fcntl(port->tcpfd, F_SETFL, O_NONBLOCK) == -1) {
+	close(port->tcpfd);
+	syslog(LOG_ERR, "Could not fcntl the tcp port %s: %m", port->portname);
+	return -1;
+    }
+    options = 1;
+    if (setsockopt(port->tcpfd, IPPROTO_TCP, TCP_NODELAY,
+		   (char *) &options, sizeof(options)) == -1) {
+	close(port->tcpfd);
+	syslog(LOG_ERR, "Could not enable TCP_NODELAY tcp port %s: %m",
+	       port->portname);
+	return -1;
+    }
+
+#ifdef HAVE_TCPD_H
+    {
+	struct request_info req;
+	
+	request_init(&req, RQ_DAEMON, progname, RQ_FILE, port->tcpfd, NULL);
+	fromhost(&req);
+
+	if (!hosts_access(&req)) {
+	    char *err = "Access denied\n\r";
+	    write(port->tcpfd, err, strlen(err));
+	    close(port->tcpfd);
+	    return -1;
+	}
+    }
+#endif /* HAVE_TCPD_H */
+    return setup_net_port2(port);  //finish the job
+}
+    
 /* A connection request has come in on a port. */
 static void
 handle_accept_port_read(int fd, void *data)
@@ -1526,9 +1536,9 @@ handle_accept_port_read(int fd, void *data)
     }
 
     if (err != NULL) {
-	struct sockaddr_in dummy_sockaddr;
+	struct sockaddr dummy_sockaddr;
 	socklen_t len = sizeof(dummy_sockaddr);
-	int new_fd = accept(fd, (struct sockaddr *) &dummy_sockaddr, &len);
+	int new_fd = accept(fd, &dummy_sockaddr, &len);
 
 	if (new_fd != -1) {
 	    write(new_fd, err, strlen(err));
@@ -1538,8 +1548,7 @@ handle_accept_port_read(int fd, void *data)
     }
 
     len = sizeof(port->remote);
-
-    port->tcpfd = accept(fd, (struct sockaddr *) &(port->remote), &len);
+    port->tcpfd = accept(fd, (struct sockaddr *)&port->remote, &len);
     if (port->tcpfd == -1) {
 	syslog(LOG_ERR, "Could not accept on port %s: %m", port->portname);
 	return;
@@ -1547,6 +1556,43 @@ handle_accept_port_read(int fd, void *data)
 
     setup_tcp_port(port);
 }
+
+/* Initial read from UDP port.  This serves to "connect" the remote host */
+static void
+handle_initial_UDP_port_read(int fd, void *data)
+{
+    port_info_t *port = (port_info_t *) data;
+    socklen_t len = sizeof(port->remote);
+
+    if (is_device_already_inuse(port)) {
+      syslog(LOG_ERR, "Device %s already in use on port %s", 
+             port->devname, port->portname);
+      return;
+    }
+     //extract initial packet's source address without reading its contents
+    if (recvfrom(port->acceptfd, NULL, 0, MSG_PEEK, 
+                  (struct sockaddr *)&port->remote, &len)) {
+      syslog(LOG_ERR, "UDP recvfrom %s:%s failed -- %m", 
+             inet_ntoa(port->remote.sin_addr), port->portname);
+      return;
+    }          
+    port->tcpfd = port->acceptfd;
+    if (!setup_net_port2(port)) { 
+      connect (port->tcpfd, (struct sockaddr *)&port->remote, len);
+      handle_tcp_fd_read (fd, data);         //now we can read the initial msg
+    }
+}
+
+
+static void setAcceptReadHandler(port_info_t *port)
+{
+  sel_set_fd_handlers(ser2net_sel, port->acceptfd, port,
+	              port->enabled == PORT_UDP ? 
+                   handle_initial_UDP_port_read : handle_accept_port_read,
+		          NULL,
+		          NULL);
+}
+
 
 /* Start monitoring for connections on a specific port. */
 static char *
@@ -1569,9 +1615,10 @@ startup_port(port_info_t *port)
 	return NULL;
     }
 
-    port->acceptfd = socket(PF_INET, SOCK_STREAM, 0);
+    port->acceptfd = socket(PF_INET, 
+                       port->enabled == PORT_UDP ? SOCK_DGRAM : SOCK_STREAM, 0);
     if (port->acceptfd == -1) {
-	return "Unable to create TCP socket";
+	return "Unable to create network socket";
     }
 
     if (fcntl(port->acceptfd, F_SETFL, O_NONBLOCK) == -1) {
@@ -1592,23 +1639,16 @@ startup_port(port_info_t *port)
 	     (struct sockaddr *) &port->tcpport,
 	     sizeof(port->tcpport)) == -1) {
 	close(port->acceptfd);
-	return "Unable to bind TCP port";
+	return "Unable to bind network port";
     }
 
-    if (listen(port->acceptfd, 1) != 0) {
-	close(port->acceptfd);
-	return "Unable to listen to TCP port";
+    if (port->enabled != PORT_UDP && listen(port->acceptfd, 1)) {    
+      close(port->acceptfd);
+      return "Unable to listen to TCP port";
     }
-
-    sel_set_fd_handlers(ser2net_sel,
-			port->acceptfd,
-			port,
-			handle_accept_port_read,
-			NULL,
-			NULL);
+    setAcceptReadHandler(port);
     sel_set_fd_read_handler(ser2net_sel, port->acceptfd,
 			    SEL_FD_HANDLER_ENABLED);
-
     return NULL;
 }
 
@@ -1680,7 +1720,18 @@ shutdown_port(port_info_t *port, char *reason)
     sel_stop_timer(port->timer);
     sel_clear_fd_handlers(ser2net_sel, port->devfd);
     sel_clear_fd_handlers(ser2net_sel, port->tcpfd);
-    close(port->tcpfd);
+    if (port->enabled == PORT_UDP) {
+      struct sockaddr any = {AF_UNSPEC};
+      sel_set_fd_handlers(ser2net_sel, port->acceptfd, port,
+                          handle_initial_UDP_port_read,
+		          NULL, NULL);
+      sel_set_fd_read_handler(ser2net_sel, port->acceptfd,
+			      SEL_FD_HANDLER_ENABLED);
+      if (connect(port->acceptfd, &any, sizeof(any)))
+        syslog(LOG_ERR, "failed to disassociate UDP %s:%s from %s -- %m",
+               inet_ntoa(port->remote.sin_addr),port->portname, port->devname);
+    }else
+      close(port->tcpfd);
     /* To avoid blocking on close if we have written bytes and are in
        flow-control, we flush the output queue. */
     tcflush(port->devfd, TCOFLUSH);
@@ -1742,12 +1793,7 @@ shutdown_port(port_info_t *port, char *reason)
 	if (curr != NULL) {
 	    port = curr->new_config;
 	    port->acceptfd = curr->acceptfd;
-	    sel_set_fd_handlers(ser2net_sel,
-				port->acceptfd,
-				port,
-				handle_accept_port_read,
-				NULL,
-				NULL);
+	    setAcceptReadHandler(port);
 	    curr->acceptfd = -1;
 	    port->next = curr->next;
 	    if (prev == NULL) {
@@ -1847,15 +1893,17 @@ portconfig(char *portnum,
 	goto errout;
     }
 
-    if (strcmp(state, "raw") == 0) {
+    if (!strcmp(state, "udp"))
+	new_port->enabled = PORT_UDP;
+    else if (strcmp(state, "raw") == 0)
 	new_port->enabled = PORT_RAW;
-    } else if (strcmp(state, "rawlp") == 0) {
+    else if (strcmp(state, "rawlp") == 0)
 	new_port->enabled = PORT_RAWLP;
-    } else if (strcmp(state, "telnet") == 0) {
+    else if (strcmp(state, "telnet") == 0)
 	new_port->enabled = PORT_TELNET;
-    } else if (strcmp(state, "off") == 0) {
+    else if (strcmp(state, "off") == 0)
 	new_port->enabled = PORT_DISABLED;
-    } else {
+    else {
 	rv = "state was invalid";
 	goto errout;
     }
@@ -1897,12 +1945,7 @@ portconfig(char *portnum,
 		new_port->acceptfd = curr->acceptfd;
 		curr->enabled = PORT_DISABLED;
 		curr->acceptfd = -1;
-		sel_set_fd_handlers(ser2net_sel,
-				    new_port->acceptfd,
-				    new_port,
-				    handle_accept_port_read,
-				    NULL,
-				    NULL);
+		setAcceptReadHandler(new_port);
 
 		/* Just replace with the new data. */
 		if (prev == NULL) {
@@ -2345,15 +2388,17 @@ setportenable(struct controller_info *cntlr, char *portspec, char *enable)
 	return;
     }
 
-    if (strcmp(enable, "off") == 0) {
+    if (strcmp(enable, "off") == 0)
 	new_enable = PORT_DISABLED;
-    } else if (strcmp(enable, "raw") == 0) {
+    else if (strcmp(enable, "udp") == 0)
+	new_enable = PORT_UDP;
+    else if (strcmp(enable, "raw") == 0)
 	new_enable = PORT_RAW;
-    } else if (strcmp(enable, "rawlp") == 0) {
+    else if (strcmp(enable, "rawlp") == 0)
 	new_enable = PORT_RAWLP;
-    } else if (strcmp(enable, "telnet") == 0) {
+    else if (strcmp(enable, "telnet") == 0)
 	new_enable = PORT_TELNET;
-    } else {
+    else {
 	err = "Invalid enable: ";
 	controller_output(cntlr, err, strlen(err));
 	controller_output(cntlr, enable, strlen(enable));
@@ -2475,7 +2520,7 @@ static struct baud_rates_s {
 #define BAUD_RATES_LEN ((sizeof(baud_rates) / sizeof(struct baud_rates_s)))
 
 int
-get_baud_rate(int rate, int *val)
+get_baud_rate(int rate, uint32_t *val)
 {
     int i;
     for (i=0; i<BAUD_RATES_LEN; i++) {
@@ -2499,22 +2544,18 @@ static uint32_t
   rate_from_baud_rate(uint32_t baud_rate)
 {
     int i;
-    uint32_t val;
+    uint32_t val = 0;  //unsupported baud rates return zero.
     for (i=0; i<BAUD_RATES_LEN; i++) {
 	if (baud_rate == baud_rates[i].val) {
 	    if (cisco_ios_baud_rates) {
-		if (baud_rates[i].cisco_ios_val < 0)
-		    /* We are at a baud rate unsopported by the
-		       enumeration, just return zero. */
-		    val = 0;
-		else
+		if (baud_rates[i].cisco_ios_val > 0)
 		    val = baud_rates[i].cisco_ios_val;
-	    } else {
+	    } else
 		val = baud_rates[i].real_rate;
-	    }
-	    return val;
+	    break;
 	}
     }
+    return val;
 }
 
 static int
