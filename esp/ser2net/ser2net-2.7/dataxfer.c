@@ -1365,9 +1365,14 @@ setup_trace(port_info_t *port)
 static int
 setup_net_port2(port_info_t *port)
 {
-    int options;
+    int options = O_NONBLOCK;
     struct timeval then;
     
+    if (fcntl(port->tcpfd, F_SETFL, options) == -1) {
+	close(port->tcpfd);
+	syslog(LOG_ERR, "Could not fcntl the tcp port %s: %m", port->portname);
+	return -1;
+    }
 #ifdef USE_UUCP_LOCKING
     {
 	int rv;
@@ -1387,7 +1392,7 @@ setup_net_port2(port_info_t *port)
 
     /* Oct 05 2001 druzus: NOCTTY - don't make 
        device control tty for our process */
-    options = O_NONBLOCK | O_NOCTTY;
+    options |= O_NOCTTY;
     if (port->enabled == PORT_RAWLP) {
 	options |= O_WRONLY;
     } else {
@@ -1487,14 +1492,7 @@ setup_net_port2(port_info_t *port)
 static int
 setup_tcp_port(port_info_t *port)
 {
-    int options;
-
-    if (fcntl(port->tcpfd, F_SETFL, O_NONBLOCK) == -1) {
-	close(port->tcpfd);
-	syslog(LOG_ERR, "Could not fcntl the tcp port %s: %m", port->portname);
-	return -1;
-    }
-    options = 1;
+    int options = 1;
     if (setsockopt(port->tcpfd, IPPROTO_TCP, TCP_NODELAY,
 		   (char *) &options, sizeof(options)) == -1) {
 	close(port->tcpfd);
