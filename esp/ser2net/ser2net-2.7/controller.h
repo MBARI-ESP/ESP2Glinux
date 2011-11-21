@@ -32,4 +32,7 @@ void controller_output(struct controller_info *cntlr, char *data, int count);
 /* Write some data directly to the controllers output port. */
 void controller_write(struct controller_info *cntlr, char *data, int count);
 
+/*  output a string  */
+void controller_outs (struct controller_info *cntlr, char *s);
+
 #endif /* CONTROLLER */
