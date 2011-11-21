@@ -46,6 +46,12 @@ typedef struct dev_info {
     char *trace_read;
     char *trace_write;
     char *trace_both;
+    
+    /*
+     * Optimize network usage by specifying when packets should be sent
+     */
+    size_t        shortest;  //send immediately after this many bytes accumulated
+    struct timeval  maxAge;  //or long since last byte received
 } dev_info_t;
 
 /* Called to change the configuration of a device based upon the
