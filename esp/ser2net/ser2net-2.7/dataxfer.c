@@ -79,7 +79,7 @@ char *state_str[] = { "unconnected", "waiting input", "waiting output" };
 #define PORT_TELNET		4 /* Port will do telnet negotiation. */
 char *enabled_str[] = { "off", "udp", "raw", "rawlp", "telnet" };
 
-#define PORT_BUFSIZE	2048
+#define PORT_BUFSIZE	1400
 
 typedef struct port_info
 {
@@ -113,6 +113,8 @@ typedef struct port_info
     sel_timer_t *timer;			/* Used to timeout when the no
 					   I/O has been seen for a
 					   certain period of time. */
+
+    sel_timer_t *age;	                /* track age of buffered device input */
 
 
     /* Information about the TCP port. */
@@ -445,69 +447,11 @@ do_trace(port_info_t *port, int file, unsigned char *buf, unsigned int buf_len)
     }
 }
 
-/* Data is ready to read on the serial port. */
-static void
-handle_dev_fd_read(int fd, void *data)
+
+static void tryNetWrite (port_info_t *port)
 {
-    port_info_t *port = (port_info_t *) data;
-    int write_count;
-
-    port->dev_to_tcp_buf_start = 0;
-    if (port->enabled == PORT_TELNET) {
-	/* Leave room for IACs. */
-	port->dev_to_tcp_buf_count = read(fd, port->dev_to_tcp_buf,
-					  PORT_BUFSIZE/2);
-    } else {
-	port->dev_to_tcp_buf_count = read(fd, port->dev_to_tcp_buf,
-					  PORT_BUFSIZE);
-    }
-
-    if (port->dev_monitor != NULL) {
-	controller_write(port->dev_monitor,
-			 (char *) port->dev_to_tcp_buf,
-			 port->dev_to_tcp_buf_count);
-    }
-
-    if (port->dev_to_tcp_buf_count < 0) {
-	/* Got an error on the read, shut down the port. */
-	syslog(LOG_ERR, "dev read error for port %s: %m", port->portname);
-	shutdown_port(port, "dev read error");
-	return;
-    } else if (port->dev_to_tcp_buf_count == 0) {
-	/* The port got closed somehow, shut it down. */
-        shutdown_port(port, "closed port");
-	return;
-    }
-
-    if (port->rt_file != -1)
-	/* Do read tracing, ignore errors. */
-	do_trace(port, port->rt_file,
-		 port->dev_to_tcp_buf, port->dev_to_tcp_buf_count);
-    if (port->bt_file != -1)
-	/* Do both tracing, ignore errors. */
-	do_trace(port, port->bt_file,
-		 port->dev_to_tcp_buf, port->dev_to_tcp_buf_count);
-
-    port->dev_bytes_received += port->dev_to_tcp_buf_count;
-
-    if (port->enabled == PORT_TELNET) {
-	int i, j;
-
-	/* Double the IACs on a telnet stream.  This will fit because
-	   we only use half the buffer for telnet connections. */
-	for (i=0; i<port->dev_to_tcp_buf_count; i++) {
-	    if (port->dev_to_tcp_buf[i] == 255) {
-		for (j=port->dev_to_tcp_buf_count; j>i; j--)
-		    port->dev_to_tcp_buf[j+1] = port->dev_to_tcp_buf[j];
-		port->dev_to_tcp_buf_count++;
-		i++;
-		port->dev_to_tcp_buf[i] = 255;
-	    }
-	}
-    }
-
- retry_write:
-    write_count = write(port->tcpfd,
+  retry_write: ;
+    ssize_t write_count = write(port->tcpfd,
 			port->dev_to_tcp_buf,
 			port->dev_to_tcp_buf_count);
 
@@ -520,11 +464,7 @@ handle_dev_fd_read(int fd, void *data)
 	if (errno == EAGAIN) {
 	    /* This was due to O_NONBLOCK, we need to shut off the reader
 	       and start the writer monitor. */
-	    sel_set_fd_read_handler(ser2net_sel, port->devfd,
-				    SEL_FD_HANDLER_DISABLED);
-	    sel_set_fd_write_handler(ser2net_sel, port->tcpfd,
-				     SEL_FD_HANDLER_ENABLED);
-	    port->dev_to_tcp_state = PORT_WAITING_OUTPUT_CLEAR;
+            goto clearOutput;
 	} else if (errno == EPIPE) {
 	    shutdown_port(port, "EPIPE");
 	    return;
@@ -536,11 +476,11 @@ handle_dev_fd_read(int fd, void *data)
 	    return;
 	}
     } else {
-	port->tcp_bytes_sent += write_count;
-	port->dev_to_tcp_buf_count -= write_count;
-	if (port->dev_to_tcp_buf_count != 0) {
+	port->tcp_bytes_sent += write_count;	
+	if (port->dev_to_tcp_buf_count -= write_count) {
 	    /* We didn't write all the data, shut off the reader and
                start the write monitor. */
+clearOutput:
 	    port->dev_to_tcp_buf_start += write_count;
 	    sel_set_fd_read_handler(ser2net_sel, port->devfd,
 				    SEL_FD_HANDLER_DISABLED);
@@ -549,9 +489,82 @@ handle_dev_fd_read(int fd, void *data)
 	    port->dev_to_tcp_state = PORT_WAITING_OUTPUT_CLEAR;
 	}
     }
-
-    reset_timer(port);
 }
+
+/* Data is ready to read on the serial port. */
+static void
+handle_dev_fd_read(int fd, void *data)
+{
+    port_info_t *port = (port_info_t *) data;
+	/* Leave room for IACs if using TELNET */
+    ssize_t read_count = read(fd, port->dev_to_tcp_buf, 
+      (port->enabled==PORT_TELNET ?
+                   PORT_BUFSIZE/2 : PORT_BUFSIZE) - port->dev_to_tcp_buf_count);
+
+    if (read_count < 0) {
+	/* Got an error on the read, shut down the port. */
+	syslog(LOG_ERR, "dev read error for port %s: %m", port->portname);
+	shutdown_port(port, "dev read error");
+	return;
+    } else if (read_count == 0) {
+	/* The port got closed somehow, shut it down. */
+        shutdown_port(port, "closed port");
+	return;
+    }
+
+    if (port->dev_monitor)
+	controller_write(port->dev_monitor,
+			 (char *) port->dev_to_tcp_buf, read_count);
+
+    if (port->rt_file != -1)
+	/* Do read tracing, ignore errors. */
+	do_trace(port, port->rt_file, port->dev_to_tcp_buf, read_count);
+    if (port->bt_file != -1)
+	/* Do both tracing, ignore errors. */
+	do_trace(port, port->bt_file, port->dev_to_tcp_buf, read_count);
+
+    port->dev_bytes_received += read_count;
+
+    if (port->enabled == PORT_TELNET) {
+	int i, j;
+
+	/* Double the IACs on a telnet stream.  This will fit because
+	   we only use half the buffer for telnet connections. */
+	for (i=0; i<read_count; i++) {
+	    if (port->dev_to_tcp_buf[i] == 255) {
+		for (j=read_count; j>i; j--)
+		    port->dev_to_tcp_buf[j+1] = port->dev_to_tcp_buf[j];
+		read_count++;
+		i++;
+		port->dev_to_tcp_buf[i] = 255;
+	    }
+	}
+    }
+  reset_timer(port);
+    
+  if ((port->dev_to_tcp_buf_count += read_count) < port->dinfo.shortest)
+    if (port->dinfo.maxAge.tv_sec || port->dinfo.maxAge.tv_usec) {
+      struct timeval outTime;
+      gettimeofday(&outTime, NULL);
+      if ((outTime.tv_usec += port->dinfo.maxAge.tv_usec) >= 1000000) {
+        outTime.tv_usec -= 1000000;
+        outTime.tv_sec++;
+      }
+      outTime.tv_sec += port->dinfo.maxAge.tv_sec;
+      sel_start_timer(port->age, &outTime);
+      return;
+    }
+  sel_stop_timer(port->age);
+  tryNetWrite (port);
+}
+
+static void
+aged(selector_t *sel, sel_timer_t *timer, void *data)
+{
+  port_info_t *port = (port_info_t *) data;
+  tryNetWrite(port);
+}
+
 
 /* The serial port has room to write some data.  This is only activated
    if a write fails to complete, it is deactivated as soon as writing
@@ -1682,6 +1695,7 @@ static void
 free_port(port_info_t *port)
 {
     sel_free_timer(port->timer);
+    sel_free_timer(port->age);
     change_port_state(port, PORT_DISABLED);
     if (port->portname != NULL) {
 	free(port->portname);
@@ -1808,7 +1822,7 @@ shutdown_port(port_info_t *port, char *reason)
     }
 }
 
-void
+static void
 got_timeout(selector_t  *sel,
 	    sel_timer_t *timer,
 	    void        *data)
@@ -1853,6 +1867,7 @@ got_timeout(selector_t  *sel,
     sel_start_timer(port->timer, &then);
 }
 
+
 /* Create a port based on a set of parameters passed in. */
 char *
 portconfig(char *portnum,
@@ -1869,16 +1884,15 @@ portconfig(char *portnum,
     if (new_port == NULL) {
 	return "Could not allocate a port data structure";
     }
+    /* Errors from here on out must goto errout. */
 
-    if (sel_alloc_timer(ser2net_sel,
-			got_timeout, new_port,
-			&new_port->timer))
+    if (sel_alloc_timer(ser2net_sel, got_timeout, new_port, &new_port->timer) ||
+        sel_alloc_timer(ser2net_sel, aged, new_port, &new_port->age))
     {
-	free(new_port);
-	return "Could not allocate timer data";
+	rv = "Could not allocate timer data";
+        goto errout;
     }
 
-    /* Errors from here on out must goto errout. */
     init_port_data(new_port);
 
     new_port->portname = malloc(strlen(portnum)+1);
@@ -1921,7 +1935,11 @@ portconfig(char *portnum,
 	  rv = "device configuration invalid";
 	  goto errout;
     }
-
+    size_t maxSize = new_port->enabled==PORT_TELNET ?
+                                     PORT_BUFSIZE/2 : PORT_BUFSIZE;
+    if (new_port->dinfo.shortest > maxSize)
+      new_port->dinfo.shortest = maxSize;
+      
     new_port->devname = malloc(strlen(devname) + 1);
     if (new_port->devname == NULL) {
 	rv = "could not allocate device name";
@@ -2043,45 +2061,45 @@ showshortport(struct controller_info *cntlr, port_info_t *port)
     int  need_space = 0;
 
     snprintf(buffer, 23, "%-22s", port->portname);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, " %-6s ", enabled_str[port->enabled]);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%7d ", port->timeout);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     inet_ntop(AF_INET, &(port->remote.sin_addr), buffer, sizeof(buffer));
     count = strlen(buffer);
     controller_output(cntlr, buffer, count);
     sprintf(buffer, ",%d ", ntohs(port->remote.sin_port));
     count += strlen(buffer);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
     while (count < 23) {
-	controller_output(cntlr, " ", 1);
+	controller_outs(cntlr, " ");
 	count++;
     }
 
     snprintf(buffer, 23, "%-22s", port->devname);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, " %-14s ", state_str[port->tcp_to_dev_state]);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%-14s ", state_str[port->dev_to_tcp_state]);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%9d ", port->tcp_bytes_received);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%9d ", port->tcp_bytes_sent);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%9d ", port->dev_bytes_received);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
     sprintf(buffer, "%9d ", port->dev_bytes_sent);
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
 
 
     if (port->enabled != PORT_RAWLP) {
@@ -2091,12 +2109,12 @@ showshortport(struct controller_info *cntlr, port_info_t *port)
 
     if (port->tcp_to_dev_state != PORT_UNCONNECTED) {
 	if (need_space) {
-	    controller_output(cntlr, " ", 1);
+	    controller_outs(cntlr, " ");
 	}
 	    
 	show_devcontrol(cntlr, port->devfd);
     }
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, "\n\r");
 
 }
 
@@ -2104,104 +2122,93 @@ showshortport(struct controller_info *cntlr, port_info_t *port)
 static void
 showport(struct controller_info *cntlr, port_info_t *port)
 {
-    char *str;
     char buffer[128];
 
-    str = "TCP Port ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "TCP Port ");
     sprintf(buffer, "%s", port->portname);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  enable state: ";
-    controller_output(cntlr, str, strlen(str));
-    str = enabled_str[port->enabled];
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, "  enable state: ");
+    controller_outs(cntlr, enabled_str[port->enabled]);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  timeout: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  timeout: ");
     sprintf(buffer, "%d", port->timeout);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  connected to (or last connection): ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  connected to (or last connection): ");
     inet_ntop(AF_INET, &(port->remote.sin_addr), buffer, sizeof(buffer));
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, ":", 1);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, ":");
     sprintf(buffer, "%d", ntohs(port->remote.sin_port));
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  device: ";
-    controller_output(cntlr, str, strlen(str));
-    str = port->devname;
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, "  device: ");
+    controller_outs(cntlr, port->devname);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  device config: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  device config: ");
     if (port->enabled == PORT_RAWLP) {
-	str = "none\n\r";
-	controller_output(cntlr, str, strlen(str));
+	controller_outs(cntlr, "none\n\r");
     } else {
 	show_devcfg(cntlr, &(port->dinfo.termctl));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, "\n\r");
     }
-
-    str = "  device controls: ";
-    controller_output(cntlr, str, strlen(str));
+   
+    controller_outs(cntlr, "  device controls: ");
     if (port->tcp_to_dev_state == PORT_UNCONNECTED) {
-	str = "not currently connected\n\r";
-	controller_output(cntlr, str, strlen(str));
+	controller_outs(cntlr, "not currently connected\n\r");
     } else {
 	show_devcontrol(cntlr, port->devfd);
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, "\n\r");
     }
 
-    str = "  tcp to device state: ";
-    controller_output(cntlr, str, strlen(str));
-    str = state_str[port->tcp_to_dev_state];
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, "\n\r", 2);
+    if (port->dinfo.shortest) {
+      double maxAge = port->dinfo.maxAge.tv_sec+port->dinfo.maxAge.tv_usec/1e6;
+      sprintf(buffer, 
+      "Buffer input until %u characters received or %g seconds elapse\r\n",
+              port->dinfo.shortest, maxAge);
+      controller_outs(cntlr, buffer);
+    }
+      
 
-    str = "  device to tcp state: ";
-    controller_output(cntlr, str, strlen(str));
-    str = state_str[port->dev_to_tcp_state];
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, "  tcp to device state: ");
+    controller_outs(cntlr, state_str[port->tcp_to_dev_state]);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  bytes read from TCP: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  device to tcp state: ");
+    controller_outs(cntlr, state_str[port->dev_to_tcp_state]);
+    controller_outs(cntlr, "\n\r");
+
+    controller_outs(cntlr, "  bytes read from TCP: ");
     sprintf(buffer, "%d", port->tcp_bytes_received);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  bytes written to TCP: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  bytes written to TCP: ");
     sprintf(buffer, "%d", port->tcp_bytes_sent);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  bytes read from device: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  bytes read from device: ");
     sprintf(buffer, "%d", port->dev_bytes_received);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
-    str = "  bytes written to device: ";
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, "  bytes written to device: ");
     sprintf(buffer, "%d", port->dev_bytes_sent);
-    controller_output(cntlr, buffer, strlen(buffer));
-    controller_output(cntlr, "\n\r", 2);
+    controller_outs(cntlr, buffer);
+    controller_outs(cntlr, "\n\r");
 
     if (port->config_num == -1) {
-	str = "  Port will be deleted when current session closes.\n\r";
-	controller_output(cntlr, str, strlen(str));
+      controller_outs(cntlr, 
+              "  Port will be deleted when current session closes.\n\r");
     } else if (port->new_config != NULL) {
-	str = "  Port will be reconfigured when current session closes.\n\r";
-	controller_output(cntlr, str, strlen(str));
+      controller_outs(cntlr, 
+              "  Port will be reconfigured when current session closes.\n\r");
     }
 }
 
@@ -2239,9 +2246,9 @@ showports(struct controller_info *cntlr, char *portspec)
 	port = find_port_by_num(portspec);
 	if (port == NULL) {
 	    char *err = "Invalid port number: ";
-	    controller_output(cntlr, err, strlen(err));
-	    controller_output(cntlr, portspec, strlen(portspec));
-	    controller_output(cntlr, "\n\r", 2);
+	    controller_outs(cntlr, err);
+	    controller_outs(cntlr, portspec);
+	    controller_outs(cntlr, "\n\r");
 	} else {
 	    showport(cntlr, port);	    
 	}
@@ -2269,7 +2276,7 @@ showshortports(struct controller_info *cntlr, char *portspec)
 	    "Dev in",
 	    "Dev out",
 	    "State");
-    controller_output(cntlr, buffer, strlen(buffer));
+    controller_outs(cntlr, buffer);
     if (portspec == NULL) {
 	/* Dump everything. */
 	port = ports;
@@ -2281,9 +2288,9 @@ showshortports(struct controller_info *cntlr, char *portspec)
 	port = find_port_by_num(portspec);
 	if (port == NULL) {
 	    char *err = "Invalid port number: ";
-	    controller_output(cntlr, err, strlen(err));
-	    controller_output(cntlr, portspec, strlen(portspec));
-	    controller_output(cntlr, "\n\r", 2);
+	    controller_outs(cntlr, err);
+	    controller_outs(cntlr, portspec);
+	    controller_outs(cntlr, "\n\r");
 	} else {
 	    showshortport(cntlr, port);	    
 	}
@@ -2302,16 +2309,16 @@ setporttimeout(struct controller_info *cntlr, char *portspec, char *timeout)
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	char *err = "Invalid port number: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
     } else {
 	timeout_num = scan_int(timeout);
 	if (timeout_num == -1) {
 	    char *err = "Invalid timeout: ";
-	    controller_output(cntlr, err, strlen(err));
-	    controller_output(cntlr, timeout, strlen(timeout));
-	    controller_output(cntlr, "\n\r", 2);
+	    controller_outs(cntlr, err);
+	    controller_outs(cntlr, timeout);
+	    controller_outs(cntlr, "\n\r");
 	} else {
 	    port->timeout = timeout_num;
 	    if (port->tcpfd != -1) {
@@ -2332,14 +2339,14 @@ setportdevcfg(struct controller_info *cntlr, char *portspec, char *devcfg)
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	char *err = "Invalid port number: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
     } else {
 	if (devconfig(devcfg, &port->dinfo) == -1)
 	{
 	    char *err = "Invalid device config\n\r";
-	    controller_output(cntlr, err, strlen(err));
+	    controller_outs(cntlr, err);
 	}
     }
 }
@@ -2355,18 +2362,18 @@ setportcontrol(struct controller_info *cntlr, char *portspec, char *controls)
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	char *err = "Invalid port number: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
     } else if (port->tcp_to_dev_state == PORT_UNCONNECTED) {
 	char *err = "Port is not currently connected: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
     } else {
 	if (setdevcontrol(controls, port->devfd) == -1) {
 	    char *err = "Invalid device controls\n\r";
-	    controller_output(cntlr, err, strlen(err));
+	    controller_outs(cntlr, err);
 	}
     }
 }
@@ -2382,9 +2389,9 @@ setportenable(struct controller_info *cntlr, char *portspec, char *enable)
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	err = "Invalid port number: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
 	return;
     }
 
@@ -2400,16 +2407,16 @@ setportenable(struct controller_info *cntlr, char *portspec, char *enable)
 	new_enable = PORT_TELNET;
     else {
 	err = "Invalid enable: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, enable, strlen(enable));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, enable);
+	controller_outs(cntlr, "\n\r");
 	return;
     }
 
     err = change_port_state(port, new_enable);
     if (err != NULL) {
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, "\n\r");
     }
 }
 
@@ -2426,16 +2433,16 @@ data_monitor_start(struct controller_info *cntlr,
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	char *err = "Invalid port number: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+	controller_outs(cntlr, "\n\r");
 	return NULL;
     }
 
     if ((port->tcp_monitor != NULL) || (port->dev_monitor != NULL)) {
 	char *err = "Port is already being monitored";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, "\n\r");
 	return NULL;
     }
  
@@ -2447,9 +2454,9 @@ data_monitor_start(struct controller_info *cntlr,
 	return port;
     } else {
 	 char *err = "invalid monitor type: ";
-	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, type, strlen(type));
-	controller_output(cntlr, "\n\r", 2);
+	controller_outs(cntlr, err);
+	controller_outs(cntlr, type);
+	controller_outs(cntlr, "\n\r");
 	return NULL;
      }
 }
@@ -2474,15 +2481,15 @@ disconnect_port(struct controller_info *cntlr,
     port = find_port_by_num(portspec);
     if (port == NULL) {
 	char *err = "Invalid port number: ";
- 	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
- 	controller_output(cntlr, "\n\r", 2);
+ 	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+ 	controller_outs(cntlr, "\n\r");
  	return;
     } else if (port->tcp_to_dev_state == PORT_UNCONNECTED) {
 	char *err = "Port not connected: ";
- 	controller_output(cntlr, err, strlen(err));
-	controller_output(cntlr, portspec, strlen(portspec));
- 	controller_output(cntlr, "\n\r", 2);
+ 	controller_outs(cntlr, err);
+	controller_outs(cntlr, portspec);
+ 	controller_outs(cntlr, "\n\r");
  	return;
     }
  
