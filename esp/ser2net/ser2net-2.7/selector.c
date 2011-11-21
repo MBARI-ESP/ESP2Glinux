@@ -704,8 +704,9 @@ sel_start_timer(sel_timer_t    *timer,
 		struct timeval *timeout)
 {
     if (timer->in_heap)
-	return EBUSY;
-
+      remove_from_heap(&(timer->sel->timer_top),
+		       &(timer->sel->timer_last),
+		       timer);
     timer->timeout = *timeout;
     add_to_heap(&(timer->sel->timer_top), &(timer->sel->timer_last), timer);
     timer->in_heap = 1;
