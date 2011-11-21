@@ -80,93 +80,110 @@ devconfig(char *instr, dev_info_t *dinfo)
 
     dinfo->allow_2217 = 0;
     dinfo->disablebreak = 0;
+    dinfo->shortest = 0;
+    dinfo->maxAge.tv_sec = 0;
+    dinfo->maxAge.tv_usec = 0;
     dinfo->banner = NULL;
     dinfo->trace_read = NULL;
     dinfo->trace_write = NULL;
     dinfo->trace_both = NULL;
     pos = strtok_r(str, ", \t", &strtok_data);
     while (pos != NULL) {
-	if (strcmp(pos, "300") == 0) {
+	if (strcasecmp(pos, "300") == 0) {
 	    cfsetospeed(termctl, B300);
 	    cfsetispeed(termctl, B300);
-	} else if (strcmp(pos, "600") == 0) {
+	} else if (strcasecmp(pos, "600") == 0) {
 	    cfsetospeed(termctl, B600);
 	    cfsetispeed(termctl, B600);
-	} else if (strcmp(pos, "1200") == 0) {
+	} else if (strcasecmp(pos, "1200") == 0) {
 	    cfsetospeed(termctl, B1200);
 	    cfsetispeed(termctl, B1200);
-	} else if (strcmp(pos, "2400") == 0) {
+	} else if (strcasecmp(pos, "2400") == 0) {
 	    cfsetospeed(termctl, B2400);
 	    cfsetispeed(termctl, B2400);
-	} else if (strcmp(pos, "4800") == 0) {
+	} else if (strcasecmp(pos, "4800") == 0) {
 	    cfsetospeed(termctl, B4800);
 	    cfsetispeed(termctl, B4800);
-	} else if (strcmp(pos, "9600") == 0) {
+	} else if (strcasecmp(pos, "9600") == 0) {
 	    cfsetospeed(termctl, B9600);
 	    cfsetispeed(termctl, B9600);
-	} else if (strcmp(pos, "19200") == 0) {
+	} else if (strcasecmp(pos, "19200") == 0) {
 	    cfsetospeed(termctl, B19200);
 	    cfsetispeed(termctl, B19200);
-	} else if (strcmp(pos, "38400") == 0) {
+	} else if (strcasecmp(pos, "38400") == 0) {
 	    cfsetospeed(termctl, B38400);
 	    cfsetispeed(termctl, B38400);
-	} else if (strcmp(pos, "57600") == 0) {
+	} else if (strcasecmp(pos, "57600") == 0) {
 	    cfsetospeed(termctl, B57600);
 	    cfsetispeed(termctl, B57600);
-	} else if (strcmp(pos, "115200") == 0) {
+	} else if (strcasecmp(pos, "115200") == 0) {
 	    cfsetospeed(termctl, B115200);
 	    cfsetispeed(termctl, B115200);
-	} else if (strcmp(pos, "1STOPBIT") == 0) {
+	} else if (strcasecmp(pos, "1STOPBIT") == 0) {
 	    termctl->c_cflag &= ~(CSTOPB);
-	} else if (strcmp(pos, "2STOPBITS") == 0) {
+	} else if (strcasecmp(pos, "2STOPBITS") == 0) {
 	    termctl->c_cflag |= CSTOPB;
-	} else if (strcmp(pos, "7DATABITS") == 0) {
+	} else if (strcasecmp(pos, "7DATABITS") == 0) {
 	    termctl->c_cflag &= ~(CSIZE);
 	    termctl->c_cflag |= CS7;
-	} else if (strcmp(pos, "8DATABITS") == 0) {
+	} else if (strcasecmp(pos, "8DATABITS") == 0) {
 	    termctl->c_cflag &= ~(CSIZE);
 	    termctl->c_cflag |= CS8;
-	} else if (strcmp(pos, "NONE") == 0) {
+	} else if (strcasecmp(pos, "NONE") == 0) {
 	    termctl->c_cflag &= ~(PARENB);
-	} else if (strcmp(pos, "EVEN") == 0) {
+	} else if (strcasecmp(pos, "EVEN") == 0) {
 	    termctl->c_cflag |= PARENB;
 	    termctl->c_cflag &= ~(PARODD);
-	} else if (strcmp(pos, "ODD") == 0) {
+	} else if (strcasecmp(pos, "ODD") == 0) {
 	    termctl->c_cflag |= PARENB | PARODD;
-        } else if (strcmp(pos, "XONXOFF") == 0) {
+        } else if (strcasecmp(pos, "XONXOFF") == 0) {
             termctl->c_iflag |= (IXON | IXOFF | IXANY);
             termctl->c_cc[VSTART] = 17;
             termctl->c_cc[VSTOP] = 19;      
-        } else if (strcmp(pos, "-XONXOFF") == 0) {
+        } else if (strcasecmp(pos, "-XONXOFF") == 0) {
             termctl->c_iflag &= ~(IXON | IXOFF | IXANY);
-        } else if (strcmp(pos, "RTSCTS") == 0) {
+        } else if (strcasecmp(pos, "RTSCTS") == 0) {
             termctl->c_cflag |= CRTSCTS;  
-        } else if (strcmp(pos, "-RTSCTS") == 0) {
+        } else if (strcasecmp(pos, "-RTSCTS") == 0) {
             termctl->c_cflag &= ~CRTSCTS;
-        } else if (strcmp(pos, "LOCAL") == 0) {
+        } else if (strcasecmp(pos, "LOCAL") == 0) {
             termctl->c_cflag |= CLOCAL;  
-        } else if (strcmp(pos, "-LOCAL") == 0) {
+        } else if (strcasecmp(pos, "-LOCAL") == 0) {
             termctl->c_cflag &= ~CLOCAL;
-        } else if (strcmp(pos, "HANGUP_WHEN_DONE") == 0) {
+        } else if (strcasecmp(pos, "HANGUP_WHEN_DONE") == 0) {
             termctl->c_cflag |= HUPCL;  
-        } else if (strcmp(pos, "-HANGUP_WHEN_DONE") == 0) {
+        } else if (strcasecmp(pos, "-HANGUP_WHEN_DONE") == 0) {
             termctl->c_cflag &= ~HUPCL;
-        } else if (strcmp(pos, "remctl") == 0) {
+        } else if (strcasecmp(pos, "remctl") == 0) {
 	    dinfo->allow_2217 = 1;
-	} else if (strcmp(pos, "NOBREAK") == 0) {
+	} else if (strcasecmp(pos, "NOBREAK") == 0) {
 	    dinfo->disablebreak = 1;
-	} else if (strncmp(pos, "tr=", 3) == 0) {
+	} else if (strncasecmp(pos, "tr=", 3) == 0) {
 	    /* trace read, data from the port to the socket */
 	    dinfo->trace_read = find_tracefile(pos + 3);
-	} else if (strncmp(pos, "tw=", 3) == 0) {
+	} else if (strncasecmp(pos, "tw=", 3) == 0) {
 	    /* trace write, data from the socket to the port */
 	    dinfo->trace_write = find_tracefile(pos + 3);
-	} else if (strncmp(pos, "tb=", 3) == 0) {
+	} else if (strncasecmp(pos, "tb=", 3) == 0) {
 	    /* trace both directions. */
 	    dinfo->trace_both = find_tracefile(pos + 3);
+        } else if (strncasecmp(pos, "shortest=", 9) == 0) {
+            char *end;
+            unsigned long ms = strtoul(pos+=9, &end, 10);
+            if (pos == end)
+              goto cfgErr;
+            dinfo->shortest = ms;
+        } else if (strncasecmp(pos, "maxAge=", 7) == 0) {
+            char *end;
+            double maxAge = strtod(pos+=7, &end);
+            if (pos == end || maxAge < 0.0 || maxAge > 1.0e9)
+              goto cfgErr;
+            dinfo->maxAge.tv_sec = maxAge;
+            dinfo->maxAge.tv_usec = (maxAge-dinfo->maxAge.tv_sec)*1e6 - 0.5;
 	} else if ((dinfo->banner = find_banner(pos))) {
 	    /* It's a banner to display at startup, it's already set. */
 	} else {
+cfgErr:
 	    rv = -1;
 	    goto out;
 	}
@@ -253,40 +270,38 @@ show_devcfg(struct controller_info *cntlr, struct termios *termctl)
     char    *str;
 
     str = baud_string(speed);
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, " ", 1);
+    controller_outs(cntlr, str);
+    controller_outs(cntlr, " ");
 
     if (xon && xoff && xany) {
-      controller_output(cntlr, "XONXOFF ", 8);
+      controller_outs(cntlr, "XONXOFF ");
     }      
     
     if (flow_rtscts) {
-      controller_output(cntlr, "RTSCTS ", 7);
+      controller_outs(cntlr, "RTSCTS ");
     }
 
     if (clocal) {
-      controller_output(cntlr, "LOCAL ", 6);
+      controller_outs(cntlr, "LOCAL ");
     }
 
     if (hangup_when_done) {
-      controller_output(cntlr, "HANGUP_WHEN_DONE ", 17);
+      controller_outs(cntlr, "HANGUP_WHEN_DONE ");
     }
 
     if (stopbits) {
-	str = "2STOPBITS";
+	str = "2STOPBITS ";
     } else {
-	str = "1STOPBIT";
+	str = "1STOPBIT ";
     }
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, " ", 1);
+    controller_outs(cntlr, str);
 
     switch (databits) {
-    case CS7: str = "7DATABITS"; break;
-    case CS8: str = "8DATABITS"; break;
-    default: str = "unknown databits";
+    case CS7: str = "7DATABITS "; break;
+    case CS8: str = "8DATABITS "; break;
+    default: str = "unknown databits ";
     }
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, " ", 1);
+    controller_outs(cntlr, str);
 
     if (parity_enabled) {
 	if (parity) {
@@ -297,7 +312,7 @@ show_devcfg(struct controller_info *cntlr, struct termios *termctl)
     } else {
 	str = "NONE";
     }
-    controller_output(cntlr, str, strlen(str));
+    controller_outs(cntlr, str);
 }
 
 int
@@ -318,19 +333,19 @@ setdevcontrol(char *instr, int fd)
 
     pos = strtok_r(str, " \t", &strtok_data);
     while (pos != NULL) {
-       if (strcmp(pos, "RTSHI") == 0) {
+       if (strcasecmp(pos, "RTSHI") == 0) {
            ioctl(fd, TIOCMGET, &status);
            status |= TIOCM_RTS;
            ioctl(fd, TIOCMSET, &status);
-       } else if (strcmp(pos, "RTSLO") == 0) {
+       } else if (strcasecmp(pos, "RTSLO") == 0) {
            ioctl(fd, TIOCMGET, &status);
            status &= ~TIOCM_RTS;
            ioctl(fd, TIOCMSET, &status);
-       } else if (strcmp(pos, "DTRHI") == 0) {
+       } else if (strcasecmp(pos, "DTRHI") == 0) {
            ioctl(fd, TIOCMGET, &status);
            status |= TIOCM_DTR;
            ioctl(fd, TIOCMSET, &status);
-       } else if (strcmp(pos, "DTRLO") == 0) {
+       } else if (strcasecmp(pos, "DTRLO") == 0) {
            ioctl(fd, TIOCMGET, &status);
            status &= ~TIOCM_DTR;               /* AKA drop DTR */
            ioctl(fd, TIOCMSET, &status);
@@ -356,18 +371,16 @@ show_devcontrol(struct controller_info *cntlr, int fd)
     ioctl(fd, TIOCMGET, &status);
 
     if (status & TIOCM_RTS) {
-	str = "RTSHI";
+	str = "RTSHI ";
     } else {
-	str = "RTSLO";
+	str = "RTSLO ";
     }
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, " ", 1);
+    controller_outs(cntlr, str);
 
     if (status & TIOCM_DTR) {
-	str = "DTRHI";
+	str = "DTRHI ";
     } else {
-	str = "DTRLO";
+	str = "DTRLO ";
     }
-    controller_output(cntlr, str, strlen(str));
-    controller_output(cntlr, " ", 1);
+    controller_outs(cntlr, str);
 }
