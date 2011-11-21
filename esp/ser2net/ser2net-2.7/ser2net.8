@@ -246,6 +246,17 @@ Disables automatic clearing of the break setting of the port.
 .I remctl
 allows remote control of the serial port parameters via RFC 2217.  See
 the README for more info.
+
+.I shortest=<number>
+causes incoming serial data to be buffered until the specified 
+number of characters have been received.
+
+.I maxAge=<delay>
+causes incoming serial data to be buffered for the specified (floating point) 
+number of seconds.  Setting this
+and shortest= appropriately can replace lots of tiny, inefficient 
+network packets with a single larger one.
+
 .I <banner name>
 displays the given banner when a user connects to the port.
 
