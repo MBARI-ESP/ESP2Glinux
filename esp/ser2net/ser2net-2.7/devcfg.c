@@ -179,7 +179,7 @@ devconfig(char *instr, dev_info_t *dinfo)
             if (pos == end || maxAge < 0.0 || maxAge > 1.0e9)
               goto cfgErr;
             dinfo->maxAge.tv_sec = maxAge;
-            dinfo->maxAge.tv_usec = (maxAge-dinfo->maxAge.tv_sec)*1e6 - 0.5;
+            dinfo->maxAge.tv_usec = (maxAge-dinfo->maxAge.tv_sec)*1e6 + 0.5;
 	} else if ((dinfo->banner = find_banner(pos))) {
 	    /* It's a banner to display at startup, it's already set. */
 	} else {
