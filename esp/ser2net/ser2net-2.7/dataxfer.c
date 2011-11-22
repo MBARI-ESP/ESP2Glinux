@@ -497,7 +497,8 @@ handle_dev_fd_read(int fd, void *data)
 {
     port_info_t *port = (port_info_t *) data;
 	/* Leave room for IACs if using TELNET */
-    ssize_t read_count = read(fd, port->dev_to_tcp_buf, 
+    ssize_t read_count = read(fd, 
+      port->dev_to_tcp_buf+port->dev_to_tcp_buf_count, 
       (port->enabled==PORT_TELNET ?
                    PORT_BUFSIZE/2 : PORT_BUFSIZE) - port->dev_to_tcp_buf_count);
 
@@ -541,8 +542,8 @@ handle_dev_fd_read(int fd, void *data)
 	}
     }
   reset_timer(port);
-    
-  if ((port->dev_to_tcp_buf_count += read_count) < port->dinfo.shortest)
+
+  if ((port->dev_to_tcp_buf_count += read_count) < port->dinfo.shortest) {
     if (port->dinfo.maxAge.tv_sec || port->dinfo.maxAge.tv_usec) {
       struct timeval outTime;
       gettimeofday(&outTime, NULL);
@@ -552,8 +553,9 @@ handle_dev_fd_read(int fd, void *data)
       }
       outTime.tv_sec += port->dinfo.maxAge.tv_sec;
       sel_start_timer(port->age, &outTime);
-      return;
     }
+    return;
+  }
   sel_stop_timer(port->age);
   tryNetWrite (port);
 }
@@ -1712,7 +1714,7 @@ free_port(port_info_t *port)
 static void
 shutdown_port(port_info_t *port, char *reason)
 {
-    syslog(LOG_INFO, "shutdown port %s because %s", port->portname, reason);
+    syslog(LOG_INFO, "shutdown port %s due to %s", port->portname, reason);
     if (port->wt_file != -1) {
 	close(port->wt_file);
 	if (port->rt_file == port->wt_file)
@@ -2168,9 +2170,11 @@ showport(struct controller_info *cntlr, port_info_t *port)
 
     if (port->dinfo.shortest) {
       double maxAge = port->dinfo.maxAge.tv_sec+port->dinfo.maxAge.tv_usec/1e6;
-      sprintf(buffer, 
-      "Buffer input until %u characters received or %g seconds elapse\r\n",
-              port->dinfo.shortest, maxAge);
+      ssize_t len = sprintf(buffer, 
+        "  buffer input until %u characters received", port->dinfo.shortest);
+      if (maxAge > 0.0) 
+        len += sprintf(buffer+len, " or %g seconds since last", maxAge);
+      strcpy (buffer+len, "\r\n");
       controller_outs(cntlr, buffer);
     }
       
