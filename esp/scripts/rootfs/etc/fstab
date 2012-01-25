@@ -15,4 +15,4 @@ tempest:/vol/vol0/users /u nfs rsize=2048,intr,nosuid,nodev,noauto
 tempest:/vol/tempbox /tempbox nfs rsize=2048,intr,nosuid,nodev,noauto
 tornado:/vol/vol0/Engineering /engineering nfs rsize=2048,intr,nosuid,nodev,noauto
 tornado:/vol/ProjectLibrary /project nfs rsize=2048,intr,nosuid,nodev,noauto
-tornado:/vol/vol0/ESP /ESP nfs rsize=2048,intr,nosuid,nodev,noauto
+atlasnfs:/ifs/mbari/ESP /ESP nfs rsize=2048,intr,nosuid,nodev,noauto
