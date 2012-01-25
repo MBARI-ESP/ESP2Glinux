@@ -111,17 +111,10 @@ HEADERS += sha1.h
 PPPDOBJS += sha1.o
 endif
 
-ifdef HAS_SHADOW
 CFLAGS   += -DHAS_SHADOW
-#LIBS     += -lshadow $(LIBS)
-endif
 
-ifneq ($(wildcard /usr/include/crypt.h),)
 CFLAGS   += -DHAVE_CRYPT_H=1
-endif
-ifneq ($(wildcard /usr/lib/libcrypt.*),)
 LIBS	+= -lcrypt
-endif
 
 ifdef NEEDDES
 ifndef USE_CRYPT
@@ -192,7 +185,8 @@ ifdef MAXOCTETS
      CFLAGS += -DMAXOCTETS
 endif
 
-INSTALL= install -o root
+INSTALL= install
+# -o root
 
 all: $(TARGETS)
 

@@ -1,2 +1,2 @@
-#define VERSION		"2.4.2-mbari2"
-#define DATE		"1 Sep 2009"
+#define VERSION		"2.4.2-mbari3"
+#define DATE		"21 Jan 2012"
