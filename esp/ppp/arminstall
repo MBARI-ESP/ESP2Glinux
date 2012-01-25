@@ -8,6 +8,7 @@
 : ${PPPBINS:=pppd/pppd chat/chat}  #pppdump/pppdump pppstat/pppstat
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
+top=$PWD
 cd ${PPPVERS-ppp-2.4.2} || exit 2
 make CC=/arm/bin/gcc DESTDIR=$ARMGCC COPTS="-Os -fomit-frame-pointer "  &&
 $ARMSTRIP `find pppd/plugins -name "*.so"` &&
@@ -15,4 +16,11 @@ $ARMSTRIP $PPPBINS || exit 2
 mkdir -pm 755 $HOSTTOP/usr/sbin &&
 install -m 755 $PPPBINS $HOSTTOP/usr/sbin || exit 3
 make -C pppd/plugins install DESTDIR=$HOSTTOP || exit 4
+
+cd $top && cd ${PPTPVERS:=pptp-1.7.2} || exit 2
+make CC=/arm/bin/gcc OPTIMIZE=-Os DEBUG= &&
+echo "Installing PPTP under $HOSTTOP"
+$ARMSTRIP pptp &&
+install -m 755 pptp pptpsetup $HOSTTOP/usr/sbin || exit 3
+install -m 644 options.pptp $HOSTTOP/etc/ppp || exit 3
 echo "Done."

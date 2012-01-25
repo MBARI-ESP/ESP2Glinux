@@ -1,13 +1,16 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 1/24/12 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 1/25/12 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
 : ${CC:=$ARMGCC/bin/gcc}
 : ${LIBTOP:=${1-$ARMGCC}}
 : ${PPPVERS:=ppp-2.4.2}
+: ${PPTPVERS:=pptp-1.7.2}
 export CC CFLAGS CXXFLAGS
-rm -rf $PPPVERS && tar xzf $PPPVERS.tar.gz && cd $PPPVERS &&
+rm -rf $PPPVERS && tar xzf $PPPVERS.tar.gz && 
+top=$PWD
+cd $PPPVERS &&
 cp ../Makefile.pppd pppd/Makefile.linux &&
 cp ../Makefile.plugins pppd/plugins/Makefile.linux &&
 cp ../Makefile.rp-pppoe pppd/plugins/rp-pppoe/Makefile.linux &&
@@ -17,4 +20,9 @@ gunzip -c ../ppp-2.4.2-mppe-mppc-1.1.patch.gz | patch -p1 &&
 pwd &&
 cp ../patchlevel.h pppd &&
 configure --host=arm-unknown-linux --prefix=$LIBTOP --includedir=$ARMGCC/include &&
+
+cd $top &&
+rm -rf $PPTPVERS && tar zxf $PPTPVERS.tar.gz &&
+cd $PPTPVERS
+patch <../pptp.patch
 echo "Next, run arminstall here"
