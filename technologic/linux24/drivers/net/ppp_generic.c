@@ -19,7 +19,7 @@
  * PPP driver, written by Michael Callahan and Al Longyear, and
  * subsequently hacked by Paul Mackerras.
  *
- * ==FILEVERSION 20020217==
+ * ==FILEVERSION 20040509==
  */
 
 #include <linux/config.h>
@@ -102,6 +102,7 @@ struct ppp {
 	spinlock_t	rlock;		/* lock for receive side 58 */
 	spinlock_t	wlock;		/* lock for transmit side 5c */
 	int		mru;		/* max receive unit 60 */
+	int		mru_alloc;	/* MAX(1500,MRU) for dev_alloc_skb() */
 	unsigned int	flags;		/* control bits 64 */
 	unsigned int	xstate;		/* transmit state bits 68 */
 	unsigned int	rstate;		/* receive state bits 6c */
@@ -552,7 +553,9 @@ static int ppp_ioctl(struct inode *inode, struct file *file,
 	case PPPIOCSMRU:
 		if (get_user(val, (int *) arg))
 			break;
-		ppp->mru = val;
+		ppp->mru_alloc = ppp->mru = val;
+		if (ppp->mru_alloc < PPP_MRU)
+		    ppp->mru_alloc = PPP_MRU;	/* increase for broken peers */
 		err = 0;
 		break;
 
@@ -1025,14 +1028,37 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 	case PPP_CCP:
 		/* peek at outbound CCP frames */
 		ppp_ccp_peek(ppp, skb, 0);
+		/*
+		 * When LZS or MPPE/MPPC has been negotiated we don't send
+		 * CCP_RESETACK after receiving CCP_RESETREQ; in fact pppd
+		 * sends such a packet but we silently discard it here
+		 */
+		if (CCP_CODE(skb->data+2) == CCP_RESETACK
+		    && (ppp->xcomp->compress_proto == CI_MPPE
+			|| ppp->xcomp->compress_proto == CI_LZS)) {
+		    --ppp->stats.tx_packets;
+		    ppp->stats.tx_bytes -= skb->len - 2;
+		    kfree_skb(skb);
+		    return;
+		}
 		break;
 	}
 
 	/* try to do packet compression */
 	if ((ppp->xstate & SC_COMP_RUN) && ppp->xc_state != 0
 	    && proto != PPP_LCP && proto != PPP_CCP) {
-		new_skb = alloc_skb(ppp->dev->mtu + ppp->dev->hard_header_len,
-				    GFP_ATOMIC);
+		int comp_ovhd = 0;
+		/* 
+		 * because of possible data expansion when MPPC or LZS
+		 * is used, allocate compressor's buffer 12.5% bigger
+		 * than MTU
+		 */
+		if (ppp->xcomp->compress_proto == CI_MPPE)
+		    comp_ovhd = ((ppp->dev->mtu * 9) / 8) + 1 + MPPE_OVHD;
+		else if (ppp->xcomp->compress_proto == CI_LZS)
+		    comp_ovhd = ((ppp->dev->mtu * 9) / 8) + 1 + LZS_OVHD;
+		new_skb = alloc_skb(ppp->dev->mtu + ppp->dev->hard_header_len
+				    + comp_ovhd, GFP_ATOMIC);
 		if (new_skb == 0) {
 			printk(KERN_ERR "PPP: no memory (comp pkt)\n");
 			goto drop;
@@ -1050,9 +1076,21 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 			skb = new_skb;
 			skb_put(skb, len);
 			skb_pull(skb, 2);	/* pull off A/C bytes */
-		} else {
+		} else if (len == 0) {
 			/* didn't compress, or CCP not up yet */
 			kfree_skb(new_skb);
+		} else {
+			/*
+			 * (len < 0)
+			 * MPPE requires that we do not send unencrypted
+			 * frames.  The compressor will return -1 if we
+			 * should drop the frame.  We cannot simply test
+			 * the compress_proto because MPPE and MPPC share
+			 * the same number.
+			 */
+			printk(KERN_ERR "ppp: compressor dropped pkt\n");
+			kfree_skb(new_skb);
+			goto drop;
 		}
 	}
 
@@ -1540,14 +1578,15 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 	int len;
 
 	if (proto == PPP_COMP) {
-		ns = dev_alloc_skb(ppp->mru + PPP_HDRLEN);
+		ns = dev_alloc_skb(ppp->mru_alloc + PPP_HDRLEN);
 		if (ns == 0) {
 			printk(KERN_ERR "ppp_decompress_frame: no memory\n");
 			goto err;
 		}
 		/* the decompressor still expects the A/C bytes in the hdr */
 		len = ppp->rcomp->decompress(ppp->rc_state, skb->data - 2,
-				skb->len + 2, ns->data, ppp->mru + PPP_HDRLEN);
+				skb->len + 2, ns->data,
+				ppp->mru_alloc + PPP_HDRLEN);
 		if (len < 0) {
 			/* Pass the compressed frame to pppd as an
 			   error indication. */
@@ -1573,7 +1612,14 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 	return skb;
 
  err:
-	ppp->rstate |= SC_DC_ERROR;
+	if (ppp->rcomp->compress_proto != CI_MPPE
+	    && ppp->rcomp->compress_proto != CI_LZS) {
+	    /*
+	     * If decompression protocol isn't MPPE/MPPC or LZS, we set
+	     * SC_DC_ERROR flag and wait for CCP_RESETACK
+	     */
+	    ppp->rstate |= SC_DC_ERROR;
+	}
 	ppp_receive_error(ppp);
 	return skb;
 }
@@ -2253,6 +2299,7 @@ ppp_create_interface(int unit, int *retp)
 	/* Initialize the new ppp unit */
 	ppp->file.index = unit;
 	ppp->mru = PPP_MRU;
+	ppp->mru_alloc = PPP_MRU;
 	init_ppp_file(&ppp->file, INTERFACE);
 	ppp->file.hdrlen = PPP_HDRLEN - 2;	/* don't count proto bytes */
 	for (i = 0; i < NUM_NP; ++i)
