@@ -380,12 +380,7 @@ const struct module_symbol __ksymtab_##sym 		\
 __attribute__((section("__ksymtab"))) =			\
 { (unsigned long)&sym, __kstrtab_##sym }
 
-#define __EXPORT_SYMBOL_GPL(sym, str)			\
-const char __kstrtab_##sym[]				\
-__attribute__((section(".kstrtab"))) = "GPLONLY_" str;	\
-const struct module_symbol __ksymtab_##sym		\
-__attribute__((section("__ksymtab"))) =			\
-{ (unsigned long)&sym, __kstrtab_##sym }
+#define __EXPORT_SYMBOL_GPL(sym, str)	__EXPORT_SYMBOL(sym, str)
 
 #if defined(MODVERSIONS) || !defined(CONFIG_MODVERSIONS)
 #define EXPORT_SYMBOL(var)  __EXPORT_SYMBOL(var, __MODULE_STRING(var))
