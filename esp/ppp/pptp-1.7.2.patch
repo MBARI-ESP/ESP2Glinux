@@ -1,0 +1,11 @@
+--- original/pptp.c	2008-05-13 23:33:55.000000000 -0700
++++ ./pptp.c	2012-01-25 10:25:15.141070369 -0800
+@@ -59,7 +59,7 @@
+ #include "pptp_callmgr.h"
+ #include "pptp_gre.h"
+ #include "version.h"
+-#if defined(__linux__)
++#if PR_SET_NAME
+ #include <sys/prctl.h>
+ #else
+ #include "inststr.h"
