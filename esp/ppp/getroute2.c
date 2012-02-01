@@ -55,5 +55,6 @@ usage:
       }
     }
   }
+  fprintf (stderr, "This is no active route to %s\n", inet_ntoa(dstAdr));
   exit(1);
 }
