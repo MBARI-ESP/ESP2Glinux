@@ -1,24 +1,26 @@
 #!/bin/sh
-# build & install setserial for arm-linux -- 3/25/05 brent@mbari.org
+# build & install setserial for arm-linux -- 3/30/05 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${TARGETTOP:=${2-}}
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 : ${PPPBINS:=pppd/pppd chat/chat}  #pppdump/pppdump pppstat/pppstat
+: ${COPTS:="-Os -fomit-frame-pointer"}
+: ${INSTALL:="install --strip-program=$ARMSTRIP"}
+: ${CC:=$ARMGCC/bin/gcc}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 top=$PWD
-cd ${PPPVERS-ppp-2.4.2} || exit 2
-make CC=/arm/bin/gcc DESTDIR=$ARMGCC COPTS="-Os -fomit-frame-pointer "  &&
-$ARMSTRIP `find pppd/plugins -name "*.so"` &&
-$ARMSTRIP $PPPBINS || exit 2
+cd ${PPPVERS-ppp-2.4.5} || exit 2
 mkdir -pm 755 $HOSTTOP/usr/sbin &&
-install -m 755 $PPPBINS $HOSTTOP/usr/sbin || exit 3
-make -C pppd/plugins install DESTDIR=$HOSTTOP || exit 4
+for dir in chat pppd/plugins pppd; do make -C $dir install \
+   CC=$CC DESTDIR=$HOSTTOP/usr COPTS="$COPTS" INSTALL="$INSTALL" || exit 4
+done
+rm -rf $HOSTTOP/usr/share/man  $HOSTTOP/usr/sbin/pptpsetup
 
 cd $top && cd ${PPTPVERS:=pptp-1.7.2} || exit 2
-make CC=/arm/bin/gcc OPTIMIZE=-Os DEBUG= &&
+make CC=$CC OPTIMIZE="$COPTS" INSTALL="$INSTALL" DEBUG= &&
 echo "Installing PPTP under $HOSTTOP" &&
 $ARMSTRIP pptp &&
 install -m 755 pptp $HOSTTOP/usr/sbin || exit 3
