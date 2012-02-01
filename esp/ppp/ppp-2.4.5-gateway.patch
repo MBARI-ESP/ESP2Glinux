@@ -1,14 +1,5 @@
 --- ppp-2.4.5/pppd/ipcp.original	2012-01-30 16:19:25.990745836 -0800
 +++ ppp-2.4.5/pppd/ipcp.c	2012-01-30 16:30:29.760354704 -0800
-@@ -40,7 +40,7 @@
-  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-  */
- 
--#define RCSID	"$Id$"
-+#define RCSID	"$Id$"
- 
- /*
-  * TODO:
 @@ -249,7 +249,6 @@
  static void ip_check_options __P((void));
  static int  ip_demand_conf __P((int));
