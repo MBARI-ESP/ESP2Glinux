@@ -1,0 +1,78 @@
+--- ppp-2.4.5/pppd/ipcp.original	2012-01-30 16:19:25.990745836 -0800
++++ ppp-2.4.5/pppd/ipcp.c	2012-01-30 16:30:29.760354704 -0800
+@@ -40,7 +40,7 @@
+  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
+-#define RCSID	"$Id$"
++#define RCSID	"$Id$"
+ 
+ /*
+  * TODO:
+@@ -249,7 +249,6 @@
+ static void ip_check_options __P((void));
+ static int  ip_demand_conf __P((int));
+ static int  ip_active_pkt __P((u_char *, int));
+-static void create_resolv __P((u_int32_t, u_int32_t));
+ 
+ struct protent ipcp_protent = {
+     PPP_IPCP,
+@@ -1713,6 +1712,16 @@
+ }
+ 
+ 
++static int setdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
++/*
++  try to set default route
++*/
++{
++    script_setenv("DEFAULTROUTE", "1", 0);
++    return default_route_set[unit] = sifdefaultroute(unit, ouraddr, gateway);
++}
++
++
+ /*
+  * ip_demand_conf - configure the interface as though
+  * IPCP were up, for use with dial-on-demand.
+@@ -1742,8 +1751,7 @@
+     if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
+ 	return 0;
+     if (wo->default_route)
+-	if (sifdefaultroute(u, wo->ouraddr, wo->hisaddr))
+-	    default_route_set[u] = 1;
++	setdefaultroute(u, wo->ouraddr, wo->hisaddr);
+     if (wo->proxy_arp)
+ 	if (sifproxyarp(u, wo->hisaddr))
+ 	    proxy_arp_set[u] = 1;
+@@ -1806,10 +1814,8 @@
+ 	script_setenv("DNS1", ip_ntoa(go->dnsaddr[0]), 0);
+     if (go->dnsaddr[1])
+ 	script_setenv("DNS2", ip_ntoa(go->dnsaddr[1]), 0);
+-    if (usepeerdns && (go->dnsaddr[0] || go->dnsaddr[1])) {
++    if (usepeerdns && (go->dnsaddr[0] || go->dnsaddr[1]))
+ 	script_setenv("USEPEERDNS", "1", 0);
+-	create_resolv(go->dnsaddr[0], go->dnsaddr[1]);
+-    }
+ 
+     /*
+      * Check that the peer is allowed to use the IP address it wants.
+@@ -1855,8 +1861,7 @@
+ 
+ 	    /* assign a default route through the interface if required */
+ 	    if (ipcp_wantoptions[f->unit].default_route) 
+-		if (sifdefaultroute(f->unit, go->ouraddr, ho->hisaddr))
+-		    default_route_set[f->unit] = 1;
++		setdefaultroute(f->unit, go->ouraddr, ho->hisaddr);
+ 
+ 	    /* Make a proxy ARP entry if requested. */
+ 	    if (ho->hisaddr != 0 && ipcp_wantoptions[f->unit].proxy_arp)
+@@ -1905,8 +1910,7 @@
+ 
+ 	/* assign a default route through the interface if required */
+ 	if (ipcp_wantoptions[f->unit].default_route) 
+-	    if (sifdefaultroute(f->unit, go->ouraddr, ho->hisaddr))
+-		default_route_set[f->unit] = 1;
++	    setdefaultroute(f->unit, go->ouraddr, ho->hisaddr);
+ 
+ 	/* Make a proxy ARP entry if requested. */
+ 	if (ho->hisaddr != 0 && ipcp_wantoptions[f->unit].proxy_arp)
