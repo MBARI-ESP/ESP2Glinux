@@ -84,24 +84,29 @@ ret:
   pclose(p);
 }
 
-void routing_start() {
+static int svrRoute(const char *op, const char *redir, int logErrs) {
   if (oldIface) {
     char buf[300];
     char *svrIP = inet_ntoa(svrAdr);
-    snprintf(buf, sizeof(buf), "/sbin/route add %s dev %s", svrIP, oldIface);
-    if (system(buf))
-      syslog (LOG_ERR, 
-              "Could not add route to server %s: %s", svrIP, strerror(errno));
+    snprintf(buf, sizeof(buf), "/sbin/route %s %s dev %s%s", 
+                  op, svrIP, oldIface, redir);
+    if (system(buf) && logErrs) {
+      syslog (LOG_ERR,
+              "Could not %s route to %s: %s", op, svrIP, strerror(errno));
+      return 1;
+    }
+  }else{
+    syslog (LOG_ERR, "never called routing_init()");
+    return -1;
   }
+  return 0;
+}
+
+void routing_start() {
+  svrRoute("del", "2>/dev/null", 0);
+  svrRoute("add", "", 1);
 }
 
 void routing_end() {
-  if (oldIface) {
-    char buf[300];
-    char *svrIP = inet_ntoa(svrAdr);
-    snprintf(buf, sizeof(buf), "/sbin/route del %s dev %s", svrIP, oldIface);
-    if (system(buf))
-      syslog (LOG_ERR,
-              "Could not delete route to %s: %s", svrIP, strerror(errno));
-  }
+  svrRoute("del", "", 1);
 }
