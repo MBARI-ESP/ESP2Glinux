@@ -9,3 +9,13 @@
  #include <sys/prctl.h>
  #else
  #include "inststr.h"
+--- pptp_callmgr.original	2012-02-01 17:03:14.568770519 -0800
++++ pptp_callmgr.c	2012-02-01 17:03:19.376660239 -0800
+@@ -297,6 +297,7 @@
+         vector_destroy(call_list);
+     }
+ cleanup:
++    routing_end();
+     signal(SIGINT, callmgr_do_nothing);
+     signal(SIGTERM, callmgr_do_nothing);
+     close_inetsock(inet_sock, inetaddr);
