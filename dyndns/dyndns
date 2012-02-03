@@ -1,0 +1,23 @@
+daemon=inadyn
+OPTIONS=""
+
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       $daemon $OPTIONS
+       ;;
+                         
+    restart)
+      $0 stop 
+      $0 start
+       ;;
+       
+    stop)
+       echo "Stopping $daemon"
+       killall $daemon
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

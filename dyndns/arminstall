@@ -1,0 +1,20 @@
+#!/bin/sh
+# build & install dnydns update daemon for arm-linux -- 2/2/12 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-usr/bin}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+prog=inadyn
+cp $prog.conf $HOSTTOP/etc &&
+cp dyndns $HOSTTOP/etc/init.d &&
+chmod 600 $HOSTTOP/etc/$prog.conf &&
+cd ${inadyn-$prog} || exit 2
+make CC=/arm/bin/gcc CFLAGS=-Os || exit 1
+mkdir -p $TOP || exit 4
+$ARMSTRIP bin/linux/$prog -o $TOP/$prog || exit 3
+cd $TOP || exit 4
+echo "Done."
