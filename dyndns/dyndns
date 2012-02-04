@@ -1,5 +1,5 @@
 daemon=inadyn
-OPTIONS=""
+OPTIONS="--background --input_file /etc/$daemon.conf"
 
 case "$1" in
     start)
