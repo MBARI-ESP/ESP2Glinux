@@ -4,5 +4,5 @@
 : ${inadyn:=inadyn}
 rm -rf $inadyn && 
 unzip $inadyn && 
-cp makefile $inadyn &&
+cat $inadyn.patch | (cd $inadyn && patch -p1) && 
 echo Done.

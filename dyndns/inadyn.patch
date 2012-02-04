@@ -1,0 +1,284 @@
+Only in inadyn/bin/linux: inadyn
+diff -rwu inadyn/makefile inadyn.new/makefile
+--- inadyn/makefile	2005-09-09 23:16:50.000000000 -0700
++++ inadyn.new/makefile	2012-02-03 13:41:54.765963995 -0800
+@@ -11,7 +11,7 @@
+ OUTFILE=$(OUTDIR)/$(TARGET_ARCH)/inadyn
+ 
+ # Make command to use for dependencies
+-MAKECMD=gmake
++MAKECMD=make
+ 
+ ifeq ($(TARGET_ARCH),solaris)
+ 	ARCH_SPECIFIC_LIBS += -lsocket -lnsl
+@@ -33,8 +33,8 @@
+ 	$(OUTDIR)/os_unix.o $(OUTDIR)/os_windows.o $(OUTDIR)/tcp.o $(OUTDIR)/inadyn_cmd.o
+ OBJ=$(COMMON_OBJ) $(CFG_OBJ)
+ 
+-COMPILE=gcc  -Wall  -pedantic -c  $(ARCH_SPECIFIC_CFLAGS) $(CFLAGS) -o "$(OUTDIR)/$(*F).o" $(CFG_INC) "$<"
+-LINK=gcc $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS)
++COMPILE=$(CC)  -Wall  -pedantic -c  $(ARCH_SPECIFIC_CFLAGS) $(CFLAGS) -o "$(OUTDIR)/$(*F).o" $(CFG_INC) "$<"
++LINK=$(CC) $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS)
+ 
+ # Pattern rules
+ $(OUTDIR)/%.o : $(SRCDIR)/%.c
+diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
+--- inadyn/src/dyndns.c	2007-03-12 08:07:32.000000000 -0700
++++ inadyn.new/src/dyndns.c	2012-02-03 18:49:48.030511177 -0800
+@@ -19,6 +19,9 @@
+ Copyright (C) 2003-2006 INAtech
+ Author: Narcis Ilisei
+ 
++Revised:  Feb 3, 2012  brent@mbari.org
++     added option to read public IP address from specified network interface(s)
++
+ */
+ /**
+ 	Dyn Dns update main implementation file 
+@@ -35,6 +38,8 @@
+ #define MODULE_TAG      "INADYN: "  
+ #include <stdlib.h>
+ #include <string.h>
++#include <sys/ioctl.h>
++#include <net/if.h>
+ #include "dyndns.h"
+ #include "debug_if.h"
+ #include "base64.h"
+@@ -221,12 +226,7 @@
+ */
+ static RC_TYPE do_ip_server_transaction(DYN_DNS_CLIENT *p_self)
+ {
+-	RC_TYPE rc = RC_OK;
+-	HTTP_CLIENT *p_http;
+-
+-	p_http = &p_self->http_to_ip_server;
+-
+-	rc = http_client_init(&p_self->http_to_ip_server);
++	RC_TYPE rc = http_client_init(&p_self->http_to_ip_server);
+ 	if (rc != RC_OK)
+ 	{
+ 		return rc;
+@@ -262,6 +262,13 @@
+ }
+ 
+ 
++static void setMyIP(DYN_DNS_CLIENT *p_self, const char *newIPstr)
++{
++    p_self->info.my_ip_has_changed = (strcmp(newIPstr, p_self->info.my_ip_address.name) != 0);
++	strcpy(p_self->info.my_ip_address.name, newIPstr);
++}
++
++
+ /* 
+ 	Read in 4 integers the ip addr numbers.
+ 	construct then the IP address from those numbers.
+@@ -315,8 +322,7 @@
+ 	if (found)
+ 	{        
+         sprintf(new_ip_str, DYNDNS_IP_ADDR_FORMAT, ip1, ip2, ip3, ip4);
+-        p_self->info.my_ip_has_changed = (strcmp(new_ip_str, p_self->info.my_ip_address.name) != 0);
+-		strcpy(p_self->info.my_ip_address.name, new_ip_str);
++        setMyIP(p_self, new_ip_str);
+ 		return RC_OK;
+ 	}
+ 	else
+@@ -456,7 +462,7 @@
+ 					{
+ 			                        p_self->alias_info.update_required[i] = FALSE;
+ 
+-						DBG_PRINTF((LOG_WARNING,"I:" MODULE_TAG "Alias '%s' to IP '%s' updated successful.\n", 
++						DBG_PRINTF((LOG_WARNING,"I:" MODULE_TAG "Alias '%s' to IP '%s' update successful.\n", 
+ 							p_self->alias_info.names[i].name,
+ 							p_self->info.my_ip_address.name));                        
+ 						p_self->times_since_last_update = 0;
+@@ -795,6 +801,61 @@
+ 	return RC_OK;
+ }
+ 
++
++/** return the IP address of the specified network interface
++*/
++static int ifaceIP (const char *iface, struct in_addr *ip)
++{
++  int err = -1;   
++  if (!iface || strlen(iface)>IFNAMSIZ)
++    errno = EINVAL;
++  else{
++    struct ifreq ifr;
++    int fd = socket(AF_INET, SOCK_DGRAM, 0);
++    if (fd >= 0) {
++      /* I want to get an IPv4 IP address */
++      ifr.ifr_addr.sa_family = AF_INET;
++      strncpy(ifr.ifr_name, iface, IFNAMSIZ);
++      if (!(err = ioctl(fd, SIOCGIFADDR, &ifr)))
++        *ip = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
++    }
++    close(fd);
++  }
++  return err;
++}
++
++
++/** get public IP address by scanning listed network interfaces
++	return RC_OK only if one of the listed interfaces is up and
++    has an IP address associated with it
++*/
++RC_TYPE getIPfromIfaces(DYN_DNS_CLIENT *p_self)
++{
++	char *iface = p_self->ifaces;
++	if (iface) {
++        char *end = iface + strlen(iface);
++        struct in_addr ip;
++		while ((iface = strtok(iface, " "))) {
++        	size_t len = strlen(iface);
++			if (ifaceIP(iface, &ip)) {
++				if (p_self->dbg.level > 1)
++                	DBG_PRINTF((LOG_WARNING, "%s is unavailable\n", iface));
++        	}else{
++            	char *publicIP = inet_ntoa(ip);
++                if (p_self->dbg.level > 1)
++					DBG_PRINTF((LOG_NOTICE, "%s up at %s\n", iface, publicIP));
++				setMyIP(p_self, publicIP);
++				return RC_OK;
++			}  /* remove any string terminator strtok() wrote */
++            if ((iface+=len) >= end)
++              break;
++			*iface++=' ';
++        }
++    }
++    return RC_ERROR;
++}
++
++
+ /** the real action:
+ 	- increment the forced update times counter
+ 	- detect current IP
+@@ -815,8 +876,14 @@
+ 	}
+ 
+ 	do
+-	{
+-		/*ask IP server something so he will respond and give me my IP */
++	{	/* first see if any of our "public" interfaces are up */
++		if (getIPfromIfaces(p_self) != RC_OK) {
++        	if (p_self->info.ip_server_url[0]=='^') {
++            	rc = RC_ERROR;  /* URL is invalid and no public interfaces available */
++			    DBG_PRINTF((LOG_WARNING,"W: DYNDNS: ip server URL marked invalid AND no public network interfaces available\n"));
++                break;
++            }
++		    /*failing that, probe IP server and parse response to get my IP */
+ 		rc = do_ip_server_transaction(p_self);
+ 		if (rc != RC_OK)
+ 		{
+@@ -835,7 +902,7 @@
+ 		{	
+ 			break;
+ 		}
+-		
++		}		
+ 		if (p_self->dbg.level > 1)
+ 		{
+ 			DBG_PRINTF((LOG_WARNING,"W: DYNDNS: My IP address: %s\n", p_self->info.my_ip_address.name));		
+diff -rwu inadyn/src/dyndns.h inadyn.new/src/dyndns.h
+--- inadyn/src/dyndns.h	2007-03-12 08:04:28.000000000 -0700
++++ inadyn.new/src/dyndns.h	2012-02-03 13:47:51.809616904 -0800
+@@ -25,7 +25,7 @@
+ #include "http_client.h"
+ #include "debug_if.h"
+ 
+-#define DYNDNS_VERSION_STRING  "1.96.2"
++#define DYNDNS_VERSION_STRING  "1.96.2-mbari1"
+ #define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
+ #define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
+ 
+@@ -260,6 +260,7 @@
+ 	USER_INFO sys_usr_info; /*info about the current account running inadyn*/
+ 	DYNDNS_INFO_TYPE info; /*servers, names, passwd*/
+ 	DYNDNS_ALIAS_INFO alias_info;
++	char *ifaces;
+ 
+ 	BOOL abort_on_network_errors;
+ 	BOOL force_addr_update;
+diff -rwu inadyn/src/inadyn_cmd.c inadyn.new/src/inadyn_cmd.c
+--- inadyn/src/inadyn_cmd.c	2005-09-09 23:17:30.000000000 -0700
++++ inadyn.new/src/inadyn_cmd.c	2012-02-03 16:30:07.311072531 -0800
+@@ -27,6 +27,7 @@
+ 		- many options added
+ 		- january 2005 - new format for the config file =Thanks to Jerome Benoit. 
+         - january 30 2005 - new parser for config file -
++        - febuary 2 2012 - added interface option
+ */
+ #define MODULE_TAG "CMD_OPTS: "
+ 
+@@ -46,6 +47,7 @@
+ static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+ static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+ static RC_TYPE get_alias_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
++static RC_TYPE get_iface_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+ static RC_TYPE get_dns_server_name_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+ static RC_TYPE get_dns_server_url_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+ static RC_TYPE get_ip_server_name_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+@@ -77,6 +79,9 @@
+ 	{"--alias",		1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
+ 	{"-a",			1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
+ 
++	{"--interface",	1,	{get_iface_handler, NULL},	"network interface to check. this option can appear multiple times." },
++	{"-i",			1,	{get_iface_handler, NULL},	"network interface to check. this option can appear multiple times." },
++
+ 	{DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL}, "the file containing [further] inadyn options."
+ 			"The default config file, '" DYNDNS_DEFAULT_CONFIG_FILE "' is used if inadyn is called without any cmd line options." },
+ 	
+@@ -311,6 +316,41 @@
+ 	return RC_OK;
+ }
+ 
++/**
++    Parses interface,local interface.
++    Example: eth0
++    Action:  appends interface to list of those net interface to check for an ip
++    	     The first listed interface with a valid IP is assumed to be
++             the machine's external address.  Only if no listed interfaces
++             have an IP address do we resort to checking our IP via an http probe
++*/
++static RC_TYPE get_iface_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
++{
++	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
++    char *ifaceArg;
++
++	if (p_self == NULL)
++	{
++		return RC_INVALID_POINTER;
++	}
++    ifaceArg = p_cmd->argv[current_nr];
++	if (!p_self->ifaces) {
++    	p_self->ifaces = strdup(ifaceArg);
++        if (!p_self->ifaces)
++        	return RC_OUT_OF_MEMORY;
++    }else{
++    	size_t ifacesLen = strlen(p_self->ifaces);
++        char *grown = realloc(p_self->ifaces, ifacesLen+strlen(ifaceArg)+2);
++        if (!grown)
++          return RC_OUT_OF_MEMORY;
++        grown[ifacesLen] = ' ';  	
++        strcpy(grown+ifacesLen+1, ifaceArg);
++        p_self->ifaces=grown;
++    }
++
++	return RC_OK;
++}
++
+ static RC_TYPE get_name_and_port(char *p_src, char *p_dest_name, int *p_dest_port)
+ {
+     const char *p_port = NULL;
+diff -rwu inadyn/src/os_unix.c inadyn.new/src/os_unix.c
+--- inadyn/src/os_unix.c	2005-09-07 21:22:54.000000000 -0700
++++ inadyn.new/src/os_unix.c	2012-02-03 19:14:12.009373570 -0800
+@@ -176,7 +176,7 @@
+ 
+ RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
+ {
+-	int rc;
++	int rc = 0;
+ 	do
+ 	{	 
+ 		if (p_usr_info->gid != -1) 
