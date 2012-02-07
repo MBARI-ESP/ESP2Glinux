@@ -1,35 +1,11 @@
-Only in inadyn/bin/linux: inadyn
-diff -rwu inadyn/makefile inadyn.new/makefile
---- inadyn/makefile	2005-09-09 23:16:50.000000000 -0700
-+++ inadyn.new/makefile	2012-02-03 13:41:54.765963995 -0800
-@@ -11,7 +11,7 @@
- OUTFILE=$(OUTDIR)/$(TARGET_ARCH)/inadyn
- 
- # Make command to use for dependencies
--MAKECMD=gmake
-+MAKECMD=make
- 
- ifeq ($(TARGET_ARCH),solaris)
- 	ARCH_SPECIFIC_LIBS += -lsocket -lnsl
-@@ -33,8 +33,8 @@
- 	$(OUTDIR)/os_unix.o $(OUTDIR)/os_windows.o $(OUTDIR)/tcp.o $(OUTDIR)/inadyn_cmd.o
- OBJ=$(COMMON_OBJ) $(CFG_OBJ)
- 
--COMPILE=gcc  -Wall  -pedantic -c  $(ARCH_SPECIFIC_CFLAGS) $(CFLAGS) -o "$(OUTDIR)/$(*F).o" $(CFG_INC) "$<"
--LINK=gcc $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS)
-+COMPILE=$(CC)  -Wall  -pedantic -c  $(ARCH_SPECIFIC_CFLAGS) $(CFLAGS) -o "$(OUTDIR)/$(*F).o" $(CFG_INC) "$<"
-+LINK=$(CC) $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS)
- 
- # Pattern rules
- $(OUTDIR)/%.o : $(SRCDIR)/%.c
-diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
---- inadyn/src/dyndns.c	2007-03-12 08:07:32.000000000 -0700
-+++ inadyn.new/src/dyndns.c	2012-02-03 18:49:48.030511177 -0800
+diff -rwu inadyn.original/src/dyndns.c inadyn/src/dyndns.c
+--- inadyn.original/src/dyndns.c	2007-03-12 08:07:32.000000000 -0700
++++ inadyn/src/dyndns.c	2012-02-06 16:59:55.721216994 -0800
 @@ -19,6 +19,9 @@
  Copyright (C) 2003-2006 INAtech
  Author: Narcis Ilisei
  
-+Revised:  Feb 3, 2012  brent@mbari.org
++Revised:  Feb 6, 2012  brent@mbari.org
 +     added option to read public IP address from specified network interface(s)
 +
  */
@@ -91,7 +67,7 @@ diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
  							p_self->alias_info.names[i].name,
  							p_self->info.my_ip_address.name));                        
  						p_self->times_since_last_update = 0;
-@@ -795,6 +801,61 @@
+@@ -795,6 +801,62 @@
  	return RC_OK;
  }
  
@@ -139,11 +115,12 @@ diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
 +                if (p_self->dbg.level > 1)
 +					DBG_PRINTF((LOG_NOTICE, "%s up at %s\n", iface, publicIP));
 +				setMyIP(p_self, publicIP);
++  			    /* remove the string terminator strtok() wrote */
++                if ((iface+=len) < end) *iface=' ';
 +				return RC_OK;
-+			}  /* remove any string terminator strtok() wrote */
-+            if ((iface+=len) >= end)
-+              break;
-+			*iface++=' ';
++			}
++  			/* remove the string terminator strtok() wrote */
++            if ((iface+=len) < end) *iface++=' ';
 +        }
 +    }
 +    return RC_ERROR;
@@ -153,7 +130,7 @@ diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
  /** the real action:
  	- increment the forced update times counter
  	- detect current IP
-@@ -815,8 +876,14 @@
+@@ -815,8 +877,19 @@
  	}
  
  	do
@@ -163,14 +140,19 @@ diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
 +		if (getIPfromIfaces(p_self) != RC_OK) {
 +        	if (p_self->info.ip_server_url[0]=='^') {
 +            	rc = RC_ERROR;  /* URL is invalid and no public interfaces available */
-+			    DBG_PRINTF((LOG_WARNING,"W: DYNDNS: ip server URL marked invalid AND no public network interfaces available\n"));
++            	if (p_self->ifaces)
++                	DBG_PRINTF((LOG_WARNING, 
++                    "W: DYNDNS: ip server config URL invalid AND interface(s) <%s> unavailable\n", 
++                    	p_self->ifaces));
++                else
++                	DBG_PRINTF((LOG_WARNING, "W: DYNDNS: ip server config URL invalid\n"));
 +                break;
 +            }
 +		    /*failing that, probe IP server and parse response to get my IP */
  		rc = do_ip_server_transaction(p_self);
  		if (rc != RC_OK)
  		{
-@@ -835,7 +902,7 @@
+@@ -835,7 +908,7 @@
  		{	
  			break;
  		}
@@ -179,15 +161,15 @@ diff -rwu inadyn/src/dyndns.c inadyn.new/src/dyndns.c
  		if (p_self->dbg.level > 1)
  		{
  			DBG_PRINTF((LOG_WARNING,"W: DYNDNS: My IP address: %s\n", p_self->info.my_ip_address.name));		
-diff -rwu inadyn/src/dyndns.h inadyn.new/src/dyndns.h
---- inadyn/src/dyndns.h	2007-03-12 08:04:28.000000000 -0700
-+++ inadyn.new/src/dyndns.h	2012-02-03 13:47:51.809616904 -0800
+diff -rwu inadyn.original/src/dyndns.h inadyn/src/dyndns.h
+--- inadyn.original/src/dyndns.h	2007-03-12 08:04:28.000000000 -0700
++++ inadyn/src/dyndns.h	2012-02-06 16:13:50.550026193 -0800
 @@ -25,7 +25,7 @@
  #include "http_client.h"
  #include "debug_if.h"
  
 -#define DYNDNS_VERSION_STRING  "1.96.2"
-+#define DYNDNS_VERSION_STRING  "1.96.2-mbari1"
++#define DYNDNS_VERSION_STRING  "1.96.2-mbari2"
  #define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
  #define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
  
@@ -199,9 +181,10 @@ diff -rwu inadyn/src/dyndns.h inadyn.new/src/dyndns.h
  
  	BOOL abort_on_network_errors;
  	BOOL force_addr_update;
-diff -rwu inadyn/src/inadyn_cmd.c inadyn.new/src/inadyn_cmd.c
---- inadyn/src/inadyn_cmd.c	2005-09-09 23:17:30.000000000 -0700
-+++ inadyn.new/src/inadyn_cmd.c	2012-02-03 16:30:07.311072531 -0800
+Only in inadyn/src: foo.c
+diff -rwu inadyn.original/src/inadyn_cmd.c inadyn/src/inadyn_cmd.c
+--- inadyn.original/src/inadyn_cmd.c	2005-09-09 23:17:30.000000000 -0700
++++ inadyn/src/inadyn_cmd.c	2012-02-06 16:29:09.466502811 -0800
 @@ -27,6 +27,7 @@
  		- many options added
  		- january 2005 - new format for the config file =Thanks to Jerome Benoit. 
@@ -249,7 +232,7 @@ diff -rwu inadyn/src/inadyn_cmd.c inadyn.new/src/inadyn_cmd.c
 +	{
 +		return RC_INVALID_POINTER;
 +	}
-+    ifaceArg = p_cmd->argv[current_nr];
++	ifaceArg = p_cmd->argv[current_nr];
 +	if (!p_self->ifaces) {
 +    	p_self->ifaces = strdup(ifaceArg);
 +        if (!p_self->ifaces)
@@ -270,9 +253,9 @@ diff -rwu inadyn/src/inadyn_cmd.c inadyn.new/src/inadyn_cmd.c
  static RC_TYPE get_name_and_port(char *p_src, char *p_dest_name, int *p_dest_port)
  {
      const char *p_port = NULL;
-diff -rwu inadyn/src/os_unix.c inadyn.new/src/os_unix.c
---- inadyn/src/os_unix.c	2005-09-07 21:22:54.000000000 -0700
-+++ inadyn.new/src/os_unix.c	2012-02-03 19:14:12.009373570 -0800
+diff -rwu inadyn.original/src/os_unix.c inadyn/src/os_unix.c
+--- inadyn.original/src/os_unix.c	2005-09-07 21:22:54.000000000 -0700
++++ inadyn/src/os_unix.c	2012-02-03 19:20:45.515876849 -0800
 @@ -176,7 +176,7 @@
  
  RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
