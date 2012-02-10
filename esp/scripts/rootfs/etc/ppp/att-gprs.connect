@@ -1,0 +1,34 @@
+# Name: gprs-connect-chat
+# Purpose: GPRS PPP Connect Script
+#
+# Activate the device and pause before sending additional AT commands.
+ABORT "NO CARRIER"
+ABORT "NO DIALTONE"
+ABORT "ERROR"
+ABORT "NO ANSWER"
+ABORT "BUSY"
+ABORT "Username/Password Incorrect"
+ABORT "\nRINGING\r\n\r\nRINGING\r"
+TIMEOUT 5
+
+#send carridge return, then delay 100ms for autobaud
+"" ""
+#cancel command echo (and hang up if in use) 
+"" \pATE0
+OK\r-\d\p\p+++\c-OK\r ATE0H0
+#
+# Verify GPRS Attach prior to attempting PDP Context negotiation.
+OK\r AT+CGREG=1
+#
+# Define the PDP Context: Context ID, Routing Protocol, APN
+# Multiple definitions can be configured by assigning each a unique CID.
+# Use "isp.cingular" for a public IP address (all incoming ports blocked !)
+# or "Broadband" for for a private IP address with NAT.
+# Use "proxy" to connect to the AT&T blue network.
+OK\r AT+CGDCONT=1,"IP","Broadband"
+#
+# Set the dialing string and specify which PDP Context definition to use.
+OK\r ATD*99***1#
+TIMEOUT 10
+CONNECT \c
+
