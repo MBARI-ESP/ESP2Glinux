@@ -1,0 +1,8 @@
+#!/bin/sh
+cell=ppp8   
+vpn=ppp9   
+ifdown $vpn
+ifdown $cell
+ifup $cell
+sleep 15
+ifup $vpn
