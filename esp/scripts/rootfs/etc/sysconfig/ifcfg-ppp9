@@ -1,0 +1,11 @@
+IFNAME=ppp9
+AUTOSTART=no
+ifPrep() {
+  pppd unit 9 call mbari name scwharf logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-vpn)
+EOS
+}

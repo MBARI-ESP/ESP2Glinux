@@ -1,0 +1,11 @@
+IFNAME=ppp8
+AUTOSTART=no
+ifPrep() {
+  pppd call att unit 8 logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+EOS
+}
