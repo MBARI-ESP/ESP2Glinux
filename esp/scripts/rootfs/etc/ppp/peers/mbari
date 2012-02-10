@@ -1,0 +1,20 @@
+file /etc/ppp/options.mbari
+
+#for vpn2.mbari.org
+pty "pptp 134.89.19.10 --nolaunchpppd --idle-wait 180 --loglevel 0 --logstring mbari"
+
+#for vpn.mbari.org
+#pty "pptp 134.89.18.10 --nolaunchpppd --loglevel 0 --logstring mbari"
+# --debug
+
+noauth
+remotename mbari
+ipparam mbari
+
+defaultroute
+usepeerdns
+
+holdoff 30
+persist
+maxfail 3
+

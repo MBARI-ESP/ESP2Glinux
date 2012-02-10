@@ -1,0 +1,50 @@
+# Name: AT&T gprs
+# Purpose: GPRS PPPD Connection Script
+# See 
+#  http://www.att.com/esupport/article.jsp?sid=36059&cv=820#fbid=yKLsCZLWCPH
+#
+# Specify which device to use
+freewave
+modem
+crtscts
+115200
+
+# Most GPRS devices will not reply to LCP echo's
+lcp-echo-failure 0
+lcp-echo-interval 0
+
+# Used to create a debug log.
+# Comment this out once the PPP configuration is connecting successfully.
+# debug
+# show-password
+# nodetach
+
+connect "/usr/sbin/chat -v -f /etc/ppp/att-gprs.connect"
+#no need for disconnect script with USB.  Closing serial port closes the connection.
+#disconnect "/usr/sbin/chat -v -f /etc/ppp/att-gprs.disconnect"
+
+# Add the PPP interface as the default route to the IP routing table.
+defaultroute
+
+# Defines whether an attempt should be made to re-establish a dropped GPRS connection.
+persist
+holdoff 5
+#maxfail 99
+#
+# :10.0.0.1
+#
+# Advises PPPD to request any DHCP address, none in particular.
+noipdefault
+#
+# Allows the PPPD daemon to accept DHCP assigned IPs.
+ipcp-accept-local
+#
+# Advises PPPD to use the DNS provided by DHCP.
+usepeerdns
+
+#do not require remote system to authenticate itself
+noauth
+
+user a
+password a
+
