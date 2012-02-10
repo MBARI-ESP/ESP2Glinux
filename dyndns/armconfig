@@ -1,8 +1,8 @@
 #!/bin/sh
-# unpack and patch dnydns update daemon for arm-linux -- 2/2/12 brent@mbari.org
+# unpack and patch dnydns update daemon for arm-linux -- 2/10/12 brent@mbari.org
 
-: ${inadyn:=inadyn}
+: ${inadyn:=inadyn-1.98.1}
 rm -rf $inadyn && 
-unzip $inadyn && 
+tar xjf $inadyn.tar.bz2 && 
 cat $inadyn.patch | (cd $inadyn && patch -p1) && 
 echo Done.
