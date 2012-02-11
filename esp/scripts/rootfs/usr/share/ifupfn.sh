@@ -90,7 +90,9 @@ set +f
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
         false
       ;;
-    esac && type ifPost >/dev/null 2>&1 && ifPost
+    esac || return $?
+    type ifPost >/dev/null 2>&1 || return 0
+    ifPost
   }
 }
 
