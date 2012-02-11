@@ -1,6 +1,6 @@
-diff -ru inadyn-1.98.1-original/include/dyndns.h inadyn-1.98.1/include/dyndns.h
---- inadyn-1.98.1-original/include/dyndns.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/include/dyndns.h	2012-02-07 23:02:26.833586746 -0800
+diff -ru inadyn-1.98.1/include/dyndns.h inadyn-1.98.1-mbari4/include/dyndns.h
+--- inadyn-1.98.1/include/dyndns.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/include/dyndns.h	2012-02-10 22:39:09.247108781 -0800
 @@ -53,9 +53,7 @@
  /*test values*/
  #define DYNDNS_DEFAULT_DEBUG_LEVEL	1
@@ -71,9 +71,9 @@ diff -ru inadyn-1.98.1-original/include/dyndns.h inadyn-1.98.1/include/dyndns.h
  	BOOL force_addr_update;
  	BOOL use_proxy;
  	BOOL abort;
-diff -ru inadyn-1.98.1-original/include/errorcode.h inadyn-1.98.1/include/errorcode.h
---- inadyn-1.98.1-original/include/errorcode.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/include/errorcode.h	2012-02-08 19:57:31.656458041 -0800
+diff -ru inadyn-1.98.1/include/errorcode.h inadyn-1.98.1-mbari4/include/errorcode.h
+--- inadyn-1.98.1/include/errorcode.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/include/errorcode.h	2012-02-10 22:39:09.247108781 -0800
 @@ -37,6 +37,7 @@
  	RC_IP_OBJECT_NOT_INITIALIZED = 0x16,
  	RC_IP_OS_SOCKET_INIT_FAILED = 0x17,
@@ -90,9 +90,9 @@ diff -ru inadyn-1.98.1-original/include/errorcode.h inadyn-1.98.1/include/errorc
  	RC_RESTART = 0xff,
  } RC_TYPE;
  
-diff -ru inadyn-1.98.1-original/include/os.h inadyn-1.98.1/include/os.h
---- inadyn-1.98.1-original/include/os.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/include/os.h	2012-02-07 12:19:12.237960490 -0800
+diff -ru inadyn-1.98.1/include/os.h inadyn-1.98.1-mbari4/include/os.h
+--- inadyn-1.98.1/include/os.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/include/os.h	2012-02-10 22:39:09.247108781 -0800
 @@ -150,6 +150,10 @@
  
  RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info);
@@ -104,15 +104,15 @@ diff -ru inadyn-1.98.1-original/include/os.h inadyn-1.98.1/include/os.h
  /* Blocks a thread the specified number of milliseconds*/
  void os_sleep_ms(int ms);
  
-diff -ru inadyn-1.98.1-original/Makefile inadyn-1.98.1/Makefile
---- inadyn-1.98.1-original/Makefile	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/Makefile	2012-02-08 20:01:31.370827275 -0800
+diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari4/Makefile
+--- inadyn-1.98.1/Makefile	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/Makefile	2012-02-10 22:39:09.247108781 -0800
 @@ -1,7 +1,7 @@
  # Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
  
  #VERSION      ?= $(shell git tag -l | tail -1)
 -VERSION      ?= 1.98.1
-+VERSION      ?= 1.98.1-mbari3
++VERSION      ?= 1.98.1-mbari4
  NAME          = inadyn
  EXEC          = src/$(NAME)
  PKG           = $(NAME)-$(VERSION)
@@ -186,9 +186,9 @@ diff -ru inadyn-1.98.1-original/Makefile inadyn-1.98.1/Makefile
 -	@(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
 +	(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
  
-diff -ru inadyn-1.98.1-original/src/dyndns.c inadyn-1.98.1/src/dyndns.c
---- inadyn-1.98.1-original/src/dyndns.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/src/dyndns.c	2012-02-08 20:33:18.035253681 -0800
+diff -ru inadyn-1.98.1/src/dyndns.c inadyn-1.98.1-mbari4/src/dyndns.c
+--- inadyn-1.98.1/src/dyndns.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/src/dyndns.c	2012-02-10 23:01:40.359572676 -0800
 @@ -2,6 +2,8 @@
   *
   * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
@@ -361,7 +361,7 @@ diff -ru inadyn-1.98.1-original/src/dyndns.c inadyn-1.98.1/src/dyndns.c
 +					*updateDue = FALSE;
  
 -					logit(LOG_INFO, MODULE_TAG "Successful alias table update for %s => new IP# %s",
-+					logit(LOG_INFO, MODULE_TAG "Updated %s => %s",
++					logit(LOG_WARNING, MODULE_TAG "Updated %s => %s",
  					      info->alias_info[j].names.name, info->my_ip_address.name);
  					p_self->times_since_last_update = 0;
  				}
@@ -422,6 +422,15 @@ diff -ru inadyn-1.98.1-original/src/dyndns.c inadyn-1.98.1/src/dyndns.c
  	}
  	while (0);
  
+@@ -879,7 +855,7 @@
+ 
+ void dyn_dns_print_hello(void)
+ {
+-	logit(LOG_INFO, "%s", DYNDNS_VERSION_STRING);
++	logit(LOG_WARNING, "%s", DYNDNS_VERSION_STRING);
+ }
+ 
+ /**
 @@ -951,10 +927,11 @@
  		}
  		http_to_dyndns_constructed = TRUE;
@@ -757,31 +766,32 @@ diff -ru inadyn-1.98.1-original/src/dyndns.c inadyn-1.98.1/src/dyndns.c
  
  	do
  	{
-@@ -1406,7 +1402,13 @@
+@@ -1406,40 +1402,31 @@
  				/* dyn_dns_update_ip() failed above, and we've not reached MAX iterations. 
  				 * Time to inform the user the (network) error is not fatal and that we
  				 * will try again in a short while. */
 -				logit(LOG_WARNING, MODULE_TAG "Will retry again in %d sec...", p_dyndns->sleep_sec);
 +				if (p_dyndns->onNetErr) {
 +                	logit(LOG_WARNING, MODULE_TAG "Running %s -- retrying in %d sec...", 
-+                    	 p_dyndns->onNetErr, p_dyndns->sleep_sec);
++							p_dyndns->onNetErr, p_dyndns->sleep_sec);
 +					if (os_shell_execute(p_dyndns->onNetErr))
-+                      logit(LOG_ERR, MODULE_TAG "%s failed!", p_dyndns->onNetErr);                   
++						logit(LOG_ERR, MODULE_TAG "%s failed!", p_dyndns->onNetErr);                   
 +				}else
 +                	logit(LOG_WARNING, MODULE_TAG "Will retry in %d sec...", p_dyndns->sleep_sec);
  			}
  
  			/* Now sleep a while. Using the time set in sleep_sec data member */
-@@ -1414,7 +1416,7 @@
+ 			dyn_dns_wait_for_cmd(p_dyndns);
  			if (p_dyndns->cmd == CMD_STOP)
  			{
- 				logit(LOG_DEBUG, MODULE_TAG "STOP command received, exiting.");
+-				logit(LOG_DEBUG, MODULE_TAG "STOP command received, exiting.");
 -				rc = RC_OK;
 +				rc = RC_STOP;
  				break;
  			}
  			else if (p_dyndns->cmd == CMD_RESTART)
-@@ -1423,23 +1425,10 @@
+ 			{
+-				logit(LOG_DEBUG, "RESTART command received, restarting.");
  				rc = RC_RESTART;
  				break;
  			}
@@ -805,9 +815,9 @@ diff -ru inadyn-1.98.1-original/src/dyndns.c inadyn-1.98.1/src/dyndns.c
  	return rc;
  }
  
-diff -ru inadyn-1.98.1-original/src/errorcode.c inadyn-1.98.1/src/errorcode.c
---- inadyn-1.98.1-original/src/errorcode.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/src/errorcode.c	2012-02-08 19:59:09.618156989 -0800
+diff -ru inadyn-1.98.1/src/errorcode.c inadyn-1.98.1-mbari4/src/errorcode.c
+--- inadyn-1.98.1/src/errorcode.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/src/errorcode.c	2012-02-10 22:39:09.251108702 -0800
 @@ -41,7 +41,8 @@
  	{RC_IP_RECV_ERROR,			"RC_IP_RECV_ERROR"},
  	{RC_IP_OBJECT_NOT_INITIALIZED,		"RC_IP_OBJECT_NOT_INITIALIZED"},
@@ -818,9 +828,9 @@ diff -ru inadyn-1.98.1-original/src/errorcode.c inadyn-1.98.1/src/errorcode.c
  	{RC_TCP_OBJECT_NOT_INITIALIZED,		"RC_TCP_OBJECT_NOT_INITIALIZED"},
  
  	{RC_HTTP_OBJECT_NOT_INITIALIZED,	"RC_HTTP_OBJECT_NOT_INITIALIZED"},
-diff -ru inadyn-1.98.1-original/src/inadyn_cmd.c inadyn-1.98.1/src/inadyn_cmd.c
---- inadyn-1.98.1-original/src/inadyn_cmd.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/src/inadyn_cmd.c	2012-02-07 23:44:07.388973125 -0800
+diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari4/src/inadyn_cmd.c
+--- inadyn-1.98.1/src/inadyn_cmd.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/src/inadyn_cmd.c	2012-02-10 22:39:09.251108702 -0800
 @@ -42,6 +42,7 @@
  static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
  static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
@@ -1050,9 +1060,9 @@ diff -ru inadyn-1.98.1-original/src/inadyn_cmd.c inadyn-1.98.1/src/inadyn_cmd.c
  
  /**
     Searches the DYNDNS system by the argument.
-diff -ru inadyn-1.98.1-original/src/main.c inadyn-1.98.1/src/main.c
---- inadyn-1.98.1-original/src/main.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/src/main.c	2012-02-08 15:38:38.240057318 -0800
+diff -ru inadyn-1.98.1/src/main.c inadyn-1.98.1-mbari4/src/main.c
+--- inadyn-1.98.1/src/main.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/src/main.c	2012-02-10 22:39:09.251108702 -0800
 @@ -27,56 +27,37 @@
  /* MAIN - Dyn DNS update entry point.*/
  int inadyn_main(int argc, char* argv[])
@@ -1123,9 +1133,9 @@ diff -ru inadyn-1.98.1-original/src/main.c inadyn-1.98.1/src/main.c
  
  	/* Cleanup */
  	dyn_dns_destruct(p_dyndns);
-diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
---- inadyn-1.98.1-original/src/os_unix.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1/src/os_unix.c	2012-02-07 16:36:40.451277566 -0800
+diff -ru inadyn-1.98.1/src/os_unix.c inadyn-1.98.1-mbari4/src/os_unix.c
+--- inadyn-1.98.1/src/os_unix.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari4/src/os_unix.c	2012-02-10 23:05:35.846367922 -0800
 @@ -15,17 +15,19 @@
   * You should have received a copy of the GNU General Public License
   * along with this program; if not, write to the Free Software
@@ -1178,7 +1188,7 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
  }
  
  /* storage for the parameter needed by the handler */
-@@ -86,10 +76,10 @@
+@@ -86,21 +76,21 @@
   * Since printf() is one of the possible back-ends of logit(), and printf() is not one
   * of the safe syscalls to be used, according to POSIX signal(7). The calls are commented,
   * since they are most likely also only needed for debugging.
@@ -1192,7 +1202,8 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
  
  	if (p_self == NULL)
  	{
-@@ -97,7 +87,7 @@
+-//		logit(LOG_WARNING, MODULE_TAG "Signal %d received. But handler is not installed correctly.", signo);
++		logit(LOG_WARNING, MODULE_TAG "Signal %d received. But handler is not installed correctly.", signo);
  		return;
  	}
  
@@ -1200,20 +1211,43 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
 +	switch(signo)
  	{
  		case SIGHUP:
- //			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending restart command.", signo);
-@@ -109,42 +99,42 @@
+-//			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending restart command.", signo);
++			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending restart command.", signo);
+ 			p_self->cmd = CMD_RESTART;
+ 			break;
+ 
+@@ -108,43 +98,59 @@
+ 		case SIGQUIT:
  		case SIGALRM:
  		case SIGTERM:
- //			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending shutdown command.", signo);
+-//			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending shutdown command.", signo);
 -			p_self->cmd = CMD_STOP;
 -			break;
 -
++			logit(LOG_DEBUG, MODULE_TAG "Signal %d received. Sending shutdown command.", signo);
 +			p_self->cmd = CMD_STOP;			
 +		break;
++        
++        case SIGCHLD:
++			for(;;) {
++            	int status;
++			    pid_t pid = waitpid(-1, &status, WNOHANG);
++                if (pid <= 0)
++                	break;
++
++			    if (WIFEXITED(status)) {
++                	int exitCode = WEXITSTATUS(status);
++				   logit(exitCode ? LOG_WARNING : LOG_INFO, 
++                   		 MODULE_TAG "PID[%d] exited with status=%d", pid, exitCode);
++			    }else if (WIFSIGNALED(status))
++				   logit(LOG_WARNING, MODULE_TAG "PID[%d] killed by signal %d", pid, WTERMSIG(status));
++			}
++            break;
 +	
  		default:
- //			logit(LOG_DEBUG, MODULE_TAG "Signal %d received, ignoring.", signo);
+-//			logit(LOG_DEBUG, MODULE_TAG "Signal %d received, ignoring.", signo);
 -			break;
++			logit(LOG_DEBUG, MODULE_TAG "Signal %d received, ignoring.", signo);
 +		break;
  	}
  	return;
@@ -1221,10 +1255,11 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
 +} 
  
  /**
- 	install handler for SIGALRM and HUP, INT, QUIT, TERM.
- 	avoid receiving HUP, INT, QUIT during ALRM and TERM.
+-	install handler for SIGALRM and HUP, INT, QUIT, TERM.
+-	avoid receiving HUP, INT, QUIT during ALRM and TERM.
 -
-+	
++	install handler for SIGALRM and HUP, INT, QUIT, TERM and CHLD.
++	avoid receiving HUP, INT, QUIT, and TERM during ALRM.	
  */
  RC_TYPE os_install_signal_handler(void *p_dyndns)
  {
@@ -1238,30 +1273,34 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
 -		sigaddset(&newact.sa_mask, SIGHUP)   ||
 -		sigaddset(&newact.sa_mask, SIGINT)   ||
 -		sigaddset(&newact.sa_mask, SIGQUIT)  ||
-+    rc = sigemptyset(&newact.sa_mask)              ||
-+	         sigaddset(&newact.sa_mask, SIGHUP)   ||
-+	         sigaddset(&newact.sa_mask, SIGINT)   ||
-+	         sigaddset(&newact.sa_mask, SIGQUIT)  ||
- 		sigaddset(&newact.sa_mask, SIGTERM)  ||
+-		sigaddset(&newact.sa_mask, SIGTERM)  ||
 -		sigaction(SIGALRM, &newact, NULL)    ||
 -		sigemptyset(&newact.sa_mask)         ||
 -		sigaddset(&newact.sa_mask, SIGALRM)  ||
 -		sigaction(SIGHUP, &newact, NULL)     ||
 -		sigaction(SIGINT, &newact, NULL)     ||
-+             sigaction(SIGALRM, &newact, NULL)    ||
-+             sigemptyset(&newact.sa_mask)          ||
-+	         sigaddset(&newact.sa_mask, SIGALRM)  ||
-+             sigaction(SIGHUP, &newact, NULL)     ||
-+             sigaction(SIGINT, &newact, NULL)     ||
- 		sigaction(SIGQUIT, &newact, NULL)    ||
- 		sigaction(SIGTERM, &newact, NULL);
+-		sigaction(SIGQUIT, &newact, NULL)    ||
+-		sigaction(SIGTERM, &newact, NULL);
++    rc = sigemptyset(&newact.sa_mask)         ||
++	     sigaddset(&newact.sa_mask, SIGHUP)   ||
++	     sigaddset(&newact.sa_mask, SIGINT)   ||
++	     sigaddset(&newact.sa_mask, SIGQUIT)  ||
++		 sigaddset(&newact.sa_mask, SIGTERM)  ||
++         sigaction(SIGALRM, &newact, NULL)    ||
++         sigemptyset(&newact.sa_mask)         ||
++	     sigaddset(&newact.sa_mask, SIGALRM)  ||
++         sigaction(SIGHUP, &newact, NULL)     ||
++         sigaction(SIGINT, &newact, NULL)     ||
++		 sigaction(SIGQUIT, &newact, NULL)    ||
++		 sigaction(SIGTERM, &newact, NULL)	  ||
++         sigaction(SIGCHLD, &newact, NULL);
   	if (rc == RC_OK)
 - 	{
 +	{
  		global_p_signal_handler_param = p_dyndns;
  	}
  
-@@ -152,48 +142,48 @@
+@@ -152,48 +158,48 @@
  }
  
  /*
@@ -1329,7 +1368,7 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
  
      return RC_OK;		/* Never reached. */
  }
-@@ -218,10 +208,9 @@
+@@ -218,10 +224,9 @@
  
  RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
  {
@@ -1342,7 +1381,7 @@ diff -ru inadyn-1.98.1-original/src/os_unix.c inadyn-1.98.1/src/os_unix.c
  		if (p_usr_info->gid != getgid())
  		{
  			if ((rc = setgid(p_usr_info->gid)) != 0)
-@@ -231,23 +220,48 @@
+@@ -231,23 +236,48 @@
  		}
  
  		if (p_usr_info->uid != getuid())
