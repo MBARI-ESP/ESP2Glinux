@@ -1,6 +1,7 @@
 IFNAME=ppp8
 AUTOSTART=no
 ifPrep() {
+  modprobe ppp_async && modprobe ppp_deflate &&
   pppd call att unit 8 logfile /dev/null
 }
 

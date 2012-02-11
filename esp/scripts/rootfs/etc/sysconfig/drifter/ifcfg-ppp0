@@ -7,6 +7,7 @@ ifPrep() {
 #  ln -s /var/run/ppp-$link.pid /var/run/$IFNAME.pid
   modem=/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0
   [ -L /dev/freewave ] || ln -s $modem /dev/freewave
+  modprobe ppp_async && modprobe ppp_deflate &&
   pppd call $link linkname $link unit 0 logfile /var/log/$link.pppdlog
 }
 
