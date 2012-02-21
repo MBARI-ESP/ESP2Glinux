@@ -36,6 +36,9 @@ cp picocom ~/armHost/usr/local/bin
 cd ~/linux/lrzsz
 armconfig && arminstall
 
+cd ~/linux/dyndns
+armconfig && arminstall
+
 # install the kernel modules
 
 cd ~/linux/technologic/linux24
