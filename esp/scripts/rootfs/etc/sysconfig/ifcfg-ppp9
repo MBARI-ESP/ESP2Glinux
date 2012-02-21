@@ -1,7 +1,7 @@
 IFNAME=ppp9
 AUTOSTART=no
 ifPrep() {
-  modprobe ppp_mppe_mppc &&
+  modprobe arc4 && modprobe ppp_mppe_mppc &&
   pppd unit 9 call mbari name scwharf logfile /dev/null
 }
 
