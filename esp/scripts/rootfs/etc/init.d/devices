@@ -16,8 +16,6 @@ freewave=tts/15 	#serial port connected to the freewave radio modem
 [ -c "$freewave" ] && {
   ln -s $freewave freewave
   stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
-  modprobe ppp_async && modprobe ppp_deflate    #support for the ppp deamon
-  modprobe slip  #and support for SLIP
 }
 
 [ -d tts ] && {
