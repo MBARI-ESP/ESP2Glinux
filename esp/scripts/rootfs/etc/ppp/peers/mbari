@@ -1,4 +1,4 @@
-file /etc/ppp/options.mbari
+file /etc/ppp/options.pptp
 
 #for vpn2.mbari.org
 pty "pptp 134.89.19.10 --nolaunchpppd --idle-wait 180 --loglevel 0 --logstring mbari"
