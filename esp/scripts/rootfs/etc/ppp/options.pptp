@@ -5,6 +5,8 @@
 nobsdcomp
 nodeflate
 
+mtu 1460
+
 #
 # We want MPPE
 #
