@@ -13,11 +13,11 @@ TIMEOUT 10
 
 #send carridge return, then delay for autobaud
 "" ""
-#return to command mode, detach from any GPRS call in progress
-"" \d\p+++\d\pAT+CGATT=0
+#return to command mode, factory defaults, echo off, detach any GPRS call
+"" \d\p+++\d\pAT&FE0+CGATT=0
 #
 # Define the PDP Context: Context ID, Routing Protocol, APN
-OK\r AT+CGDCONT=1,"IP","epc.tmobile.com"
+OK\r \dAT+CGDCONT=1,"IP","epc.tmobile.com"
 #
 # Set the dialing string and specify which PDP Context definition to use.
 OK\r ATD*99***1#
