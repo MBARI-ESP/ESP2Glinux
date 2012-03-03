@@ -2,7 +2,7 @@ IFNAME=ppp8
 AUTOSTART=no
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
-  pppd call att unit 8 logfile /dev/null
+  pppd call t-mobile unit 8 logfile /dev/null
 }
 
 hosts() {    #add lines before EOS
