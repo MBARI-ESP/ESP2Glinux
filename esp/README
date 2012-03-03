@@ -1,5 +1,5 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  9/8/11 brent@mbari.org
+ -- revised:  3/2/12 brent@mbari.org
 
 0) delete or save any existing ~/armHost rootfs directory
 
@@ -121,7 +121,7 @@ H) Install JP 4 to use COM2 as the console port
 
 I) Replace the kernel with the one last built
 
-RedBoot>  %{getKernel} ts7200-mbari4
+RedBoot>  %{getKernel} ts7200-mbari5
 RedBoot>  fis delete vmlinux
 RedBoot>  fis create vmlinux
 
@@ -150,6 +150,7 @@ RedBoot> %{nfsboot}
 #  flash_eraseall -j /dev/mtd/1  #BEWARE:  other mtd partitions will BRICK board!
 # dd of=/dev/mtd/1 bs=128k < /flash/armHost.jffs2
 # sync; sync
+# /sbin/crash/reboot
 
 
 K) reboot and let the board start normally after disconnecting network
