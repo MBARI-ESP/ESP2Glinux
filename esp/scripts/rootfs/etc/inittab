@@ -37,5 +37,8 @@ lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1
 # Keep the freewave slip interface up
 #sl0:12345:respawn:/sbin/slattach -P /var/run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
 
+# Indirectly brings up VPN link to MBARI
+#vpn:12345:respawn:/usr/sbin/inadyn
+
 # Trap CTRL-ALT-DELETE
 ca::ctrlaltdel:/sbin/init 6
