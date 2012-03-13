@@ -17,8 +17,8 @@ TIMEOUT 10
 "" \d\p+++\d\pAT&FE0+CGATT=0
 #
 # Define the PDP Context: Context ID, Routing Protocol, APN
-OK\r \dAT+CGDCONT=1,"IP","epc.tmobile.com"
+OK\r \d\dAT+CGDCONT=1,"IP","epc.tmobile.com"
 #
-# Set the dialing string and specify which PDP Context definition to use.
-OK\r ATD*99***1#
+# Log signal strength, connect with the PDP Context definition above.
+OK\r AT+CSQ;D*99***1#
 CONNECT \c
