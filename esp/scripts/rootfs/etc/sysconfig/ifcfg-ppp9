@@ -1,12 +1,18 @@
 IFNAME=ppp9
 AUTOSTART=no
+
+provider=mbari
+
 ifPrep() {
   modprobe arc4 && modprobe ppp_mppe_mppc &&
-  pppd unit 9 call mbari name scwharf logfile /dev/null
+  ln -s /var/run/ppp-$provider.pid /var/run/$IFNAME.pid &&
+  pppd unit 9 call $provider name scwharf logfile /dev/null
 }
 
 hosts() {    #add lines before EOS
+  [ -n "$PPP_IFACE" -a -n "$PPP_REMOTE" ] &&
+    route del $PPP_REMOTE dev $PPP_IFACE
   cat <<EOS 
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-vpn)
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
 EOS
 }
