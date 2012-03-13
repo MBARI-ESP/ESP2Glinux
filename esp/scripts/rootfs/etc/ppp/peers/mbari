@@ -7,10 +7,11 @@ pty "exec pptp 134.89.19.10 --nolaunchpppd --idle-wait 180 --loglevel 0 --logstr
 #pty "exec pptp 134.89.18.10 --nolaunchpppd --loglevel 0 --logstring mbari"
 # --debug
 
-noauth
+linkname mbari
 remotename mbari
 ipparam mbari
 
+noauth
 defaultroute
 usepeerdns
 
