@@ -1,12 +1,16 @@
 IFNAME=ppp8
 AUTOSTART=no
+
+provider=t-mobile
+
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
-  pppd call t-mobile unit 8 logfile /dev/null
+  ln -s /var/run/ppp-$provider.pid /var/run/$IFNAME.pid &&
+  pppd call $provider unit 8 logfile /dev/null
 }
 
 hosts() {    #add lines before EOS
   cat <<EOS 
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
 EOS
 }
