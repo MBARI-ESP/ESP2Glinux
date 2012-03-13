@@ -40,7 +40,7 @@ A secondary task may be to implement all-to-tunnel routing if the
 appropriate flag is specified on the command line.  The flag
 --route-all is to implement this (not yet implemented).
 
-Revised:  brent@mbari.org Feb 2, 2012
+Revised:  brent@mbari.org Mar 12, 2012
 
 The 'ip' command is not available on many memory constrained embedded systems
 (It's about 250kB!)
@@ -85,6 +85,9 @@ ret:
 }
 
 static int svrRoute(const char *op, const char *redir, int logErrs) {
+/*
+  redir, if not the null string, should begin with a space
+*/
   if (oldIface) {
     char buf[300];
     char *svrIP = inet_ntoa(svrAdr);
@@ -103,7 +106,7 @@ static int svrRoute(const char *op, const char *redir, int logErrs) {
 }
 
 void routing_start() {
-  svrRoute("del", "2>/dev/null", 0);
+  svrRoute("del", " 2>/dev/null", 0);
   svrRoute("add", "", 1);
 }
 
