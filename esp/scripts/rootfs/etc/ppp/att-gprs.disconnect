@@ -11,5 +11,5 @@ ABORT "\nRINGING\r\n\r\nRINGING\r"
 TIMEOUT 5
 
 "" \d\p\p+++\d\p\c
-OK\r ATH
+OK\r ATE0+CGATT=0
 OK\r
