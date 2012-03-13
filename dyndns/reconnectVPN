@@ -4,5 +4,5 @@ vpn=ppp9
 ifdown $vpn
 ifdown $cell
 ifup $cell
-sleep 15
+sleep 30
 ifup $vpn
