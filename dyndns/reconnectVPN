@@ -1,8 +1,10 @@
 #!/bin/sh
-cell=ppp8   
+#cell=ppp8   
 vpn=ppp9   
 ifdown $vpn
-ifdown $cell
-ifup $cell
-sleep 30
+[ "$cell" ] && {
+  ifdown $cell
+  ifup $cell
+  sleep 30
+}
 ifup $vpn
