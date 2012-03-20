@@ -237,7 +237,6 @@ struct mime_mapping {
 
 struct mime_mapping *mime_map = NULL;
 size_t mime_map_size = 0;
-size_t longest_ext = 0;
 
 /* If a connection is idle for idletime seconds or more, it gets closed and
  * removed from the connlist.  Set to 0 to remove the timeout
@@ -564,13 +563,7 @@ static char *make_safe_url(char *url) {
  */
 static void add_mime_mapping(const char *extension, const char *mimetype) {
     unsigned int i;
-    assert(strlen(extension) > 0);
     assert(strlen(mimetype) > 0);
-
-    /* update longest_ext */
-    i = strlen(extension);
-    if (i > longest_ext)
-        longest_ext = i;
 
     /* look through list and replace an existing entry if possible */
     for (i=0; i<mime_map_size; i++)
@@ -640,6 +633,8 @@ static void parse_mimetype_line(const char *line) {
 
         mimetype = split_string(line, pad, bound1);
         extension = split_string(line, lbound, rbound);
+        if (extension[0]=='.' && !extension[1])
+          extension[0]=0;
         add_mime_mapping(extension, mimetype);
         free(mimetype);
         free(extension);
@@ -754,23 +749,23 @@ static int mime_mapping_cmp_str(const void *a, const void *b) {
 
 static const char *url_content_type(const char *url) {
     int period, urllen = (int)strlen(url);
+    const char *type = "";
 
+puts(url);
     for (period = urllen - 1;
-         (period > 0) && (url[period] != '.') &&
-         (urllen - period - 1 <= (int)longest_ext);
+         (period > 0) && (url[period] != '.');
          period--)
-            ;
+            if (url[period]=='/') break;
 
-    if ((period >= 0) && (url[period] == '.')) {
-        struct mime_mapping *result =
-            bsearch((url + period + 1), mime_map, mime_map_size,
-                    sizeof(struct mime_mapping), mime_mapping_cmp_str);
-        if (result != NULL) {
-            assert(strcmp(url + period + 1, result->extension) == 0);
-            return result->mimetype;
-        }
+    if ((period >= 0) && (url[period] == '.'))
+      type = url + period + 1;
+    struct mime_mapping *result =
+        bsearch(type, mime_map, mime_map_size,
+                sizeof(struct mime_mapping), mime_mapping_cmp_str);
+    if (result) {
+        assert(strcmp(url + period + 1, result->extension) == 0);
+        return result->mimetype;
     }
-    /* else no period found in the string */
     return default_mimetype;
 }
 
@@ -2404,6 +2399,9 @@ int main(int argc, char **argv) {
     if (signal(SIGTERM, stop_running) == SIG_ERR)
         err(1, "signal(SIGTERM)");
 
+    /* create pidfile */
+    if (pidfile_name) pidfile_create();
+
     /* security */
     if (want_chroot) {
         tzset(); /* read /etc/localtime before we chroot */
@@ -2424,9 +2422,6 @@ int main(int argc, char **argv) {
             err(1, "setuid(%d)", drop_uid);
         printf("set uid to %d\n", drop_uid);
     }
-
-    /* create pidfile */
-    if (pidfile_name) pidfile_create();
 
     if (want_daemon) daemonize_finish();
 

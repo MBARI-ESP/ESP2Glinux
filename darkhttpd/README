@@ -33,6 +33,8 @@ Use default.htm instead of index.html:
 Add mimetypes - in this case, serve .dat files as text/plain:
 	$ cat extramime
 	text/plain	dat
+  Note that the type of a single dot matches files with no type, as in:
+        text/plain      dat  .
 	$ ./darkhttpd /var/www/htdocs --mimetypes extramime
 
 Drop privileges:
