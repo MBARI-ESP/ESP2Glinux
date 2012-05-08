@@ -1,0 +1,15 @@
+#!/bin/bash
+# unpack & configure psmisc build for arm-linux -- 5/8/12 brent@mbari.org
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${CXXFLAGS:=$CFLAGS}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${LIBTOP:=${1-$ARMGCC/usr}}
+: ${PSMISCVERS:=psmisc-22.16}
+export CFLAGS CXXFLAGS
+top=$PWD
+rm -rf $PSMISCVERS && tar zxf ${PSMISCVERS}[-.]tar.gz 2>/dev/null || exit $?
+cd $PSMISCVERS
+ac_cv_func_malloc_0_nonnull=yes ac_cv_func_realloc_0_nonnull=yes \
+  configure --host=arm-softfloat-linux &&
+echo "Now, run arminstall"
