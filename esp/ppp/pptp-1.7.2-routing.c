@@ -40,7 +40,7 @@ A secondary task may be to implement all-to-tunnel routing if the
 appropriate flag is specified on the command line.  The flag
 --route-all is to implement this (not yet implemented).
 
-Revised:  brent@mbari.org Mar 12, 2012
+Revised:  brent@mbari.org May 14, 2012
 
 The 'ip' command is not available on many memory constrained embedded systems
 (It's about 250kB!)
@@ -84,15 +84,16 @@ ret:
   pclose(p);
 }
 
-static int svrRoute(const char *op, const char *redir, int logErrs) {
+static int svrRoute(const char *op, 
+                    const char *suffix1, const char *suffix2, int logErrs) {
 /*
-  redir, if not the null string, should begin with a space
+  command is route <add|del><svrIP><suffix1><suffix2> 
 */
   if (oldIface) {
     char buf[300];
     char *svrIP = inet_ntoa(svrAdr);
-    snprintf(buf, sizeof(buf), "/sbin/route %s %s dev %s%s", 
-                  op, svrIP, oldIface, redir);
+    snprintf(buf, sizeof(buf), "/sbin/route %s %s%s%s", 
+                  op, svrIP, suffix1, suffix2);
     if (system(buf) && logErrs) {
       syslog (LOG_ERR,
               "Could not %s route to %s: %s", op, svrIP, strerror(errno));
@@ -106,10 +107,10 @@ static int svrRoute(const char *op, const char *redir, int logErrs) {
 }
 
 void routing_start() {
-  svrRoute("del", " 2>/dev/null", 0);
-  svrRoute("add", "", 1);
+  svrRoute("del", " ", "2>/dev/null", 0);
+  svrRoute("add", " dev ", oldIface, 1);
 }
 
 void routing_end() {
-  svrRoute("del", "", 1);
+  svrRoute("del", " dev ", oldIface, 1);
 }
