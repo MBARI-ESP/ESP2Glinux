@@ -57,7 +57,11 @@ eachAlias() {
 
 case "$1" in
   -*|*/*|'') #any flag is a request for help
-    usage    
+    echo "
+usage:  ifdown [network interface or alias name]
+        disable the specified network interface or alias
+"
+    return 1
   ;;
   
   *:*) #an interface alias
