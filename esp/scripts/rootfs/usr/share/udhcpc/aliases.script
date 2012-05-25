@@ -15,7 +15,7 @@ eachAlias() {
 
 case "$1" in
   deconfig)  #kludge:  only aliases >=100 are shut down on deconfig
-    eachAlias ifdown $interface '$interface:???*'
+    eachAlias ifdown $interface $interface':???*'
    `dirname $0`/default.script "$@" 
 ;;
   bound)
