@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  7/9/11 by brent@mbari.org
+# revised:  5/24/12 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
@@ -19,7 +19,7 @@ fi
 leased=/var/run/$interface.lease
 
 case "$1" in  #ignore leasefail and renew
-  deconfig|nak)
+  deconfig)
     [ -f $leased ] && echo -n "$interface DHCP failed: "
     if . /etc/sysconfig/ifcfg-$interface && ipUp; then
       [ -f $leased ] && echo "IP=$IPADDR"
