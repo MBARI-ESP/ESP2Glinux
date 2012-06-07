@@ -1,0 +1,68 @@
+From 0199b7336ad87b54e60bd0cc5eb3a1d86ab5d6a0 Mon Sep 17 00:00:00 2001
+From: Bangaragiri G <bangaragiri.g@nxp.com>
+Date: Tue, 5 Apr 2011 14:57:02 +0530
+Subject: [PATCH 2/3] sdio:lpc313x:Enable SDIO for LPC313x in MMC driver
+
+Enables the SDIO interfacing capability in LPC313X
+MMC driver
+
+Signed-off-by: Daniel Widyanto <daniel.widyanto@nxp.com>
+---
+ drivers/mmc/host/lpc313x_mmc.c |   22 +++++++++++++++++++++-
+ 1 files changed, 21 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/lpc313x_mmc.c b/drivers/mmc/host/lpc313x_mmc.c
+index ef4d826..c8ae38c 100644
+--- a/drivers/mmc/host/lpc313x_mmc.c
++++ b/drivers/mmc/host/lpc313x_mmc.c
+@@ -725,11 +725,26 @@ static int lpc313x_mci_get_cd(struct mmc_host *mmc)
+ 	return present;
+ }
+ 
++static void lpc313x_mci_enable_sdio_irq(struct mmc_host *host, int enable)
++{
++	unsigned int reg;
++
++	if (enable) {
++		reg = mci_readl(INTMASK) | SDMMC_INT_SDIO;
++		mci_writel(INTMASK, reg);
++	}
++	else {
++		reg = mci_readl(INTMASK) & ~SDMMC_INT_SDIO;
++		mci_writel(INTMASK, reg);
++	}
++}
++
+ static const struct mmc_host_ops lpc313x_mci_ops = {
+ 	.request	= lpc313x_mci_request,
+ 	.set_ios	= lpc313x_mci_set_ios,
+ 	.get_ro		= lpc313x_mci_get_ro,
+ 	.get_cd		= lpc313x_mci_get_cd,
++	.enable_sdio_irq= lpc313x_mci_enable_sdio_irq,
+ };
+ 
+ static void lpc313x_mci_request_end(struct lpc313x_mci *host, struct mmc_request *mrq)
+@@ -1170,6 +1185,11 @@ static irqreturn_t lpc313x_mci_interrupt(int irq, void *dev_id)
+ 		    mci_writel(RINTSTS,SDMMC_INT_CMD_DONE);  //  clear interrupt
+ 		    lpc313x_mci_cmd_interrupt(host, status);
+ 		}
++
++		if (pending & SDMMC_INT_SDIO) {
++		    mci_writel(RINTSTS,SDMMC_INT_SDIO);  //  clear interrupt
++		    mmc_signal_sdio_irq(host->cur_slot->mmc);
++		}
+ 	} while (pass_count++ < 5);
+ 	
+ 	spin_unlock(&host->lock);
+@@ -1328,7 +1348,7 @@ lpc313x_mci_init_slot(struct lpc313x_mci *host, unsigned int id)
+ 	if (host->pdata->setpower)
+ 		host->pdata->setpower(id, 0);
+ 
+-	mmc->caps = 0;
++	mmc->caps = MMC_CAP_SDIO_IRQ;
+ 	if (host->pdata->get_bus_wd)
+ 		if (host->pdata->get_bus_wd(slot->id) >= 4)
+ 			mmc->caps |= MMC_CAP_4_BIT_DATA;
+-- 
+1.7.6.3
+
