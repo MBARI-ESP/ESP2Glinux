@@ -20,6 +20,8 @@ Patch4          : kernel-2.6.33-disableECCforYAFFS2.patch
 Patch5          : kernel-2.6.33-quietYAFFS2.patch
 Patch6          : kernel-2.6.33-mmc_nand_softirq_v2.patch
 Patch7          : kernel-2.6.33-restoreMMCtimeout.patch
+Patch8          : kernel-2.6.33-gadgetFix.patch
+Patch9          : kernel-2.6.33-enableSDIO.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -37,3 +39,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
+%patch9 -p1
