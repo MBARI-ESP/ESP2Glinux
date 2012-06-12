@@ -10,7 +10,7 @@ Version         : 2.6.33
 Release         : 1
 License         : GPL
 Vendor          : Kernel.org + NXP lpc313x patches
-Packager        : Kevin Wells
+Packager        : Kevin Wells and Brent Roman
 Group           : System Environment/Kernel
 Source          : %{pkg_name}-%{dversion}.tar.bz2
 Patch1		: linux-2.6.33_lpc313x.patch
@@ -18,12 +18,32 @@ Patch2		: linux-2.6.33-lpc313x-v1.01.patch
 Patch3          : kernel-2.6.33-yaffs2.patch
 Patch4          : kernel-2.6.33-disableECCforYAFFS2.patch
 Patch5          : kernel-2.6.33-quietYAFFS2.patch
-Patch6          : kernel-2.6.33-mmc_nand_softirq_v2.patch
-Patch7          : kernel-2.6.33-restoreMMCtimeout.patch
+#Patch6          : lpc315x_ad_codec.patch
+#Patch7          : watchdog_driver-100816.patch
 Patch8          : kernel-2.6.33-gadgetFix.patch
-Patch9          : kernel-2.6.33-enableSDIO.patch
+#Patch9          : i2c-pnx-restart.patch
+Patch10         : kernel-2.6.33-enableSDIO.patch
+Patch11         : kernel-2.6.33-mmc_nand_softirq_v2.patch
+Patch12         : kernel-2.6.33-restoreMMCtimeout.patch
+Patch13         : 0001-backport-wire-up-sys_accept4-on-ARM.patch
+Patch14         : 0002-lpc313x-rng-driver.patch
+Patch15         : 0003-lpc313x-define-non-LPC3152-variants-of-AD-events.patch
+Patch16         : 0004-lpc313x-fixed-soc-audio-configuration-so-it-can-work.patch
+Patch17         : 0005-lpc313x-various-fixes-for-usb-vbus-overcurrent-detec.patch
+Patch18         : 0006-lpc313x-implement-GENERIC_TIME-and-GENERIC_CLOCKEVEN.patch
+#Patch19         : 0007-lpc313x-gpiolib-support.patch
+#Patch20         : 0008-lpc313x-export-boot-selector-gpios.patch
+#Patch21         : 0009-lpc313x-cleaned-up-interrupt-handling.patch
+#Patch22         : 0010-lpc313x-mmc-driver-cleanup.patch
+#Patch23         : 0011-lpc313x-import-support-for-olimex-lpc_h3131-board.patch
+#Patch24         : 0012-lpc313x-improvements-to-lpc_h3131-board-support.patch
+Patch25         : linux-2.6.33-lpc313x_uart_dma_fixes.patch
+Patch26         : lpc31xx_2633_nand_fixes.patch
+Patch27         : lpc315x_codec_fixes.patch
+Patch28         : kernel-2.6.33-usbOvercurrent.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
+
 
 %Description
 %{summary}
@@ -37,7 +57,17 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
-%patch6 -p1
-%patch7 -p1
 %patch8 -p1
-%patch9 -p1
+%patch10 -p1
+%patch11 -p1
+%patch12 -p1
+%patch13 -p1
+%patch14 -p1
+%patch15 -p1
+%patch16 -p1
+%patch17 -p1
+%patch18 -p1
+%patch25 -p1
+%patch26 -p1
+%patch27 -p1
+%patch28 -p1
