@@ -41,6 +41,7 @@ Patch25         : linux-2.6.33-lpc313x_uart_dma_fixes.patch
 Patch26         : lpc31xx_2633_nand_fixes.patch
 Patch27         : lpc315x_codec_fixes.patch
 Patch28         : kernel-2.6.33-usbOvercurrent.patch
+Patch29         : kernel-2.6.33-eacpuled.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -71,3 +72,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch26 -p1
 %patch27 -p1
 %patch28 -p1
+%patch29 -p1
+
