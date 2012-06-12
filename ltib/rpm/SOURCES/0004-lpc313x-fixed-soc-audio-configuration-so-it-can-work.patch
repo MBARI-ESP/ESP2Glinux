@@ -1,0 +1,37 @@
+From d3ca8c34790b940950c1087c9ddd090152b7da18 Mon Sep 17 00:00:00 2001
+From: Ingo Albrecht <prom@berlin.ccc.de>
+Date: Wed, 23 Feb 2011 04:32:29 +0100
+Subject: [PATCH 04/15] lpc313x: fixed soc audio configuration so it can work
+ on all boards
+
+---
+ sound/soc/lpc313x/Kconfig |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sound/soc/lpc313x/Kconfig b/sound/soc/lpc313x/Kconfig
+index 91298dd..851511f 100644
+--- a/sound/soc/lpc313x/Kconfig
++++ b/sound/soc/lpc313x/Kconfig
+@@ -1,6 +1,6 @@
+ config SND_LPC313X_SOC
+         tristate "SoC Audio for the NXP LPC313X System-on-a-Chip"
+-				depends on ARCH_LPC313X && SND_SOC && MACH_EA313X
++				depends on ARCH_LPC313X && SND_SOC && !LPC3152_AD
+         help
+           Say Y or M if you want to add audio support for the LPC313X.
+           You will also need to to select the audio interfaces to
+@@ -8,9 +8,9 @@ config SND_LPC313X_SOC
+ 
+ config SND_LPC315X_SOC
+ 	tristate "SoC Audio for the NXP LPC315X System-on-a-Chip"
+-	depends on ARCH_LPC313X && SND_SOC && MACH_EA3152
++	depends on ARCH_LPC313X && SND_SOC && LPC3152_AD
+ 	help
+-	Say Y or M if you want to add audio support for the LPC313X.
++	Say Y or M if you want to add audio support for the LPC315X.
+ 	You will also need to to select the audio interfaces to
+ 	support below.
+ 
+-- 
+1.7.6.3
+

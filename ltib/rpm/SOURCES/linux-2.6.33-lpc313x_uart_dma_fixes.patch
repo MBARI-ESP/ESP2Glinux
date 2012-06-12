@@ -1,0 +1,216 @@
+diff --git a/arch/arm/mach-lpc313x/generic.c b/arch/arm/mach-lpc313x/generic.c
+index dc7d79c..9cd1b1d 100644
+--- a/arch/arm/mach-lpc313x/generic.c
++++ b/arch/arm/mach-lpc313x/generic.c
+@@ -92,6 +92,7 @@ static struct plat_serial8250_port platform_serial_ports[] = {
+ 		.uartclk = XTAL_CLOCK,
+ 		.regshift = 2,
+ 		.iotype = UPIO_MEM,
++		.type	= PORT_NXP16750,
+ 		.flags = UPF_BOOT_AUTOCONF | UPF_BUGGY_UART | UPF_SKIP_TEST,
+ 		.pm = lpc313x_uart_pm,
+ 	},
+@@ -176,6 +177,18 @@ void __init lpc313x_map_io(void)
+ }
+ extern int __init cgu_init(char *str);
+ 
++void __init lpc313x_uart_init(void)
++{
++	int mul, div;
++
++	/* check what FDR bootloader is using */
++	mul = (UART_FDR_REG >> 4) & 0xF;
++	div = UART_FDR_REG & 0xF;
++	if (div != 0)  {
++		platform_serial_ports[0].uartclk = (XTAL_CLOCK * mul) / (mul + div);
++	}
++}
++
+ int __init lpc313x_init(void)
+ {
+ 	/* cgu init */
+@@ -217,6 +230,8 @@ int __init lpc313x_init(void)
+ 	/* AUDIO CODEC CLOCK (256FS) */
+ 	GPIO_DRV_IP(IOCONF_I2STX_1, 0x8);
+ 
++	lpc313x_uart_init();
++
+ 	return platform_add_devices(devices, ARRAY_SIZE(devices));
+ }
+ 
+@@ -247,8 +262,8 @@ static int __init lpc313x_init_console(void)
+ 	mul = (UART_FDR_REG >> 4) & 0xF;
+ 	div = UART_FDR_REG & 0xF;
+ 	if (div != 0)  {
+-		up.uartclk = (XTAL_CLOCK * mul) / (mul + div); 
+-	} 
++		up.uartclk = (XTAL_CLOCK * mul) / (mul + div);
++	}
+ 	up.regshift = 2;
+ 	up.iotype = UPIO_MEM;
+ 	up.type	= PORT_NXP16750;
+diff --git a/drivers/serial/8250.c b/drivers/serial/8250.c
+index 24f0ef2..77a1686 100644
+--- a/drivers/serial/8250.c
++++ b/drivers/serial/8250.c
+@@ -41,7 +41,7 @@
+  *  RX side modifications
+  *   1) RX FIFO based mechanism replaced with DMA based circ
+  *      buffer logic.The DMA nevers stops servicing the FIFO
+- *      event when the DMA buffer is 
++ *      event when the DMA buffer is
+  *
+  *
+  *  TX side modifications
+@@ -1443,7 +1443,7 @@ static void lpc31xx_dma_lock(struct uart_8250_port *up)
+ 
+ static void lpc31xx_dma_unlock(struct uart_8250_port *up)
+ {
+-	mutex_unlock(&dma_mutex);	
++	mutex_unlock(&dma_mutex);
+ }
+ 
+ static void lpc31xx_uart_tx_dma_start(struct uart_8250_port *up);
+@@ -1497,7 +1497,7 @@ static void serial8250_dma_rx_timer_check(unsigned long data)
+ 	struct uart_8250_port *up = (struct uart_8250_port *) data;
+ 
+ 	/* Emulate RX timeout when DMA buffer is not full */
+-	if (lpc31xx_get_readl_rx_dma_count(up))
++	if ((lpc31xx_get_readl_rx_dma_count(up)) && (up->dma_rx.active))
+ 		tasklet_schedule(&up->dma_rx.tasklet);
+ 	else
+ 		mod_timer(&up->dma_rx.timer, jiffies +
+@@ -1605,9 +1605,6 @@ static void lpc31xx_dma_rx_tasklet_func(unsigned long data)
+ 			ch = serial_inp(up, UART_RX);
+ 	}
+ 	else {
+-		dma_sync_single_for_device(up->port.dev, (u32) pbuf,
+-			   count, DMA_FROM_DEVICE);
+-
+ 		for (i = 0; i < (count - 1); i++) {
+ 			up->port.icount.rx++;
+ 			if (uart_handle_sysrq_char(&up->port, buf[i]))
+@@ -2149,6 +2146,7 @@ static int serial_link_irq_chain(struct uart_8250_port *up)
+ 		lpc31xx_dma_rx_interrupt, up);
+ 	if (up->dma_rx.dmach < 0)
+ 	{
++		dma_release_channel(up->dma_tx.dmach);
+ 		printk(KERN_ERR "serial: error getting RX DMA channel.\n");
+ 		return -EBUSY;
+ 	}
+@@ -2156,16 +2154,15 @@ static int serial_link_irq_chain(struct uart_8250_port *up)
+ 	/* dma_map_single() can be used for the TX buffer, but the RX
+ 	  buffer needs it's own buffer */
+ 	up->dma_rx.dma_buff_v = dma_alloc_coherent(NULL, UART_DMABUF_RX_SIZE,
+-		&dma_handle, GFP_DMA);
++		&dma_handle, GFP_KERNEL);
+ 	if (up->dma_rx.dma_buff_v == NULL)
+ 	{
++		dma_release_channel(up->dma_tx.dmach);
++		dma_release_channel(up->dma_rx.dmach);
+ 		printk(KERN_ERR "serial: error getting DMA region.\n");
+ 		return -ENOMEM;
+ 	}
+ 	up->dma_rx.dma_buff_p = dma_handle;
+-	printk(KERN_INFO "serial: UART RX buffer: P0x%08x, V0x%08x, size:%ld.\n",
+-		(u32) up->dma_rx.dma_buff_p, (u32) up->dma_rx.dma_buff_v,
+-		UART_DMABUF_RX_SIZE);
+ 
+ 	tasklet_init(&up->dma_tx.tasklet, lpc31xx_dma_tx_tasklet_func,
+ 			(unsigned long) up);
+@@ -2179,12 +2176,21 @@ static int serial_link_irq_chain(struct uart_8250_port *up)
+ 				       (void*)xmit->buf,
+ 				       UART_XMIT_SIZE,
+ 				       DMA_TO_DEVICE);
+-
+-	printk(KERN_INFO "serual: UART TX buffer: P0x%08x, V0x%08x, size:%ld.\n",
+-		(u32) up->dma_tx.dma_buff_p, (u32) xmit->buf, UART_XMIT_SIZE);
++	if (dma_mapping_error(up->port.dev, up->dma_tx.dma_buff_p)){
++		dma_release_channel(up->dma_tx.dmach);
++		dma_release_channel(up->dma_rx.dmach);
++		dma_free_coherent(NULL, UART_DMABUF_RX_SIZE,
++			(void *) up->dma_rx.dma_buff_v,
++			up->dma_rx.dma_buff_p);
++		printk(KERN_ERR "serial: error mapping DMA region.\n");
++		return -ENOMEM;
++	}
+ 
+ 	dma_set_irq_mask(up->dma_tx.dmach, 1, 1);
+ 	dma_set_irq_mask(up->dma_rx.dmach, 1, 0);
++
++	up->dma_rx.active = 1;
++
+ #endif
+ 		irq_flags |= up->port.irqflags;
+ 		ret = request_irq(up->port.irq, serial8250_interrupt,
+@@ -2217,9 +2223,14 @@ static void serial_unlink_irq_chain(struct uart_8250_port *up)
+ 	   always point to that channel. This logic isn't quite right,
+ 	   but its ok for a single UART */
+ 
++	up->dma_rx.active = 0;
++
++	/* Delete Rx Timer */
++	del_timer(&up->dma_rx.timer);
++
+ 	/* Disable DMA channels */
+-	dma_set_irq_mask(up->dma_tx.dmach, 0, 0);
+-	dma_set_irq_mask(up->dma_rx.dmach, 0, 0);
++	dma_set_irq_mask(up->dma_tx.dmach, 1, 1);
++	dma_set_irq_mask(up->dma_rx.dmach, 1, 1);
+ 	dma_stop_channel(up->dma_tx.dmach);
+ 	dma_stop_channel(up->dma_rx.dmach);
+ 	dma_release_channel(up->dma_tx.dmach);
+@@ -2228,7 +2239,7 @@ static void serial_unlink_irq_chain(struct uart_8250_port *up)
+ 	dma_unmap_single(up->port.dev, up->dma_tx.dma_buff_p, UART_XMIT_SIZE,
+ 		DMA_TO_DEVICE);
+ 
+-	dma_free_coherent(up->port.dev, UART_XMIT_SIZE,
++	dma_free_coherent(NULL, UART_DMABUF_RX_SIZE,
+ 		(void *) up->dma_rx.dma_buff_v,
+ 		up->dma_rx.dma_buff_p);
+ #endif
+@@ -2594,12 +2605,6 @@ static int serial8250_startup(struct uart_port *port)
+ 		mod_timer(&up->timer, jiffies +
+ 			  poll_timeout(up->port.timeout) + HZ / 5);
+ 	}
+-
+-#else
+-	init_timer(&up->dma_rx.timer);
+-	up->dma_rx.timer.function = serial8250_dma_rx_timer_check;
+-	up->dma_rx.timer.data = (unsigned long)up;
+-	mod_timer(&up->dma_rx.timer, jiffies + 5);
+ #endif
+ 
+ 	/*
+@@ -2616,6 +2621,13 @@ static int serial8250_startup(struct uart_port *port)
+ 			return retval;
+ 	}
+ 
++#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
++	init_timer(&up->dma_rx.timer);
++	up->dma_rx.timer.function = serial8250_dma_rx_timer_check;
++	up->dma_rx.timer.data = (unsigned long)up;
++	mod_timer(&up->dma_rx.timer, jiffies + 5);
++#endif
++
+ 	/*
+ 	 * Now, initialize the UART
+ 	 */
+@@ -2980,7 +2992,7 @@ serial8250_pm(struct uart_port *port, unsigned int state,
+ 		lcp31xx_dma_rx_setup(p);
+ 	} else
+ 		dma_stop_channel(p->dma_rx.dmach);
+-	 
++
+ #endif
+ 
+ 	if (p->pm)
+@@ -3533,7 +3545,7 @@ static int __devinit serial8250_probe(struct platform_device *dev)
+ 				"(IO%lx MEM%llx IRQ%d): %d\n", i,
+ 				p->iobase, (unsigned long long)p->mapbase,
+ 				p->irq, ret);
+-		} else 
++		} else
+ 			serial8250_ports[ret].pm = p->pm;
+ 
+ 	}

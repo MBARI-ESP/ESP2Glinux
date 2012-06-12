@@ -1,0 +1,29 @@
+From f7f18417ef462439a7d9050a7415e9110d877b2d Mon Sep 17 00:00:00 2001
+From: Ingo Albrecht <prom@berlin.ccc.de>
+Date: Sun, 18 Sep 2011 11:27:58 +0200
+Subject: [PATCH 03/15] lpc313x: define non-LPC3152 variants of AD events
+
+---
+ arch/arm/mach-lpc313x/include/mach/event_router.h |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-lpc313x/include/mach/event_router.h b/arch/arm/mach-lpc313x/include/mach/event_router.h
+index b26eff9..3a9f6f0 100644
+--- a/arch/arm/mach-lpc313x/include/mach/event_router.h
++++ b/arch/arm/mach-lpc313x/include/mach/event_router.h
+@@ -125,8 +125,10 @@ typedef enum _EVT_TYPE_
+   EVT_I2C_SDA1,
+   EVT_I2C_SCL1,
+   EVT_PWM_DATA,
+-  EVT_AD_NINT_I,
+-  EVT_PLAY_DET_I,
++  EVT_GPIO19,
++  EVT_AD_NINT_I = EVT_GPIO19,
++  EVT_GPIO20,
++  EVT_PLAY_DET_I = EVT_GPIO20,
+   EVT_timer0_intct1,
+   EVT_timer1_intct1,
+   EVT_timer2_intct1,
+-- 
+1.7.6.3
+

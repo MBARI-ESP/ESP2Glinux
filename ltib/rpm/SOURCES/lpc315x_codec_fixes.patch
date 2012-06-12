@@ -1,0 +1,291 @@
+diff --git a/sound/soc/codecs/lpc315x_codec.c b/sound/soc/codecs/lpc315x_codec.c
+index 546d649..a998f50 100644
+--- a/sound/soc/codecs/lpc315x_codec.c
++++ b/sound/soc/codecs/lpc315x_codec.c
+@@ -226,116 +226,6 @@ static void lpc315x_codec_work(struct work_struct *work)
+ 	}
+ }
+ 
+-/*
+- * LPC315X CODEC volatge ramp up & ramp down function
+- * for Playback functionality
+- * This will be called after the DAC widget is powered up
+- * snd after powered down
+- * */
+-static int lpc315x_codec_ref_vol(struct snd_soc_dapm_widget *w,
+-				 struct snd_kcontrol *kcontrol, int event)
+-{
+-	struct snd_soc_codec *codec = w->codec;
+-	unsigned int cgu_reg = 0;
+-	u32 aout_reg, int0_reg, ain_reg, int1_reg, i2srx1_reg;
+-
+-	switch(event) {
+-	case SND_SOC_DAPM_POST_PMU:
+-		/* Complete the power up sequence for playback.
+-		 * This code will be executed after DACs are powered up
+-		 * */
+-		/* By Default, decimator is connected Interpolator.
+-		 * Connect I2SRX1 output Interpolator.
+-		 * */
+-		i2srx1_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_I2SMUX1);
+-		i2srx1_reg &= ~(LPC315X_CODEC_I2SMUX1_DEMUX_MSK);
+-		lpc315x_codec_write(codec, LPC315X_CODEC_I2SMUX1, i2srx1_reg);
+-
+-		/* Connect DAC outputs to HP Amplifiers */
+-		aout_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AOUT);
+-		aout_reg |= LPC315X_CODEC_AOUT_SWDAC_ON;
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+-
+-		/* Ramp up Interpolator volatge */
+-		int0_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_INT0);
+-		int0_reg &= ~(LPC315X_CODEC_INT0_PD_DAC);
+-		lpc315x_codec_write(codec, LPC315X_CODEC_INT0, int0_reg);
+-		mdelay(30);
+-
+-		/* Ramp up Reference Volatge */
+-		aout_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AOUT);
+-		aout_reg |= LPC315X_CODEC_AOUT_VREF_SLOW_UP;
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+-		mdelay(500);
+-
+-		/* Set Interpolator Volume & Unmute */
+-		int1_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_INT1);
+-		int1_reg &= ~(LPC315X_CODEC_INT1_MAS_MUTE |
+-				LPC315X_CODEC_INT1_MAS_VOL_L_MSK |
+-		     	     LPC315X_CODEC_INT1_MAS_VOL_R_MSK);
+-		lpc315x_codec_write(codec, LPC315X_CODEC_INT1, int1_reg);
+-
+-		/* By default AVC is muted, set AVC Volume & unmute */
+-		aout_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AOUT);
+-		aout_reg &= ~(LPC315X_CODEC_AOUT_AVC_COA_GAIN_MSK |
+-				LPC315X_CODEC_AOUT_AVC_FIN_GAIN_MSK);
+-		aout_reg |=
+-			((AVC_COA_VOL << LPC315X_CODEC_AOUT_AVC_COA_GAIN_POS)|
+-			(AVC_FIN_VOL << LPC315X_CODEC_AOUT_AVC_FIN_GAIN_POS));
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+-
+-		break;
+-
+-	case SND_SOC_DAPM_POST_PMD:
+-		/* Complete the power down sequence for playback.
+-		 * This code will be executed aftet DACs are powered down
+-		 * */
+-
+-		/* Power down Central Reference source */
+-		ain_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AIN1);
+-		ain_reg |= (LPC315X_CODEC_AIN1_PD_VCOM_VREF1);
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AIN1, ain_reg);
+-
+-		/* Power down Reference buffer Voltage */
+-		aout_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AOUT);
+-		aout_reg |= (LPC315X_CODEC_AOUT_VREF_SLOW);
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+-
+-		/* Power down HP Amplifiers */
+-		aout_reg = lpc315x_codec_read_reg_cache(codec,
+-				LPC315X_CODEC_AOUT);
+-		aout_reg |= (LPC315X_CODEC_AOUT_PD_HP_L |
+-				LPC315X_CODEC_AOUT_PD_HP_C |
+-				LPC315X_CODEC_AOUT_PD_HP_R );
+-		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+-
+-		/* Switch off NS, DSP, DAC clocks */
+-		lpc315x_codec_register_rw(codec, LPC315X_CODEC_CGU,
+-				&cgu_reg, 1);
+-		cgu_reg |= (LPC315X_CODEC_CGU_PD_DSP_CLK |
+-				LPC315X_CODEC_CGU_PD_NS_CLK |
+-				LPC315X_CODEC_CGU_PD_I2SRX_BCLK |
+-				LPC315X_CODEC_CGU_PD_I2SRX_SYSCLK |
+-				LPC315X_CODEC_CGU_PD_I2C256FS_CLK |
+-				LPC315X_CODEC_CGU_PD_DAC_CLK);
+-		lpc315x_codec_register_rw(codec, LPC315X_CODEC_CGU,
+-				&cgu_reg, 0);
+-		break;
+-	default:
+-		BUG();
+-	}
+-
+-	return 0;
+-}
+-
+ /* Digital Demux control */
+ static const char *lpc315x_codec_dmux_sel[] = {
+ 	"I2SRX1",
+@@ -744,9 +634,8 @@ static const struct snd_soc_dapm_widget lpc315x_codec_dapm_widgets[] = {
+ 	SND_SOC_DAPM_PGA("AVC Right", LPC315X_CODEC_AOUT, 0, 1, NULL, 0),
+ 	SND_SOC_DAPM_DAC("SDAC Right", "Right Playback",
+ 			LPC315X_CODEC_AOUT, 4, 1),
+-	SND_SOC_DAPM_DAC_E("SDAC Left", "Left Playback",
+-			LPC315X_CODEC_AOUT, 5, 1, lpc315x_codec_ref_vol,
+-			SND_SOC_DAPM_POST_PMD | SND_SOC_DAPM_POST_PMU),
++	SND_SOC_DAPM_DAC("SDAC Left", "Left Playback",
++			LPC315X_CODEC_AOUT, 5, 1),
+ };
+ 
+ /*
+@@ -950,7 +839,7 @@ static int lpc315x_codec_pcm_hw_params(struct snd_pcm_substream *substream,
+ 	struct snd_soc_device *socdev = rtd->socdev;
+ 	struct snd_soc_codec *codec = socdev->card->codec;
+ 	unsigned int cgu_reg = 0;
+-	u32 aout_reg, ain_reg, int0_reg, dec_reg;
++	u32 aout_reg, ain_reg, int0_reg, dec_reg, i2srx1_reg, int1_reg;
+ 
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
+ 		/* Playback power up sequence */
+@@ -965,6 +854,7 @@ static int lpc315x_codec_pcm_hw_params(struct snd_pcm_substream *substream,
+ 				LPC315X_CODEC_CGU_PD_DAC_CLK);
+ 		lpc315x_codec_register_rw(codec, LPC315X_CODEC_CGU,
+ 				&cgu_reg, 0);
++
+ 		/* Power up HP */
+ 		aout_reg = lpc315x_codec_read_reg_cache(codec,
+ 				LPC315X_CODEC_AOUT);
+@@ -990,6 +880,59 @@ static int lpc315x_codec_pcm_hw_params(struct snd_pcm_substream *substream,
+ 				LPC315X_CODEC_INT0);
+ 		int0_reg |= (LPC315X_CODEC_INT0_PD_DAC);
+ 		lpc315x_codec_write(codec, LPC315X_CODEC_INT0, int0_reg);
++
++		/* By Default, decimator is connected Interpolator.
++		 * Connect I2SRX1 output Interpolator.
++		 * */
++		i2srx1_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_I2SMUX1);
++		i2srx1_reg &= ~(LPC315X_CODEC_I2SMUX1_DEMUX_MSK);
++		lpc315x_codec_write(codec, LPC315X_CODEC_I2SMUX1, i2srx1_reg);
++
++		/* Connect DAC outputs to HP Amplifiers */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg |= LPC315X_CODEC_AOUT_SWDAC_ON;
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++
++		/* Enable DACs */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg &= ~(LPC315X_CODEC_AOUT_PD_SDAC_R |
++				LPC315X_CODEC_AOUT_PD_SDAC_L);
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++
++		/* Ramp up Interpolator volatge */
++		int0_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_INT0);
++		int0_reg &= ~(LPC315X_CODEC_INT0_PD_DAC);
++		lpc315x_codec_write(codec, LPC315X_CODEC_INT0, int0_reg);
++		mdelay(30);
++
++		/* Ramp up Reference Volatge */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg |= LPC315X_CODEC_AOUT_VREF_SLOW_UP;
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++		mdelay(500);
++
++		/* Set Interpolator Volume & Unmute */
++		int1_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_INT1);
++		int1_reg &= ~(LPC315X_CODEC_INT1_MAS_MUTE |
++				LPC315X_CODEC_INT1_MAS_VOL_L_MSK |
++				LPC315X_CODEC_INT1_MAS_VOL_R_MSK);
++		lpc315x_codec_write(codec, LPC315X_CODEC_INT1, int1_reg);
++
++		/* By default AVC is muted, set AVC Volume & unmute */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg &= ~(LPC315X_CODEC_AOUT_AVC_COA_GAIN_MSK |
++				LPC315X_CODEC_AOUT_AVC_FIN_GAIN_MSK);
++		aout_reg |=
++			((AVC_COA_VOL << LPC315X_CODEC_AOUT_AVC_COA_GAIN_POS)|
++			(AVC_FIN_VOL << LPC315X_CODEC_AOUT_AVC_FIN_GAIN_POS));
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+ 	}
+ 	else {
+ 		/* Recording power up sequence */
+@@ -1021,8 +964,7 @@ static int lpc315x_codec_pcm_hw_params(struct snd_pcm_substream *substream,
+ 		/* Power up Central Reference source */
+ 		ain_reg = lpc315x_codec_read_reg_cache(codec,
+ 				LPC315X_CODEC_AIN1);
+-		ain_reg &= ~(LPC315X_CODEC_AIN1_PD_VCOM_VREF1 |
+-				LPC315X_CODEC_AIN1_PD_BIAS);
++		ain_reg &= ~(LPC315X_CODEC_AIN1_PD_VCOM_VREF1);
+ 		lpc315x_codec_write(codec, LPC315X_CODEC_AIN1, ain_reg);
+ 
+ 		/* Ramp up Reference voltage */
+@@ -1058,9 +1000,10 @@ static void lpc315x_codec_pcm_shutdown(struct snd_pcm_substream *substream,
+ 	struct snd_soc_device *socdev = rtd->socdev;
+ 	struct snd_soc_codec *codec = socdev->card->codec;
+ 	unsigned int cgu_reg = 0;
+-	u32 aout_reg, dec_reg, int0_reg, ain_reg, int1_reg;
++	u32 aout_reg, dec_reg, int0_reg, ain_reg, int1_reg, i2srx1_reg;
+ 
+ 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		/* Playback power down sequence */
+ 		/* Set Interpolator to mute */
+ 		int1_reg = lpc315x_codec_read_reg_cache(codec,
+ 				LPC315X_CODEC_INT1);
+@@ -1074,7 +1017,6 @@ static void lpc315x_codec_pcm_shutdown(struct snd_pcm_substream *substream,
+ 				LPC315X_CODEC_AOUT_AVC_FIN_GAIN_MSK);
+ 		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+ 
+-		/* Playback power down sequence */
+ 		/* Ramp down Reference Volatge */
+ 		aout_reg = lpc315x_codec_read_reg_cache(codec,
+ 				LPC315X_CODEC_AOUT);
+@@ -1095,6 +1037,50 @@ static void lpc315x_codec_pcm_shutdown(struct snd_pcm_substream *substream,
+ 		aout_reg &= ~(LPC315X_CODEC_AOUT_SWDAC_ON);
+ 		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
+ 
++		/* Connect Decimator output to Interpolator */
++		i2srx1_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_I2SMUX1);
++		i2srx1_reg |= (LPC315X_CODEC_I2SMUX1_DEMUX_MSK);
++		lpc315x_codec_write(codec, LPC315X_CODEC_I2SMUX1, i2srx1_reg);
++
++		/* Power down DACs */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg |= (LPC315X_CODEC_AOUT_PD_SDAC_R |
++				LPC315X_CODEC_AOUT_PD_SDAC_L);
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++
++		/* Power down Central Reference source */
++		ain_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AIN1);
++		ain_reg |= (LPC315X_CODEC_AIN1_PD_VCOM_VREF1);
++		lpc315x_codec_write(codec, LPC315X_CODEC_AIN1, ain_reg);
++
++		/* Power down Reference buffer Voltage */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg |= (LPC315X_CODEC_AOUT_VREF_SLOW);
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++
++		/* Power down HP Amplifiers */
++		aout_reg = lpc315x_codec_read_reg_cache(codec,
++				LPC315X_CODEC_AOUT);
++		aout_reg |= (LPC315X_CODEC_AOUT_PD_HP_L |
++				LPC315X_CODEC_AOUT_PD_HP_C |
++				LPC315X_CODEC_AOUT_PD_HP_R );
++		lpc315x_codec_write(codec, LPC315X_CODEC_AOUT, aout_reg);
++
++		/* Switch off NS, DSP, DAC clocks */
++		lpc315x_codec_register_rw(codec, LPC315X_CODEC_CGU,
++				&cgu_reg, 1);
++		cgu_reg |= (LPC315X_CODEC_CGU_PD_DSP_CLK |
++				LPC315X_CODEC_CGU_PD_NS_CLK |
++				LPC315X_CODEC_CGU_PD_I2SRX_BCLK |
++				LPC315X_CODEC_CGU_PD_I2SRX_SYSCLK |
++				LPC315X_CODEC_CGU_PD_I2C256FS_CLK |
++				LPC315X_CODEC_CGU_PD_DAC_CLK);
++		lpc315x_codec_register_rw(codec, LPC315X_CODEC_CGU,
++				&cgu_reg, 0);
+ 	}
+ 	else {
+ 		/* Mute */

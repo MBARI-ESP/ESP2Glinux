@@ -1,0 +1,138 @@
+diff --git a/drivers/mtd/nand/lpc313x_nand.c b/drivers/mtd/nand/lpc313x_nand.c
+index a302f12..3e92a4f 100644
+--- a/drivers/mtd/nand/lpc313x_nand.c
++++ b/drivers/mtd/nand/lpc313x_nand.c
+@@ -271,60 +271,6 @@ static void lpc313x_nand_dma_irq(int chn, dma_irq_type_t type,
+ }
+ 
+ /*
+- * DMA mapping function
+- * host : Pointer to ilpc313x_nand_info structure
+- * addr : Address to be DMA mapped
+- * size : Size of the buffer
+- * rd : DMA direction (1: read operation, 0: Write operation
+- */
+-static dma_addr_t lpc313x_nand_dma_map(struct lpc313x_nand_info *host,
+-		u32 addr, u32 size, int rd)
+-{
+-	void *addr_map;
+-	dma_addr_t dma_addr;
+-	enum dma_data_direction dir = rd ? DMA_FROM_DEVICE :
+-								DMA_TO_DEVICE;
+-
+-	if ((void *)addr >= high_memory) {
+-		/* For vmalloced buffers, check if buffer is within PAGE_SIZE.
+-	 	* If buffer is not within PAGE_SIZE, DMA map will not work
+-		* If buffer not within PAGE_SIZE, return with 0 (mapping failed)
+-		* Else DMA map the buffer.
+-	 	* */
+-		struct page *p1;
+-
+-		if (((size_t)addr & PAGE_MASK) !=
+-				((size_t)(addr + size - 1) & PAGE_MASK)) {
+-			dev_err(host->dev, "Buffer not within page \r\n");
+-			return 0;
+-		}
+-
+-		/* Get page address address */
+-		p1 = vmalloc_to_page((void *)addr);
+-		if (!p1) {
+-			dev_err(host->dev, "vmalloc_to_page failure \r\n");
+-			return 0;
+-		}
+-		addr_map = page_address(p1) + ((size_t)addr & ~PAGE_MASK);
+-	}
+-	else {
+-		/* kmalloced buffer */
+-		addr_map = (void *)addr;
+-	}
+-
+-	/* Get DMA mapping */
+-	dma_addr = (u32) dma_map_single(host->dev, (void *) addr_map,
+-				size, dir);
+-	if (dma_mapping_error(host->dev, dma_addr))
+-	{
+-		dev_err(host->dev, "DMA mapping failure \r\n");
+-		return 0;
+-	}
+-
+-	return dma_addr;
+-}
+-
+-/*
+  * DMA Scatter Gather transfer function
+  * mtd : Pointer to mtd_info structure
+  * chip : Pointer to nand_chip structure
+@@ -867,13 +813,23 @@ static int lpc313x_nand_read_page_syndrome(struct mtd_info *mtd, struct nand_chi
+ #endif
+ 
+ #ifdef USE_DMA
+-	/* Get DMA mappings for buffers */
+-	pmapped = lpc313x_nand_dma_map(host, (u32) p, (eccsize * eccsteps), 1);
+-	oobmapped = lpc313x_nand_dma_map(host, (u32) oob, (eccbytes * eccsteps), 1);
+-	if((oobmapped) && (pmapped)) {
+-		p1 = pmapped;
+-		oob1 = oobmapped;
+-		use_dma = 1;
++	/* Map DMA buffer, if kmalloced buffer */
++	if (likely((void *) p < high_memory)) {
++		/* Get DMA mappings for buffers */
++		pmapped = dma_map_single(host->dev, (void *) p,
++							(eccsize * eccsteps), DMA_FROM_DEVICE);
++		oobmapped = dma_map_single(host->dev, (void *) oob,
++							(eccbytes * eccsteps), DMA_FROM_DEVICE);
++		if ((dma_mapping_error(host->dev, pmapped)) ||
++				(dma_mapping_error(host->dev, oobmapped)))
++		{
++			use_dma = 0;
++		}
++		else {
++			p1 = pmapped;
++			oob1 = oobmapped;
++			use_dma = 1;
++		}
+ 	}
+ #endif
+ 
+@@ -937,9 +893,9 @@ static int lpc313x_nand_read_page_syndrome(struct mtd_info *mtd, struct nand_chi
+ 
+ 		/* Unmap DMA mappings */
+ 		dma_unmap_single(host->dev, pmapped, (eccsize * eccsteps),
+-				DMA_FROM_DEVICE);
++					DMA_FROM_DEVICE);
+ 		dma_unmap_single(host->dev, oobmapped, (eccbytes * eccsteps),
+-				DMA_FROM_DEVICE);
++					DMA_FROM_DEVICE);
+ 	}
+ 	else
+ #endif
+@@ -1020,12 +976,23 @@ static void lpc313x_nand_write_page_syndrome(struct mtd_info *mtd,
+ #endif
+ 
+ #ifdef USE_DMA
+-	pmapped = lpc313x_nand_dma_map(host, (u32) p, (eccsize * eccsteps), 0);
+-	oobmapped = lpc313x_nand_dma_map(host, (u32) oob, (eccbytes * eccsteps), 0);
+-	if((pmapped) && (oobmapped)) {
+-		use_dma = 1;
+-		p1 = pmapped;
+-		oob1 = oobmapped;
++	/* Map DMA buffer, if kmalloced buffer */
++	if (likely((void *) p < high_memory)) {
++		/* Get DMA mappings for buffers */
++		pmapped = dma_map_single(host->dev, (void *) p,
++							(eccsize * eccsteps), DMA_TO_DEVICE);
++		oobmapped = dma_map_single(host->dev, (void *) oob,
++							(eccbytes * eccsteps), DMA_TO_DEVICE);
++		if ((dma_mapping_error(host->dev, pmapped)) ||
++				(dma_mapping_error(host->dev, oobmapped)))
++		{
++			use_dma = 0;
++		}
++		else {
++			p1 = pmapped;
++			oob1 = oobmapped;
++			use_dma = 1;
++		}
+ 	}
+ #endif
+ 

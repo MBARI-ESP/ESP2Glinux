@@ -1,0 +1,273 @@
+From 149068a0c14fee0c94901fc336ecb5991d23c1b2 Mon Sep 17 00:00:00 2001
+From: Ingo Albrecht <prom@berlin.ccc.de>
+Date: Fri, 10 Dec 2010 13:48:05 +0100
+Subject: [PATCH 02/15] lpc313x: rng driver
+
+---
+ arch/arm/mach-lpc313x/generic.c                |   21 +++
+ arch/arm/mach-lpc313x/include/mach/constants.h |    1 +
+ drivers/char/hw_random/Kconfig                 |   12 ++
+ drivers/char/hw_random/Makefile                |    1 +
+ drivers/char/hw_random/lpc313x-rng.c           |  174 ++++++++++++++++++++++++
+ 5 files changed, 209 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/char/hw_random/lpc313x-rng.c
+
+diff --git a/arch/arm/mach-lpc313x/generic.c b/arch/arm/mach-lpc313x/generic.c
+index dc7d79c..aeda7fa 100644
+--- a/arch/arm/mach-lpc313x/generic.c
++++ b/arch/arm/mach-lpc313x/generic.c
+@@ -108,9 +108,30 @@ static struct platform_device serial_device = {
+ 	},
+ };
+ 
++#if defined(CONFIG_HW_RANDOM_LPC313X) || defined(CONFIG_HW_RANDOM_LPC313X_MODULE)
++
++static struct resource rng_resources[] = {
++	{
++		.start = RNG_PHYS,
++		.end   = RNG_PHYS + 4096,
++		.flags = IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device rng_device = {
++	.name = "lpc313x-rng",
++	.id   = -1,
++	.num_resources = ARRAY_SIZE(rng_resources),
++	.resource = rng_resources,
++};
++
++#endif
+ 
+ static struct platform_device *devices[] __initdata = {
+ 	&serial_device,
++#if defined(CONFIG_HW_RANDOM_LPC313X) || defined(CONFIG_HW_RANDOM_LPC313X_MODULE)
++	&rng_device,
++#endif
+ };
+ 
+ static struct map_desc lpc313x_io_desc[] __initdata = {
+diff --git a/arch/arm/mach-lpc313x/include/mach/constants.h b/arch/arm/mach-lpc313x/include/mach/constants.h
+index 81233a6..eb02e57 100644
+--- a/arch/arm/mach-lpc313x/include/mach/constants.h
++++ b/arch/arm/mach-lpc313x/include/mach/constants.h
+@@ -36,6 +36,7 @@
+ #define GPIO_PHYS         (0x13003000)
+ #define CGU_SB_PHYS       (0x13004000)
+ #define CGU_CFG_PHYS      (0x13004c00)
++#define RNG_PHYS          (0x13006000)
+ #define TIMER0_PHYS       (0x13008000)
+ #define TIMER1_PHYS       (0x13008400)
+ #define TIMER2_PHYS       (0x13008800)
+diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
+index 8706026..ac70217 100644
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -186,3 +186,15 @@ config HW_RANDOM_MXC_RNGA
+ 	  module will be called mxc-rnga.
+ 
+ 	  If unsure, say Y.
++
++config HW_RANDOM_LPC313X
++	tristate "NXP LPC313x Random Number Generator"
++	depends on HW_RANDOM && ARCH_LPC313X
++	---help---
++	  This driver provides kernel-side support for the Random Number
++	  Generator hardware found on NXP LPC313x processors.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called lpc313x-rng.
++
++	  If unsure, say Y.
+diff --git a/drivers/char/hw_random/Makefile b/drivers/char/hw_random/Makefile
+index 5eeb130..83f6829 100644
+--- a/drivers/char/hw_random/Makefile
++++ b/drivers/char/hw_random/Makefile
+@@ -18,3 +18,4 @@ obj-$(CONFIG_HW_RANDOM_VIRTIO) += virtio-rng.o
+ obj-$(CONFIG_HW_RANDOM_TX4939) += tx4939-rng.o
+ obj-$(CONFIG_HW_RANDOM_MXC_RNGA) += mxc-rnga.o
+ obj-$(CONFIG_HW_RANDOM_OCTEON) += octeon-rng.o
++obj-$(CONFIG_HW_RANDOM_LPC313X) += lpc313x-rng.o
+diff --git a/drivers/char/hw_random/lpc313x-rng.c b/drivers/char/hw_random/lpc313x-rng.c
+new file mode 100644
+index 0000000..5932a88
+--- /dev/null
++++ b/drivers/char/hw_random/lpc313x-rng.c
+@@ -0,0 +1,174 @@
++/*
++ * lpc313x-rng.c - RNG driver for NXP LPC313x
++ *
++ * Author: Ingo Albrecht <prom@berlin.ccc.de>
++ *
++ * Copyright 2010 (c) Ingo Albrecht
++ *
++ * This file is licensed under  the terms of the GNU General Public
++ * License version 2. This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
++#include <linux/hw_random.h>
++
++#include <mach/hardware.h>
++
++static void __iomem *rng_base;
++static struct platform_device *rng_dev;
++
++#define RNG_REG_RANDOM 0x000
++#define RNG_REG_POWER  0xFF4
++
++static inline u32 lpc313x_rng_read_reg(int reg)
++{
++	return __raw_readl(rng_base + reg);
++}
++
++static inline void lpc313x_rng_write_reg(int reg, u32 val)
++{
++	__raw_writel(val, rng_base + reg);
++}
++
++static int lpc313x_rng_data_read(struct hwrng *rng, u32 * data)
++{
++	*data = lpc313x_rng_read_reg(RNG_REG_RANDOM);
++	return 4;
++}
++
++static struct hwrng lpc313x_rng = {
++	.name		= "lpc313x",
++	.data_read	  = lpc313x_rng_data_read,
++};
++
++static void lpc313x_rng_endis_ring_clocks(int enable)
++{
++	if(enable) {
++		SYS_RNG_OSC_CFG = 3;
++	} else {
++		SYS_RNG_OSC_CFG = 0;
++	}
++}
++
++static void lpc313x_rng_endis_bus_clock(int enable)
++{
++	cgu_clk_en_dis(CGU_SB_RNG_PCLK_ID, enable);
++}
++
++static int __init lpc313x_rng_probe(struct platform_device *pdev)
++{
++	struct resource *res, *mem;
++	int ret;
++
++	if (rng_dev)
++		return -EBUSY;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	if(!res)
++		return -ENOENT;
++
++	mem = request_mem_region(res->start, resource_size(res),
++				 pdev->name);
++	if (mem == NULL)
++		return -EBUSY;
++
++	dev_set_drvdata(&pdev->dev, mem);
++	rng_base = ioremap(res->start, resource_size(res));
++	if (!rng_base) {
++		ret = -ENOMEM;
++		goto err_ioremap;
++	}
++
++	/* initialize the rng itself */
++	lpc313x_rng_endis_bus_clock(1);
++	lpc313x_rng_endis_ring_clocks(1);
++	lpc313x_rng_write_reg(RNG_REG_POWER, 0);
++
++	ret = hwrng_register(&lpc313x_rng);
++	if (ret)
++		goto err_register;
++
++	dev_info(&pdev->dev, "rng initialized\n");
++
++	rng_dev = pdev;
++
++	return 0;
++
++err_register:
++	lpc313x_rng_endis_bus_clock(0);
++	lpc313x_rng_endis_ring_clocks(0);
++	iounmap(rng_base);
++	rng_base = NULL;
++err_ioremap:
++	release_resource(mem);
++	return ret;
++}
++
++static int __exit lpc313x_rng_remove(struct platform_device *pdev)
++{
++	struct resource *mem = dev_get_drvdata(&pdev->dev);
++
++	hwrng_unregister(&lpc313x_rng);
++
++	iounmap(rng_base);
++
++	lpc313x_rng_endis_bus_clock(0);
++	lpc313x_rng_endis_ring_clocks(0);
++
++	release_resource(mem);
++	rng_base = NULL;
++
++	return 0;
++}
++
++#ifdef CONFIG_PM
++
++static int lpc313x_rng_suspend(struct platform_device *pdev, pm_message_t message)
++{
++	return 0;
++}
++
++static int lpc313x_rng_resume(struct platform_device *pdev)
++{
++	return 0;
++}
++
++#else
++
++#define lpc313x_rng_suspend NULL
++#define lpc313x_rng_resume NULL
++
++#endif
++
++static struct platform_driver lpc313x_rng_driver = {
++	.driver = {
++		   .name = "lpc313x-rng",
++		   .owner = THIS_MODULE,
++		   },
++	.probe   = lpc313x_rng_probe,
++	.remove  = __exit_p(lpc313x_rng_remove),
++	.suspend = lpc313x_rng_suspend,
++	.resume	 = lpc313x_rng_resume,
++};
++
++static int __init mod_init(void)
++{
++	return platform_driver_register(&lpc313x_rng_driver);
++}
++
++static void __exit mod_exit(void)
++{
++	platform_driver_unregister(&lpc313x_rng_driver);
++}
++
++module_init(mod_init);
++module_exit(mod_exit);
++
++MODULE_AUTHOR("Ingo Albrecht");
++MODULE_DESCRIPTION("H/W RNG driver for NXP LPC313x");
++MODULE_LICENSE("GPL");
+-- 
+1.7.6.3
+
