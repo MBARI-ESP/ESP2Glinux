@@ -1,0 +1,22 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c	2012-06-12 14:44:46.324700486 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c	2012-06-12 14:31:51.057851607 -0700
+@@ -135,6 +135,17 @@
+ 		}
+ 		break;
+ #endif
++
++#ifdef CONFIG_LEDS_CPU
++	case led_idle_start:	/* Entering idle state */
++		gpio_set_value(GPIO_GPIO2, 0);
++		break;
++
++	case led_idle_end:	/* Exit idle state */
++		gpio_set_value(GPIO_GPIO2, 1);
++		break;
++#endif
++
+ 	default:
+ 		break;
+ 	}
+
