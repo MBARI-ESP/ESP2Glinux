@@ -74,4 +74,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch27 -p1
 %patch28 -p1
 %patch29 -p1
-
+%patch30 -p1
