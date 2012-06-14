@@ -1,0 +1,15 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/kernel/printk.c linux-2.6.33.modified/kernel/printk.c
+--- linux-2.6.33/kernel/printk.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/kernel/printk.c	2012-06-13 17:37:44.439421553 -0700
+@@ -762,9 +762,9 @@
+ 
+ 				t = cpu_clock(printk_cpu);
+ 				nanosec_rem = do_div(t, 1000000000);
+-				tlen = sprintf(tbuf, "[%5lu.%06lu] ",
++				tlen = sprintf(tbuf, "[%5lu.%02lu] ",
+ 						(unsigned long) t,
+-						nanosec_rem / 1000);
++						nanosec_rem / 10000000);
+ 
+ 				for (tp = tbuf; tp < tbuf + tlen; tp++)
+ 					emit_log_char(*tp);
