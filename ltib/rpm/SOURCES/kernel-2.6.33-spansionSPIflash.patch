@@ -112,3 +112,86 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mtd/devices/mtd_data
  }
  
  static int __devexit dataflash_remove(struct spi_device *spi)
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2012-06-18 19:20:10.547100470 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2012-06-18 19:27:32.533827866 -0700
+@@ -286,10 +286,20 @@
+ 	16M:  Blocks 38  - 165  - Ramdisk image (if used)
+ 	???:  Blocks 166 - end  - Root filesystem/storage */
+ 	{
+-		.name	= "lpc313x-rootfs",
++		.name	= "lpc313x-std.rootfs",
+ 		.offset	= (BLK_SIZE * 166),
+ 		.size	= MTDPART_SIZ_FULL
+ 	},
++	{
++		.name	= "lpc313x-big.rootfs.",
++		.offset	= (BLK_SIZE * 38),
++		.size	= MTDPART_SIZ_FULL
++	},
++	{
++		.name	= "lpc313x-all.rootfs",
++		.offset	= (BLK_SIZE * 6),
++		.size	= MTDPART_SIZ_FULL
++	},
+ };
+ 
+ static struct lpc313x_nand_timing ea313x_nanddev_timing = {
+@@ -362,12 +372,17 @@
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+ {
+ 	/* SPI CS0 */
+-	[0] =
+ 	{
+ 		.spi_spo	= 0, /* Low clock between transfers */
+ 		.spi_sph	= 0, /* Data capture on first clock edge (high edge with spi_spo=0) */
+ 		.spi_cs_set	= spi_set_cs_state,
+ 	},
++    /* use SPI CS1 only for probing two alternative NOR flash chips */
++	{ 
++		.spi_spo	= 0, /* Low clock between transfers */
++		.spi_sph	= 0, /* Data capture on first clock edge (high edge with spi_spo=0) */
++		.spi_cs_set	= spi_set_cs_state,
++	},
+ };
+ 
+ struct lpc313x_spi_cfg lpc313x_spidata =
+@@ -407,23 +422,32 @@
+ arch_initcall(lpc313x_spidev_register);
+ #endif
+ 
+-#if defined(CONFIG_MTD_DATAFLASH)
++/*  either one Amtel DataFlash *or* Spansion SPI NOR flash may be loaded */
+ /* MTD Data FLASH driver registration */
+ static int __init lpc313x_spimtd_register(void)
+ {
+-	struct spi_board_info info =
+-	{
++	struct spi_board_info info[] = {
++#if defined(CONFIG_MTD_DATAFLASH)
++	  {
+ 		.modalias = "mtd_dataflash",
+ 		.max_speed_hz = 30000000,
+ 		.bus_num = 0,
+ 		.chip_select = 0,
++	  },
++#endif
++#if defined(CONFIG_MTD_M25P80)
++	  {
++		.modalias = "m25p80",
++		.max_speed_hz = 30000000,
++		.bus_num = 0,
++		.chip_select = 1,
++	  }
++#endif
+ 	};
+-
+-	return spi_register_board_info(&info, 1);
++	return spi_register_board_info(info, ARRAY_SIZE(info));
+ }
+ arch_initcall(lpc313x_spimtd_register);
+ #endif
+-#endif
+ 
+ static struct platform_device *devices[] __initdata = {
+ 	&lpc313x_mci_device,
