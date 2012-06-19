@@ -43,6 +43,7 @@ Patch27         : lpc315x_codec_fixes.patch
 Patch28         : kernel-2.6.33-usbOvercurrent.patch
 Patch29         : kernel-2.6.33-eacpuled.patch
 Patch30         : kernel-2.6.33-printktime.patch
+Patch31         : kernel-2.6.33-spansionSPIflash.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -75,3 +76,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch28 -p1
 %patch29 -p1
 %patch30 -p1
+%patch31 -p1
+
