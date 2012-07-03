@@ -1,0 +1,79 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2011-07-25 21:44:27.106498180 -0700
++++ u-boot-2009.11.modified/Makefile	2011-07-25 14:11:20.008418784 -0700
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION =
++EXTRAVERSION = -mbari3
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2011-07-25 21:44:26.946501979 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2011-07-25 18:15:54.209347529 -0700
+@@ -114,31 +114,39 @@
+  * U-boot Boot configuration
+  */
+ #define CONFIG_BOOTFILE			uImage
+-#define CONFIG_BOOTDELAY		5
++#define CONFIG_BOOTDELAY		1
+ #define CONFIG_EXTRA_ENV_SETTINGS	\
+-"loadaddr=0x31000000\0" \
+-"rd_addr=0x32000000\0" \
++"loadaddr=31000000\0" \
++"rd_addr=32000000\0" \
++"kernBase=50000\0" \
++"maxKernLen=200000\0" \
+ "usbtty=cdc_acm\0" \
+ "ramargs=setenv bootargs console=ttyS0,115200n8 root=/dev/ram0 rw ip=dhcp loglevel=7\0" \
+-"serverip=192.168.1.48\0" \
+-"nfsargs=setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp loglevel=7\0" \
+-"rootpath=/tftpboot/arm\0" \
++"nfsargs=setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp loglevel=7" \
+ "bootfile=uImage\0" \
+ "ramfile=rootfs.ext2.gz.uboot\0" \
+ "net_boot=dhcp; run nfsargs; bootm $(loadaddr)\0" \
+-"spi_boot= sf probe 0 0 0; sf read $(loadaddr) 0x42000 0x200000; run nfsargs; bootm $(loadaddr)\0" \
+-"nand_boot= nand read $(loadaddr) 0x80000 0x200000; run nfsargs; bootm $(loadaddr)\0" \
++"spi_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
++"nand_boot= nand read $(loadaddr) 80000 $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
+ "sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+ "usbdfu_boot= usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)\0" \
+ "usb_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+ "uart_boot= loady; run nfsargs; bootm $(loadaddr)\0" \
+ "netram_boot=dhcp; tftp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"spiram_boot= sf probe 0 0 0; sf read $(loadaddr) 0x42000 0x200000; sf read $(rd_addr) 0x243000 0x400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"nandram_boot= nand read $(loadaddr) 0x80000 0x200000; nand read $(rd_addr) 0x2a0000 0x400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"spiram_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); sf read $(rd_addr) 243000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"nandram_boot= nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+ "sdmmcram_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"usbdfuram_boot= usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"sbdfuram_boot= usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+ "usbram_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+ "uartram_boot= loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"flashargs=setenv bootargs $(console) $(flash_root) loglevel=7\0" \
++"rootpath=/nfsroot/ltib\0" \
++"console=console=ttyS0,115200n8\0" \
++"testKernel=dhcp; run flashargs; bootm $(loadaddr)\0" \
++"flash_root=root=/dev/mtdblock0 ro\0" \
++"flashNewKernel=dhcp; sf probe 0 0 0; sf erase $(kernBase) $(maxKernLen); sf write $(loadaddr) $(kernBase) $(maxKernLen); set kernSize $(filesize); saveenv\0" \
++"flash_boot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)\0" \
++"serverip=134.89.10.31\0" \
+ ""
+ 
+ /*
+@@ -155,9 +163,9 @@
+  */
+ #define CONFIG_SYS_LONGHELP				/* undef to save memory */
+ #ifndef CONFIG_EA3152
+-#define CONFIG_SYS_PROMPT		"EA3131-NXP # "	/* Monitor Command Prompt */
++#define CONFIG_SYS_PROMPT		"EA3131/41-MBARI # "/* Monitor Command Prompt */
+ #else
+-#define CONFIG_SYS_PROMPT		"EA3152-NXP # "	/* Monitor Command Prompt */
++#define CONFIG_SYS_PROMPT		"EA3152-MBARI    # "/* Monitor Command Prompt */
+ #endif
+ 
+ #define CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size */
+ 
