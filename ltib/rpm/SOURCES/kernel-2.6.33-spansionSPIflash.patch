@@ -130,8 +130,8 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x
 +		.size	= MTDPART_SIZ_FULL
 +	},
 +	{
-+		.name	= "lpc313x-all.rootfs",
-+		.offset	= (BLK_SIZE * 6),
++		.name	= "lpc313x-max.rootfs",
++		.offset	= (BLK_SIZE * 1),
 +		.size	= MTDPART_SIZ_FULL
 +	},
  };
