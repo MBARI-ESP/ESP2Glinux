@@ -1,0 +1,1731 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2012-07-09 14:03:18.225272800 -0700
++++ u-boot-2009.11.modified/Makefile	2012-07-08 21:50:37.021105904 -0700
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbari3
++EXTRAVERSION = -mbari4
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/common/main.c u-boot-2009.11.modified/common/main.c
+--- u-boot-2009.11/common/main.c	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/common/main.c	2012-07-09 11:48:56.130616072 -0700
+@@ -207,10 +207,6 @@
+ 
+ # else	/* !defined(CONFIG_AUTOBOOT_KEYED) */
+ 
+-#ifdef CONFIG_MENUKEY
+-static int menukey = 0;
+-#endif
+-
+ static __inline__ int abortboot(int bootdelay)
+ {
+ 	int abort = 0;
+@@ -218,7 +214,7 @@
+ #ifdef CONFIG_MENUPROMPT
+ 	printf(CONFIG_MENUPROMPT);
+ #else
+-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
++	printf("Hit <ctrl-C> to stop autoboot: %2d ", bootdelay);
+ #endif
+ 
+ #if defined CONFIG_ZERO_BOOTDELAY_CHECK
+@@ -227,8 +223,7 @@
+ 	 * Don't check if bootdelay < 0
+ 	 */
+ 	if (bootdelay >= 0) {
+-		if (tstc()) {	/* we got a key press	*/
+-			(void) getc();  /* consume input	*/
++		if (tstc() && getc()==3 ) {	/* we got ctrl-C */
+ 			puts ("\b\b\b 0");
+ 			abort = 1;	/* don't auto boot	*/
+ 		}
+@@ -241,14 +236,9 @@
+ 		--bootdelay;
+ 		/* delay 100 * 10ms */
+ 		for (i=0; !abort && i<100; ++i) {
+-			if (tstc()) {	/* we got a key press	*/
++			if (tstc() && getc()==3 ) {	/* we got ctrl-C */
+ 				abort  = 1;	/* don't auto boot	*/
+ 				bootdelay = 0;	/* no more delay	*/
+-# ifdef CONFIG_MENUKEY
+-				menukey = getc();
+-# else
+-				(void) getc();  /* consume input	*/
+-# endif
+ 				break;
+ 			}
+ 			udelay(10000);
+@@ -414,19 +404,6 @@
+ # endif
+ 	}
+ 
+-# ifdef CONFIG_MENUKEY
+-	if (menukey == CONFIG_MENUKEY) {
+-	    s = getenv("menucmd");
+-	    if (s) {
+-# ifndef CONFIG_SYS_HUSH_PARSER
+-		run_command (s, 0);
+-# else
+-		parse_string_outer(s, FLAG_PARSE_SEMICOLON |
+-				    FLAG_EXIT_FROM_LOOP);
+-# endif
+-	    }
+-	}
+-#endif /* CONFIG_MENUKEY */
+ #endif	/* CONFIG_BOOTDELAY */
+ 
+ #ifdef CONFIG_AMIGAONEG3SE
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cgu.h u-boot-2009.11.modified/cpu/lpc313x/cgu.h
+--- u-boot-2009.11/cpu/lpc313x/cgu.h	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/cgu.h	2012-07-08 22:47:54.828268105 -0700
+@@ -0,0 +1,644 @@
++/* linux/arch/arm/mach-lpc313x/include/mach/cgu.h
++ *
++ *  Author:	Durgesh Pattamatta
++ *  Copyright (C) 2009 NXP semiconductors
++ *
++ *  CGU defines and register structures for LPC313x and LPC315x SoCs.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef LPC313X_CGU_H
++#define LPC313X_CGU_H
++
++ /***********************************************************************
++ * CGU register definitions
++ **********************************************************************/
++#define CGU_SB_NR_BASE     12
++#define CGU_SB_NR_CLK      92
++#define CGU_SB_NR_BCR      5
++#define CGU_SB_NR_FRACDIV  24
++#define CGU_SB_NR_DYN_FDIV 7
++#define CGU_SB_NR_ESR      89
++#define CGU_SB_BASE0_FDIV_CNT           7
++#define CGU_SB_BASE0_FDIV_LOW_ID        0
++#define CGU_SB_BASE0_FDIV_HIGH_ID       6
++#define CGU_SB_BASE0_FDIV0_W            8
++
++#define CGU_SB_BASE1_FDIV_CNT           2
++#define CGU_SB_BASE1_FDIV_LOW_ID        7
++#define CGU_SB_BASE1_FDIV_HIGH_ID       8
++
++#define CGU_SB_BASE2_FDIV_CNT           2
++#define CGU_SB_BASE2_FDIV_LOW_ID        9
++#define CGU_SB_BASE2_FDIV_HIGH_ID       10
++
++#define CGU_SB_BASE3_FDIV_CNT           3
++#define CGU_SB_BASE3_FDIV_LOW_ID        11
++#define CGU_SB_BASE3_FDIV_HIGH_ID       13
++
++#define CGU_SB_BASE4_FDIV_CNT           1
++#define CGU_SB_BASE4_FDIV_LOW_ID        14
++#define CGU_SB_BASE4_FDIV_HIGH_ID       14
++
++#define CGU_SB_BASE5_FDIV_CNT           1
++#define CGU_SB_BASE5_FDIV_LOW_ID        15
++#define CGU_SB_BASE5_FDIV_HIGH_ID       15
++
++#define CGU_SB_BASE6_FDIV_CNT           1
++#define CGU_SB_BASE6_FDIV_LOW_ID        16
++#define CGU_SB_BASE6_FDIV_HIGH_ID       16
++
++#define CGU_SB_BASE7_FDIV_CNT           6
++#define CGU_SB_BASE7_FDIV_LOW_ID        17
++#define CGU_SB_BASE7_FDIV_HIGH_ID       22
++#define CGU_SB_BASE7_FDIV0_W            13
++
++#define CGU_SB_BASE10_FDIV_CNT          1
++#define CGU_SB_BASE10_FDIV_LOW_ID       23
++#define CGU_SB_BASE10_FDIV_HIGH_ID      23
++
++
++typedef volatile struct
++{
++  /* Switches controls */
++  volatile u32 base_scr[12]; /* Switch control */
++  volatile u32 base_fs1[12]; /* Frequency select side 1 */
++  volatile u32 base_fs2[12]; /* Frequency select side 2 */
++  volatile u32 base_ssr[12]; /* Switch status */
++  /* Clock enable controls (positive and inverted clock pairs share control register)*/
++  volatile u32 clk_pcr[92]; /* power control */
++  volatile u32 clk_psr[92]; /* power status */
++  /* enable select from fractional dividers (positive and inverted clock pairs share esr)*/
++  volatile u32 clk_esr[89]; /* enable select */
++  /* Base controls, currently only fd_run (base wide fractional divider enable) bit.*/
++  volatile u32 base_bcr[5]; /* Base control */
++  /* Fractional divider controls & configuration*/
++  volatile u32 base_fdc[24]; /* Fractional divider config & ctrl */
++  volatile u32 base_dyn_fdc[7]; /* Fractional divider config & ctrl for dynamic fracdivs */
++  volatile u32 base_dyn_sel[7]; /* Fractional divider register for selecting an external signal to trigger high-speed operation*/
++} CGU_SB_REGS_T;
++
++/* ----------------
++* HP PLL Registers
++* ----------------
++*/
++typedef volatile struct
++{
++  volatile u32 fin_select;
++  volatile u32 mdec;
++  volatile u32 ndec;
++  volatile u32 pdec;
++  volatile u32 mode;
++  volatile u32 status;
++  volatile u32 ack;
++  volatile u32 req;
++  volatile u32 inselr;
++  volatile u32 inseli;
++  volatile u32 inselp;
++  volatile u32 selr;
++  volatile u32 seli;
++  volatile u32 selp;
++} CGU_HP_CFG_REGS;
++
++typedef volatile struct
++{
++  volatile u32 powermode;
++  volatile u32 wd_bark;
++  volatile u32 ffast_on;
++  volatile u32 ffast_bypass;
++  volatile u32 resetn_soft[56];
++  CGU_HP_CFG_REGS hp[2];
++} CGU_CONFIG_REGS;
++
++#define CGU_SB    ((CGU_SB_REGS_T*) io_p2v(CGU_SB_PHYS))
++#define CGU_CFG   ((CGU_CONFIG_REGS*) io_p2v(CGU_CFG_PHYS))
++
++
++/* Switch Control Register */
++#define CGU_SB_SCR_EN1              _BIT(0)
++#define CGU_SB_SCR_EN2              _BIT(1)
++#define CGU_SB_SCR_RST              _BIT(2)
++#define CGU_SB_SCR_STOP             _BIT(3)
++#define CGU_SB_SCR_FS_MASK          0x3
++
++/* Switch Status Register */
++#define CGU_SB_SSR_FS_GET(x)        ( ((x) >> 2) & 0x7)
++/* Power Control Register */
++#define CGU_SB_PCR_RUN              _BIT(0)
++#define CGU_SB_PCR_AUTO             _BIT(1)
++#define CGU_SB_PCR_WAKE_EN          _BIT(2)
++#define CGU_SB_PCR_EXTEN_EN         _BIT(3)
++#define CGU_SB_PCR_ENOUT_EN         _BIT(4)
++/* Power Status Register */
++#define CGU_SB_PSR_ACTIVE           _BIT(0)
++#define CGU_SB_PSR_WAKEUP           _BIT(1)
++/* Enable Select Register */
++#define CGU_SB_ESR_ENABLE           _BIT(0)
++#define CGU_SB_ESR_SELECT(x)        _SBF(1, (x))
++#define CGU_SB_ESR_SEL_GET(x)       (((x) >> 1) & 0x7)
++
++/* Base control Register */
++#define CGU_SB_BCR_FD_RUN           _BIT(0)
++/* Fractional Divider Configuration Register */
++#define CGU_SB_FDC_RUN              _BIT(0)
++#define CGU_SB_FDC_RESET            _BIT(1)
++#define CGU_SB_FDC_STRETCH          _BIT(2)
++#define CGU_SB_FDC_MADD(x)          _SBF( 3, ((x) & 0xFF))
++#define CGU_SB_FDC_MSUB(x)          _SBF(11, ((x) & 0xFF))
++#define CGU_SB_FDC17_MADD(x)        _SBF( 3, ((x) & 0x1FFF))
++#define CGU_SB_FDC17_MSUB(x)        _SBF(16, ((x) & 0x1FFF))
++#define CGU_SB_FDC_MADD_GET(x)      (((x) >> 3) & 0xFF)
++#define CGU_SB_FDC_MSUB_GET(x)      ((((x) >> 11) & 0xFF) | 0xFFFFFF00)
++#define CGU_SB_FDC17_MADD_GET(x)    (((x) >> 3) & 0x1FFF)
++#define CGU_SB_FDC17_MSUB_GET(x)    ((((x) >> 16) & 0x1FFF) | 0xFFFFE000)
++#define CGU_SB_FDC_MADD_POS         3
++
++/* Dynamic Fractional Divider Configuration Register */
++#define CGU_SB_DYN_FDC_RUN          _BIT(0)
++#define CGU_SB_DYN_FDC_ALLOW        _BIT(1)
++#define CGU_SB_DYN_FDC_STRETCH      _BIT(2)
++
++/**********************************************************************
++* Register description of POWERMODE
++**********************************************************************/
++#define CGU_POWERMODE_MASK     0x3
++#define CGU_POWERMODE_NORMAL   0x1
++#define CGU_POWERMODE_WAKEUP   0x3
++
++/**********************************************************************
++* Register description of WD_BARK
++**********************************************************************/
++#define CGU_WD_BARK            0x1
++
++/**********************************************************************
++* Register description of FFAST_ON
++**********************************************************************/
++#define CGU_FFAST_ON           0x1
++
++/**********************************************************************
++* Register description of FFAST_BYPASS
++**********************************************************************/
++#define CGU_FFAST_BYPASS       0x1
++
++/**********************************************************************
++* Register description of soft reset registers
++**********************************************************************/
++#define CGU_CONFIG_SOFT_RESET  0x1
++
++/**********************************************************************
++* Register description of HP_FIN_SELECT
++**********************************************************************/
++#define CGU_HPLL_FIN_SEL_MASK       0xf
++#define CGU_FIN_SELECT_FFAST        0x0
++#define CGU_FIN_SELECT_XT_DAI_BCK0  0x1
++#define CGU_FIN_SELECT_XT_DAI_WS0   0x2
++#define CGU_FIN_SELECT_XT_DAI_BCK1  0x3
++#define CGU_FIN_SELECT_XT_DAI_WS1   0x4
++#define CGU_FIN_SELECT_HPPLL0       0x5
++#define CGU_FIN_SELECT_HPPLL1       0x6
++#define CGU_FIN_SELECT_MAX          7
++
++/**********************************************************************
++* Register description of HP_MDEC
++**********************************************************************/
++#define CGU_HPLL_MDEC_MASK          0x1ffff
++/**********************************************************************
++* Register description of HP_NDEC
++**********************************************************************/
++#define CGU_HPLL_NDEC_MSK           0x3ff
++/**********************************************************************
++* Register description of HP_PDEC
++**********************************************************************/
++#define CGU_HPLL_PDEC_MSK           0x7f
++/**********************************************************************
++* Register description of HP_MODE
++**********************************************************************/
++#define CGU_HPLL_MODE_POR_VAL       0x6
++#define CGU_HPLL_MODE_CLKEN         _BIT(0)
++#define CGU_HPLL_MODE_SKEWEN        _BIT(1)
++#define CGU_HPLL_MODE_PD            _BIT(2)
++#define CGU_HPLL_MODE_DIRECTO       _BIT(3)
++#define CGU_HPLL_MODE_DIRECTI       _BIT(4)
++#define CGU_HPLL_MODE_FRM           _BIT(5)
++#define CGU_HPLL_MODE_BANDSEL       _BIT(6)
++#define CGU_HPLL_MODE_LIMUP_OFF     _BIT(7)
++#define CGU_HPLL_MODE_BYPASS        _BIT(8)
++
++/**********************************************************************
++* Register description of HP1_STATUS
++**********************************************************************/
++#define CGU_HPLL_STATUS_FR          _BIT(1)
++#define CGU_HPLL_STATUS_LOCK        _BIT(0)
++
++/**********************************************************************
++* Register description of HP_ACK & HP_REQ
++**********************************************************************/
++#define CGU_HPLL_ACK_P              _BIT(2)
++#define CGU_HPLL_ACK_N              _BIT(1)
++#define CGU_HPLL_ACK_M              _BIT(0)
++
++/**********************************************************************
++* Register description of HP1_INSELR
++**********************************************************************/
++#define CGU_HPLL_INSELR_MASK        0xf
++/**********************************************************************
++* Register description of HP1_INSELI
++**********************************************************************/
++#define CGU_HPLL_INSELI_MASK        0x3f
++/**********************************************************************
++* Register description of HP1_INSELP
++**********************************************************************/
++#define CGU_HPLL_INSELP_MASK        0x1f
++/**********************************************************************
++* Register description of HP1_SELR
++**********************************************************************/
++#define CGU_HPLL_SELR_MASK          0xf
++/**********************************************************************
++* Register description of HP1_SELI
++**********************************************************************/
++#define CGU_HPLL_SELI_MASK          0x3f
++/**********************************************************************
++* Register description of HP1_SELP
++**********************************************************************/
++#define CGU_HPLL_SELP_MASK          0x1f
++
++/***********************************************************************
++* Clock domain base id's
++***********************************************************************/
++typedef enum
++{
++  CGU_SB_SYS_BASE_ID = 0,
++  CGU_SB_BASE_FIRST = CGU_SB_SYS_BASE_ID,
++  CGU_SB_AHB0_APB0_BASE_ID,
++  CGU_SB_AHB0_APB1_BASE_ID,
++  CGU_SB_AHB0_APB2_BASE_ID,
++  CGU_SB_AHB0_APB3_BASE_ID,
++  CGU_SB_IPINT_BASE_ID,
++  CGU_SB_UARTCLK_BASE_ID,
++  CGU_SB_CLK1024FS_BASE_ID,
++  CGU_SB_I2SRX_BCK0_BASE_ID,
++  CGU_SB_I2SRX_BCK1_BASE_ID,
++  CGU_SB_SPI_CLK_BASE_ID,
++  CGU_SB_SYSCLK_O_BASE_ID,
++  CGU_SB_BASE_LAST = CGU_SB_SYSCLK_O_BASE_ID
++} CGU_DOMAIN_ID_T;
++
++/***********************************************************************
++// Clock id's (= clkid in address calculation)
++***********************************************************************/
++typedef enum
++{
++  /* domain 0 = SYS_BASE */
++  CGU_SB_APB0_CLK_ID = 0,
++  CGU_SYS_FIRST = CGU_SB_APB0_CLK_ID,
++  CGU_SB_APB1_CLK_ID,
++  CGU_SB_APB2_CLK_ID,
++  CGU_SB_APB3_CLK_ID,
++  CGU_SB_APB4_CLK_ID,
++  CGU_SB_AHB2INTC_CLK_ID,
++  CGU_SB_AHB0_CLK_ID,
++  CGU_SB_EBI_CLK_ID,
++  CGU_SB_DMA_PCLK_ID,
++  CGU_SB_DMA_CLK_GATED_ID,
++  CGU_SB_NANDFLASH_S0_CLK_ID,
++  CGU_SB_NANDFLASH_ECC_CLK_ID,
++  CGU_SB_NANDFLASH_AES_CLK_ID, /* valid on LPC3153 & LPC3154 only */
++  CGU_SB_NANDFLASH_NAND_CLK_ID,
++  CGU_SB_NANDFLASH_PCLK_ID,
++  CGU_SB_CLOCK_OUT_ID,
++  CGU_SB_ARM926_CORE_CLK_ID,
++  CGU_SB_ARM926_BUSIF_CLK_ID,
++  CGU_SB_ARM926_RETIME_CLK_ID,
++  CGU_SB_SD_MMC_HCLK_ID,
++  CGU_SB_SD_MMC_CCLK_IN_ID,
++  CGU_SB_USB_OTG_AHB_CLK_ID,
++  CGU_SB_ISRAM0_CLK_ID,
++  CGU_SB_RED_CTL_RSCLK_ID,
++  CGU_SB_ISRAM1_CLK_ID,
++  CGU_SB_ISROM_CLK_ID,
++  CGU_SB_MPMC_CFG_CLK_ID,
++  CGU_SB_MPMC_CFG_CLK2_ID,
++  CGU_SB_MPMC_CFG_CLK3_ID,
++  CGU_SB_INTC_CLK_ID,
++  CGU_SYS_LAST = CGU_SB_INTC_CLK_ID,
++
++  /* domain 1 = AHB0APB0_BASE */
++  CGU_SB_AHB2APB0_ASYNC_PCLK_ID,
++  CGU_AHB0APB0_FIRST = CGU_SB_AHB2APB0_ASYNC_PCLK_ID,
++  CGU_SB_EVENT_ROUTER_PCLK_ID,
++  CGU_SB_ADC_PCLK_ID,
++  CGU_SB_ADC_CLK_ID,
++  CGU_SB_WDOG_PCLK_ID,
++  CGU_SB_IOCONF_PCLK_ID,
++  CGU_SB_CGU_PCLK_ID,
++  CGU_SB_SYSCREG_PCLK_ID,
++  CGU_SB_OTP_PCLK_ID, /* valid on LPC315x series only */
++  CGU_SB_RNG_PCLK_ID,
++  CGU_AHB0APB0_LAST = CGU_SB_RNG_PCLK_ID,
++
++
++  /* domain 2 = AHB0APB1_BASE */
++  CGU_SB_AHB2APB1_ASYNC_PCLK_ID,
++  CGU_AHB0APB1_FIRST = CGU_SB_AHB2APB1_ASYNC_PCLK_ID,
++  CGU_SB_TIMER0_PCLK_ID,
++  CGU_SB_TIMER1_PCLK_ID,
++  CGU_SB_TIMER2_PCLK_ID,
++  CGU_SB_TIMER3_PCLK_ID,
++  CGU_SB_PWM_PCLK_ID,
++  CGU_SB_PWM_PCLK_REGS_ID,
++  CGU_SB_PWM_CLK_ID,
++  CGU_SB_I2C0_PCLK_ID,
++  CGU_SB_I2C1_PCLK_ID,
++  CGU_AHB0APB1_LAST = CGU_SB_I2C1_PCLK_ID,
++
++  /* domain 3 = AHB0APB2_BASE */
++  CGU_SB_AHB2APB2_ASYNC_PCLK_ID,
++  CGU_AHB0APB2_FIRST = CGU_SB_AHB2APB2_ASYNC_PCLK_ID,
++  CGU_SB_PCM_PCLK_ID,
++  CGU_SB_PCM_APB_PCLK_ID,
++  CGU_SB_UART_APB_CLK_ID,
++  CGU_SB_LCD_PCLK_ID,
++  CGU_SB_LCD_CLK_ID,
++  CGU_SB_SPI_PCLK_ID,
++  CGU_SB_SPI_PCLK_GATED_ID,
++  CGU_AHB0APB2_LAST = CGU_SB_SPI_PCLK_GATED_ID,
++
++  /* domain 4 = AHB0APB3_BASE */
++  CGU_SB_AHB2APB3_ASYNC_PCLK_ID,
++  CGU_AHB0APB3_FIRST = CGU_SB_AHB2APB3_ASYNC_PCLK_ID,
++  CGU_SB_I2S_CFG_PCLK_ID,
++  CGU_SB_EDGE_DET_PCLK_ID,
++  CGU_SB_I2STX_FIFO_0_PCLK_ID,
++  CGU_SB_I2STX_IF_0_PCLK_ID,
++  CGU_SB_I2STX_FIFO_1_PCLK_ID,
++  CGU_SB_I2STX_IF_1_PCLK_ID,
++  CGU_SB_I2SRX_FIFO_0_PCLK_ID,
++  CGU_SB_I2SRX_IF_0_PCLK_ID,
++  CGU_SB_I2SRX_FIFO_1_PCLK_ID,
++  CGU_SB_I2SRX_IF_1_PCLK_ID,
++  CGU_SB_RSVD69_ID,
++  CGU_SB_AHB2APB3_RSVD_ID,
++  CGU_AHB0APB3_LAST = CGU_SB_AHB2APB3_RSVD_ID,
++
++  /* domain 5 = PCM_BASE */
++  CGU_SB_PCM_CLK_IP_ID,
++  CGU_PCM_FIRST = CGU_SB_PCM_CLK_IP_ID,
++  CGU_PCM_LAST = CGU_SB_PCM_CLK_IP_ID,
++
++  /* domain 6 = UART_BASE */
++  CGU_SB_UART_U_CLK_ID,
++  CGU_UART_FIRST = CGU_SB_UART_U_CLK_ID,
++  CGU_UART_LAST = CGU_SB_UART_U_CLK_ID,
++
++  /* domain 7 = CLK1024FS_BASE */
++  CGU_SB_I2S_EDGE_DETECT_CLK_ID,
++  CGU_CLK1024FS_FIRST = CGU_SB_I2S_EDGE_DETECT_CLK_ID,
++  CGU_SB_I2STX_BCK0_N_ID,
++  CGU_SB_I2STX_WS0_ID,
++  CGU_SB_I2STX_CLK0_ID,
++  CGU_SB_I2STX_BCK1_N_ID,
++  CGU_SB_I2STX_WS1_ID,
++  CGU_SB_CLK_256FS_ID,
++  CGU_SB_I2SRX_BCK0_N_ID,
++  CGU_SB_I2SRX_WS0_ID,
++  CGU_SB_I2SRX_BCK1_N_ID,
++  CGU_SB_I2SRX_WS1_ID,
++  CGU_SB_RSVD84_ID,
++  CGU_SB_RSVD85_ID,
++  CGU_SB_RSVD86_ID,
++  CGU_CLK1024FS_LAST = CGU_SB_RSVD86_ID,
++
++  /* domain 8 = BCK0_BASE */
++  CGU_SB_I2SRX_BCK0_ID,
++  CGU_I2SRX_BCK0_FIRST = CGU_SB_I2SRX_BCK0_ID,
++  CGU_I2SRX_BCK0_LAST = CGU_SB_I2SRX_BCK0_ID,
++
++  /* domain 9 = BCK1_BASE */
++  CGU_SB_I2SRX_BCK1_ID,
++  CGU_I2SRX_BCK1_FIRST = CGU_SB_I2SRX_BCK1_ID,
++  CGU_I2SRX_BCK1_LAST = CGU_SB_I2SRX_BCK1_ID,
++
++  /* domain 10 = SPI_BASE */
++  CGU_SB_SPI_CLK_ID,
++  CGU_SPI_FIRST = CGU_SB_SPI_CLK_ID,
++  CGU_SB_SPI_CLK_GATED_ID,
++  CGU_SPI_LAST = CGU_SB_SPI_CLK_GATED_ID,
++
++  /* domain 11 = SYSCLKO_BASE */
++  CGU_SB_SYSCLK_O_ID,
++  CGU_SYSCLK_O_FIRST = CGU_SB_SYSCLK_O_ID,
++  CGU_SYSCLK_O_LAST = CGU_SB_SYSCLK_O_ID,
++
++  CGU_SB_INVALID_CLK_ID = -1
++} CGU_CLOCK_ID_T;
++
++
++/***********************************************************************
++* CGU driver defines - MACROS & constants
++**********************************************************************/
++#define CGU_INVALID_ID  0xFFFF
++
++/* Clocks which which need wake_en set. These are system clocks not
++ * managed by individual drivers. All other clocks should be disabled
++ * at startup.
++ */
++#define CGU_WKE_CLKS_0_31   ( _BIT(CGU_SB_APB0_CLK_ID) | _BIT(CGU_SB_APB1_CLK_ID) | \
++                              _BIT(CGU_SB_APB2_CLK_ID) | _BIT(CGU_SB_APB3_CLK_ID) | _BIT(CGU_SB_APB4_CLK_ID) | \
++                              _BIT(CGU_SB_AHB2INTC_CLK_ID) | _BIT(CGU_SB_AHB0_CLK_ID) | \
++                              _BIT(CGU_SB_EBI_CLK_ID) | _BIT(CGU_SB_DMA_PCLK_ID) | _BIT(CGU_SB_DMA_CLK_GATED_ID) | \
++                              _BIT(CGU_SB_ARM926_CORE_CLK_ID) | _BIT(CGU_SB_ARM926_BUSIF_CLK_ID) | \
++                              _BIT(CGU_SB_ARM926_RETIME_CLK_ID) | _BIT(CGU_SB_ISRAM0_CLK_ID) | \
++                              _BIT(CGU_SB_ISRAM1_CLK_ID) | _BIT(CGU_SB_ISROM_CLK_ID) | \
++                              _BIT(CGU_SB_MPMC_CFG_CLK_ID) | _BIT(CGU_SB_MPMC_CFG_CLK2_ID) | _BIT(CGU_SB_MPMC_CFG_CLK3_ID) | \
++                              _BIT(CGU_SB_INTC_CLK_ID) | _BIT(CGU_SB_AHB2APB0_ASYNC_PCLK_ID) | \
++                              _BIT(CGU_SB_EVENT_ROUTER_PCLK_ID) /*| _BIT(CGU_SB_CLOCK_OUT_ID)*/)
++
++#define CGU_WKE_CLKS_32_63 ( _BIT(CGU_SB_IOCONF_PCLK_ID - 32) | _BIT(CGU_SB_CGU_PCLK_ID - 32) | \
++                             _BIT(CGU_SB_SYSCREG_PCLK_ID - 32) | \
++                             _BIT(CGU_SB_AHB2APB1_ASYNC_PCLK_ID - 32) | _BIT(CGU_SB_AHB2APB2_ASYNC_PCLK_ID - 32) | \
++                             _BIT(CGU_SB_AHB2APB3_ASYNC_PCLK_ID - 32) | _BIT(CGU_SB_TIMER0_PCLK_ID - 32) | \
++			     _BIT(CGU_SB_TIMER1_PCLK_ID - 32) | _BIT(CGU_SB_TIMER2_PCLK_ID - 32) | \
++			     _BIT(CGU_SB_TIMER3_PCLK_ID - 32) )
++
++
++#define CGU_WKE_CLKS_64_92 ( 0 )
++
++
++/***********************************************************************
++* CGU driver enumerations
++**********************************************************************/
++/* Possible HPLL ids */
++typedef enum {CGU_HPLL0_ID, CGU_HPLL1_ID} CGU_HPLL_ID_T;
++
++/* CGU soft reset module ID enumerations */
++typedef enum
++{
++  APB0_RST_SOFT = 0,
++  AHB2APB0_PNRES_SOFT,
++  APB1_RST_SOFT,
++  AHB2APB1_PNRES_SOFT,
++  APB2_RESETN_SOFT,
++  AHB2APB2_PNRES_SOFT,
++  APB3_RESETN_SOFT,
++  AHB2APB3_PNRES_SOFT,
++  APB4_RESETN_SOFT,
++  AHB2INTC_RESETN_SOFT,
++  AHB0_RESETN_SOFT,
++  EBI_RESETN_SOFT,
++  PCM_PNRES_SOFT,
++  PCM_RESET_N_SOFT,
++  PCM_RESET_ASYNC_N_SOFT,
++  TIMER0_PNRES_SOFT,
++  TIMER1_PNRES_SOFT,
++  TIMER2_PNRES_SOFT,
++  TIMER3_PNRES_SOFT,
++  ADC_PRESETN_SOFT,
++  ADC_RESETN_ADC10BITS_SOFT,
++  PWM_RESET_AN_SOFT,
++  UART_SYS_RST_AN_SOFT,
++  I2C0_PNRES_SOFT,
++  I2C1_PNRES_SOFT,
++  I2S_CFG_RST_N_SOFT,
++  I2S_NSOF_RST_N_SOFT,
++  EDGE_DET_RST_N_SOFT,
++  I2STX_FIFO_0_RST_N_SOFT,
++  I2STX_IF_0_RST_N_SOFT,
++  I2STX_FIFO_1_RST_N_SOFT,
++  I2STX_IF_1_RST_N_SOFT,
++  I2SRX_FIFO_0_RST_N_SOFT,
++  I2SRX_IF_0_RST_N_SOFT,
++  I2SRX_FIFO_1_RST_N_SOFT,
++  I2SRX_IF_1_RST_N_SOFT,
++  RSRVD_0_SOFT,
++  RSRVD_1_SOFT,
++  RSRVD_2_SOFT,
++  RSRVD_3_SOFT,
++  RSRVD_4_SOFT,
++  LCD_PNRES_SOFT,
++  SPI_PNRES_APB_SOFT,
++  SPI_PNRES_IP_SOFT,
++  DMA_PNRES_SOFT,
++  NANDFLASH_CTRL_ECC_RESET_N_SOFT,
++  NANDFLASH_CTRL_AES_RESET_N_SOFT,
++  NANDFLASH_CTRL_NAND_RESET_N_SOFT,
++  RNG_RESETN_SOFT,
++  SD_MMC_PNRES_SOFT,
++  SD_MMC_NRES_CCLK_IN_SOFT,
++  USB_OTG_AHB_RST_N_SOFT,
++  RED_CTL_RESET_N_SOFT,
++  AHB_MPMC_HRESETN_SOFT,
++  AHB_MPMC_REFRESH_RESETN_SOFT,
++  INTC_RESETN_SOFT
++} CGU_MOD_ID_T;
++
++/***********************************************************************
++* CGU driver structures
++**********************************************************************/
++/* CGU HPLL config settings structure type */
++typedef struct
++{
++  u32 fin_select;
++  u32 ndec;
++  u32 mdec;
++  u32 pdec;
++  u32 selr;
++  u32 seli;
++  u32 selp;
++  u32 mode;
++  u32 freq; /* in MHz for driver internal data */
++} CGU_HPLL_SETUP_T;
++
++/* CGU fractional divider settings structure type */
++typedef struct
++{
++  u8 stretch; /* Fractional divider stretch enable. */
++  u8 n;       /* Fractional divider nominal nominator */
++  u16 m;      /* Fractional divider nominal denominator */
++} CGU_FDIV_SETUP_T;
++
++/***********************************************************************
++* CGU driver functions
++**********************************************************************/
++/* Return the current base frequecy of the requested domain*/
++u32 cgu_get_base_freq(CGU_DOMAIN_ID_T baseid);
++
++/* Change the base frequency for the requested domain */
++void cgu_set_base_freq(CGU_DOMAIN_ID_T baseid, u32 fin_sel);
++
++/* Return the current frequecy of the requested clock*/
++u32 cgu_get_clk_freq(CGU_CLOCK_ID_T clkid);
++
++/* Change the sub-domain frequency for the requested clock */
++void cgu_set_subdomain_freq(CGU_CLOCK_ID_T clkid, CGU_FDIV_SETUP_T fdiv_cfg);
++
++/* Configure the selected HPLL */
++void cgu_hpll_config(CGU_HPLL_ID_T id, CGU_HPLL_SETUP_T* pllsetup);
++
++/* enable / disable external enabling of the requested clock in CGU */
++void cgu_clk_set_exten(CGU_CLOCK_ID_T clkid, u32 enable);
++
++/* frac divider config function */
++u32 cgu_fdiv_config(u32 fdId, CGU_FDIV_SETUP_T fdivCfg, u32 enable);
++
++/***********************************************************************
++* CGU driver inline (ANSI C99 based) functions
++**********************************************************************/
++/* enable / disable the requested clock in CGU */
++static inline void cgu_clk_en_dis(CGU_CLOCK_ID_T clkid, u32 enable)
++{
++  if (enable)
++  {
++    CGU_SB->clk_pcr[clkid] |= CGU_SB_PCR_RUN;
++  }
++  else
++  {
++    CGU_SB->clk_pcr[clkid] &= ~CGU_SB_PCR_RUN;
++  }
++
++}
++/* Issue a software reset to the requested module */
++static inline void cgu_soft_reset_module(CGU_MOD_ID_T modId)
++{
++  volatile u32 i;
++
++  /* clear and set the register */
++  CGU_CFG->resetn_soft[modId] = 0;
++  /* introduce some delay */
++  for (i = 0;i < 1000;i++);
++
++  CGU_CFG->resetn_soft[modId] = CGU_CONFIG_SOFT_RESET;
++}
++/* enable / disable the requested clock in CGU */
++static inline int cgu_clk_is_enabled(CGU_CLOCK_ID_T clkid)
++{
++	return (CGU_SB->clk_pcr[clkid] | CGU_SB_PCR_RUN) ? 1 : 0;
++}
++
++/***********************************************************************
++* Enable/Disable frequency input to the selected base
++**********************************************************************/
++static inline void cgu_endis_base_freq(CGU_DOMAIN_ID_T baseid, int en)
++{
++	/* Let us not disturb anything except STOP */
++	if (!en){
++		CGU_SB->base_scr[baseid] |= CGU_SB_SCR_STOP;
++	} else {
++		CGU_SB->base_scr[baseid] &= ~CGU_SB_SCR_STOP;
++	}
++}
++
++#endif /* LPC313X_CGU_DRIVER_H */
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/constants.h u-boot-2009.11.modified/cpu/lpc313x/constants.h
+--- u-boot-2009.11/cpu/lpc313x/constants.h	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/constants.h	2012-07-08 22:47:54.828268105 -0700
+@@ -0,0 +1,108 @@
++/* linux/arch/arm/mach-lpc313x/include/mach/constants.h
++ *
++ *  Author:	Durgesh Pattamatta
++ *  Copyright (C) 2009 NXP semiconductors
++ *
++ * Manifest constants for LPC313x and LPC315x SoCs.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++/* ----- Globals */
++#define _BIT(n)	  ((1) << (n))
++/* shift bit field */
++#define _SBF(f,v) ((v) << (f))
++
++
++/***********************************************************************
++ * Physical bases
++ **********************************************************************/
++#define EVTR_PHYS         (0x13000000)
++#define ADC_PHYS          (0x13002000)
++#define WDT_PHYS          (0x13002400)
++#define SYS_PHYS          (0x13002800)
++#define GPIO_PHYS         (0x13003000)
++#define CGU_SB_PHYS       (0x13004000)
++#define CGU_CFG_PHYS      (0x13004c00)
++#define RNG_PHYS          (0x13006000)
++#define TIMER0_PHYS       (0x13008000)
++#define TIMER1_PHYS       (0x13008400)
++#define TIMER2_PHYS       (0x13008800)
++#define TIMER3_PHYS       (0x13008c00)
++#define I2C0_PHYS         (0x1300a000)
++#define I2C1_PHYS         (0x1300a400)
++#define UART_PHYS         (0x15001000)
++#define SPI_PHYS          (0x15002000)
++#define I2S_PHYS          (0x16000000)
++#define DMA_PHYS          (0x17000000)
++#define MPMC_PHYS         (0x17008000)
++#define SDMMC_PHYS        (0x18000000)
++#define USBOTG_PHYS       (0x19000000)
++#define INTC_PHYS         (0x60000000)
++#define NANDC_PHYS        (0x17000800)
++/***********************************************************************
++ * Memory definitions
++ **********************************************************************/
++#define EXT_SDRAM_PHYS    (0x30000000)
++#define EXT_SRAM0_PHYS    (0x20000000)
++#define EXT_SRAM1_PHYS    (0x20020000)
++#define ISRAM0_PHYS       (0x11028000)
++#define ISRAM0_LENGTH     (0x00018000)
++#define ISRAM1_PHYS       (0x11040000)
++#define ISRAM1_LENGTH     (0x00018000)
++
++/***********************************************************************
++ * XTAL clock definitions
++ **********************************************************************/
++#define XTAL_CLOCK        (12000000)
++#define FFAST_CLOCK       XTAL_CLOCK
++
++/* SoC CPU IO addressing */
++/* APB0 & APB1 address range*/
++#define IO_APB01_PHYS     (0x13000000)
++#define IO_APB01_SIZE     (0x0000B000)
++/* APB2 address range*/
++#define IO_APB2_PHYS      (0x15000000)
++#define IO_APB2_SIZE      (0x00003000)
++/* APB3 address range*/
++#define IO_APB3_PHYS      (0x16000000)
++#define IO_APB3_SIZE      (0x00001000)
++/* APB4 address range*/
++#define IO_APB4_PHYS      (0x17000000)
++#define IO_APB4_SIZE      (0x00001000)
++/* DMA registers address range*/
++#define IO_DMA_REG_PHYS  (DMA_PHYS)
++#define IO_DMA_REG_SIZE  (0x0000800)
++/* MPMC config registers address range*/
++#define IO_MPMC_CFG_PHYS  (0x17008000)
++#define IO_MPMC_CFG_SIZE  (0x00001000)
++/* SD/MMC address range*/
++#define IO_SDMMC_PHYS     (SDMMC_PHYS)
++#define IO_SDMMC_SIZE     (0x00001000)
++/* USB OTG address range*/
++#define IO_USB_PHYS       (USBOTG_PHYS)
++#define IO_USB_SIZE       (0x00001000)
++/* Interrupt controller address range*/
++#define IO_INTC_PHYS      (0x60000000)
++#define IO_INTC_SIZE      (0x00001000)
++/* NAND address range*/
++#define IO_NAND_PHYS	  (NANDC_PHYS)
++#define IO_NAND_SIZE	  (0x00000800)
++/* NAND buffer address range*/
++#define IO_NAND_BUF_PHYS  (0x70000000)
++#define IO_NAND_BUF_SIZE  (0x00001000)
++/* ISRAM address range*/
++#define IO_ISRAM0_PHYS     (0x11028000)
++#define IO_ISRAM0_SIZE     (0x00018000)
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cpu.c u-boot-2009.11.modified/cpu/lpc313x/cpu.c
+--- u-boot-2009.11/cpu/lpc313x/cpu.c	2012-07-09 14:03:15.809325793 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/cpu.c	2012-07-08 23:06:53.478752866 -0700
+@@ -33,6 +33,9 @@
+ #include <command.h>
+ #include <asm/system.h>
+ 
++/* to support arch_reset code lifted from linux kernel 2.6.33 */
++#include "hardware.h"
++
+ static void cache_flush(void);
+ 
+ int cleanup_before_linux (void)
+@@ -68,3 +71,27 @@
+ 
+ 	asm ("mcr p15, 0, %0, c7, c7, 0": :"r" (i));
+ }
++
++
++void reset_cpu(ulong ignored)
++{
++	/* enable WDT clock */
++    CGU_SB->clk_pcr[CGU_SB_WDOG_PCLK_ID] |= CGU_SB_PCR_RUN;
++
++	/* Disable watchdog */
++	WDT_TCR = 0;
++	WDT_MCR = WDT_MCR_STOP_MR1 | WDT_MCR_INT_MR1;
++
++	/*  If TC and MR1 are equal a reset is generated. */
++	WDT_PR  = 0x00000002;
++	WDT_TC  = 0x00000FF0;
++	WDT_MR0 = 0x0000F000;
++	WDT_MR1 = 0x00001000;
++	WDT_EMR = WDT_EMR_CTRL1(0x3);
++	/* Enable watchdog timer; assert reset at timer timeout */
++	WDT_TCR = WDT_TCR_CNT_EN;
++
++	while (1);  /* loop forever and wait for reset to happen */
++	/* Never reached */
++}
++
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/hardware.h u-boot-2009.11.modified/cpu/lpc313x/hardware.h
+--- u-boot-2009.11/cpu/lpc313x/hardware.h	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/hardware.h	2012-07-09 12:14:58.497549952 -0700
+@@ -0,0 +1,80 @@
++/* linux/arch/arm/mach-lpc313x/include/mach/hardware.h
++ *  
++ *  Author:	Durgesh Pattamatta
++ *  Copyright (C) 2009 NXP semiconductors
++ *
++ * Hardware register defines for LPC313x and LPC315x SoCs.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++#ifndef __ASM_ARCH_HARDWARE_H
++#define __ASM_ARCH_HARDWARE_H
++
++#include <asm/sizes.h>
++
++#include "constants.h"
++
++
++/* macros to convert phys to virtual & virtual to phys memory location*/
++/*  [direct mapping because u-boot does not enable the mmu] */
++#define io_p2v(x) (x)
++#define io_v2p(x) (x)
++
++#define MASK_AND_SET(v,m,s)	(v) = ((v)&~(m))|(s)
++
++#ifdef __ASSEMBLY__
++
++# define __REG(x)	io_p2v(x)
++# define __PREG(x)	io_v2p(x)
++
++#else
++
++# if 0
++#  define __REG(x)	(*((volatile u32 *)io_p2v(x)))
++# else
++/*
++ * This __REG() version gives the same results as the one above,  except
++ * that we are fooling gcc somehow so it generates far better and smaller
++ * assembly code for access to contigous registers.  
++ */
++#include <asm/types.h>
++typedef struct { volatile u32 offset[4096]; } __regbase;
++# define __REGP(x)	((__regbase *)((x)&~4095))->offset[((x)&4095)>>2]
++# define __REG(x)	__REGP(io_p2v(x))
++typedef struct { volatile u16 offset[4096]; } __regbase16;
++# define __REGP16(x)	((__regbase16 *)((x)&~4095))->offset[((x)&4095)>>1]
++# define __REG16(x)	__REGP16(io_p2v(x))
++typedef struct { volatile u8 offset[4096]; } __regbase8;
++# define __REGP8(x)	((__regbase8 *)((x)&~4095))->offset[(x)&4095]
++# define __REG8(x)	__REGP8(io_p2v(x))
++#endif /* 0 */
++
++# define __REG2(x,y)	\
++	( __builtin_constant_p(y) ? (__REG((x) + (y))) \
++				  : (*(volatile u32 *)((u32)&__REG(x) + (y))) )
++
++# define __PREG(x)	(io_v2p((u32)&(x)))
++
++/* include CGU header */
++#include "cgu.h"
++
++#endif /*__ASSEMBLY__ */
++
++
++#include "registers.h"
++
++#endif
++
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/registers.h u-boot-2009.11.modified/cpu/lpc313x/registers.h
+--- u-boot-2009.11/cpu/lpc313x/registers.h	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/registers.h	2012-07-08 22:55:15.298403367 -0700
+@@ -0,0 +1,658 @@
++/* linux/arch/arm/mach-lpc313x/include/mach/registers.h
++ *
++ *  Author:	Durgesh Pattamatta
++ *  Copyright (C) 2009 NXP semiconductors
++ *
++ * Register defines for LPC313x and LPC315x SoCs.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++
++#ifndef __ASM_ARCH_REGISTERS_H
++#define __ASM_ARCH_REGISTERS_H
++
++
++/***********************************************************************
++ * Interrupt controller register definitions
++ **********************************************************************/
++#define INTC_IRQ_PRI_MASK     __REG(INTC_PHYS + 0x000)
++#define INTC_FIQ_PRI_MASK     __REG(INTC_PHYS + 0x004)
++#define INTC_IRQ_VEC_BASE     __REG(INTC_PHYS + 0x100)
++#define INTC_FIQ_VEC_BASE     __REG(INTC_PHYS + 0x104)
++#define INTC_REQ_REG(irq)     __REG(INTC_PHYS + 0x400 + ((irq) << 2))
++
++#define INTC_REQ_PEND         _BIT(31)
++#define INTC_REQ_SET_SWINT    _BIT(30)
++#define INTC_REQ_CLR_SWINT    _BIT(29)
++#define INTC_REQ_WE_PRIO_LVL  _BIT(28)
++#define INTC_REQ_WE_TARGET    _BIT(27)
++#define INTC_REQ_WE_ENABLE    _BIT(26)
++#define INTC_REQ_WE_ACT_LOW   _BIT(25)
++#define INTC_REQ_ACT_LOW      _BIT(17)
++#define INTC_REQ_ENABLE       _BIT(16)
++#define INTC_REQ_TARGET(n)    _SBF(8, ((n) & 0x3F))
++#define INTC_REQ_PRIO_LVL(n)  ((n) & 0xFF)
++#define INTC_REQ_TARGET_IRQ   (INTC_REQ_WE_TARGET)
++#define INTC_REQ_TARGET_FIQ   (INTC_REQ_WE_TARGET | _BIT(8))
++
++/***********************************************************************
++ * Event router register definitions
++ **********************************************************************/
++#define EVRT_INT_PEND(bank)  __REG (EVTR_PHYS + 0xC00 + ((bank) << 2))
++#define EVRT_INT_CLR(bank)   __REG (EVTR_PHYS + 0xC20 + ((bank) << 2))
++#define EVRT_INT_SET(bank)   __REG (EVTR_PHYS + 0xC40 + ((bank) << 2))
++#define EVRT_MASK(bank)      __REG (EVTR_PHYS + 0xC60 + ((bank) << 2))
++#define EVRT_MASK_CLR(bank)  __REG (EVTR_PHYS + 0xC80 + ((bank) << 2))
++#define EVRT_MASK_SET(bank)  __REG (EVTR_PHYS + 0xCA0 + ((bank) << 2))
++#define EVRT_APR(bank)       __REG (EVTR_PHYS + 0xCC0 + ((bank) << 2))
++#define EVRT_ATR(bank)       __REG (EVTR_PHYS + 0xCE0 + ((bank) << 2))
++#define EVRT_RSR(bank)       __REG (EVTR_PHYS + 0xD20 + ((bank) << 2))
++#define EVRT_OUT_PEND(vec,bank)     __REG (EVTR_PHYS + 0x1000 + ((vec) << 5) + ((bank) << 2))
++#define EVRT_OUT_MASK(vec,bank)     __REG (EVTR_PHYS + 0x1400 + ((vec) << 5) + ((bank) << 2))
++#define EVRT_OUT_MASK_CLR(vec,bank) __REG (EVTR_PHYS + 0x1800 + ((vec) << 5) + ((bank) << 2))
++#define EVRT_OUT_MASK_SET(vec,bank) __REG (EVTR_PHYS + 0x1C00 + ((vec) << 5) + ((bank) << 2))
++
++/***********************************************************************
++ * WDT register definitions
++ **********************************************************************/
++#define WDT_IR       __REG (WDT_PHYS + 0x00)
++#define WDT_TCR      __REG (WDT_PHYS + 0x04)
++#define WDT_TC       __REG (WDT_PHYS + 0x08)
++#define WDT_PR       __REG (WDT_PHYS + 0x0c)
++#define WDT_MCR      __REG (WDT_PHYS + 0x14)
++#define WDT_MR0      __REG (WDT_PHYS + 0x18)
++#define WDT_MR1      __REG (WDT_PHYS + 0x1c)
++#define WDT_EMR      __REG (WDT_PHYS + 0x3c)
++
++#define WDT_IR_MR1        _BIT(1)
++#define WDT_IR_MR0        _BIT(0)
++#define WDT_TCR_CNT_RESET _BIT(1)
++#define WDT_TCR_CNT_EN    _BIT(0)
++#define WDT_MCR_STOP_MR1  _BIT(5)
++#define WDT_MCR_RESET_MR1 _BIT(4)
++#define WDT_MCR_INT_MR1   _BIT(3)
++#define WDT_MCR_STOP_MR0  _BIT(2)
++#define WDT_MCR_RESET_MR0 _BIT(1)
++#define WDT_MCR_INT_MR0   _BIT(0)
++#define WDT_EMR_CTRL0(n)  _SBF(4,((n) &0x3))
++#define WDT_EMR_CTRL1(n)  _SBF(6,((n) &0x3))
++#define WDT_EMR_M1        _BIT(1)
++#define WDT_EMR_M0        _BIT(0)
++
++/***********************************************************************
++ * Timer register definitions
++ **********************************************************************/
++#define TIMER_LOAD(base)      __REG (((unsigned int)base) + 0x00)
++#define TIMER_VALUE(base)     __REG (((unsigned int)base) + 0x04)
++#define TIMER_CONTROL(base)   __REG (((unsigned int)base) + 0x08)
++#define TIMER_CLEAR(base)     __REG (((unsigned int)base) + 0x0c)
++
++#define TM_CTRL_ENABLE    _BIT(7)
++#define TM_CTRL_MODE      _BIT(6)
++#define TM_CTRL_PERIODIC  _BIT(6)
++#define TM_CTRL_PS1       _SBF(2, 0)
++#define TM_CTRL_PS16      _SBF(2, 1)
++#define TM_CTRL_PS256     _SBF(2, 2)
++#define TM_CTRL_PS_MASK   _SBF(2, 0x3)
++
++/***********************************************************************
++ * UART register definitions
++ **********************************************************************/
++#define UART_DLL_REG      __REG (UART_PHYS + 0x00)
++#define UART_FIFO_REG     __REG (UART_PHYS + 0x00)
++#define UART_IE_REG       __REG (UART_PHYS + 0x04)
++#define UART_DLM_REG      __REG (UART_PHYS + 0x04)
++#define UART_IIR_REG      __REG (UART_PHYS + 0x08)
++#define UART_FCR_REG      __REG (UART_PHYS + 0x08)
++#define UART_LCR_REG      __REG (UART_PHYS + 0x0c)
++#define UART_MCR_REG      __REG (UART_PHYS + 0x10)
++#define UART_LSR_REG      __REG (UART_PHYS + 0x14)
++#define UART_MSR_REG      __REG (UART_PHYS + 0x18)
++#define UART_SCR_REG      __REG (UART_PHYS + 0x1c)
++#define UART_ACR_REG      __REG (UART_PHYS + 0x20)
++#define UART_ICR_REG      __REG (UART_PHYS + 0x24)
++#define UART_FDR_REG      __REG (UART_PHYS + 0x28)
++
++/***********************************************************************
++ * SPI register definitions
++ **********************************************************************/
++#define SPI_CONFIG_REG    __REG (SPI_PHYS + 0x00)
++#define SPI_SLV_ENAB_REG  __REG (SPI_PHYS + 0x04)
++#define SPI_TXF_FLUSH_REG __REG (SPI_PHYS + 0x08)
++#define SPI_FIFO_DATA_REG __REG (SPI_PHYS + 0x0C)
++#define SPI_NHP_POP_REG   __REG (SPI_PHYS + 0x10)
++#define SPI_NHP_MODE_REG  __REG (SPI_PHYS + 0x14)
++#define SPI_DMA_SET_REG   __REG (SPI_PHYS + 0x18)
++#define SPI_STS_REG       __REG (SPI_PHYS + 0x1C)
++#define SPI_HWINFO_REG    __REG (SPI_PHYS + 0x20)
++#define SPI_SLV_SET1_REG(slv) __REG (SPI_PHYS + 0x24 + (8 * slv))
++#define SPI_SLV_SET2_REG(slv) __REG (SPI_PHYS + 0x28 + (8 * slv))
++#define SPI_INT_TRSH_REG  __REG (SPI_PHYS + 0xFD4)
++#define SPI_INT_CLRE_REG  __REG (SPI_PHYS + 0xFD8)
++#define SPI_INT_SETE_REG  __REG (SPI_PHYS + 0xFDC)
++#define SPI_INT_STS_REG   __REG (SPI_PHYS + 0xFE0)
++#define SPI_INT_ENAB_REG  __REG (SPI_PHYS + 0xFE4)
++#define SPI_INT_CLRS_REG  __REG (SPI_PHYS + 0xFE8)
++#define SPI_INT_SETS_REG  __REG (SPI_PHYS + 0xFEC)
++#define SPI_MOD_ID_REG    __REG (SPI_PHYS + 0xFFC)
++
++/* SPI device contants */
++#define SPI_FIFO_DEPTH  64 /* 64 words (16bit) deep */
++#define SPI_NUM_SLAVES  3  /* number of slaves supported */
++#define SPI_MAX_DIV2    254
++#define SPI_MAX_DIVIDER 65024 /* = 254 * (255 + 1) */
++#define SPI_MIN_DIVIDER 2
++
++/* SPI Configuration register definitions (SPI_CONFIG_REG) */
++#define SPI_CFG_INTER_DLY(n)      _SBF(16, ((n) & 0xFFFF))
++#define SPI_CFG_INTER_DLY_GET(n)  (((n) >> 16) & 0xFFFF)
++#define SPI_CFG_UPDATE_EN         _BIT(7)
++#define SPI_CFG_SW_RESET          _BIT(6)
++#define SPI_CFG_SLAVE_DISABLE     _BIT(4)
++#define SPI_CFG_MULTI_SLAVE       _BIT(3)
++#define SPI_CFG_LOOPBACK          _BIT(2)
++#define SPI_CFG_SLAVE_MODE        _BIT(1)
++#define SPI_CFG_ENABLE            _BIT(0)
++
++/* SPI slave_enable register definitions (SPI_SLV_ENAB_REG) */
++#define SPI_SLV_EN(n)             _SBF(((n) << 1), 0x1)
++#define SPI_SLV_SUSPEND(n)        _SBF(((n) << 1), 0x3)
++
++/* SPI tx_fifo_flush register definitions (SPI_TXF_FLUSH_REG) */
++#define SPI_TXFF_FLUSH            _BIT(1)
++
++/* SPI dma_settings register definitions (SPI_DMA_SET_REG) */
++#define SPI_DMA_TX_EN             _BIT(1)
++#define SPI_DMA_RX_EN             _BIT(0)
++
++/* SPI status register definitions (SPI_STS_REG) */
++#define SPI_ST_SMS_BUSY           _BIT(5)
++#define SPI_ST_BUSY               _BIT(4)
++#define SPI_ST_RX_FF              _BIT(3)
++#define SPI_ST_RX_EMPTY           _BIT(2)
++#define SPI_ST_TX_FF              _BIT(1)
++#define SPI_ST_TX_EMPTY           _BIT(0)
++
++/* SPI slv_setting registers definitions (SPI_SLV_SET1_REG) */
++#define SPI_SLV1_INTER_TX_DLY(n)  _SBF(24, ((n) & 0xFF))
++#define SPI_SLV1_NUM_WORDS(n)     _SBF(16, ((n) & 0xFF))
++#define SPI_SLV1_CLK_PS(n)        _SBF(8, ((n) & 0xFF))
++#define SPI_SLV1_CLK_PS_GET(n)    (((n) >> 8) & 0xFF)
++#define SPI_SLV1_CLK_DIV1(n)      ((n) & 0xFF)
++#define SPI_SLV1_CLK_DIV1_GET(n)  ((n) & 0xFF)
++
++/* SPI slv_setting registers definitions (SPI_SLV_SET2_REG) */
++#define SPI_SLV2_PPCS_DLY(n)      _SBF(9, ((n) & 0xFF))
++#define SPI_SLV2_CS_HIGH          _BIT(8)
++#define SPI_SLV2_SSI_MODE         _BIT(7)
++#define SPI_SLV2_SPO              _BIT(6)
++#define SPI_SLV2_SPH              _BIT(5)
++#define SPI_SLV2_WD_SZ(n)         ((n) & 0x1F)
++
++/* SPI int_threshold registers definitions (SPI_INT_TRSH_REG) */
++#define SPI_INT_TSHLD_TX(n)       _SBF(8, ((n) & 0xFF))
++#define SPI_INT_TSHLD_RX(n)       ((n) & 0xFF)
++
++/* SPI intterrupt registers definitions ( SPI_INT_xxx) */
++#define SPI_SMS_INT               _BIT(4)
++#define SPI_TX_INT                _BIT(3)
++#define SPI_RX_INT                _BIT(2)
++#define SPI_TO_INT                _BIT(1)
++#define SPI_OVR_INT               _BIT(0)
++#define SPI_ALL_INTS              (SPI_SMS_INT | SPI_TX_INT | SPI_RX_INT | SPI_TO_INT | SPI_OVR_INT)
++
++/***********************************************************************
++* Audio Subsystem (ADSS) register definitions
++**********************************************************************/
++
++/* I2S Controller Module Register Structure */
++#define I2S_FORMAT_SETTINGS       __REG (I2S_PHYS + 0x00)
++#define I2S_CFG_MUX_SETTINGS      __REG (I2S_PHYS + 0x04)
++#define I2S_CLASSED_CFG           __REG (I2S_PHYS + 0x08)
++#define I2S_CLASSED_STS           __REG (I2S_PHYS + 0x0C)
++#define I2S_N_SOF_COUNTER         __REG (I2S_PHYS + 0x10)
++
++/* I2S channels */
++#define I2S_CH_TX0 1
++#define I2S_CH_TX1 2
++#define I2S_CH_RX0 3
++#define I2S_CH_RX1 4
++
++/* I2S channel specific registers */
++#define I2S_CH_LEFT_16BIT(n)      __REG (I2S_PHYS + ((n) * 0x80) + 0x00)
++#define I2S_CH_RIGHT_16BIT(n)     __REG (I2S_PHYS + ((n) * 0x80) + 0x04)
++#define I2S_CH_LEFT_24BIT(n)      __REG (I2S_PHYS + ((n) * 0x80) + 0x08)
++#define I2S_CH_RIGHT_24BIT(n)     __REG (I2S_PHYS + ((n) * 0x80) + 0x0C)
++#define I2S_CH_INT_STATUS(n)      __REG (I2S_PHYS + ((n) * 0x80) + 0x10)
++#define I2S_CH_INT_MASK(n)        __REG (I2S_PHYS + ((n) * 0x80) + 0x14)
++#define I2S_CH_LEFT32(n)          __REG (I2S_PHYS + ((n) * 0x80) + 0x20)
++#define I2S_CH_RIGHT32(n)         __REG (I2S_PHYS + ((n) * 0x80) + 0x40)
++#define I2S_CH_INTERLEAVED(n)     __REG (I2S_PHYS + ((n) * 0x80) + 0x60)
++
++/* I2S format settings register defines */
++#define I2S_FORMAT_I2S            0x3
++#define I2S_FORMAT_LSB16          0x4
++#define I2S_FORMAT_LSB18          0x5
++#define I2S_FORMAT_LSB20          0x6
++#define I2S_FORMAT_LSB24          0x7
++#define I2S_FORMAT_MASK           0x7
++#define I2S_SET_FORMAT(n, s)      ((s) << (((n) - 1) * 3))
++
++/* I2S Mux configuration setting defines */
++#define I2S_RXO_SELECT_MASTER     _BIT(1)
++#define I2S_RX1_SELECT_MASTER     _BIT(2)
++
++/* I2S interrupt status and mask bits */
++#define I2S_FIFO_RIGHT_UNDERRUN   _BIT(0)
++#define I2S_FIFO_LEFT_UNDERRUN    _BIT(1)
++#define I2S_FIFO_RIGHT_OVERRUN    _BIT(2)
++#define I2S_FIFO_LEFT_OVERRUN     _BIT(3)
++#define I2S_FIFO_LEFT_FULL        _BIT(4)
++#define I2S_FIFO_LEFT_HALF_FULL   _BIT(5) /* RX only */
++#define I2S_FIFO_LEFT_HALF_EMPTY  _BIT(5) /* TX only */
++#define I2S_FIFO_LEFT_NOT_EMPTY   _BIT(6) /* RX only */
++#define I2S_FIFO_LEFT_EMPTY       _BIT(6) /* TX only */
++#define I2S_FIFO_RIGHT_FULL       _BIT(7)
++#define I2S_FIFO_RIGHT_HALF_FULL  _BIT(8) /* RX only */
++#define I2S_FIFO_RIGHT_HALF_EMPTY _BIT(8) /* TX only */
++#define I2S_FIFO_RIGHT_NOT_EMPTY  _BIT(9) /* RX only */
++#define I2S_FIFO_RIGHT_EMPTY      _BIT(9) /* TX only */
++#define I2S_FIFO_ALL_MASK         0x3FF
++
++/***********************************************************************
++ * ADC_REG register definitions
++ **********************************************************************/
++#define ADC_CON_REG            __REG (ADC_PHYS + 0x20)
++
++/***********************************************************************
++ * SYS_REG register definitions
++ **********************************************************************/
++#define SYS_RNG_OSC_CFG        __REG (SYS_PHYS + 0x14)
++#define SYS_ADC_PD             __REG (SYS_PHYS + 0x18)
++#define SYS_SDMMC_DELAYMODES   __REG (SYS_PHYS + 0x2C)
++#define SYS_USB_ATX_PLL_PD_REG __REG (SYS_PHYS + 0x30)
++#define SYS_USB_OTG_CFG        __REG (SYS_PHYS + 0x34)
++#define SYS_USB_OTG_LED_CTL    __REG (SYS_PHYS + 0x38)
++#define SYS_USB_PLL_NDEC       __REG (SYS_PHYS + 0x40)
++#define SYS_USB_PLL_MDEC       __REG (SYS_PHYS + 0x44)
++#define SYS_USB_PLL_PDEC       __REG (SYS_PHYS + 0x48)
++#define SYS_USB_PLL_SELR       __REG (SYS_PHYS + 0x4C)
++#define SYS_USB_PLL_SELI       __REG (SYS_PHYS + 0x50)
++#define SYS_USB_PLL_SELP       __REG (SYS_PHYS + 0x54)
++
++#define SYS_MPMC_DELAY      __REG (SYS_PHYS + 0x68)
++#define SYS_MPMC_WTD_DEL0   __REG (SYS_PHYS + 0x6C)
++#define SYS_MPMC_WTD_DEL1   __REG (SYS_PHYS + 0x70)
++#define SYS_MPMC_TESTMODE0  __REG (SYS_PHYS + 0x78)
++#define SYS_REMAP_ADDR      __REG (SYS_PHYS + 0x84)
++#define SYS_MUX_LCD_EBI     __REG (SYS_PHYS + 0x90)
++#define SYS_MUX_GPIO_MCI    __REG (SYS_PHYS + 0x94)
++#define SYS_MUX_NAND_MCI    __REG (SYS_PHYS + 0x98)
++
++/***********************************************************************
++ * GPIO register definitions
++ **********************************************************************/
++#define GPIO_STATE(port)     __REG (GPIO_PHYS + (port) + 0x00)
++#define GPIO_STATE_M0(port)  __REG (GPIO_PHYS + (port) + 0x10)
++#define GPIO_M0_SET(port)    __REG (GPIO_PHYS + (port) + 0x14)
++#define GPIO_M0_RESET(port)  __REG (GPIO_PHYS + (port) + 0x18)
++#define GPIO_STATE_M1(port)  __REG (GPIO_PHYS + (port) + 0x20)
++#define GPIO_M1_SET(port)    __REG (GPIO_PHYS + (port) + 0x24)
++#define GPIO_M1_RESET(port)  __REG (GPIO_PHYS + (port) + 0x28)
++
++#define GPIO_OUT_LOW(port, pin)  do { GPIO_M1_SET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
++#define GPIO_OUT_HIGH(port, pin) do { GPIO_M1_SET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
++#define GPIO_IN(port, pin)       do { GPIO_M1_RESET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
++#define GPIO_DRV_IP(port, pin)   do { GPIO_M1_RESET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
++
++#define IOCONF_EBI_MCI       (0x000)
++#define IOCONF_EBI_I2STX_0   (0x040)
++#define IOCONF_CGU           (0x080)
++#define IOCONF_I2SRX_0       (0x0c0)
++#define IOCONF_I2SRX_1       (0x100)
++#define IOCONF_I2STX_1       (0x140)
++#define IOCONF_EBI           (0x180)
++#define IOCONF_GPIO          (0x1c0)
++#define IOCONF_I2C1          (0x200)
++#define IOCONF_SPI           (0x240)
++#define IOCONF_NAND_CTRL     (0x280)
++#define IOCONF_PWM           (0x2c0)
++#define IOCONF_UART          (0x300)
++
++
++/***********************************************************************
++ * MPMC memory controller register definitions
++ **********************************************************************/
++#define MPMC_CTRL           __REG (MPMC_PHYS + 0x000)
++#define MPMC_STATUS         __REG (MPMC_PHYS + 0x004)
++#define MPMC_CONFIG         __REG (MPMC_PHYS + 0x008)
++#define MPMC_DYNCTL         __REG (MPMC_PHYS + 0x020)
++#define MPMC_DYNREF         __REG (MPMC_PHYS + 0x024)
++#define MPMC_DYRDCFG        __REG (MPMC_PHYS + 0x028)
++#define MPMC_DYTRP          __REG (MPMC_PHYS + 0x030)
++#define MPMC_DYTRAS         __REG (MPMC_PHYS + 0x034)
++#define MPMC_DYTSREX        __REG (MPMC_PHYS + 0x038)
++#define MPMC_DYTAPR         __REG (MPMC_PHYS + 0x03C)
++#define MPMC_DYTDAL         __REG (MPMC_PHYS + 0x040)
++#define MPMC_DYTWR          __REG (MPMC_PHYS + 0x044)
++#define MPMC_DYTRC          __REG (MPMC_PHYS + 0x048)
++#define MPMC_DYTRFC         __REG (MPMC_PHYS + 0x04C)
++#define MPMC_DYTXSR         __REG (MPMC_PHYS + 0x050)
++#define MPMC_DYTRRD         __REG (MPMC_PHYS + 0x054)
++#define MPMC_DYTMRD         __REG (MPMC_PHYS + 0x058)
++#define MPMC_STEXDWT        __REG (MPMC_PHYS + 0x080)
++#define MPMC_DYCONFIG       __REG (MPMC_PHYS + 0x100)
++#define MPMC_DYRASCAS       __REG (MPMC_PHYS + 0x104)
++#define MPMC_STCONFIG0      __REG (MPMC_PHYS + 0x200)
++#define MPMC_STWTWEN0       __REG (MPMC_PHYS + 0x204)
++#define MPMC_STWTOEN0       __REG (MPMC_PHYS + 0x208)
++#define MPMC_STWTRD0        __REG (MPMC_PHYS + 0x20C)
++#define MPMC_STWTPG0        __REG (MPMC_PHYS + 0x210)
++#define MPMC_STWTWR0        __REG (MPMC_PHYS + 0x214)
++#define MPMC_STWTTURN0      __REG (MPMC_PHYS + 0x218)
++#define MPMC_STCONFIG1      __REG (MPMC_PHYS + 0x220)
++#define MPMC_STWTWEN1       __REG (MPMC_PHYS + 0x224)
++#define MPMC_STWTOEN1       __REG (MPMC_PHYS + 0x228)
++#define MPMC_STWTRD1        __REG (MPMC_PHYS + 0x22C)
++#define MPMC_STWTPG1        __REG (MPMC_PHYS + 0x230)
++#define MPMC_STWTWR1        __REG (MPMC_PHYS + 0x234)
++#define MPMC_STWTTURN1      __REG (MPMC_PHYS + 0x238)
++
++#define NS_TO_MPMCCLK(ns, clk)	(((ns)*((clk + 500)/1000) + 500000)/1000000)
++/* MPMC Controller Bit Field constants*/
++#define MPMC_CTL_LOW_PWR               _BIT(2)
++#define MPMC_CTL_ENABLE                _BIT(0)
++/* MPMC status Bit Field constants*/
++#define MPMC_STATUS_SA                 _BIT(2)
++#define MPMC_STATUS_WR_BUF             _BIT(1)
++#define MPMC_STATUS_BUSY               _BIT(0)
++/* MPMC config Bit Field constants*/
++#define MPMC_CFG_SDCCLK_1_2            _BIT(8)
++#define MPMC_CFG_SDCCLK_1_1            (0)
++/* SDRAM Controller Bit Field constants*/
++#define MPMC_SDRAMC_CTL_DP             _BIT(13)
++#define MPMC_SDRAMC_CTL_NORMAL_CMD     _SBF(7,0)
++#define MPMC_SDRAMC_CTL_MODE_CMD       _SBF(7,1)
++#define MPMC_SDRAMC_CTL_PALL_CMD       _SBF(7,2)
++#define MPMC_SDRAMC_CTL_NOP_CMD        _SBF(7,3)
++#define MPMC_SDRAMC_CTL_MCC            _BIT(5)
++#define MPMC_SDRAMC_CTL_SR             _BIT(2)
++#define MPMC_SDRAMC_CTL_CS             _BIT(1)
++#define MPMC_SDRAMC_CTL_CE             _BIT(0)
++/* SDRAM Config Bit Field constants*/
++#define MPMC_SDRAMC_CFG_SDRAM_MD       _SBF(3,0)
++#define MPMC_SDRAMC_CFG_LOW_PWR_MD     _SBF(3,1)
++#define MPMC_SDRAMC_CFG_SYNC_FLASH     _SBF(3,2)
++#define MPMC_SDRAMC_CFG_BUF_EN         _BIT(19)
++#define MPMC_SDRAMC_CFG_WP             _BIT(20)
++
++
++/* SDRAM Read Config Bit Field constants*/
++#define MPMC_SDRAMC_RDCFG_CLKOUTDELAY_STG       _SBF(0,0)
++#define MPMC_SDRAMC_RDCFG_CMDDELAY_STG          _SBF(0,1)
++#define MPMC_SDRAMC_RDCFG_CMDDELAY_P1_STG       _SBF(0,2)
++#define MPMC_SDRAMC_RDCFG_CMDDELAY_P2_STG       _SBF(0,3)
++/* SDRAM RASCAS Bit Field constants*/
++#define MPMC_SDRAMC_RASCAS_CAS0        _SBF(8,0)
++#define MPMC_SDRAMC_RASCAS_CAS1        _SBF(8,1)
++#define MPMC_SDRAMC_RASCAS_CAS2        _SBF(8,2)
++#define MPMC_SDRAMC_RASCAS_CAS3        _SBF(8,3)
++#define MPMC_SDRAMC_RASCAS_RAS0        _SBF(0,0)
++#define MPMC_SDRAMC_RASCAS_RAS1        _SBF(0,1)
++#define MPMC_SDRAMC_RASCAS_RAS2        _SBF(0,2)
++#define MPMC_SDRAMC_RASCAS_RAS3        _SBF(0,3)
++
++/***********************************************************************
++ * SD/MMC MCI register definitions
++ **********************************************************************/
++#define SDMMC_CTRL            __REG (SDMMC_PHYS + 0x000)
++#define SDMMC_PWREN           __REG (SDMMC_PHYS + 0x004)
++#define SDMMC_CLKDIV          __REG (SDMMC_PHYS + 0x008)
++#define SDMMC_CLKSRC          __REG (SDMMC_PHYS + 0x00c)
++#define SDMMC_CLKENA          __REG (SDMMC_PHYS + 0x010)
++#define SDMMC_TMOUT           __REG (SDMMC_PHYS + 0x014)
++#define SDMMC_CTYPE           __REG (SDMMC_PHYS + 0x018)
++#define SDMMC_BLKSIZ          __REG (SDMMC_PHYS + 0x01c)
++#define SDMMC_BYTCNT          __REG (SDMMC_PHYS + 0x020)
++#define SDMMC_INTMASK         __REG (SDMMC_PHYS + 0x024)
++#define SDMMC_CMDARG          __REG (SDMMC_PHYS + 0x028)
++#define SDMMC_CMD             __REG (SDMMC_PHYS + 0x02c)
++#define SDMMC_RESP0           __REG (SDMMC_PHYS + 0x030)
++#define SDMMC_RESP1           __REG (SDMMC_PHYS + 0x034)
++#define SDMMC_RESP2           __REG (SDMMC_PHYS + 0x038)
++#define SDMMC_RESP3           __REG (SDMMC_PHYS + 0x03c)
++#define SDMMC_MINTSTS         __REG (SDMMC_PHYS + 0x040)
++#define SDMMC_RINTSTS         __REG (SDMMC_PHYS + 0x044)
++#define SDMMC_STATUS          __REG (SDMMC_PHYS + 0x048)
++#define SDMMC_FIFOTH          __REG (SDMMC_PHYS + 0x04c)
++#define SDMMC_TCBCNT          __REG (SDMMC_PHYS + 0x05c)
++#define SDMMC_TBBCNT          __REG (SDMMC_PHYS + 0x060)
++#define SDMMC_DEBNCE          __REG (SDMMC_PHYS + 0x064)
++#define SDMMC_USRID           __REG (SDMMC_PHYS + 0x068)
++#define SDMMC_VERID           __REG (SDMMC_PHYS + 0x06c)
++#define SDMMC_HCON            __REG (SDMMC_PHYS + 0x070)
++#define SDMMC_DATA            __REG (SDMMC_PHYS + 0x100)
++#define SDMMC_DATA_ADR        (SDMMC_PHYS + 0x100)
++
++/* Control register defines */
++#define SDMMC_CTRL_CEATA_INT_EN   _BIT(11)
++#define SDMMC_CTRL_SEND_AS_CCSD   _BIT(10)
++#define SDMMC_CTRL_SEND_CCSD      _BIT(9)
++#define SDMMC_CTRL_ABRT_READ_DATA _BIT(8)
++#define SDMMC_CTRL_SEND_IRQ_RESP  _BIT(7)
++#define SDMMC_CTRL_READ_WAIT      _BIT(6)
++#define SDMMC_CTRL_DMA_ENABLE     _BIT(5)
++#define SDMMC_CTRL_INT_ENABLE     _BIT(4)
++#define SDMMC_CTRL_DMA_RESET      _BIT(2)
++#define SDMMC_CTRL_FIFO_RESET     _BIT(1)
++#define SDMMC_CTRL_RESET          _BIT(0)
++/* Clock Enable register defines */
++#define SDMMC_CLKEN_LOW_PWR      _BIT(16)
++#define SDMMC_CLKEN_ENABLE       _BIT(0)
++/* time-out register defines */
++#define SDMMC_TMOUT_DATA(n)      _SBF(8, (n))
++#define SDMMC_TMOUT_DATA_MSK     0xFFFFFF00
++#define SDMMC_TMOUT_RESP(n)      ((n) & 0xFF)
++#define SDMMC_TMOUT_RESP_MSK     0xFF
++/* card-type register defines */
++#define SDMMC_CTYPE_8BIT         _BIT(16)
++#define SDMMC_CTYPE_4BIT         _BIT(0)
++/* Interrupt status & mask register defines */
++#define SDMMC_INT_SDIO           _BIT(16)
++#define SDMMC_INT_EBE            _BIT(15)
++#define SDMMC_INT_ACD            _BIT(14)
++#define SDMMC_INT_SBE            _BIT(13)
++#define SDMMC_INT_HLE            _BIT(12)
++#define SDMMC_INT_FRUN           _BIT(11)
++#define SDMMC_INT_HTO            _BIT(10)
++#define SDMMC_INT_DTO            _BIT(9)
++#define SDMMC_INT_RTO            _BIT(8)
++#define SDMMC_INT_DCRC           _BIT(7)
++#define SDMMC_INT_RCRC           _BIT(6)
++#define SDMMC_INT_RXDR           _BIT(5)
++#define SDMMC_INT_TXDR           _BIT(4)
++#define SDMMC_INT_DATA_OVER      _BIT(3)
++#define SDMMC_INT_CMD_DONE       _BIT(2)
++#define SDMMC_INT_RESP_ERR       _BIT(1)
++#define SDMMC_INT_CD             _BIT(0)
++#define SDMMC_INT_ERROR          0xbfc2
++/* Command register defines */
++#define SDMMC_CMD_START         _BIT(31)
++#define SDMMC_CMD_CCS_EXP       _BIT(23)
++#define SDMMC_CMD_CEATA_RD      _BIT(22)
++#define SDMMC_CMD_UPD_CLK       _BIT(21)
++#define SDMMC_CMD_INIT          _BIT(15)
++#define SDMMC_CMD_STOP          _BIT(14)
++#define SDMMC_CMD_PRV_DAT_WAIT  _BIT(13)
++#define SDMMC_CMD_SEND_STOP     _BIT(12)
++#define SDMMC_CMD_STRM_MODE     _BIT(11)
++#define SDMMC_CMD_DAT_WR        _BIT(10)
++#define SDMMC_CMD_DAT_EXP       _BIT(9)
++#define SDMMC_CMD_RESP_CRC      _BIT(8)
++#define SDMMC_CMD_RESP_LONG     _BIT(7)
++#define SDMMC_CMD_RESP_EXP      _BIT(6)
++#define SDMMC_CMD_INDX(n)       ((n) & 0x1F)
++/* Status register defines */
++#define SDMMC_GET_FCNT(x)       (((x)>>17) & 0x1FF)
++#define SDMMC_FIFO_SZ           32
++
++
++/***********************************************************************
++ * NAND Controller register definitions
++ **********************************************************************/
++#define NAND_IRQSTATUS1                __REG (NANDC_PHYS + 0x000)
++#define NAND_IRQMASK1                  __REG (NANDC_PHYS + 0x004)
++#define NAND_IRQSTATUSRAW1             __REG (NANDC_PHYS + 0x008)
++#define NAND_CONFIG                    __REG (NANDC_PHYS + 0x00C)
++#define NAND_IOCONFIG                  __REG (NANDC_PHYS + 0x010)
++#define NAND_TIMING1                   __REG (NANDC_PHYS + 0x014)
++#define NAND_TIMING2                   __REG (NANDC_PHYS + 0x018)
++#define NAND_SETCMD                    __REG (NANDC_PHYS + 0x020)
++#define NAND_SETADDR                   __REG (NANDC_PHYS + 0x024)
++#define NAND_WRITEDATA                 __REG (NANDC_PHYS + 0x028)
++#define NAND_SETCE                     __REG (NANDC_PHYS + 0x02C)
++#define NAND_READDATA                  __REG (NANDC_PHYS + 0x030)
++#define NAND_CHECKSTS                  __REG (NANDC_PHYS + 0x034)
++#define NAND_CONTROLFLOW               __REG (NANDC_PHYS + 0x038)
++#define NAND_GPIO1                     __REG (NANDC_PHYS + 0x040)
++#define NAND_GPIO2                     __REG (NANDC_PHYS + 0x044)
++#define NAND_IRQSTATUS2                __REG (NANDC_PHYS + 0x048)
++#define NAND_IRQMASK2                  __REG (NANDC_PHYS + 0x04C)
++#define NAND_IRQSTATUSRAW2             __REG (NANDC_PHYS + 0x050)
++#define NAND_ECCERRSTATUS              __REG (NANDC_PHYS + 0x078)
++
++/* NAND internal SDRAM address definitions*/
++#define NAND_BUFFER_ADRESS             __REG (IO_NAND_BUF_PHYS)
++
++/* Register description of NANDIRQSTATUS1 */
++#define NAND_NANDIRQSTATUS1_RB4_POS_EDGE       _BIT(31)
++#define NAND_NANDIRQSTATUS1_RB3_POS_EDGE       _BIT(30)
++#define NAND_NANDIRQSTATUS1_RB2_POS_EDGE       _BIT(29)
++#define NAND_NANDIRQSTATUS1_RB1_POS_EDGE       _BIT(28)
++#define NAND_NANDIRQSTATUS1_ERASED_RAM1        _BIT(27)
++#define NAND_NANDIRQSTATUS1_ERASED_RAM0        _BIT(26)
++#define NAND_NANDIRQSTATUS1_WR_RAM1            _BIT(25)
++#define NAND_NANDIRQSTATUS1_WR_RAM0            _BIT(24)
++#define NAND_NANDIRQSTATUS1_RD_RAM1            _BIT(23)
++#define NAND_NANDIRQSTATUS1_RD_RAM0            _BIT(22)
++#define NAND_NANDIRQSTATUS1_ECC_DEC_RAM0       _BIT(21)
++#define NAND_NANDIRQSTATUS1_ECC_ENC_RAM0       _BIT(20)
++#define NAND_NANDIRQSTATUS1_ECC_DEC_RAM1       _BIT(19)
++#define NAND_NANDIRQSTATUS1_ECC_ENC_RAM1       _BIT(18)
++#define NAND_NANDIRQSTATUS1_NOERR_RAM0         _BIT(17)
++#define NAND_NANDIRQSTATUS1_ERR1_RAM0          _BIT(16)
++#define NAND_NANDIRQSTATUS1_ERR2_RAM0          _BIT(15)
++#define NAND_NANDIRQSTATUS1_ERR3_RAM0          _BIT(14)
++#define NAND_NANDIRQSTATUS1_ERR4_RAM0          _BIT(13)
++#define NAND_NANDIRQSTATUS1_ERR5_RAM0          _BIT(12)
++#define NAND_NANDIRQSTATUS1_ERR_UNR_RAM0       _BIT(11)
++#define NAND_NANDIRQSTATUS1_NOERR_RAM1         _BIT(10)
++#define NAND_NANDIRQSTATUS1_ERR1_RAM1          _BIT(9)
++#define NAND_NANDIRQSTATUS1_ERR2_RAM1          _BIT(8)
++#define NAND_NANDIRQSTATUS1_ERR3_RAM1          _BIT(7)
++#define NAND_NANDIRQSTATUS1_ERR4_RAM1          _BIT(6)
++#define NAND_NANDIRQSTATUS1_ERR5_RAM1          _BIT(5)
++#define NAND_NANDIRQSTATUS1_ERR_UNR_RAM1       _BIT(4)
++#define NAND_NANDIRQSTATUS1_AES_DONE_RAM1      _BIT(1)
++#define NAND_NANDIRQSTATUS1_AES_DONE_RAM0      _BIT(0)
++
++/* Register description of NANDCONFIG */
++#define NAND_NANDCONFIG_PEC                _BIT(15) /* Power off ECC clock*/
++#define NAND_NANDCONFIG_ECGC               _BIT(13) /* Enable ECC clock gating*/
++#define NAND_NANDCONFIG_8BIT_ECC           _BIT(12) /* ECC mode*/
++#define NAND_NANDCONFIG_TL_528             _SBF(10, 0x0) /* Transfer limit*/
++#define NAND_NANDCONFIG_TL_516             _SBF(10, 0x2) /* Transfer limit*/
++#define NAND_NANDCONFIG_TL_512             _SBF(10, 0x3) /* Transfer limit*/
++#define NAND_NANDCONFIG_TL_MASK            _SBF(10, 0x3) /* Transfer limit*/
++#define NAND_NANDCONFIG_EO                 _BIT(9) /* */
++#define NAND_NANDCONFIG_DC                 _BIT(8) /* Deactivate CE enable*/
++#define NAND_NANDCONFIG_M                  _BIT(7) /* 512 mode*/
++#define NAND_NANDCONFIG_LC_0               _SBF(5, 0x0) /* Latency Configuration: zero wait state*/
++#define NAND_NANDCONFIG_LC_1               _SBF(5, 0x1) /* Latency Configuration: one wait state*/
++#define NAND_NANDCONFIG_LC_2               _SBF(5, 0x2) /* Latency Configuration: two wait state*/
++#define NAND_NANDCONFIG_LC_MASK            _SBF(5, 0x3) /* Latency Configuration*/
++#define NAND_NANDCONFIG_ES                 _BIT(4) /* Endianess setting */
++#define NAND_NANDCONFIG_DE                 _BIT(3) /* DMA external enable*/
++#define NAND_NANDCONFIG_AO                 _BIT(2) /* */
++#define NAND_NANDCONFIG_WD                 _BIT(1) /* Wide device*/
++#define NAND_NANDCONFIG_EC                 _BIT(0) /* ECC on*/
++
++/* Register description of NANDIOCONFIG */
++#define NAND_NANDIOCONFIG_CFG_IO_DRIVE        _BIT(24) /* Nand IO drive default*/
++#define NAND_NANDIOCONFIG_CFG_DATA_DEF(n)     _SBF(8, ((n) & 0xFFFF)) /* Data to nand default*/
++#define NAND_NANDIOCONFIG_CFG_CLE_1           _SBF(6, 0x01) /* CLE default*/
++#define NAND_NANDIOCONFIG_CFG_ALE_1           _SBF(4, 0x01) /* ALE default*/
++#define NAND_NANDIOCONFIG_CFG_WE_1            _SBF(2, 0x01) /* WE_n default*/
++#define NAND_NANDIOCONFIG_CFG_RE_1            _SBF(0, 0x01) /* RE_n default*/
++
++/* Register description of NANDTIMING1 */
++#define NAND_NANDTIMING1_DEFAULT		   (0x000FFFFF)
++#define NAND_NANDTIMING1_TSRD(n)           _SBF(20, ((n) & 0x3)) /* Single data input delay*/
++#define NAND_NANDTIMING1_TALS(n)           _SBF(16, ((n) & 0x7)) /* Address setup time*/
++#define NAND_NANDTIMING1_TALH(n)           _SBF(12, ((n) & 0x7)) /* Address hold time*/
++#define NAND_NANDTIMING1_TCLS(n)           _SBF(4, ((n) & 0x7)) /* Command setup time*/
++#define NAND_NANDTIMING1_TCLH(n)           ((n) & 0x7) /* Command hold time*/
++
++/* Register description of NANDTIMING2 */
++#define NAND_NANDTIMING2_DEFAULT		   (0xFFFFFFFF)
++#define NAND_NANDTIMING2_TDRD(n)           _SBF(28, ((n) & 0x7)) /* Data input delay*/
++#define NAND_NANDTIMING2_TEBI(n)           _SBF(24, ((n) & 0x7)) /* EBI delay time*/
++#define NAND_NANDTIMING2_TCH(n)            _SBF(20, ((n) & 0x7)) /* Chip select hold time*/
++#define NAND_NANDTIMING2_TCS(n)            _SBF(16, ((n) & 0x7)) /* Chip select setup time*/
++#define NAND_NANDTIMING2_TRH(n)            _SBF(12, ((n) & 0x7)) /* Read enable high hold*/
++#define NAND_NANDTIMING2_TRP(n)            _SBF(8, ((n) & 0x7)) /* Read enable pulse width*/
++#define NAND_NANDTIMING2_TWH(n)            _SBF(4, ((n) & 0x7)) /* Write enable high hold*/
++#define NAND_NANDTIMING2_TWP(n)            ((n) & 0x7) /* Write enable pulse width*/
++
++/* Register description of NANDSETCE */
++#define NAND_NANDSETCE_OVR_EN(n)        _BIT(((n) & 0x3) + 12) /* */
++#define NAND_NANDSETCE_OVR_V(n)         _BIT(((n) & 0x3) + 8) /* */
++#define NAND_NANDSETCE_WP               _BIT(4) /* WP_n pin value*/
++#define NAND_NANDSETCE_CV_MASK          0x0F /* Chip select value*/
++#define NAND_NANDSETCE_CV(n)            (0x0F & ~_BIT(((n) & 0x3))) /* Chip select value*/
++#define NAND_NANDSETCE_CV0              _BIT(0)
++
++/* Register description of NANDCHECKSTS */
++#define NAND_NANDCHECKSTS_RB4_EDGE       _BIT(8) /* mNAND_RYBN3 rising edge*/
++#define NAND_NANDCHECKSTS_RB3_EDGE       _BIT(7) /* mNAND_RYBN2 rising edge*/
++#define NAND_NANDCHECKSTS_RB2_EDGE       _BIT(6) /* mNAND_RYBN1 rising edge*/
++#define NAND_NANDCHECKSTS_RB1_EDGE       _BIT(5) /* mNAND_RYBN0 rising edge*/
++#define NAND_NANDCHECKSTS_RB4_LVL        _BIT(4) /* mNAND_RYBN3 value*/
++#define NAND_NANDCHECKSTS_RB3_LVL        _BIT(3) /* mNAND_RYBN2 value*/
++#define NAND_NANDCHECKSTS_RB2_LVL        _BIT(2) /* mNAND_RYBN1 value*/
++#define NAND_NANDCHECKSTS_RB1_LVL        _BIT(1) /* mNAND_RYBN0 value*/
++#define NAND_NANDCHECKSTS_APB_BSY        _BIT(0) /* APB busy*/
++
++/* Register description of NANDCONTROLFLOW */
++
++/* Write the contents of SRAM1 to the NAND flash*/
++#define NAND_CTRL_WR_RAM1           _BIT(5)
++/* Write the contents of SRAM0 to the NAND flash */
++#define NAND_CTRL_WR_RAM0           _BIT(4)
++/* Read a defined number of bytes from the NAND flash and store them in SRAM1*/
++#define NAND_CTRL_RD_RAM1           _BIT(1)
++/* Read a defined number of bytes from the NAND flash and store them in SRAM0*/
++#define NAND_CTRL_RD_RAM0           _BIT(0)
++
++/* Register description of ... */
++#define NAND_AES_AHB_EN             _BIT(7)
++#define NAND_AES_AHB_DCRYPT_RAM1    _BIT(1)
++#define NAND_AES_AHB_DCRYPT_RAM0    _BIT(0)
++
++
++
++
++#endif  /* __ASM_ARCH_REGISTERS_H */
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/timer.c u-boot-2009.11.modified/cpu/lpc313x/timer.c
+--- u-boot-2009.11/cpu/lpc313x/timer.c	2012-07-09 14:03:18.221272887 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/timer.c	2012-07-08 22:59:53.036184591 -0700
+@@ -161,12 +161,6 @@
+ 	timer_delay_cmn(TIMER_CNTR1, usec);
+ }
+ 
+-void reset_cpu(ulong ignored)
+-{
+-	while (1);
+-	/* Never reached */
+-}
+-
+ void reset_timer()
+ {
+ 	TIMER_CNTR0->control &= ~TM_CTRL_ENABLE;
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2012-07-09 14:03:18.225272800 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2012-07-09 13:51:49.567716573 -0700
+@@ -101,7 +101,7 @@
+ #endif
+ 
+ /* Linux boot using network */
+-#define CONFIG_BOOTCOMMAND		"run net_boot"
++#define CONFIG_BOOTCOMMAND		"run flash_boot"
+ 
+ /*
+  * Serial Driver Console
+@@ -115,37 +115,43 @@
+  */
+ #define CONFIG_BOOTFILE			uImage
+ #define CONFIG_BOOTDELAY		1
++#define CONFIG_ZERO_BOOTDELAY_CHECK
+ #define CONFIG_EXTRA_ENV_SETTINGS	\
+ "loadaddr=31000000\0" \
+ "rd_addr=32000000\0" \
++"envOffset=40000\0" \
++"envSize=10000\0" \
+ "kernBase=50000\0" \
+-"maxKernLen=200000\0" \
++"maxKernSize=200000\0" \
++"kernSize=200000\0" \
+ "usbtty=cdc_acm\0" \
+-"ramargs=setenv bootargs console=ttyS0,115200n8 root=/dev/ram0 rw ip=dhcp loglevel=7\0" \
+-"nfsargs=setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp loglevel=7" \
++"console=console=ttyS0,115200n8 loglevel=5\0" \
++"ramargs=setenv bootargs $(console) root=/dev/ram0 rw ip=dhcp\0" \
++"nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp" \
+ "bootfile=uImage\0" \
+ "ramfile=rootfs.ext2.gz.uboot\0" \
+ "net_boot=dhcp; run nfsargs; bootm $(loadaddr)\0" \
+-"spi_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
+-"nand_boot= nand read $(loadaddr) 80000 $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
++"spi_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
++"nand_boot=nand read $(loadaddr) 80000 $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
+ "sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+-"usbdfu_boot= usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)\0" \
+-"usb_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+-"uart_boot= loady; run nfsargs; bootm $(loadaddr)\0" \
+-"netram_boot=dhcp; tftp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"spiram_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); sf read $(rd_addr) 243000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"nandram_boot= nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"sdmmcram_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"sbdfuram_boot= usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"usbram_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"uartram_boot= loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"flashargs=setenv bootargs $(console) $(flash_root) loglevel=7\0" \
+-"rootpath=/nfsroot/ltib\0" \
+-"console=console=ttyS0,115200n8\0" \
++"usbdfu_boot=usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)\0" \
++"usb_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
++"uart_boot=loady; run nfsargs; bootm $(loadaddr)\0" \
++"netram_boot=dhcp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"spiram_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); sf read $(rd_addr) 243000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"nandram_boot=nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"sdmmcram_boot=mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"sbdfuram_boot=usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"usbram_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"uartram_boot=loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
++"flashargs=setenv bootargs $(console) $(flash_root)\0" \
++"rootpath=/nfsroot/ea313x\0" \
+ "testKernel=dhcp; run flashargs; bootm $(loadaddr)\0" \
+-"flash_root=root=/dev/mtdblock0 ro\0" \
+-"flashNewKernel=dhcp; sf probe 0 0 0; sf erase $(kernBase) $(maxKernLen); sf write $(loadaddr) $(kernBase) $(maxKernLen); set kernSize $(filesize); saveenv\0" \
++"flash_root=root=/dev/mtdblock2 ro\0" \
+ "flash_boot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)\0" \
++"flashNewKernel=dhcp; sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
++"flashNewUboot=dhcp u-boot.bin; sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
++"resetEnvironment=sf probe 0 0 0; echo \\\\cErasing environment...;  sf erase $(envOffset) $(envSize); reset\0" \
+ "serverip=134.89.10.31\0" \
+ ""
+ 
+@@ -225,8 +231,8 @@
+ #else
+ 
+ #ifdef CONFIG_ENV_IS_IN_SPI_FLASH
+-#define CONFIG_ENV_SIZE			0x1000		/* Total Size of Environment Sector */
+-#define CONFIG_ENV_SECT_SIZE		0x10000
++#define CONFIG_ENV_SIZE			0x4000		/* Total Size of Environment Sector */
++#define CONFIG_ENV_SECT_SIZE	0x10000
+ #define CONFIG_ENV_OFFSET		0x40000
+ 
+ #else
