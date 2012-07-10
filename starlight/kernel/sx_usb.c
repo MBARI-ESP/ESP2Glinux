@@ -251,7 +251,7 @@ static int devnum[NR_SX] = { [0 ... NR_SX-1] = -1 };
 static int force_load[NR_SX] = { [0 ... NR_SX-1] = 0 };
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 MODULE_AUTHOR("David Schmenk, dschmenk@earthlink.net");
-MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver");
+MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(model, "SX camera model");
 MODULE_PARM_DESC(color, "SX camera one-shot color flag");
@@ -270,6 +270,7 @@ static struct usb_device_id sx_usb_id_table[] =
     {USB_DEVICE(EZUSB_VENDOR_ID,  EZUSB_PRODUCT_ID)},
     {USB_DEVICE(EZUSB2_VENDOR_ID, EZUSB2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2_PRODUCT_ID)},
+    {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2a_PRODUCT_ID)},
     {USB_DEVICE(ECHO3_VENDOR_ID,  ECHO3_PRODUCT_ID)},
     {}
 };
@@ -913,12 +914,14 @@ static struct tty_struct *sx_tty_table[NR_SX*4];
 static int                sx_tty_refcount;
 #endif
 static struct ktermios    *sx_tty_termios[NR_SX*4];
-static struct ktermios    *sx_tty_termios_locked[NR_SX*4];
 static int                sx_tty_ser_opened;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
 static struct tq_struct   do_sx_tty_poll;
 #else
 static struct work_struct do_sx_tty_poll;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27))
+static struct ktermios    *sx_tty_termios_locked[NR_SX*4];
+#endif
 #endif
 static struct timer_list  do_sx_tty_timer;
 /*
@@ -1154,7 +1157,11 @@ static int sx_tty_open(struct tty_struct *tty, struct file *filp)
 #endif
     return (0);
 }
-static int sx_tty_ioctl(struct tty_struct *tty, struct file *file, unsigned int cmd, unsigned long arg)
+static int sx_tty_ioctl(struct tty_struct *tty, 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0)
+                         struct file *file,
+#endif
+						 unsigned int cmd, unsigned long arg)
 {
     return (-ENOIOCTLCMD);
 }
@@ -1444,9 +1451,10 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
 #endif
     }
     else if((usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
-            usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID)
-        || (usbdev->descriptor.idVendor  == ECHO3_VENDOR_ID &&
-            usbdev->descriptor.idProduct == ECHO3_PRODUCT_ID))
+              (usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID ||
+               usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID))
+         || (usbdev->descriptor.idVendor  == ECHO3_VENDOR_ID &&
+              usbdev->descriptor.idProduct == ECHO3_PRODUCT_ID))
     {
         struct ccd_mini     mini_device;
         int                 sx_model, sx_color;
@@ -1983,12 +1991,14 @@ static struct tty_driver sx_tty_driver =
     type:           TTY_DRIVER_TYPE_SERIAL,
     subtype:        SERIAL_TYPE_NORMAL,
     termios:        sx_tty_termios,
-    termios_locked: sx_tty_termios_locked,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     flags:          TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS,
     refcount:      &sx_tty_refcount,
     table:          sx_tty_table,
 #else
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27))
+    termios_locked: sx_tty_termios_locked,
+#endif
     flags:          TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
     refcount:      1,
