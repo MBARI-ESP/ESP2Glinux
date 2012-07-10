@@ -1,0 +1,119 @@
+CCD 1.0 README
+==============
+
+
+Build Requirements
+------------------
+
+These are kernel device drivers for the 2.2.x kernel but should also build 
+with the 2.4.x kernels and 2.6.x kernels. You will need the kernel headers to
+your kernel in order to build.  The class driver, ccd.o, loads at the default
+major # 127.  If you have a conflict you will need to change it.  The
+mini-drivers use whatever low-level interface needed to get to the camera.
+Most use the parallel port so the parport driver will need to be available on
+your system.  To build the drivers, just type 'make'.  Edit the makefile to
+install only the drivers for your camera.  To install, 'su' to root and type
+'make install'.  To ensure the drivers were properly installed, type 'lsmod'
+and you should see the modules listed.  Many of the cameras use the parallel
+port as their interface so the parport driver will also be required.  Using
+'modprobe' to install the camera drivers will take care of all these
+dependencies.  You may also need to pass in parameters to your camera driver.
+Each has its own requirements, so look into them seperately.  The sample code
+is available in C and Perl.  To build the C code, enter the 'samples' directory
+and type make.  The testguide program uses the SVGA library so that library and
+header files need to be installed in order to build.  The Perl code and just be
+run as-is.  
+
+
+How Does It Work?
+-----------------
+
+The kernel driver is designed to provide a high level interface to CCD 
+cameras so applications from interactive C programs to batch mode scipts 
+can easily get results from the camera.  The class driver 'ccd.o' is used 
+to manage the high level driver interface.  The mini-drivers like mx5.o 
+are relatively simple in comparison.  They are responsible for basic 
+camera functions like clearing the camera and downloading the image from 
+the camera.  This makes it very easy to support new cameras, as the 
+mini-drivers are much simpler to write.  Each camera can be accessed 
+through up to six different device names.  The two methods of interfacing 
+to a camera device are either a binary, high performance command set, or 
+an XML based text command set.  The commands ar equivalent in both 
+interfaces, just the details are different.  Each camera can be accessed 
+by its base device, which allows all the most common functions to be 
+programmed.  On special cameras like the Starlight Xpress M series, 
+seperate even and odd image fields can be independently exposed to allow 
+guiding and exposing to occur simultaneously or to allow the full vertical 
+resolution of the CCD.  The default device names for the first camera are 
+thus:
+
+	/dev/ccda	The binary interface device
+	/dev/ccda1	The binary interface for the odd field
+	/dev/ccda2	The binary interface for the even field
+	/dev/ccdA	The text interface device
+	/dev/ccdA1	The text interface for the odd field
+	/dev/ccdA2	The text interface for the even field
+
+The second camera (if you are so lucky) would be /dev/ccdb, /dev/ccdB, 
+etc.
+  
+All the commands to the binary or text devices are identical.  The 
+only difference is the image data loaded will come from one or both, the 
+odd, or the even field dependent on the device accessed.  On devices that 
+don't support odd and even fields only the two base devices will be 
+available.  See the testguide.c sample code or the fullres.pl sample code 
+for programming examples.  
+
+
+Supported Cameras
+-----------------
+
+Connectix parallel port Quickcams:
+Both color and B&W are supported.  I don't know where you would find these 
+anymore.  Maybe eBay.
+	
+Starlight XPress:
+Installing the Starlight Xpress cameras usually invloves passing some 
+parameters to the driver.  The currently supported parameters are:
+
+	parport=[0..?]	The parallel port the camera is attached to (0 is default).
+	model=[5,7,9]	Set the camera to MX5, MX7, or MX9 (MX5 is default).
+	model=[-5,-9]	Set the camera to HX5 or HX9.
+	color=[0,1]	Only useful for the MX5, enables color with 1.
+	dac=[12,16]	Only useful for MX5/12, sets DAC size (16 is default).
+	
+The parallel port cameras use the sx_parport driver, the USB cameras use 
+the sx_usb driver. The sx_mx driver is depricated.
+	
+Audine:
+There is now a contributed audine camera.
+
+Dummy:
+There is a test driver called tester.c.  Its just simulated a camera and 
+has a bouncing star image.  Use this as a sample starting point or for 
+debugging apps when you don't want to attach a camera to your development 
+machine.
+
+
+Programming
+-----------
+
+Look at ./samples directory for C programs and Perl programs.  The interface
+is much like any device.  open/close/read/write/ioctl/select are the 
+supported system level interface.  There is a binary command set and an 
+ASCII command set.  Look at ccd_msg.h for the details of the commands.
+
+
+Features, Bugs, Etc.
+--------------------
+
+I've changed the names of the image capture command from CAP to IMG.  I 
+felt that CAP was too much like capapbilities.  The actual values remain 
+the same so old software will work just fine.  If it is rebuilt to the new 
+header file, the name will have to be changed.  Sorry for the indecision.
+
+Feeback
+-------
+
+Dave Schmenk
+dschmenk@earthlink.net
