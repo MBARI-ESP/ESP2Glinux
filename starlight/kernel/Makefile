@@ -5,7 +5,7 @@ KERNEL_DIR:=/lib/modules/$(shell uname -r)/build
 EXTRA_CFLAGS = -I$(obj) -DVERSION_MAJOR=${VERSION_MAJOR} -DVERSION_MINOR=${VERSION_MINOR}
 MISCDIR       =/lib/modules/$(shell uname -r)/misc
 
-obj-m := ccd.o sx_parport.o sx_usb.o audinegccd.o cookbook.o qc.o tester.o fli_parport.o
+obj-m := ccd.o sx_usb.o audinegccd.o tester.o
 
 ifndef KERNELRELEASE
 ifndef KERNEL_VER
@@ -21,6 +21,7 @@ uninstall: remove-devices
 dep:
 clean:
 	$(RM) kernel-ver $(obj-m) $(obj-m:.o=.ko) *.mod.* .*.cmd *~
+	$(RM) *.order *.symvers
 
 install-devices:
 	-mkdir -p ${DESTDIR}/dev
@@ -81,6 +82,8 @@ remove-devices:
 	rm -f /dev/ttysx*
 else
 ifeq ($(findstring 2.4,$(KERNEL_VER)),2.4)
+
+obj-m += sx_parport.o cookbook.o qc.o fli_parport.o
 
 module-dir ?= ${DESTDIR}/lib/modules/$(KERNEL_VER)/misc
 
