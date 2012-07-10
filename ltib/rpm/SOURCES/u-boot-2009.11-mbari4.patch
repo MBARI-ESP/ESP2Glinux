@@ -1,6 +1,6 @@
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
---- u-boot-2009.11/Makefile	2012-07-09 14:03:18.225272800 -0700
-+++ u-boot-2009.11.modified/Makefile	2012-07-08 21:50:37.021105904 -0700
+--- u-boot-2009.11/Makefile	2012-07-09 14:39:30.705899845 -0700
++++ u-boot-2009.11.modified/Makefile	2012-07-09 14:29:25.695041179 -0700
 @@ -24,7 +24,7 @@
  VERSION = 2009
  PATCHLEVEL = 11
@@ -12,7 +12,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.mo
  else
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/common/main.c u-boot-2009.11.modified/common/main.c
 --- u-boot-2009.11/common/main.c	2009-12-15 14:20:54.000000000 -0800
-+++ u-boot-2009.11.modified/common/main.c	2012-07-09 11:48:56.130616072 -0700
++++ u-boot-2009.11.modified/common/main.c	2012-07-09 14:29:25.695041179 -0700
 @@ -207,10 +207,6 @@
  
  # else	/* !defined(CONFIG_AUTOBOOT_KEYED) */
@@ -81,7 +81,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/common/main.c u-boot-2009.
  #ifdef CONFIG_AMIGAONEG3SE
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cgu.h u-boot-2009.11.modified/cpu/lpc313x/cgu.h
 --- u-boot-2009.11/cpu/lpc313x/cgu.h	1969-12-31 16:00:00.000000000 -0800
-+++ u-boot-2009.11.modified/cpu/lpc313x/cgu.h	2012-07-08 22:47:54.828268105 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/cgu.h	2012-07-09 14:29:25.699041092 -0700
 @@ -0,0 +1,644 @@
 +/* linux/arch/arm/mach-lpc313x/include/mach/cgu.h
 + *
@@ -729,7 +729,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cgu.h u-boot-2
 +#endif /* LPC313X_CGU_DRIVER_H */
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/constants.h u-boot-2009.11.modified/cpu/lpc313x/constants.h
 --- u-boot-2009.11/cpu/lpc313x/constants.h	1969-12-31 16:00:00.000000000 -0800
-+++ u-boot-2009.11.modified/cpu/lpc313x/constants.h	2012-07-08 22:47:54.828268105 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/constants.h	2012-07-09 14:29:25.699041092 -0700
 @@ -0,0 +1,108 @@
 +/* linux/arch/arm/mach-lpc313x/include/mach/constants.h
 + *
@@ -840,8 +840,8 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/constants.h u-
 +#define IO_ISRAM0_PHYS     (0x11028000)
 +#define IO_ISRAM0_SIZE     (0x00018000)
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cpu.c u-boot-2009.11.modified/cpu/lpc313x/cpu.c
---- u-boot-2009.11/cpu/lpc313x/cpu.c	2012-07-09 14:03:15.809325793 -0700
-+++ u-boot-2009.11.modified/cpu/lpc313x/cpu.c	2012-07-08 23:06:53.478752866 -0700
+--- u-boot-2009.11/cpu/lpc313x/cpu.c	2012-07-09 14:39:30.617901753 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/cpu.c	2012-07-09 14:29:25.699041092 -0700
 @@ -33,6 +33,9 @@
  #include <command.h>
  #include <asm/system.h>
@@ -882,7 +882,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/cpu.c u-boot-2
 +
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/hardware.h u-boot-2009.11.modified/cpu/lpc313x/hardware.h
 --- u-boot-2009.11/cpu/lpc313x/hardware.h	1969-12-31 16:00:00.000000000 -0800
-+++ u-boot-2009.11.modified/cpu/lpc313x/hardware.h	2012-07-09 12:14:58.497549952 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/hardware.h	2012-07-09 14:29:25.699041092 -0700
 @@ -0,0 +1,80 @@
 +/* linux/arch/arm/mach-lpc313x/include/mach/hardware.h
 + *  
@@ -966,7 +966,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/hardware.h u-b
 +
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/registers.h u-boot-2009.11.modified/cpu/lpc313x/registers.h
 --- u-boot-2009.11/cpu/lpc313x/registers.h	1969-12-31 16:00:00.000000000 -0800
-+++ u-boot-2009.11.modified/cpu/lpc313x/registers.h	2012-07-08 22:55:15.298403367 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/registers.h	2012-07-09 14:29:25.703041005 -0700
 @@ -0,0 +1,658 @@
 +/* linux/arch/arm/mach-lpc313x/include/mach/registers.h
 + *
@@ -1627,8 +1627,8 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/registers.h u-
 +
 +#endif  /* __ASM_ARCH_REGISTERS_H */
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/timer.c u-boot-2009.11.modified/cpu/lpc313x/timer.c
---- u-boot-2009.11/cpu/lpc313x/timer.c	2012-07-09 14:03:18.221272887 -0700
-+++ u-boot-2009.11.modified/cpu/lpc313x/timer.c	2012-07-08 22:59:53.036184591 -0700
+--- u-boot-2009.11/cpu/lpc313x/timer.c	2012-07-09 14:39:30.701899932 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/timer.c	2012-07-09 14:29:25.703041005 -0700
 @@ -161,12 +161,6 @@
  	timer_delay_cmn(TIMER_CNTR1, usec);
  }
@@ -1643,8 +1643,8 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/timer.c u-boot
  {
  	TIMER_CNTR0->control &= ~TM_CTRL_ENABLE;
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
---- u-boot-2009.11/include/configs/ea31xx.h	2012-07-09 14:03:18.225272800 -0700
-+++ u-boot-2009.11.modified/include/configs/ea31xx.h	2012-07-09 13:51:49.567716573 -0700
+--- u-boot-2009.11/include/configs/ea31xx.h	2012-07-09 14:39:30.705899845 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2012-07-09 14:38:25.247319994 -0700
 @@ -101,7 +101,7 @@
  #endif
  
@@ -1654,7 +1654,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u
  
  /*
   * Serial Driver Console
-@@ -115,37 +115,43 @@
+@@ -115,37 +115,45 @@
   */
  #define CONFIG_BOOTFILE			uImage
  #define CONFIG_BOOTDELAY		1
@@ -1662,23 +1662,28 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u
  #define CONFIG_EXTRA_ENV_SETTINGS	\
  "loadaddr=31000000\0" \
  "rd_addr=32000000\0" \
-+"envOffset=40000\0" \
-+"envSize=10000\0" \
- "kernBase=50000\0" \
+-"kernBase=50000\0" \
 -"maxKernLen=200000\0" \
-+"maxKernSize=200000\0" \
-+"kernSize=200000\0" \
- "usbtty=cdc_acm\0" \
+-"usbtty=cdc_acm\0" \
 -"ramargs=setenv bootargs console=ttyS0,115200n8 root=/dev/ram0 rw ip=dhcp loglevel=7\0" \
 -"nfsargs=setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp loglevel=7" \
++"envOffset=40000\0" \
++"envSize=10000\0" \
++"ubootFile=u-boot.bin\0" \
++"kernFile=uImage\0" \
+ "bootfile=uImage\0" \
+ "ramfile=rootfs.ext2.gz.uboot\0" \
+-"net_boot=dhcp; run nfsargs; bootm $(loadaddr)\0" \
+-"spi_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
+-"nand_boot= nand read $(loadaddr) 80000 $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
++"kernBase=50000\0" \
++"maxKernSize=200000\0" \
++"kernSize=200000\0" \
++"usbtty=cdc_acm\0" \
 +"console=console=ttyS0,115200n8 loglevel=5\0" \
 +"ramargs=setenv bootargs $(console) root=/dev/ram0 rw ip=dhcp\0" \
 +"nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp" \
- "bootfile=uImage\0" \
- "ramfile=rootfs.ext2.gz.uboot\0" \
- "net_boot=dhcp; run nfsargs; bootm $(loadaddr)\0" \
--"spi_boot= sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
--"nand_boot= nand read $(loadaddr) 80000 $(maxKernLen); run nfsargs; bootm $(loadaddr)\0" \
++"net_boot=dhcp $(kernFile); run nfsargs; bootm $(loadaddr)\0" \
 +"spi_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
 +"nand_boot=nand read $(loadaddr) 80000 $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
  "sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
@@ -1695,6 +1700,9 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u
 -"flashargs=setenv bootargs $(console) $(flash_root) loglevel=7\0" \
 -"rootpath=/nfsroot/ltib\0" \
 -"console=console=ttyS0,115200n8\0" \
+-"testKernel=dhcp; run flashargs; bootm $(loadaddr)\0" \
+-"flash_root=root=/dev/mtdblock0 ro\0" \
+-"flashNewKernel=dhcp; sf probe 0 0 0; sf erase $(kernBase) $(maxKernLen); sf write $(loadaddr) $(kernBase) $(maxKernLen); set kernSize $(filesize); saveenv\0" \
 +"usbdfu_boot=usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)\0" \
 +"usb_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
 +"uart_boot=loady; run nfsargs; bootm $(loadaddr)\0" \
@@ -1707,18 +1715,16 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u
 +"uartram_boot=loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
 +"flashargs=setenv bootargs $(console) $(flash_root)\0" \
 +"rootpath=/nfsroot/ea313x\0" \
- "testKernel=dhcp; run flashargs; bootm $(loadaddr)\0" \
--"flash_root=root=/dev/mtdblock0 ro\0" \
--"flashNewKernel=dhcp; sf probe 0 0 0; sf erase $(kernBase) $(maxKernLen); sf write $(loadaddr) $(kernBase) $(maxKernLen); set kernSize $(filesize); saveenv\0" \
++"testKernel=dhcp $(kernFile); run flashargs; bootm $(loadaddr)\0" \
 +"flash_root=root=/dev/mtdblock2 ro\0" \
  "flash_boot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)\0" \
-+"flashNewKernel=dhcp; sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
-+"flashNewUboot=dhcp u-boot.bin; sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
++"flashNewKernel=dhcp $(kernFile); sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
++"flashNewUboot=dhcp $(ubootFile); sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
 +"resetEnvironment=sf probe 0 0 0; echo \\\\cErasing environment...;  sf erase $(envOffset) $(envSize); reset\0" \
  "serverip=134.89.10.31\0" \
  ""
  
-@@ -225,8 +231,8 @@
+@@ -225,8 +233,8 @@
  #else
  
  #ifdef CONFIG_ENV_IS_IN_SPI_FLASH
