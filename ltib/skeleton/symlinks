@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 4/26/11 BAR
+Configuration symlinks for ESP embedded linux - 7/11/12 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -11,7 +11,6 @@ First the mountpoints and empty directories:
 
 bufflehead/etc ->
 bufflehead/home ->
-bufflehead/home2 ->
 pippin/etc ->
 pippin/home ->
 tern/etc ->
@@ -24,6 +23,7 @@ flash ->
 project ->
 tempbox ->
 u ->
+ftp ->
 
 ============================================================
 
