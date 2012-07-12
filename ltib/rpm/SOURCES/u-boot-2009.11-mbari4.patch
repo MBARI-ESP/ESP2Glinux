@@ -1682,7 +1682,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u
 +"usbtty=cdc_acm\0" \
 +"console=console=ttyS0,115200n8 loglevel=5\0" \
 +"ramargs=setenv bootargs $(console) root=/dev/ram0 rw ip=dhcp\0" \
-+"nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp" \
++"nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) ip=dhcp\0" \
 +"net_boot=dhcp $(kernFile); run nfsargs; bootm $(loadaddr)\0" \
 +"spi_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
 +"nand_boot=nand read $(loadaddr) 80000 $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
