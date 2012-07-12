@@ -73,7 +73,7 @@ cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst &&
 rm -rf `find $dst -name CVS` &&
 mksymlinks $dst < $here/symlinks && 
 ldconfig -r . &&
-mkdir -p $log && cd $log && { 
+mkdir -p $log && chmod g-w $log && cd $log && { 
       d=`date  -uIseconds` &&
       echo ${d%+*}UTC > birth &&
       echo "Image Built at  `date`"
