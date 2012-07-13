@@ -9,10 +9,11 @@ none /dev devfs remount,rw    #for case of sysmount restart
 #END nfsmount service ignores entries below this line END#
 
 bufflehead:/home /bufflehead/home nfs rsize=2048,intr,noauto
-bufflehead:/home2 /bufflehead/home2 nfs rsize=2048,intr,noauto
 
 tempest:/vol/vol0/users /u nfs rsize=2048,intr,nosuid,nodev,noauto
 tempest:/vol/tempbox /tempbox nfs rsize=2048,intr,nosuid,nodev,noauto
 tornado:/vol/vol0/Engineering /engineering nfs rsize=2048,intr,nosuid,nodev,noauto
 tornado:/vol/ProjectLibrary /project nfs rsize=2048,intr,nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/ESP /ESP nfs rsize=2048,intr,nosuid,nodev,noauto
+
+pippin:/home /pippin/home nfs rsize=2048,intr,noauto
