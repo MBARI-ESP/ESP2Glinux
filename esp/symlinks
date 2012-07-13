@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 9/8/08 BAR
+Configuration symlinks for ESP embedded linux - 7/12/12 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -15,7 +15,7 @@ proc ->
 mnt ->
 bufflehead/etc ->
 bufflehead/home ->
-bufflehead/home2 ->
+pippin/home ->
 book/home ->
 cf ->
 engineering ->
