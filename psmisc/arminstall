@@ -1,20 +1,20 @@
 #!/bin/sh
 # build & install just the fuser command of psmisc for arm-linux
-# -- 5/8/12 brent@mbari.org
+# -- 7/24/12 brent@mbari.org
 
-: ${PSMISCVERS:=psmisc-22.16}
+: ${PSMISCVERS:=psmisc-22.3}
+: ${PSMISCTOOLS:=fuser}
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
-: ${TARGETTOP:=${2-/usr/bin}}
+: ${TARGETTOP:=${2-/bin}}
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
-cd $PSMISCVERS || exit 2
-make
-echo "errors are expected due to lack of curses library"
+cd $PSMISCVERS/src || exit 2
+make signames.h $PSMISCTOOLS || exit 3
 
-for tool in fuser; do
-  $ARMSTRIP src/$tool -o $HOSTTOP/$tool
+for tool in $PSMISCTOOLS; do
+  $ARMSTRIP $tool -o $HOSTTOP/$tool
 done
 echo "Done."
