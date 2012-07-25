@@ -1,8 +1,5 @@
 #!/bin/sh
-#  connect to specified GPRS APN.  For
-#   T-Mobile:  epc.tmobile.com
-#   AT&T:      Broadband
-#
+#  connect to specified GPRS APN
 
 export tag=`basename $0`
 tracefn=/tmp/${tag}.trace
@@ -37,17 +34,18 @@ exit 1
 }
 cd `dirname $0` || exit 2
 
-while ! /usr/sbin/chat -vf gprs-detach.chat; do
+until /usr/sbin/chat -vf gprs-detach.chat; do
   fuser -u $gateway 2>&1 | tr \(\) " " | (
     while read dev espPid espUser ignored; do
       if [ -n "$espPid" -a -n "$espUser" ]; then
         logger -t$tag \
           "Modem won't detach -- cycling power via $espUser's espclient"
-        if su - $espUser <<-EOS
-          espclient --server=$espPid $tag >&5 <<-EOC
+        if su - $espUser <<EOS
+          espclient --server=$espPid $tag >&5 <<EOC
             Sleepy.cycleModemPower! $offSecs
-          EOC
-        EOS; then 5>&1 >- | {
+EOC
+EOS
+        then 5>&1 >- | {
             read arrow secsOff
             [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ] && return
           }
