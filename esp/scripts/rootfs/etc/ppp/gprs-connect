@@ -1,0 +1,71 @@
+#!/bin/sh
+#  connect to specified GPRS APN.  For
+#   T-Mobile:  epc.tmobile.com
+#   AT&T:      Broadband
+#
+
+export tag=`basename $0`
+tracefn=/tmp/${tag}.trace
+[ -w $tracefn ] && {
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+}
+
+export APN=$1
+resetDelay=${2-900}  #fifteen minutes
+offSecs=${3-5}
+gateway=${4-/dev/I2Cgate}
+esp=esp  #esp user for case where no espclient available
+mRstCmd="/sbin/crash/resetModem --device=$gateway $offSecs"
+
+[ "$APN" ] || {
+cat << EOS
+ $tag:  attach to specified GPRS APN.  Specify for...
+   T-Mobile:  epc.tmobile.com
+   AT&T:      Broadband
+ stdin and stdout should be redirected to the cellular modem
+ Modem will be power cycled if it appears to be hung.
+ optional 2nd arg is the number of seconds to wait after resetting modem
+  [defaults to $resetDelay seconds]
+ optional 3rd arg is the number of seconds to hold power off
+  [defaults to $offSecs seconds]
+ optional 4th arg is the device connected to the ESP I2C gateway
+  [defaults to $gateway]
+EOS
+exit 1
+}
+cd `dirname $0` || exit 2
+
+while ! /usr/sbin/chat -vf gprs-detach.chat; do
+  fuser -u $gateway 2>&1 | tr \(\) " " | {
+    while read dev espPid espUser ignored; do
+      if [ -n "$espPid" -a -n "$espUser" ] &&
+         tmpfn=`mktemp /tmp/$tag.XXXXXX` &&
+         chown $espUser $tmpfn; then
+        logger -t$tag \
+          "Modem won't detach -- cycling power via $espUser's espclient"
+        if su - $espUser <<EOS
+          echo "Sleepy.cycleModemPower! $offSecs" | 
+          espclient --server=$espPid $tag > $tmpfn
+EOS
+        then    
+          cat $tmpfn | {
+            read arrow secsOff
+            rm -f $tmpfn
+            [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ]
+          } && continue 2
+        fi
+      fi
+    done
+    # reset modem directly first as user esp
+    #   failing that, output warning in log and try resetting as root
+    logger -t$tag "Modem won't detach, no espclient -- resetting via $gateway"
+    errmsg=`su $esp -c "$mRstCmd" 2>&1 1>/dev/null` && continue
+    logger -t$tag "retrying as root after $esp failed with $errmsg"
+    errmsg=`$mRstCmd 2>&1 1>/dev/null` && continue
+    logger -t$tag "also failed as root -- $errmsg"
+  }
+  sleep $resetDelay
+done
+exec /usr/sbin/chat -vEf gprs-attach.chat
