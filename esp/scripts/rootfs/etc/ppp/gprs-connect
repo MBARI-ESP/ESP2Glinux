@@ -38,7 +38,7 @@ exit 1
 cd `dirname $0` || exit 2
 
 while ! /usr/sbin/chat -vf gprs-detach.chat; do
-  fuser -u $gateway 2>&1 | tr \(\) " " | {
+  fuser -u $gateway 2>&1 | tr \(\) " " | (
     while read dev espPid espUser ignored; do
       if [ -n "$espPid" -a -n "$espUser" ] &&
          tmpfn=`mktemp /tmp/$tag.XXXXXX` &&
@@ -50,22 +50,20 @@ while ! /usr/sbin/chat -vf gprs-detach.chat; do
           espclient --server=$espPid $tag > $tmpfn
 EOS
         then    
-          cat $tmpfn | {
-            read arrow secsOff
-            rm -f $tmpfn
-            [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ]
-          } && continue 2
+          read arrow secsOff < $tmpfn
+          rm -f $tmpfn
+          [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ] && return
         fi
       fi
     done
     # reset modem directly first as user esp
     #   failing that, output warning in log and try resetting as root
     logger -t$tag "Modem won't detach, no espclient -- resetting via $gateway"
-    errmsg=`su $esp -c "$mRstCmd" 2>&1 1>/dev/null` && continue
+    errmsg=`su $esp -c "$mRstCmd" 2>&1 1>/dev/null` && return
     logger -t$tag "retrying as root after $esp failed with $errmsg"
-    errmsg=`$mRstCmd 2>&1 1>/dev/null` && continue
+    errmsg=`$mRstCmd 2>&1 1>/dev/null` && return
     logger -t$tag "also failed as root -- $errmsg"
-  }
+  )
   sleep $resetDelay
 done
 exec /usr/sbin/chat -vEf gprs-attach.chat
