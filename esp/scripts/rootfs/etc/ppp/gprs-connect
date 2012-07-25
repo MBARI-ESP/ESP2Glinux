@@ -39,26 +39,21 @@ cd `dirname $0` || exit 2
 
 while ! /usr/sbin/chat -vf gprs-detach.chat; do
   fuser -u $gateway 2>&1 | tr \(\) " " | (
-    tmpfn=`mktemp /tmp/$tag.XXXXXX` &&
-    chown $espUser $tmpfn &&
     while read dev espPid espUser ignored; do
       if [ -n "$espPid" -a -n "$espUser" ]; then
         logger -t$tag \
           "Modem won't detach -- cycling power via $espUser's espclient"
-        if su - $espUser <<EOS
-          echo "Sleepy.cycleModemPower! $offSecs" | 
-          espclient --server=$espPid $tag > $tmpfn
-EOS
-        then    
-          cat $tmpfn | {
+        if su - $espUser <<-EOS
+          espclient --server=$espPid $tag >&5 <<-EOC
+            Sleepy.cycleModemPower! $offSecs
+          EOC
+        EOS; then 5>&1 >- | {
             read arrow secsOff
-            rm -f $tmpfn
             [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ] && return
           }
         fi
       fi
     done
-    rm -f $tmpfn
     # reset modem directly first as user esp
     #   failing that, output warning in log and try resetting as root
     logger -t$tag "Modem won't detach, no espclient -- resetting via $gateway"
