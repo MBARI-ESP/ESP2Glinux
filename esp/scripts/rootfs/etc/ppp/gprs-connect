@@ -10,7 +10,7 @@ tracefn=/tmp/${tag}.trace
 }
 
 export APN=$1
-resetDelay=${2-900}  #fifteen minutes
+resetDelay=${2-120}  #fifteen minutes (do not retry)
 offSecs=${3-5}
 gateway=${4-/dev/I2Cgate}
 esp=esp  #esp user for case where no espclient available
@@ -24,6 +24,7 @@ cat << EOS
  stdin and stdout should be redirected to the cellular modem
  Modem will be power cycled if it appears to be hung.
  optional 2nd arg is the number of seconds to wait after resetting modem
+  if < 0, retry after the absolute value of seconds specified
   [defaults to $resetDelay seconds]
  optional 3rd arg is the number of seconds to hold power off
   [defaults to $offSecs seconds]
@@ -59,6 +60,13 @@ EOS
     errmsg=`$mRstCmd 2>&1 >&-` && return
     logger -t$tag "also failed as root -- $errmsg"
   )
-  sleep $resetDelay
+  [ "$resetDelay" -ge 0 ] && {
+    [ $resetDelay -ne 0 ] && 
+      logger -t$tag "Waiting $resetDelay seconds before reporting failure"
+    sleep $resetDelay
+    exit 7
+  }
+  logger -t$tag "Waiting $((-$resetDelay)) seconds before retrying..."
+  sleep $((-$resetDelay))
 done
 exec /usr/sbin/chat -vEf gprs-attach.chat
