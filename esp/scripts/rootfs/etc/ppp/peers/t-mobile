@@ -31,7 +31,7 @@ defaultroute
 
 # Defines whether an attempt should be made to re-establish a dropped GPRS connection.
 persist
-holdoff 5
+holdoff 30
 #
 # Advises PPPD to request any DHCP address, none in particular.
 noipdefault
