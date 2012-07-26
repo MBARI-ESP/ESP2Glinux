@@ -40,24 +40,23 @@ until /usr/sbin/chat -vf gprs-detach.chat; do
       if [ -n "$espPid" -a -n "$espUser" ]; then
         logger -t$tag \
           "Modem won't detach -- cycling power via $espUser's espclient"
-        if su - $espUser <<EOS
+        result=$(exec 5>&1; su - $espUser >&2 <<EOS
           espclient --server=$espPid $tag >&5 <<EOC
             Sleepy.cycleModemPower! $offSecs
 EOC
 EOS
-        then 5>&1 >- | {
-            read arrow secsOff
-            [ "$arrow" = "=>" -a "$secsOff" -eq "$offSecs" ] && return
-          }
-        fi
+        ) && {
+          set -- $result
+          [ -z "$3" -a "$1" = "=>" -a "$2" -eq "$offSecs" ] && return
+        }
       fi
     done
     # reset modem directly first as user esp
     #   failing that, output warning in log and try resetting as root
     logger -t$tag "Modem won't detach, no espclient -- resetting via $gateway"
-    errmsg=`su $esp -c "$mRstCmd" 2>&1 1>/dev/null` && return
+    errmsg=`su $esp -c "$mRstCmd" 2>&1 >&-` && return
     logger -t$tag "retrying as root after $esp failed with $errmsg"
-    errmsg=`$mRstCmd 2>&1 1>/dev/null` && return
+    errmsg=`$mRstCmd 2>&1 >&-` && return
     logger -t$tag "also failed as root -- $errmsg"
   )
   sleep $resetDelay
