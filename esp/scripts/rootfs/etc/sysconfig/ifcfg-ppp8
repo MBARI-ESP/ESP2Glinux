@@ -5,7 +5,7 @@ provider=t-mobile
 
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
-  ln -s /var/run/ppp-$provider.pid /var/run/$IFNAME.pid &&
+  ln -s ppp-$provider.pid /var/run/$IFNAME.pid &&
   pppd call $provider unit 8 logfile /dev/null
 }
 
