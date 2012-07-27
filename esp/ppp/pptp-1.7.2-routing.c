@@ -40,7 +40,7 @@ A secondary task may be to implement all-to-tunnel routing if the
 appropriate flag is specified on the command line.  The flag
 --route-all is to implement this (not yet implemented).
 
-Revised:  brent@mbari.org May 14, 2012
+Revised:  brent@mbari.org July 25, 2012
 
 The 'ip' command is not available on many memory constrained embedded systems
 (It's about 250kB!)
@@ -48,11 +48,12 @@ This is an alternative implementation using the standard 'route' command instead
 */
 
 static char *oldIface = NULL;
-static struct in_addr svrAdr;
+static struct in_addr svrAdr, svrGateway;
 
 void routing_init(char *ip) {
   static const char *word = " \t\n";
   char line[256];
+  oldIface = NULL;
   snprintf(line, sizeof(line), "/sbin/route -n");
   FILE *p;
   if (!inet_aton(ip, &svrAdr)) {
@@ -65,12 +66,13 @@ void routing_init(char *ip) {
     return;
   }
   while (fgets(line, sizeof(line), p)) {
-    char *adrs, *netMasks, *flags, *iface;
+    char *adrs, *netMasks, *gateways, *flags, *iface;
     struct in_addr adr, netMask;
     if ((adrs = strtok(line, word)) && inet_aton(adrs, &adr) && 
-          strtok(NULL, word) &&   //skip gateway
+        (gateways= strtok(NULL, word)) && inet_aton(gateways, &svrGateway) &&
         (netMasks= strtok(NULL, word)) && inet_aton(netMasks, &netMask) &&
         (flags=strtok(NULL, word)) && strchr(flags, 'U') &&
+        /* skip Metric, Ref and Use fields */
         strtok(NULL, word) && strtok(NULL, word) && strtok(NULL, word) &&
         (iface = strtok(NULL, word))) {
       if ((svrAdr.s_addr & netMask.s_addr) == (adr.s_addr & netMask.s_addr)) {
@@ -84,33 +86,49 @@ ret:
   pclose(p);
 }
 
-static int svrRoute(const char *op, 
-                    const char *suffix1, const char *suffix2, int logErrs) {
+static int delRoute(const char *suffix1, const char *suffix2, int logErrs) {
 /*
-  command is route <add|del><svrIP><suffix1><suffix2> 
+  command is route del <svrIP><suffix1><suffix2> 
 */
   if (oldIface) {
-    char buf[300];
+    char buf[200];
     char *svrIP = inet_ntoa(svrAdr);
-    snprintf(buf, sizeof(buf), "/sbin/route %s %s%s%s", 
-                  op, svrIP, suffix1, suffix2);
+    snprintf(buf, sizeof(buf), 
+      "/sbin/route del %s%s%s", svrIP, suffix1, suffix2);
     if (system(buf) && logErrs) {
       syslog (LOG_ERR,
-              "Could not %s route to %s: %s", op, svrIP, strerror(errno));
+              "Could not delete route to %s: %s", svrIP, strerror(errno));
       return 1;
     }
   }else{
-    syslog (LOG_ERR, "never called routing_init()");
+    syslog (LOG_ERR, "previous routing_init() failed");
     return -1;
   }
   return 0;
 }
 
 void routing_start() {
-  svrRoute("del", " ", "2>/dev/null", 0);
-  svrRoute("add", " dev ", oldIface, 1);
+  if (!delRoute(" ", "2>/dev/null", 0)) {
+    char buf[200];
+    char *svrIP = inet_ntoa(svrAdr);
+    const char *gateIP = "";
+    const char *gateway = gateIP;
+    if (svrGateway.s_addr) {  //preserve routing via gateway if one specified
+      gateway = " gw ";
+      svrIP = strdup(svrIP);
+      gateIP = inet_ntoa(svrGateway);
+    }
+    snprintf(buf, sizeof(buf), 
+      "/sbin/route add %s%s%s dev %s", svrIP, gateway, gateIP, oldIface);      
+    if (system(buf)) {
+      syslog (LOG_ERR,
+              "Could not add route to %s: %s", svrIP, strerror(errno));
+    }
+    if (svrGateway.s_addr)
+      free(svrIP);
+  }
 }
 
 void routing_end() {
-  svrRoute("del", " dev ", oldIface, 1);
+  delRoute(" dev ", oldIface, 1);
 }
