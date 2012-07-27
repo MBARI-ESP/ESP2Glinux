@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 2/1/12 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 7/25/12 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -13,6 +13,7 @@ top=$PWD
 cd $PPPVERS &&
 patch -p1 <../$PPPVERS-makefile.patch &&
 patch -p1 <../$PPPVERS-gateway.patch &&
+patch -p1 <../$PPPVERS-keeppid.patch &&
 cp ../$PPPVERS-patchlevel.h pppd/patchlevel.h &&
 configure --host=arm-unknown-linux --prefix=$LIBTOP --includedir=$ARMGCC/include ||
 exit 5

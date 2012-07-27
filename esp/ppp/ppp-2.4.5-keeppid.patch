@@ -1,0 +1,18 @@
+--- ppp-2.4.5/pppd/auth.c	2009-11-16 14:26:07.000000000 -0800
++++ ppp-2.4.5/pppd/auth.c.original	2012-07-26 17:51:52.967138259 -0700
+@@ -631,6 +631,7 @@
+     } else
+ 	notice("Link terminated.");
+ 
++#if 0
+     /*
+      * Delete pid files before disestablishing ppp.  Otherwise it
+      * can happen that another pppd gets the same unit and then
+@@ -638,6 +639,7 @@
+      */
+     if (!doing_multilink && !demand)
+ 	remove_pidfiles();
++#endif
+ 
+     /*
+      * If we may want to bring the link up again, transfer
