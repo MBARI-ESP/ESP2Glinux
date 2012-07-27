@@ -79,9 +79,9 @@ home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
 home/esp/.irbrc -> /etc/esp/irbrc
 
-home/everlove/bin/su -> /usr/bin/be
-home/everlove/.profile -> /etc/esp/profile
-home/everlove/.irbrc -> /etc/esp/irbrc
+home/maro/bin/su -> /usr/bin/be
+home/maro/.profile -> /etc/esp/profile
+home/maro/.irbrc -> /etc/esp/irbrc
 
 home/preston/bin/su -> /usr/bin/be
 home/preston/.profile -> /etc/esp/profile

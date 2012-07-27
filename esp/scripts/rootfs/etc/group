@@ -1,7 +1,7 @@
 root::0:
-users:x:20:esp,brent,sjensen,everlove,preston
-tty:x:4:esp,brent,sjensen,everlove,preston
-log:x:96:esp,brent,sjensen,everlove,preston
+users:x:20:esp,brent,sjensen,maro,preston
+tty:x:4:esp,brent,sjensen,maro,preston
+log:x:96:esp,brent,sjensen,maro,preston
 rpc:x:111:
 ftp:x:21:
 bin:x:1:
