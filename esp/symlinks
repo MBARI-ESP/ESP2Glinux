@@ -66,6 +66,7 @@ etc/hosts -> /var/etc/hosts
 etc/mtab -> /proc/mounts
 etc/issue.net -> issue
 etc/resolv.conf -> /var/etc/resolv.conf
+etc/ppp/connect-errors -> /var/etc/ppp/connect-errors
 
 root/.profile -> /etc/profile
 usr/bin/ssh2 -> ssh
