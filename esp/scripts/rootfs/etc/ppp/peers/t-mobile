@@ -14,6 +14,7 @@ crtscts
 115200
 
 # Most GPRS devices will not reply to LCP echo's
+#  (t-mobile will disconnect if link remains idle for 60 minutes)
 lcp-echo-failure 0
 lcp-echo-interval 0
 
@@ -45,6 +46,7 @@ usepeerdns
 #do not require remote system to authenticate itself
 noauth
 
-user a
-password a
+#arbitrary user/password
+user t
+password t
 
