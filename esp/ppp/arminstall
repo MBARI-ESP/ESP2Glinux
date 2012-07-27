@@ -20,7 +20,7 @@ done
 rm -rf $HOSTTOP/usr/share/man  $HOSTTOP/usr/sbin/pptpsetup
 
 cd $top && cd ${PPTPVERS:=pptp-1.7.2} || exit 2
-make CC=$CC OPTIMIZE="$COPTS" INSTALL="$INSTALL" RELEASE=-mbari2 DEBUG= &&
+make CC=$CC OPTIMIZE="$COPTS" INSTALL="$INSTALL" RELEASE=-mbari3 DEBUG= &&
 echo "Installing PPTP under $HOSTTOP" &&
 $ARMSTRIP pptp &&
 install -m 755 pptp $HOSTTOP/usr/sbin || exit 3
