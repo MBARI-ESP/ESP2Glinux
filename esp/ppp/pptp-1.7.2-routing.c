@@ -48,7 +48,7 @@ This is an alternative implementation using the standard 'route' command instead
 */
 
 static char *oldIface = NULL;
-static struct in_addr svrAdr, svrGateway;
+static struct in_addr svrAdr, svrGateway, netMask;
 
 void routing_init(char *ip) {
   static const char *word = " \t\n";
@@ -67,7 +67,7 @@ void routing_init(char *ip) {
   }
   while (fgets(line, sizeof(line), p)) {
     char *adrs, *netMasks, *gateways, *flags, *iface;
-    struct in_addr adr, netMask;
+    struct in_addr adr;
     if ((adrs = strtok(line, word)) && inet_aton(adrs, &adr) && 
         (gateways= strtok(NULL, word)) && inet_aton(gateways, &svrGateway) &&
         (netMasks= strtok(NULL, word)) && inet_aton(netMasks, &netMask) &&
@@ -90,7 +90,7 @@ static int delRoute(const char *suffix1, const char *suffix2, int logErrs) {
 /*
   command is route del <svrIP><suffix1><suffix2> 
 */
-  if (oldIface) {
+  if (oldIface && !netMask.s_addr) {  //only replace default routes
     char buf[200];
     char *svrIP = inet_ntoa(svrAdr);
     snprintf(buf, sizeof(buf), 
