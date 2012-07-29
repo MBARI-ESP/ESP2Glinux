@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 8/23/11 brent@mbari.org
+# -- revised: 7/29/12 brent@mbari.org
 #
 
 ipUp() {
@@ -41,7 +41,7 @@ ipDown() {
 
 
 gateUp() {
-  # add any specified device with gateways
+  # add any specified device with its gateway IP
   # then activate the appropriate gateway with its associated resolv.conf
   mkdir -p /var/run/resolv && cd /var/run/resolv || {
     echo "Cannot access /var/run/resolv directory" >&2
@@ -87,7 +87,7 @@ gateUp() {
       }
       : ${topIface:=$newIface}  #use newIf if no prioritized net iface found
       if [ "$topIface" ]; then
-        setGateways $topIface $gateways
+        setGateway $topIface $gateways
       else
 :       echo "No prioritized net interfaces up -- gateway unchanged" >&2
       fi
@@ -101,7 +101,6 @@ gateUp() {
 gateDown() {
   rm -f /var/run/resolv/$1
 }
-
 
 
 hostsUp() {
@@ -122,20 +121,31 @@ hostDown() {
 }
 
 
-setGateways() {
-  #update resolv.conf from device $1 and set up default gateways per following args
-  local gateway netIface=$1
-  cat /var/run/resolv/$netIface > /etc/resolv.conf &&
-  if [ "$2" ]; then  #replace all default routes
-    shift
-    while route del default gw 0.0.0.0 2>/dev/null; do
-      :
-    done
-    for gateway; do
-       route add default gw $gateway dev $netIface
-    done
+setGateway() {
+  #update resolv.conf from device $1, then
+  #set up default gateway to following gateway IP addresses
+  local topIface=$1 gateway=$2
+  export topIface gateway
+  cat /var/run/resolv/$topIface > /etc/resolv.conf &&
+  if [ "$gateway" ]; then  #replace default routes if changed
+    route -n | grep "^0\.0\.0\.0 " | {
+      del=
+      add=$gateway
+      while read dest gateIP mask flags metric ref use iface ignored; do
+        if [ "$iface" = "$topIface" -a "$gateIP" = "$gateway" ]; then
+          unset add
+        else
+          del="$del $gateIP/$iface"
+        fi
+      done
+      [ "$add" ] && route add default gw $add dev $topIface
+      for oldGate in $del; do
+        IFS=/; set -- $oldGate; unset IFS
+        route del default gw $1 dev $2
+      done
+    }
   else  #delete only this interface's default routes
-    while route del default gw 0.0.0.0 dev $netIface 2>/dev/null; do
+    while route del default dev $topIface 2>/dev/null; do
       :
     done
   fi
