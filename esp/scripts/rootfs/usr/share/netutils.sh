@@ -125,7 +125,6 @@ setGateway() {
   #update resolv.conf from device $1, then
   #set up default gateway to following gateway IP addresses
   local topIface=$1 gateway=$2
-  export topIface gateway
   cat /var/run/resolv/$topIface > /etc/resolv.conf &&
   if [ "$gateway" ]; then  #replace default routes if changed
     route -n | grep "^0\.0\.0\.0 " | {
