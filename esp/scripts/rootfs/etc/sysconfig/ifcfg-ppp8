@@ -1,7 +1,7 @@
 IFNAME=ppp8
 AUTOSTART=no
 
-provider=t-mobile
+provider=att  #works in USA with either AT&T or T-Mobile
 
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
