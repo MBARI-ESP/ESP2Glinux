@@ -3,6 +3,10 @@
 # See 
 #  http://www.att.com/esupport/article.jsp?sid=36059&cv=820#fbid=yKLsCZLWCPH
 #
+linkname att
+remotename att
+ipparam att
+
 # Specify which device to use
 freewave
 modem
