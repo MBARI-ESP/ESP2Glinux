@@ -10,7 +10,7 @@ tracefn=/tmp/${tag}.trace
 }
 
 export APN=$1
-resetDelay=${2-120}  #fifteen minutes (do not retry)
+resetDelay=${2--900}   #retry detach every 15 minutes
 offSecs=${3-5}
 gateway=${4-/dev/I2Cgate}
 esp=esp  #esp user for case where no espclient available
@@ -61,12 +61,13 @@ EOS
     logger -t$tag "also failed as root -- $errmsg"
   )
   [ "$resetDelay" -ge 0 ] && {
-    [ $resetDelay -ne 0 ] && 
+    [ $resetDelay -ne 0 ] && {
       logger -t$tag "Waiting $resetDelay seconds before reporting failure"
-    sleep $resetDelay
+      sleep $resetDelay
+    }
     exit 7
   }
-  logger -t$tag "Waiting $((-$resetDelay)) seconds before retrying..."
-  sleep $((-$resetDelay))
+  logger -t$tag "Waiting $((-($resetDelay))) seconds before retrying..."
+  sleep $((-($resetDelay)))
 done
 exec /usr/sbin/chat -vEf gprs-attach.chat
