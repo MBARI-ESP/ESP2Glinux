@@ -1,5 +1,6 @@
---- original/pptp.c	2008-05-13 23:33:55.000000000 -0700
-+++ ./pptp.c	2012-01-25 10:25:15.141070369 -0800
+diff -ru pptp-1.7.2/pptp.c pptp-1.7.2-patched/pptp.c
+--- pptp-1.7.2/pptp.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-patched/pptp.c	2012-07-31 00:54:59.750944534 -0700
 @@ -59,7 +59,7 @@
  #include "pptp_callmgr.h"
  #include "pptp_gre.h"
@@ -9,9 +10,40 @@
  #include <sys/prctl.h>
  #else
  #include "inststr.h"
---- pptp_callmgr.original	2012-02-01 17:03:14.568770519 -0800
-+++ pptp_callmgr.c	2012-02-01 17:03:19.376660239 -0800
-@@ -297,6 +297,7 @@
+diff -ru pptp-1.7.2/pptp_callmgr.c pptp-1.7.2-patched/pptp_callmgr.c
+--- pptp-1.7.2/pptp_callmgr.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-patched/pptp_callmgr.c	2012-07-31 12:14:06.467307878 -0700
+@@ -101,6 +101,10 @@
+  * the volatile qualifiers should be removed as well.
+  *****************************************************************************/
+ 
++//ensure that routing_end gets called if connect fails
++#define fatal_end(...) \
++  do { routing_end(); fatal(__VA_ARGS__); } while(0)
++
+ /*** Call Manager *************************************************************/
+ int callmgr_main(int argc, char **argv, char **envp)
+ {
+@@ -124,15 +128,15 @@
+     routing_start();
+     /* Step 1: Open sockets. */
+     if ((inet_sock = open_inetsock(inetaddr)) < 0)
+-        fatal("Could not open control connection to %s", argv[1]);
++        fatal_end("Could not open control connection to %s", argv[1]);
+     if ((unix_sock = open_unixsock(inetaddr)) < 0)
+-        fatal("Could not open unix socket for %s", argv[1]);
++        fatal_end("Could not open unix socket for %s", argv[1]);
+     /* Step 1b: FORK and return status to calling process. */
+     switch (fork()) {
+         case 0: /* child. stick around. */
+             break;
+         case -1: /* failure.  Fatal. */
+-            fatal("Could not fork.");
++            fatal_end("Could not fork.");
+         default: /* Parent. Return status to caller. */
+             exit(0);
+     }
+@@ -297,6 +301,7 @@
          vector_destroy(call_list);
      }
  cleanup:
@@ -19,3 +51,152 @@
      signal(SIGINT, callmgr_do_nothing);
      signal(SIGTERM, callmgr_do_nothing);
      close_inetsock(inet_sock, inetaddr);
+Only in pptp-1.7.2-patched: pptpsetup.8
+diff -ru pptp-1.7.2/routing.c pptp-1.7.2-patched/routing.c
+--- pptp-1.7.2/routing.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-patched/routing.c	2012-07-31 14:56:24.004230194 -0700
+@@ -18,15 +18,15 @@
+ 
+ */
+ 
+-#include <sys/types.h>
+-#include <unistd.h>
++#include <stdlib.h>
++#include <errno.h>
+ #include <stdio.h>
+ #include <string.h>
++#include <syslog.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
+ #include "routing.h"
+ 
+-/* route to the server */
+-char *route;
+-
+ /*
+ 
+ Design discussion.
+@@ -40,40 +40,98 @@
+ appropriate flag is specified on the command line.  The flag
+ --route-all is to implement this (not yet implemented).
+ 
+-Caveat.
+-
+-It is not possible from the "ip route" command to determine if a host
+-route already exists, so it isn't practical to put the routing table
+-back exactly as it was.
+-
+-We have a choice of either leaving our route lying around, or
+-destroying a route that the user had pre-arranged.  Both are
+-unfortunate.  The flag --remove-host-route is to remove the route
+-regardless (not yet implemented).
++Revised:  brent@mbari.org July 25, 2012
+ 
++The 'ip' command is not available on many memory constrained embedded systems
++(It's about 250kB!)
++This is an alternative implementation using the standard 'route' command instead.
+ */
+ 
++static char *oldIface = NULL;
++static struct in_addr svrAdr, svrGateway, netMask;
++
+ void routing_init(char *ip) {
+-  char buf[256];
+-  snprintf(buf, 255, "/bin/ip route get %s", ip);
+-  FILE *p = popen(buf, "r");
+-  fgets(buf, 255, p);
+-  /* TODO: check for failure of fgets */
+-  route = strdup(buf);
++  static const char *word = " \t\n";
++  char line[256];
++  oldIface = NULL;
++  snprintf(line, sizeof(line), "/sbin/route -n");
++  FILE *p;
++  if (!inet_aton(ip, &svrAdr)) {
++    syslog (LOG_ERR, "routing_init() was passed an invalid IPv4 address");
++    return;
++  }
++  p = popen(line, "r");
++  if (!p) {
++    syslog (LOG_ERR, "Cannot execute route utility: %s", strerror(errno));
++    return;
++  }
++  while (fgets(line, sizeof(line), p)) {
++    char *adrs, *netMasks, *gateways, *flags, *iface;
++    struct in_addr adr;
++    if ((adrs = strtok(line, word)) && inet_aton(adrs, &adr) && 
++        (gateways= strtok(NULL, word)) && inet_aton(gateways, &svrGateway) &&
++        (netMasks= strtok(NULL, word)) && inet_aton(netMasks, &netMask) &&
++        (flags=strtok(NULL, word)) && strchr(flags, 'U') &&
++        /* skip Metric, Ref and Use fields */
++        strtok(NULL, word) && strtok(NULL, word) && strtok(NULL, word) &&
++        (iface = strtok(NULL, word))) {
++      if ((svrAdr.s_addr & netMask.s_addr) == (adr.s_addr & netMask.s_addr)) {
++        oldIface = strdup(iface);
++        goto ret;
++      }
++    }
++  }
++  syslog(LOG_ERR, "there is no active route to server %s", ip);
++ret:
+   pclose(p);
+-  /* TODO: check for failure of command */
++}
++
++static int delRoute(const char *suffix1, const char *suffix2, int logErrs) {
++/*
++  command is route del <svrIP><suffix1><suffix2> 
++*/
++  if (oldIface && !netMask.s_addr) {  //only replace default routes
++    char buf[200];
++    char *svrIP = inet_ntoa(svrAdr);
++    snprintf(buf, sizeof(buf), 
++      "/sbin/route del %s%s%s", svrIP, suffix1, suffix2);
++    if (system(buf) && logErrs & 1) {
++      syslog (LOG_ERR,
++              "Could not delete route to %s: %s", svrIP, strerror(errno));
++      return 1;
++    }
++  }else if (logErrs & 2) {
++    if (oldIface)
++      syslog (LOG_NOTICE, "tunneling via existing %s route", oldIface);
++    else
++      syslog (LOG_ERR, "missing route for tunnel");
++    return -1;
++  }
++  return 0;
+ }
+ 
+ void routing_start() {
+-  char buf[256];
+-  snprintf(buf, 255, "/bin/ip route replace %s", route);
+-  FILE *p = popen(buf, "r");
+-  pclose(p);
++  if (!delRoute(" ", "2>/dev/null", 2)) {
++    char buf[200];
++    char *svrIP = inet_ntoa(svrAdr);
++    const char *gateIP = "";
++    const char *gateway = gateIP;
++    if (svrGateway.s_addr) {  //preserve routing via gateway if one specified
++      gateway = " gw ";
++      svrIP = strdup(svrIP);
++      gateIP = inet_ntoa(svrGateway);
++    }
++    snprintf(buf, sizeof(buf), 
++      "/sbin/route add %s%s%s dev %s", svrIP, gateway, gateIP, oldIface);      
++    if (system(buf)) {
++      syslog (LOG_ERR,
++              "Could not add route to %s: %s", svrIP, strerror(errno));
++    }
++    if (svrGateway.s_addr)
++      free(svrIP);
++  }
+ }
+ 
+ void routing_end() {
+-  char buf[256];
+-  snprintf(buf, 255, "/bin/ip route delete %s", route);
+-  FILE *p = popen(buf, "r");
+-  pclose(p);
++  delRoute(" dev ", oldIface, 1);
+ }

@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 7/25/12 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 7/30/12 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -22,5 +22,4 @@ cd $top &&
 rm -rf $PPTPVERS && tar zxf $PPTPVERS.tar.gz &&
 cd $PPTPVERS &&
 patch <../$PPTPVERS.patch &&
-cp ../$PPTPVERS-routing.c routing.c &&
 echo "Next, run arminstall here"
