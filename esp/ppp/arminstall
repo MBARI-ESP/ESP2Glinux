@@ -23,5 +23,5 @@ cd $top && cd ${PPTPVERS:=pptp-1.7.2} || exit 2
 make CC=$CC OPTIMIZE="$COPTS" INSTALL="$INSTALL" RELEASE=-mbari4 DEBUG= &&
 echo "Installing PPTP under $HOSTTOP" &&
 $ARMSTRIP pptp &&
-install -m 755 pptp $HOSTTOP/usr/sbin || exit 3
+install -m 555 pptp $HOSTTOP/usr/sbin || exit 3
 echo "Done."

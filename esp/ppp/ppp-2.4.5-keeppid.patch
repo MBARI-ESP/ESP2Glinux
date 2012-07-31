@@ -1,18 +1,65 @@
---- ppp-2.4.5/pppd/auth.c	2009-11-16 14:26:07.000000000 -0800
-+++ ppp-2.4.5/pppd/auth.c.original	2012-07-26 17:51:52.967138259 -0700
-@@ -631,6 +631,7 @@
-     } else
- 	notice("Link terminated.");
+--- ppp-2.4.5/pppd/original/auth.c	2012-07-31 00:42:13.600873279 -0700
++++ ppp-2.4.5/pppd/auth.c	2012-07-31 00:45:41.608006003 -0700
+@@ -578,16 +578,15 @@
+ 	goto disconnect;
+     }
  
-+#if 0
+-    if (!demand && ifunit >= 0)
+-	set_ifunit(1);
+-
      /*
-      * Delete pid files before disestablishing ppp.  Otherwise it
-      * can happen that another pppd gets the same unit and then
-@@ -638,6 +639,7 @@
+      * Start opening the connection and wait for
+      * incoming events (reply, timeout, etc.).
       */
-     if (!doing_multilink && !demand)
+-    if (ifunit >= 0)
+-	notice("Connect: %s <--> %s", ifname, ppp_devnam);
+-    else
++    if (ifunit >= 0) {
++	  if (!demand && req_unit < 0)
++	    set_ifunit(1);
++	  notice("Connect: %s <--> %s", ifname, ppp_devnam);
++    }else
+ 	notice("Starting negotiation on %s", ppp_devnam);
+     add_fd(fd_ppp);
+ 
+@@ -636,7 +635,7 @@
+      * can happen that another pppd gets the same unit and then
+      * we delete its pid file.
+      */
+-    if (!doing_multilink && !demand)
++    if (!doing_multilink && !demand && req_unit < 0)
  	remove_pidfiles();
-+#endif
  
      /*
-      * If we may want to bring the link up again, transfer
+--- ppp-2.4.5/pppd/original/main.c	2012-07-30 23:39:19.989666028 -0700
++++ ppp-2.4.5/pppd/main.c	2012-07-31 00:31:02.336593666 -0700
+@@ -489,7 +489,10 @@
+ 	/*
+ 	 * Configure the interface and mark it up, etc.
+ 	 */
+-	demand_conf();
++	demand_conf();        
++    }else if (req_unit >= 0) {   // whenever possible,
++      ifunit = req_unit;         //   write pid files before connect 
++      set_ifunit(1);
+     }
+ 
+     do_callback = 0;
+--- ppp-2.4.5/pppd/original/sys-linux.c	2012-07-30 22:59:03.655067863 -0700
++++ ppp-2.4.5/pppd/sys-linux.c	2012-07-30 23:04:24.351417453 -0700
+@@ -629,12 +629,10 @@
+ 
+ 	ifunit = req_unit;
+ 	x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
+-	if (x < 0 && req_unit >= 0 && errno == EEXIST) {
+-		warn("Couldn't allocate PPP unit %d as it is already in use", req_unit);
+-		ifunit = -1;
+-		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
+-	}
+ 	if (x < 0)
++      if (req_unit >= 0 && errno == EEXIST)
++        warn("Couldn't allocate PPP unit %d as it is already in use", req_unit);
++	  else
+ 		error("Couldn't create new ppp unit: %m");
+ 	return x;
+ }
