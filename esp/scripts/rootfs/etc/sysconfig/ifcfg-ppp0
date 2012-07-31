@@ -2,7 +2,7 @@ IFNAME=ppp0
 AUTOSTART=inittab
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate && 
-  pppd call shore unit 0 logfile /dev/null
+  pppd call shore unit ${IFNAME#ppp} logfile /dev/null
 }
 
 hosts() {    #add lines before EOS

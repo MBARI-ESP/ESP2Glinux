@@ -1,12 +1,11 @@
 IFNAME=ppp8
 AUTOSTART=no
 
-provider=att  #works in USA with either AT&T or T-Mobile
+provider=att #works with either AT&T or T-Mobile network
 
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
-  ln -s ppp-$provider.pid /var/run/$IFNAME.pid &&
-  pppd call $provider unit 8 logfile /dev/null
+  pppd call $provider unit ${IFNAME#ppp} logfile /dev/null
 }
 
 hosts() {    #add lines before EOS
