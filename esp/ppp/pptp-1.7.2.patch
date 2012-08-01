@@ -1,6 +1,6 @@
-diff -ru pptp-1.7.2/pptp.c pptp-1.7.2-patched/pptp.c
---- pptp-1.7.2/pptp.c	2008-05-13 23:33:55.000000000 -0700
-+++ pptp-1.7.2-patched/pptp.c	2012-07-31 00:54:59.750944534 -0700
+diff -ru pptp-1.7.2-original/pptp.c pptp-1.7.2/pptp.c
+--- pptp-1.7.2-original/pptp.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2/pptp.c	2012-08-01 09:38:54.334471124 -0700
 @@ -59,7 +59,7 @@
  #include "pptp_callmgr.h"
  #include "pptp_gre.h"
@@ -10,9 +10,9 @@ diff -ru pptp-1.7.2/pptp.c pptp-1.7.2-patched/pptp.c
  #include <sys/prctl.h>
  #else
  #include "inststr.h"
-diff -ru pptp-1.7.2/pptp_callmgr.c pptp-1.7.2-patched/pptp_callmgr.c
---- pptp-1.7.2/pptp_callmgr.c	2008-05-13 23:33:55.000000000 -0700
-+++ pptp-1.7.2-patched/pptp_callmgr.c	2012-07-31 12:14:06.467307878 -0700
+diff -ru pptp-1.7.2-original/pptp_callmgr.c pptp-1.7.2/pptp_callmgr.c
+--- pptp-1.7.2-original/pptp_callmgr.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2/pptp_callmgr.c	2012-08-01 09:30:47.994152971 -0700
 @@ -101,6 +101,10 @@
   * the volatile qualifiers should be removed as well.
   *****************************************************************************/
@@ -43,18 +43,18 @@ diff -ru pptp-1.7.2/pptp_callmgr.c pptp-1.7.2-patched/pptp_callmgr.c
          default: /* Parent. Return status to caller. */
              exit(0);
      }
-@@ -297,6 +301,7 @@
-         vector_destroy(call_list);
-     }
- cleanup:
-+    routing_end();
-     signal(SIGINT, callmgr_do_nothing);
+@@ -301,6 +305,7 @@
      signal(SIGTERM, callmgr_do_nothing);
      close_inetsock(inet_sock, inetaddr);
-Only in pptp-1.7.2-patched: pptpsetup.8
-diff -ru pptp-1.7.2/routing.c pptp-1.7.2-patched/routing.c
---- pptp-1.7.2/routing.c	2008-05-13 23:33:55.000000000 -0700
-+++ pptp-1.7.2-patched/routing.c	2012-07-31 14:56:24.004230194 -0700
+     close_unixsock(unix_sock, inetaddr);
++    routing_end();
+     return 0;
+ }
+ 
+Only in pptp-1.7.2: pptpsetup.8
+diff -ru pptp-1.7.2-original/routing.c pptp-1.7.2/routing.c
+--- pptp-1.7.2-original/routing.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2/routing.c	2012-07-31 15:02:27.227990389 -0700
 @@ -18,15 +18,15 @@
  
  */
