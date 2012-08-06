@@ -1,0 +1,5 @@
+#!/bin/sh
+# unpack and patch ser2net daemon for arm-linux -- 8/5/12 brent@mbari.org
+
+# this daemon has nothing to configure
+echo Done.
