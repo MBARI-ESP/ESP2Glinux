@@ -146,8 +146,7 @@ uucp_lock(void)
 	if ( fd >= 0 ) {
 		r = read(fd, buf, sizeof(buf)); 
 		close(fd);
-		/* if r == 4, lock file is binary (old-style) */
-		pid = (r == 4) ? *(int *)buf : strtol(buf, NULL, 10);
+		pid = strtol(buf, NULL, 10);
 		if ( pid > 0 
 			 && kill((pid_t)pid, 0) < 0 
 			 && errno == ESRCH ) {
