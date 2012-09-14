@@ -30,13 +30,17 @@ make clean arm/snap
 mkdir -p ~/armHost/usr/local/bin
 cp arm/snap ~/armHost/usr/local/bin
 
-
-# Add picocom and lrzsz
+# Add picocom and other binaries
 
 cd ~/linux/picocom
 make CC=/arm/bin/gcc clean picocom
 /arm/bin/strip picocom
 cp picocom ~/armHost/usr/local/bin
+
+# don't forget the resetModem binary
+cd ~/ESP/gen2/software/resetModem
+/arm/bin/gcc -Os -oresetModem resetModem.c
+/arm/bin/strip -o ~/armHost/sbin/crash/resetModem resetModem
 
 for package in lrzsz dyndns psmisc esp/wget; do
   echo "===>  Building $package  <==="
