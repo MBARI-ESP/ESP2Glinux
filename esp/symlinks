@@ -78,21 +78,17 @@ home/esp/.irbrc -> /etc/esp/irbrc
 home/brent/bin/su -> /usr/bin/be
 home/brent/.profile -> /etc/esp/profile
 home/brent/.irbrc -> /etc/esp/irbrc
-home/brent/esp2@bufflehead -> /pippin/home/maro/esp2
 
 home/maro/bin/su -> /usr/bin/be
 home/maro/.profile -> /etc/esp/profile
 home/maro/.irbrc -> /etc/esp/irbrc
-home/maro/esp2@bufflehead -> /bufflehead/home/maro/esp2
 
 home/preston/bin/su -> /usr/bin/be
 home/preston/.profile -> /etc/esp/profile
 home/preston/.irbrc -> /etc/esp/irbrc
-home/preston/esp2@bufflehead -> /bufflehead/home/preston/esp2
 
 home/sjensen/bin/su -> /usr/bin/be
 home/sjensen/.profile -> /etc/esp/profile
 home/sjensen/.irbrc -> /etc/esp/irbrc
-home/sjensen/esp2@bufflehead -> /bufflehead/home/sjensen/esp2
 
 etc/localtime -> /usr/share/zoneinfo/PST8PDT
