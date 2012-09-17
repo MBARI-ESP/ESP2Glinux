@@ -1637,3 +1637,34 @@ diff -ru inadyn-1.98.1/src/os_unix.c inadyn-1.98.1-mbari5/src/os_unix.c
  #endif
  
  /**
+diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari6/Makefile
+--- inadyn-1.98.1/Makefile	2012-09-17 10:12:30.242014555 -0700
++++ inadyn-1.98.1-mbari6/Makefile	2012-09-17 10:07:49.808501893 -0700
+@@ -1,7 +1,7 @@
+ # Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
+ 
+ #VERSION      ?= $(shell git tag -l | tail -1)
+-VERSION      ?= 1.98.1-mbari5
++VERSION      ?= 1.98.1-mbari6
+ NAME          = inadyn
+ EXEC          = src/$(NAME)
+ PKG           = $(NAME)-$(VERSION)
+diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari6/src/inadyn_cmd.c
+--- inadyn-1.98.1/src/inadyn_cmd.c	2012-09-17 10:12:30.246014462 -0700
++++ inadyn-1.98.1-mbari6/src/inadyn_cmd.c	2012-09-17 10:09:44.541847571 -0700
+@@ -937,7 +937,14 @@
+ 		return RC_INVALID_POINTER;
+ 	}
+ 
+-	p_self->onNetErr = strdup(p_cmd->argv[current_nr]);
++    char *cmd = p_cmd->argv[current_nr];
++    if (*cmd == '`') { /* strip any backtic quotes */
++      cmd++;
++      char *last = cmd+strlen(cmd)-1;
++      if (*last == '`')
++        *last = 0;
++    }
++	p_self->onNetErr = strdup(cmd);
+ 
+ 	return RC_OK;
+ }
