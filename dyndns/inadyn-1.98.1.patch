@@ -1,6 +1,6 @@
-diff -ru inadyn-1.98.1/include/dyndns.h inadyn-1.98.1-mbari5/include/dyndns.h
---- inadyn-1.98.1/include/dyndns.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/include/dyndns.h	2012-09-08 19:28:13.755695105 -0700
+diff -ru inadyn-1.98.1-upstream/include/dyndns.h inadyn-1.98.1-mbari6/include/dyndns.h
+--- inadyn-1.98.1-upstream/include/dyndns.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/include/dyndns.h	2012-09-18 14:49:24.430145323 -0700
 @@ -53,9 +53,7 @@
  /*test values*/
  #define DYNDNS_DEFAULT_DEBUG_LEVEL	1
@@ -81,9 +81,9 @@ diff -ru inadyn-1.98.1/include/dyndns.h inadyn-1.98.1-mbari5/include/dyndns.h
  	BOOL force_addr_update;
  	BOOL use_proxy;
  	BOOL abort;
-diff -ru inadyn-1.98.1/include/errorcode.h inadyn-1.98.1-mbari5/include/errorcode.h
---- inadyn-1.98.1/include/errorcode.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/include/errorcode.h	2012-09-08 10:58:19.717035813 -0700
+diff -ru inadyn-1.98.1-upstream/include/errorcode.h inadyn-1.98.1-mbari6/include/errorcode.h
+--- inadyn-1.98.1-upstream/include/errorcode.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/include/errorcode.h	2012-09-18 14:49:24.430145323 -0700
 @@ -37,6 +37,7 @@
  	RC_IP_OBJECT_NOT_INITIALIZED = 0x16,
  	RC_IP_OS_SOCKET_INIT_FAILED = 0x17,
@@ -100,9 +100,9 @@ diff -ru inadyn-1.98.1/include/errorcode.h inadyn-1.98.1-mbari5/include/errorcod
  	RC_RESTART = 0xff,
  } RC_TYPE;
  
-diff -ru inadyn-1.98.1/include/os.h inadyn-1.98.1-mbari5/include/os.h
---- inadyn-1.98.1/include/os.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/include/os.h	2012-09-08 22:21:26.797905036 -0700
+diff -ru inadyn-1.98.1-upstream/include/os.h inadyn-1.98.1-mbari6/include/os.h
+--- inadyn-1.98.1-upstream/include/os.h	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/include/os.h	2012-09-18 14:49:24.430145323 -0700
 @@ -150,6 +150,10 @@
  
  RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info);
@@ -134,15 +134,15 @@ diff -ru inadyn-1.98.1/include/os.h inadyn-1.98.1-mbari5/include/os.h
  #ifdef __cplusplus
  }
  #endif
-diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari5/Makefile
---- inadyn-1.98.1/Makefile	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/Makefile	2012-09-08 19:26:50.379135356 -0700
+diff -ru inadyn-1.98.1-upstream/Makefile inadyn-1.98.1-mbari6/Makefile
+--- inadyn-1.98.1-upstream/Makefile	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/Makefile	2012-09-18 14:49:24.430145323 -0700
 @@ -1,7 +1,7 @@
  # Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
  
  #VERSION      ?= $(shell git tag -l | tail -1)
 -VERSION      ?= 1.98.1
-+VERSION      ?= 1.98.1-mbari5
++VERSION      ?= 1.98.1-mbari6
  NAME          = inadyn
  EXEC          = src/$(NAME)
  PKG           = $(NAME)-$(VERSION)
@@ -216,9 +216,9 @@ diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari5/Makefile
 -	@(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
 +	(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
  
-diff -ru inadyn-1.98.1/src/dyndns.c inadyn-1.98.1-mbari5/src/dyndns.c
---- inadyn-1.98.1/src/dyndns.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/src/dyndns.c	2012-09-09 12:54:02.934660234 -0700
+diff -ru inadyn-1.98.1-upstream/src/dyndns.c inadyn-1.98.1-mbari6/src/dyndns.c
+--- inadyn-1.98.1-upstream/src/dyndns.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/src/dyndns.c	2012-09-18 14:49:24.434145232 -0700
 @@ -2,6 +2,8 @@
   *
   * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
@@ -879,9 +879,9 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-1.98.1-mbari5/src/dyndns.c
  	return rc;
  }
  
-diff -ru inadyn-1.98.1/src/errorcode.c inadyn-1.98.1-mbari5/src/errorcode.c
---- inadyn-1.98.1/src/errorcode.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/src/errorcode.c	2012-09-08 10:58:19.717035813 -0700
+diff -ru inadyn-1.98.1-upstream/src/errorcode.c inadyn-1.98.1-mbari6/src/errorcode.c
+--- inadyn-1.98.1-upstream/src/errorcode.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/src/errorcode.c	2012-09-18 14:49:24.434145232 -0700
 @@ -41,7 +41,8 @@
  	{RC_IP_RECV_ERROR,			"RC_IP_RECV_ERROR"},
  	{RC_IP_OBJECT_NOT_INITIALIZED,		"RC_IP_OBJECT_NOT_INITIALIZED"},
@@ -892,9 +892,9 @@ diff -ru inadyn-1.98.1/src/errorcode.c inadyn-1.98.1-mbari5/src/errorcode.c
  	{RC_TCP_OBJECT_NOT_INITIALIZED,		"RC_TCP_OBJECT_NOT_INITIALIZED"},
  
  	{RC_HTTP_OBJECT_NOT_INITIALIZED,	"RC_HTTP_OBJECT_NOT_INITIALIZED"},
-diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
---- inadyn-1.98.1/src/inadyn_cmd.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/src/inadyn_cmd.c	2012-09-09 12:11:18.856915145 -0700
+diff -ru inadyn-1.98.1-upstream/src/inadyn_cmd.c inadyn-1.98.1-mbari6/src/inadyn_cmd.c
+--- inadyn-1.98.1-upstream/src/inadyn_cmd.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/src/inadyn_cmd.c	2012-09-18 14:59:07.664864247 -0700
 @@ -42,6 +42,7 @@
  static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
  static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
@@ -935,7 +935,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
 +	{"-c",          1,   {get_check_ip_period_handler, NULL}, ""},
 +	{"--check",		1,   {get_check_ip_period_handler, NULL}, "<SEC>\n\t\t\t"
 +	 "How often to check IP address against DDNS server.\n\t\t\t"
-+     "Default: 0 --> always"},
++     "Default: 1 --> always,  Note: 0 --> never"},
 +
  	{"-d",			1,	{set_change_persona_handler, NULL}, ""},
  	{"--drop-privs", 	1,	{set_change_persona_handler, NULL}, "<USER[:GROUP]>\n"
@@ -946,7 +946,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
  
 +	{"-n",			1,	{get_err_handler, NULL}, ""},
 +	{"--on_net_err",1,	{get_err_handler, NULL}, 
-+      "Externel shell command to run after a network error"},
++      "External shell command to run after a network error"},
 +
  	{"-f",			   1,   {get_forced_update_period_handler, NULL}, ""},
 -	{"--forced-update",        1,   {get_forced_update_period_handler, NULL}, "<SEC>\n"
@@ -1128,32 +1128,56 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
  RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
  {
  	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *)p_context;
-@@ -811,6 +924,24 @@
+@@ -794,6 +907,23 @@
  	return RC_OK;
  }
  
 +
++static char *stripBackTics (char *cmd)
++{
++    if (*cmd == '`') { /* strip any backtic quotes */
++      cmd++;
++      char *last = cmd+strlen(cmd)-1;
++      if (*last == '`')
++        *last = 0;
++    }
++    cmd = strdup(cmd);
++    if (!cmd) {
++      fputs("Memory exhausted while parsing arguments!\n", stderr);
++      exit(10);
++    }
++    return cmd;
++}
++
+ static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+ {
+ 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *)p_context;
+@@ -805,9 +935,23 @@
+ 	{
+ 		return RC_INVALID_POINTER;
+ 	}
++    p_self->external_command = stripBackTics(p_cmd->argv[current_nr]);
++	return RC_OK;
++}
++
+ 
+-	p_self->external_command = strdup(p_cmd->argv[current_nr]);
 +static RC_TYPE get_err_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 +{
 +	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *)p_context;
 +
 +	(void)p_cmd;
 +	(void)current_nr;
-+
+ 
 +	if (p_self == NULL)
 +	{
 +		return RC_INVALID_POINTER;
 +	}
-+
-+	p_self->onNetErr = strdup(p_cmd->argv[current_nr]);
-+
-+	return RC_OK;
-+}
-+
- /**
-    Searches the DYNDNS system by the argument.
-    Input is like: system@server.name
-@@ -879,7 +1010,9 @@
++	p_self->onNetErr = stripBackTics(p_cmd->argv[current_nr]);
+ 	return RC_OK;
+ }
+ 
+@@ -879,7 +1023,9 @@
  	COMMENT,
  	DATA,
  	SPACE,
@@ -1164,7 +1188,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
  } PARSER_STATE;
  
  typedef struct
-@@ -908,9 +1041,11 @@
+@@ -908,9 +1054,11 @@
      * States:
      * NEW_LINE - wait here until some option. Add '--' if not already there
      * SPACE - between options. Like NEW_LINE but no additions
@@ -1177,7 +1201,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
      */
  static RC_TYPE parser_read_option(OPTION_FILE_PARSER *p_cfg, char *p_buffer, int maxlen)
  {
-@@ -989,7 +1124,7 @@
+@@ -989,7 +1137,7 @@
  					{
  						break;
  					}
@@ -1186,7 +1210,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
  					break;
  				}
  				break;
-@@ -1026,17 +1161,37 @@
+@@ -1026,17 +1174,37 @@
  					break;
  				}
  				/*actual data*/
@@ -1226,9 +1250,9 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari5/src/inadyn_cmd.c
  				break;
  
  			default:
-diff -ru inadyn-1.98.1/src/main.c inadyn-1.98.1-mbari5/src/main.c
---- inadyn-1.98.1/src/main.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/src/main.c	2012-09-08 10:58:19.717035813 -0700
+diff -ru inadyn-1.98.1-upstream/src/main.c inadyn-1.98.1-mbari6/src/main.c
+--- inadyn-1.98.1-upstream/src/main.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/src/main.c	2012-09-18 14:49:24.434145232 -0700
 @@ -27,56 +27,37 @@
  /* MAIN - Dyn DNS update entry point.*/
  int inadyn_main(int argc, char* argv[])
@@ -1299,9 +1323,9 @@ diff -ru inadyn-1.98.1/src/main.c inadyn-1.98.1-mbari5/src/main.c
  
  	/* Cleanup */
  	dyn_dns_destruct(p_dyndns);
-diff -ru inadyn-1.98.1/src/os_unix.c inadyn-1.98.1-mbari5/src/os_unix.c
---- inadyn-1.98.1/src/os_unix.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-1.98.1-mbari5/src/os_unix.c	2012-09-09 01:48:48.890997917 -0700
+diff -ru inadyn-1.98.1-upstream/src/os_unix.c inadyn-1.98.1-mbari6/src/os_unix.c
+--- inadyn-1.98.1-upstream/src/os_unix.c	2011-07-18 06:05:26.000000000 -0700
++++ inadyn-1.98.1-mbari6/src/os_unix.c	2012-09-18 14:49:24.434145232 -0700
 @@ -15,17 +15,19 @@
   * You should have received a copy of the GNU General Public License
   * along with this program; if not, write to the Free Software
@@ -1637,34 +1661,3 @@ diff -ru inadyn-1.98.1/src/os_unix.c inadyn-1.98.1-mbari5/src/os_unix.c
  #endif
  
  /**
-diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari6/Makefile
---- inadyn-1.98.1/Makefile	2012-09-17 10:12:30.242014555 -0700
-+++ inadyn-1.98.1-mbari6/Makefile	2012-09-17 10:07:49.808501893 -0700
-@@ -1,7 +1,7 @@
- # Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
- 
- #VERSION      ?= $(shell git tag -l | tail -1)
--VERSION      ?= 1.98.1-mbari5
-+VERSION      ?= 1.98.1-mbari6
- NAME          = inadyn
- EXEC          = src/$(NAME)
- PKG           = $(NAME)-$(VERSION)
-diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari6/src/inadyn_cmd.c
---- inadyn-1.98.1/src/inadyn_cmd.c	2012-09-17 10:12:30.246014462 -0700
-+++ inadyn-1.98.1-mbari6/src/inadyn_cmd.c	2012-09-17 10:09:44.541847571 -0700
-@@ -937,7 +937,14 @@
- 		return RC_INVALID_POINTER;
- 	}
- 
--	p_self->onNetErr = strdup(p_cmd->argv[current_nr]);
-+    char *cmd = p_cmd->argv[current_nr];
-+    if (*cmd == '`') { /* strip any backtic quotes */
-+      cmd++;
-+      char *last = cmd+strlen(cmd)-1;
-+      if (*last == '`')
-+        *last = 0;
-+    }
-+	p_self->onNetErr = strdup(cmd);
- 
- 	return RC_OK;
- }
