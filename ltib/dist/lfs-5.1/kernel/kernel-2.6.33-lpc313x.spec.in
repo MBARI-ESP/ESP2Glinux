@@ -13,8 +13,8 @@ Vendor          : Kernel.org + NXP lpc313x patches
 Packager        : Kevin Wells and Brent Roman
 Group           : System Environment/Kernel
 Source          : %{pkg_name}-%{dversion}.tar.bz2
-Patch1		: linux-2.6.33_lpc313x.patch
-Patch2		: linux-2.6.33-lpc313x-v1.01.patch
+Patch1          : linux-2.6.33_lpc313x.patch
+Patch2          : linux-2.6.33-lpc313x-v1.01.patch
 Patch3          : kernel-2.6.33-yaffs2.patch
 Patch4          : kernel-2.6.33-disableECCforYAFFS2.patch
 Patch5          : kernel-2.6.33-quietYAFFS2.patch
@@ -31,7 +31,7 @@ Patch15         : 0003-lpc313x-define-non-LPC3152-variants-of-AD-events.patch
 Patch16         : 0004-lpc313x-fixed-soc-audio-configuration-so-it-can-work.patch
 Patch17         : 0005-lpc313x-various-fixes-for-usb-vbus-overcurrent-detec.patch
 Patch18         : 0006-lpc313x-implement-GENERIC_TIME-and-GENERIC_CLOCKEVEN.patch
-#Patch19         : 0007-lpc313x-gpiolib-support.patch
+Patch19         : 0007-lpc313x-gpiolib-support.patch
 #Patch20         : 0008-lpc313x-export-boot-selector-gpios.patch
 #Patch21         : 0009-lpc313x-cleaned-up-interrupt-handling.patch
 #Patch22         : 0010-lpc313x-mmc-driver-cleanup.patch
@@ -44,6 +44,8 @@ Patch28         : kernel-2.6.33-usbOvercurrent.patch
 Patch29         : kernel-2.6.33-eacpuled.patch
 Patch30         : kernel-2.6.33-printktime.patch
 Patch31         : kernel-2.6.33-spansionSPIflash.patch
+Patch32         : kernel-2.6.33-gpios.patch
+Patch33         : kernel-2.6.33-i2sTriggerFix.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -70,6 +72,7 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch16 -p1
 %patch17 -p1
 %patch18 -p1
+%patch19 -p1
 %patch25 -p1
 %patch26 -p1
 %patch27 -p1
@@ -77,4 +80,6 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch29 -p1
 %patch30 -p1
 %patch31 -p1
+%patch32 -p1
+%patch33 -p1
 
