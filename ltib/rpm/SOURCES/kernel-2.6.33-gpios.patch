@@ -1,0 +1,124 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2012-10-01 12:27:33.294247483 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2012-09-28 18:12:59.716281057 -0700
+@@ -73,9 +73,13 @@
+ 	int level;
+ 
+ 	/* enable power to the slot */
+-	gpio_set_value(GPIO_MI2STX_DATA0, 0);
++    gpio_request(GPIO_MI2STX_DATA0, "MMCpower");
++	gpio_direction_output(GPIO_MI2STX_DATA0, 0);
++    gpio_export(GPIO_MI2STX_DATA0, 0);
+ 	/* set cd pins as GPIO pins */
++    gpio_request(GPIO_MI2STX_BCK0, "MMCdetect");
+ 	gpio_direction_input(GPIO_MI2STX_BCK0);
++    gpio_export(GPIO_MI2STX_BCK0, 0);
+ 
+ 	/* select the opposite level senstivity */
+ 	level = mci_get_cd(0)?IRQ_TYPE_LEVEL_LOW:IRQ_TYPE_LEVEL_HIGH;
+@@ -248,6 +252,7 @@
+ 	SYS_MPMC_WTD_DEL1 = _BIT(5) | 4;
+ 
+ 	/* Configure Interrupt pin as input, no pull-up */
++    gpio_request(GPIO_MNAND_RYBN3, "DM9000IRQ");
+ 	gpio_direction_input(GPIO_MNAND_RYBN3);
+ 
+ 	platform_device_register(&dm9000_device);
+@@ -366,7 +371,7 @@
+ 	(void) cs_num;
+ 
+ 	/* Set GPO state for CS0 */
+-	gpio_set_value(GPIO_SPI_CS_OUT0, state);
++	gpio_direction_output(GPIO_SPI_CS_OUT0, state);
+ }
+ 
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+@@ -417,6 +422,7 @@
+ 		.chip_select = 0,
+ 	};
+ 
++    gpio_request(GPIO_SPI_CS_OUT0, "SPICS0");
+ 	return spi_register_board_info(&info, 1);
+ }
+ arch_initcall(lpc313x_spidev_register);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/generic.c linux-2.6.33.modified/arch/arm/mach-lpc313x/generic.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/generic.c	2012-10-01 12:27:33.278247823 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/generic.c	2012-09-28 17:11:34.486054438 -0700
+@@ -41,12 +41,6 @@
+ {
+ 	switch (state) {
+ 	case 0:
+-		/* Free the pins so that UART IP will take control of it */
+-#if 0
+-		/* XXX fix this mess */
+-		lpc313x_gpio_ip_driven(GPIO_UART_RXD);
+-		lpc313x_gpio_ip_driven(GPIO_UART_TXD);
+-#endif
+ 		/*
+ 		 * Enable the peripheral clock for this serial port.
+ 		 * This is called on uart_open() or a resume event.
+@@ -73,12 +67,6 @@
+ 
+ 		/* Disable UART base clock */
+ 		cgu_endis_base_freq(CGU_SB_UARTCLK_BASE_ID, 0);
+-
+-		/* XXX fix this mess */
+-#if 0
+-		lpc313x_gpio_direction_input(GPIO_UART_RXD);
+-		lpc313x_gpio_set_value(GPIO_UART_TXD, 0);
+-#endif
+ 		break;
+ 	default:
+ 		printk(KERN_ERR "lpc313x_uart_pm: unknown pm %d\n", state);
+@@ -198,8 +186,27 @@
+ {
+ 	iotable_init(lpc313x_io_desc, ARRAY_SIZE(lpc313x_io_desc));
+ }
++
+ extern int __init cgu_init(char *str);
+ 
++#define GPIO_BOOT0 GPIO_GPIO0
++#define GPIO_BOOT1 GPIO_GPIO1
++#define GPIO_BOOT2 GPIO_GPIO2
++
++static void lpc313x_export_bootsel(void) {
++	/* pre-request and export boot mode selector pins */
++	gpio_request(GPIO_BOOT0, "boot0");
++	gpio_direction_input(GPIO_BOOT0);
++	gpio_export(GPIO_BOOT0, 1);
++	gpio_request(GPIO_BOOT1, "boot1");
++	gpio_direction_input(GPIO_BOOT1);
++	gpio_export(GPIO_BOOT1, 1);
++   gpio_request(GPIO_BOOT2, "boot2");  //cpu idle indicator drives this
++   gpio_direction_output(GPIO_BOOT2, 1);
++	gpio_export(GPIO_BOOT2, 0);
++}
++
++
+ void __init lpc313x_uart_init(void)
+ {
+ 	int mul, div;
+@@ -253,9 +260,11 @@
+ 	/* AUDIO CODEC CLOCK (256FS) */
+ 	GPIO_DRV_IP(IOCONF_I2STX_1, 0x8);
+ 
++	lpc313x_uart_init();
++
+ 	lpc313x_gpiolib_init();
+ 
+-	lpc313x_uart_init();
++	lpc313x_export_bootsel();
+ 
+ 	return platform_add_devices(devices, ARRAY_SIZE(devices));
+ }
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/usb.c linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/usb.c	2012-10-01 12:27:33.286247653 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c	2012-09-28 16:13:24.125708723 -0700
+@@ -261,6 +261,7 @@
+ 
+ #if defined(CONFIG_MACH_EA313X) || defined(CONFIG_MACH_EA3152)
+ 		/* set thw I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
++        gpio_request(GPIO_I2SRX_WS0, "USBoverload");
+ 		gpio_direction_input(GPIO_I2SRX_WS0);
+ 		lpc313x_usb_brd.vbus_ovrc_irq = IRQ_EA_VBUS_OVRC;
+ 
