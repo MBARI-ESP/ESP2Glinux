@@ -89,8 +89,8 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/generi
 +	gpio_request(GPIO_BOOT1, "boot1");
 +	gpio_direction_input(GPIO_BOOT1);
 +	gpio_export(GPIO_BOOT1, 1);
-+   gpio_request(GPIO_BOOT2, "boot2");  //cpu idle indicator drives this
-+   gpio_direction_output(GPIO_BOOT2, 1);
++	gpio_request(GPIO_BOOT2, "boot2");  //cpu idle indicator drives this
++	gpio_direction_output(GPIO_BOOT2, 1);
 +	gpio_export(GPIO_BOOT2, 0);
 +}
 +
