@@ -1,0 +1,1107 @@
+From 1c3af5c4b4506de2fa90d068c8897fda4557310d Mon Sep 17 00:00:00 2001
+From: Ingo Albrecht <prom@berlin.ccc.de>
+Date: Tue, 14 Dec 2010 02:36:13 +0100
+Subject: [PATCH 07/15] lpc313x: gpiolib support
+
+---
+ arch/arm/Kconfig                          |    2 +
+ arch/arm/mach-lpc313x/Makefile            |    3 +-
+ arch/arm/mach-lpc313x/ea313x.c            |    2 +-
+ arch/arm/mach-lpc313x/generic.c           |   20 +-
+ arch/arm/mach-lpc313x/gpio.c              |  135 ----------
+ arch/arm/mach-lpc313x/gpiolib.c           |  390 +++++++++++++++++++++++++++++
+ arch/arm/mach-lpc313x/include/mach/gpio.h |  389 ++++++++++++++---------------
+ arch/arm/mach-lpc313x/include/mach/irqs.h |    3 +
+ arch/arm/mach-lpc313x/val3153.c           |    2 +-
+ arch/arm/mach-lpc313x/val3154.c           |    2 +-
+ 10 files changed, 603 insertions(+), 345 deletions(-)
+ delete mode 100644 arch/arm/mach-lpc313x/gpio.c
+ create mode 100644 arch/arm/mach-lpc313x/gpiolib.c
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index a6f9afa..0970ff3 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -733,6 +733,8 @@ config ARCH_LPC313X
+ 	select CPU_ARM926T
+ 	select GENERIC_TIME
+ 	select GENERIC_CLOCKEVENTS
++	select GENERIC_GPIO
++	select ARCH_REQUIRE_GPIOLIB
+ 	help
+ 	  Say Y here for systems based on one of the NXP LPC313x & LPC315x
+ 	  System on a Chip processors.  These CPUs include an ARM926EJS
+diff --git a/arch/arm/mach-lpc313x/Makefile b/arch/arm/mach-lpc313x/Makefile
+index f64403a..4157722 100644
+--- a/arch/arm/mach-lpc313x/Makefile
++++ b/arch/arm/mach-lpc313x/Makefile
+@@ -4,7 +4,7 @@
+ 
+ # Object file lists.
+ 
+-obj-y			+= irq.o time.o cgu.o generic.o i2c.o gpio.o dma.o usb.o wdt.o
++obj-y			+= irq.o time.o cgu.o generic.o i2c.o dma.o usb.o wdt.o
+ 
+ 
+ # Specific board support
+@@ -13,6 +13,7 @@ obj-$(CONFIG_MACH_EA313X) += ea313x.o leds-pca9532.o
+ obj-$(CONFIG_MACH_EA3152) += ea313x.o leds-pca9532.o
+ obj-$(CONFIG_MACH_VAL3154) += val3154.o leds.o
+ obj-$(CONFIG_LPC3152_AD) += psu.o
++obj-$(CONFIG_GPIOLIB) += gpiolib.o
+ 
+ # Power Management
+ obj-$(CONFIG_PM)		+= pm.o pm_standby.o
+diff --git a/arch/arm/mach-lpc313x/ea313x.c b/arch/arm/mach-lpc313x/ea313x.c
+index df1a300..d8d8809 100644
+--- a/arch/arm/mach-lpc313x/ea313x.c
++++ b/arch/arm/mach-lpc313x/ea313x.c
+@@ -356,7 +356,7 @@ static void spi_set_cs_state(int cs_num, int state)
+ 	(void) cs_num;
+ 
+ 	/* Set GPO state for CS0 */
+-	lpc313x_gpio_set_value(GPIO_SPI_CS_OUT0, state);
++	gpio_set_value(GPIO_SPI_CS_OUT0, state);
+ }
+ 
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+diff --git a/arch/arm/mach-lpc313x/generic.c b/arch/arm/mach-lpc313x/generic.c
+index aeda7fa..ffbc0b6 100644
+--- a/arch/arm/mach-lpc313x/generic.c
++++ b/arch/arm/mach-lpc313x/generic.c
+@@ -42,8 +42,11 @@ static void lpc313x_uart_pm(struct uart_port * port, unsigned int state,
+ 	switch (state) {
+ 	case 0:
+ 		/* Free the pins so that UART IP will take control of it */
+-		gpio_free(GPIO_UART_RXD);
+-		gpio_free(GPIO_UART_TXD);
++#if 0
++		/* XXX fix this mess */
++		lpc313x_gpio_ip_driven(GPIO_UART_RXD);
++		lpc313x_gpio_ip_driven(GPIO_UART_TXD);
++#endif
+ 		/*
+ 		 * Enable the peripheral clock for this serial port.
+ 		 * This is called on uart_open() or a resume event.
+@@ -71,12 +74,11 @@ static void lpc313x_uart_pm(struct uart_port * port, unsigned int state,
+ 		/* Disable UART base clock */
+ 		cgu_endis_base_freq(CGU_SB_UARTCLK_BASE_ID, 0);
+ 
+-		/* Free the pins and let GPIO handle it */
+-		gpio_request(GPIO_UART_RXD, "uart_rx");
+-		gpio_request(GPIO_UART_TXD, "uart_tx");
+-
+-		gpio_direction_input(GPIO_UART_RXD);
+-		gpio_direction_output(GPIO_UART_TXD, 0);
++		/* XXX fix this mess */
++#if 0
++		lpc313x_gpio_direction_input(GPIO_UART_RXD);
++		lpc313x_gpio_set_value(GPIO_UART_TXD, 0);
++#endif
+ 		break;
+ 	default:
+ 		printk(KERN_ERR "lpc313x_uart_pm: unknown pm %d\n", state);
+@@ -238,6 +240,8 @@ int __init lpc313x_init(void)
+ 	/* AUDIO CODEC CLOCK (256FS) */
+ 	GPIO_DRV_IP(IOCONF_I2STX_1, 0x8);
+ 
++	lpc313x_gpiolib_init();
++
+ 	return platform_add_devices(devices, ARRAY_SIZE(devices));
+ }
+ 
+diff --git a/arch/arm/mach-lpc313x/gpio.c b/arch/arm/mach-lpc313x/gpio.c
+deleted file mode 100644
+index 6decaa0..0000000
+--- a/arch/arm/mach-lpc313x/gpio.c
++++ /dev/null
+@@ -1,135 +0,0 @@
+-/*  linux/arch/arm/mach-lpc313x/gpio.c
+- *
+- *  Author:	Durgesh Pattamatta
+- *  Copyright (C) 2009 NXP semiconductors
+- *
+- * GPIO driver for LPC313x & LPC315x.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+- *
+- */
+-#include <linux/platform_device.h>
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/module.h>
+-#include <linux/string.h>
+-
+-#include <asm/errno.h>
+-#include <mach/hardware.h>
+-#include <mach/gpio.h>
+-
+-
+-void lpx313x_gpio_func_mode(int gpio)
+-{
+-	unsigned long flags;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin = 1 << (gpio & GPIO_PIN_MASK);
+-
+-	raw_local_irq_save(flags);
+-
+-	GPIO_M1_RESET(port) = pin; 
+-	GPIO_M0_SET(port) = pin;
+-
+-	raw_local_irq_restore(flags);
+-
+-}
+-
+-EXPORT_SYMBOL(lpx313x_gpio_func_mode);
+-
+-
+-
+-
+-int lpc313x_gpio_direction_output(unsigned gpio, int value)
+-{
+-	unsigned long flags;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin = 1 << (gpio & GPIO_PIN_MASK);
+-
+-	raw_local_irq_save(flags);
+-
+-	GPIO_M1_SET(port) = pin; 
+-
+-	if(value) {
+-		GPIO_M0_SET(port) = pin;
+-	} else {
+-		GPIO_M0_RESET(port) = pin;
+-	}
+-
+-	raw_local_irq_restore(flags);
+-	return 0;
+-}
+-
+-EXPORT_SYMBOL(lpc313x_gpio_direction_output);
+-
+-
+-
+-int gpio_is_valid(unsigned gpio)
+-{
+-	int ret = 1;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin_no = (gpio & GPIO_PIN_MASK);
+-
+-
+-	if ( (gpio & ~(GPIO_PORT_MASK | GPIO_PIN_MASK)) &&
+-	     ((port >> 5) > 12)) {
+-		return 0;
+-	} 
+-	switch (port) {
+-		case IOCONF_EBI_I2STX_0:
+-			if (pin_no > 9)
+-				ret = 0;
+-			break;
+-		case IOCONF_PWM:
+-		case IOCONF_CGU:
+-			if (pin_no > 0)
+-				ret = 0;
+-			break;
+-		case IOCONF_I2SRX_0:
+-		case IOCONF_I2SRX_1:
+-			if (pin_no > 2)
+-				ret = 0;
+-			break;
+-		case IOCONF_I2STX_1:
+-			if (pin_no > 3)
+-				ret = 0;
+-			break;
+-		case IOCONF_EBI:
+-			if (pin_no > 15)
+-				ret = 0;
+-			break;
+-		case IOCONF_GPIO:
+-			if (pin_no > 14)
+-				ret = 0;
+-			break;
+-		case IOCONF_UART:
+-		case IOCONF_I2C1:
+-			if (pin_no > 1)
+-				ret = 0;
+-			break;
+-		case IOCONF_SPI:
+-			if (pin_no > 4)
+-				ret = 0;
+-			break;
+-		case IOCONF_NAND_CTRL:
+-			if (pin_no > 3)
+-				ret = 0;
+-			break;
+-	}
+-	return ret;
+-}
+-
+-EXPORT_SYMBOL(gpio_is_valid);
+-
+-
+diff --git a/arch/arm/mach-lpc313x/gpiolib.c b/arch/arm/mach-lpc313x/gpiolib.c
+new file mode 100644
+index 0000000..e8137a0
+--- /dev/null
++++ b/arch/arm/mach-lpc313x/gpiolib.c
+@@ -0,0 +1,390 @@
++/*
++ * gpiolib.c - GPIOLIB platform support for NXP LPC313x
++ *
++ * Author: Ingo Albrecht <prom@berlin.ccc.de>
++ *
++ * Copyright 2010 (c) Ingo Albrecht
++ *
++ * This file is licensed under  the terms of the GNU General Public
++ * License version 2. This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/seq_file.h>
++#include <linux/gpio.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/io.h>
++
++#include <mach/gpio.h>
++#include <mach/irqs.h>
++#include <mach/registers.h>
++
++
++/* Internal structures */
++
++struct lpc313x_gpio_pin {
++	char *name;
++	int event_id;
++};
++
++struct lpc313x_gpio_chip {
++	struct gpio_chip  chip;
++	void __iomem     *regbase;
++	struct lpc313x_gpio_pin *pins;
++};
++
++#define to_lpc313x_gpio_chip(c) container_of(c, struct lpc313x_gpio_chip, chip)
++
++#define LPC313X_GPIO_PIN(pname, pevent) \
++	{              						\
++		.name = pname, 					\
++		.event_id = pevent,				\
++	}
++
++#define LPC313X_GPIO_CHIP(name, basereg, base_gpio, nr_gpio, pinfo) \
++    {                                                               \
++    .chip = {                                                     	\
++	    .label            = name,				     \
++            .request          = lpc313x_gpiolib_request,          	\
++            .free             = lpc313x_gpiolib_free,             	\
++            .direction_input  = lpc313x_gpiolib_direction_input,  	\
++            .direction_output = lpc313x_gpiolib_direction_output, 	\
++            .get              = lpc313x_gpiolib_get,              	\
++            .set              = lpc313x_gpiolib_set,              	\
++            .to_irq           = lpc313x_gpiolib_to_irq,             \
++            .dbg_show         = lpc313x_gpiolib_dbg_show,         	\
++            .base             = (base_gpio),                      	\
++            .ngpio            = (nr_gpio),                        	\
++        },                                                        	\
++    .regbase = ((void *)basereg),                                 	\
++    .pins = ((struct lpc313x_gpio_pin *)pinfo), 					\
++    }
++
++
++/* Forward declarations */
++
++static int lpc313x_gpiolib_request(struct gpio_chip *chip, unsigned offset);
++static void lpc313x_gpiolib_free(struct gpio_chip *chip, unsigned offset);
++static int lpc313x_gpiolib_direction_input(struct gpio_chip *chip,
++					   unsigned offset);
++static int lpc313x_gpiolib_direction_output(struct gpio_chip *chip,
++					    unsigned offset, int val);
++static int lpc313x_gpiolib_get(struct gpio_chip *chip, unsigned offset);
++static void lpc313x_gpiolib_set(struct gpio_chip *chip,
++				unsigned offset, int val);
++static int lpc313x_gpiolib_to_irq(struct gpio_chip *chip,
++				unsigned offset);
++static void lpc313x_gpiolib_dbg_show(struct seq_file *s,
++				     struct gpio_chip *chip);
++
++/*
++ * Table of GPIO chips.
++ *
++ * Each pin group on the chip is exposed as a separate chip.
++ *
++ * Chips without pin descriptions will work but will not have irq support.
++ *
++ */
++
++static struct lpc313x_gpio_pin gpio_pins_gpio[] = {
++		LPC313X_GPIO_PIN("GPIO1", EVT_GPIO1),
++		LPC313X_GPIO_PIN("GPIO0", EVT_GPIO0),
++		LPC313X_GPIO_PIN("GPIO2", EVT_GPIO2),
++		LPC313X_GPIO_PIN("GPIO3", EVT_GPIO3),
++		LPC313X_GPIO_PIN("GPIO4", EVT_GPIO4),
++		LPC313X_GPIO_PIN("GPIO11", EVT_GPIO11),
++		LPC313X_GPIO_PIN("GPIO12", EVT_GPIO12),
++		LPC313X_GPIO_PIN("GPIO13", EVT_GPIO13),
++		LPC313X_GPIO_PIN("GPIO14", EVT_GPIO14),
++		LPC313X_GPIO_PIN("GPIO15", EVT_GPIO15),
++		LPC313X_GPIO_PIN("GPIO16", EVT_GPIO16),
++		LPC313X_GPIO_PIN("GPIO17", EVT_GPIO17),
++		LPC313X_GPIO_PIN("GPIO18", EVT_GPIO18),
++		LPC313X_GPIO_PIN("GPIO19", -1 /*EVT_GPIO19*/),
++		LPC313X_GPIO_PIN("GPIO20", -1 /*EVT_GPIO20*/),
++};
++
++static struct lpc313x_gpio_pin gpio_pins_ebi_mci[] = {
++		LPC313X_GPIO_PIN("mGPIO9",           EVT_mGPIO9),
++		LPC313X_GPIO_PIN("mGPIO6",           EVT_mGPIO6),
++		LPC313X_GPIO_PIN("mLCD_DB_7",        EVT_mLCD_DB_7),
++		LPC313X_GPIO_PIN("mLCD_DB_4",        EVT_mLCD_DB_4),
++		LPC313X_GPIO_PIN("mLCD_DB_2",        EVT_mLCD_DB_2),
++		LPC313X_GPIO_PIN("mNAND_RYBN0",      EVT_mNAND_RYBN0),
++		LPC313X_GPIO_PIN("mI2STX_CLK0",      EVT_mI2STX_CLK0),
++		LPC313X_GPIO_PIN("mI2STX_BCK0",      EVT_mI2STX_BCK0),
++		LPC313X_GPIO_PIN("EBI_A_1_CLE",      EVT_EBI_A_1_CLE),
++		LPC313X_GPIO_PIN("EBI_NCAS_BLOUT_0", EVT_EBI_NCAS_BLOUT_0),
++		LPC313X_GPIO_PIN("mLCD_DB_0",        EVT_mLCD_DB_0),
++		LPC313X_GPIO_PIN("EBI_DQM_0_NOE",    EVT_EBI_DQM_0_NOE),
++		LPC313X_GPIO_PIN("mLCD_CSB",         EVT_mLCD_CSB),
++		LPC313X_GPIO_PIN("mLCD_DB_1",        EVT_mLCD_DB_1),
++		LPC313X_GPIO_PIN("mLCD_E_RD",        EVT_mLCD_E_RD),
++		LPC313X_GPIO_PIN("mLCD_RS",          EVT_mLCD_RS),
++		LPC313X_GPIO_PIN("mLCD_RW_WR",       EVT_mLCD_RW_WR),
++		LPC313X_GPIO_PIN("mLCD_DB_3",        EVT_mLCD_DB_3),
++		LPC313X_GPIO_PIN("mLCD_DB_5",        EVT_mLCD_DB_5),
++		LPC313X_GPIO_PIN("mLCD_DB_6",        EVT_mLCD_DB_6),
++		LPC313X_GPIO_PIN("mLCD_DB_8",        EVT_mLCD_DB_8),
++		LPC313X_GPIO_PIN("mLCD_DB_9",        EVT_mLCD_DB_9),
++		LPC313X_GPIO_PIN("mLCD_DB_10",       EVT_mLCD_DB_10),
++		LPC313X_GPIO_PIN("mLCD_DB_11",       EVT_mLCD_DB_11),
++		LPC313X_GPIO_PIN("mLCD_DB_12",       EVT_mLCD_DB_12),
++		LPC313X_GPIO_PIN("mLCD_DB_13",       EVT_mLCD_DB_13),
++		LPC313X_GPIO_PIN("mLCD_DB_14",       EVT_mLCD_DB_14),
++		LPC313X_GPIO_PIN("mLCD_DB_15",       EVT_mLCD_DB_15),
++		LPC313X_GPIO_PIN("mGPIO5",           EVT_mGPIO5),
++		LPC313X_GPIO_PIN("mGPIO7",           EVT_mGPIO7),
++		LPC313X_GPIO_PIN("mGPIO8",           EVT_mGPIO8),
++		LPC313X_GPIO_PIN("mGPIO10",          EVT_mGPIO10),
++};
++
++static struct lpc313x_gpio_pin gpio_pins_ebi_i2stx_0[] = {
++		LPC313X_GPIO_PIN("mNAND_RYBN1",      EVT_mNAND_RYBN1),
++		LPC313X_GPIO_PIN("mNAND_RYBN2",      EVT_mNAND_RYBN2),
++		LPC313X_GPIO_PIN("mNAND_RYBN3",      EVT_mNAND_RYBN3),
++		LPC313X_GPIO_PIN("mUART_CTS_N",      EVT_mUART_CTS_N),
++		LPC313X_GPIO_PIN("mUART_RTS_N",      EVT_mUART_RTS_N),
++		LPC313X_GPIO_PIN("mI2STX_DATA0",     EVT_mI2STX_DATA0),
++		LPC313X_GPIO_PIN("mI2STX_WS0",       EVT_mI2STX_WS0),
++		LPC313X_GPIO_PIN("EBI_NRAS_BLOUT_1", EVT_EBI_NRAS_BLOUT_1),
++		LPC313X_GPIO_PIN("EBI_A_0_ALE",      EVT_EBI_A_0_ALE),
++		LPC313X_GPIO_PIN("EBI_NWE",          EVT_EBI_NWE),
++};
++
++static struct lpc313x_gpio_pin gpio_pins_spi[] = {
++		LPC313X_GPIO_PIN("SPI_MISO",    EVT_SPI_MISO),
++		LPC313X_GPIO_PIN("SPI_MOSI",    EVT_SPI_MOSI),
++		LPC313X_GPIO_PIN("SPI_CS_IN",   EVT_SPI_CS_IN),
++		LPC313X_GPIO_PIN("SPI_SCK",     EVT_SPI_SCK),
++		LPC313X_GPIO_PIN("SPI_CS_OUT0", EVT_SPI_CS_OUT0),
++};
++
++static struct lpc313x_gpio_pin gpio_pins_uart[] = {
++		LPC313X_GPIO_PIN("UART_RXD", EVT_UART_RXD),
++		LPC313X_GPIO_PIN("UART_TXD", EVT_UART_TXD),
++};
++
++static struct lpc313x_gpio_chip gpio_chips[] = {
++		LPC313X_GPIO_CHIP(
++			"GPIO", IOCONF_GPIO,
++			BASE_GPIO_GPIO, NUM_GPIO_GPIO,
++			&gpio_pins_gpio),
++		LPC313X_GPIO_CHIP(
++			"EBI_MCI", IOCONF_EBI_MCI,
++			BASE_GPIO_EBI_MCI, NUM_GPIO_EBI_MCI,
++			&gpio_pins_ebi_mci),
++		LPC313X_GPIO_CHIP(
++			"EBI_I2STX_0", IOCONF_EBI_I2STX_0,
++			BASE_GPIO_EBI_I2STX_0, NUM_GPIO_EBI_I2STX_0,
++			&gpio_pins_ebi_i2stx_0),
++		LPC313X_GPIO_CHIP(
++			"CGU", IOCONF_CGU,
++			BASE_GPIO_CGU, NUM_GPIO_CGU,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"I2SRX_0", IOCONF_I2SRX_0,
++			BASE_GPIO_I2SRX_0, NUM_GPIO_I2SRX_0,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"I2SRX_1", IOCONF_I2SRX_1,
++			BASE_GPIO_I2SRX_1, NUM_GPIO_I2SRX_1,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"I2STX_1", IOCONF_I2STX_1,
++			BASE_GPIO_I2STX_1, NUM_GPIO_I2STX_1,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"EBI", IOCONF_EBI,
++			BASE_GPIO_EBI, NUM_GPIO_EBI,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"I2C1", IOCONF_I2C1,
++			BASE_GPIO_I2C1, NUM_GPIO_I2C1,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"SPI", IOCONF_SPI,
++			BASE_GPIO_SPI, NUM_GPIO_SPI,
++			&gpio_pins_spi),
++		LPC313X_GPIO_CHIP(
++			"NAND_CTRL", IOCONF_NAND_CTRL,
++			BASE_GPIO_NAND_CTRL, NUM_GPIO_NAND_CTRL,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"PWM", IOCONF_PWM,
++			BASE_GPIO_PWM, NUM_GPIO_PWM,
++			NULL),
++		LPC313X_GPIO_CHIP(
++			"UART", IOCONF_UART,
++			BASE_GPIO_UART, NUM_GPIO_UART,
++			&gpio_pins_uart),
++};
++
++
++static int lpc313x_gpiolib_request(struct gpio_chip *chip, unsigned offset)
++{
++	return lpc313x_gpiolib_direction_input(chip, offset);
++}
++
++static void lpc313x_gpiolib_free(struct gpio_chip *chip, unsigned offset)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned long flags;
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin = (1 << offset);
++
++	raw_local_irq_save(flags);
++
++	GPIO_M0_RESET(port) = pin;
++	GPIO_M1_SET(port) = pin;
++
++	raw_local_irq_restore(flags);
++}
++
++static int lpc313x_gpiolib_direction_input(struct gpio_chip *chip,
++					   unsigned offset)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned long flags;
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin = (1 << offset);
++
++	raw_local_irq_save(flags);
++
++	GPIO_M1_RESET(port) = pin;
++	GPIO_M0_RESET(port) = pin;
++
++	raw_local_irq_restore(flags);
++
++	return 0;
++}
++
++static int lpc313x_gpiolib_direction_output(struct gpio_chip *chip,
++					    unsigned offset,
++					    int value)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned long flags;
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin = (1 << offset);
++
++	raw_local_irq_save(flags);
++
++	GPIO_M1_SET(port) = pin;
++
++	if(value) {
++		GPIO_M0_SET(port) = pin;
++	} else {
++		GPIO_M0_RESET(port) = pin;
++	}
++
++	raw_local_irq_restore(flags);
++
++	return 0;
++}
++
++static int lpc313x_gpiolib_get(struct gpio_chip *chip, unsigned offset)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin = (1 << offset);
++
++	if(GPIO_STATE(port) & pin) {
++		return 1;
++	} else {
++		return 0;
++	}
++}
++
++static void lpc313x_gpiolib_set(struct gpio_chip *chip,
++				unsigned offset,
++				int value)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned long flags;
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin = (1 << offset);
++
++	raw_local_irq_save(flags);
++
++	GPIO_M1_SET(port) = pin;
++
++	if(value) {
++		GPIO_M0_SET(port) = pin;
++	} else {
++		GPIO_M0_RESET(port) = pin;
++	}
++
++	raw_local_irq_restore(flags);
++}
++
++static int lpc313x_gpiolib_to_irq(struct gpio_chip *chip, unsigned offset)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++
++	if(pchip->pins) {
++		int event = pchip->pins[offset].event_id;
++		if(event >= 0) {
++			return IRQ_FOR_EVENT(event);
++		}
++	}
++
++	return -1;
++}
++
++static void lpc313x_gpiolib_dbg_show(struct seq_file *s, struct gpio_chip *chip)
++{
++	struct lpc313x_gpio_chip *pchip = to_lpc313x_gpio_chip(chip);
++	unsigned long flags;
++	unsigned port = ((unsigned)pchip->regbase);
++	unsigned pin, mode0, mode1, state;
++
++	int i;
++
++	for (i = 0; i < chip->ngpio; i++) {
++		const char *gpio_label;
++
++		pin = (1 << i);
++
++		gpio_label = gpiochip_is_requested(chip, i);
++
++		if (gpio_label) {
++
++			raw_local_irq_save(flags);
++			mode0 = GPIO_STATE_M0(port) & pin;
++			mode1 = GPIO_STATE_M1(port) & pin;
++			state = GPIO_STATE(port) & pin;
++			raw_local_irq_restore(flags);
++
++			seq_printf(s, "[%s] ", gpio_label);
++			if(pchip->pins) {
++				seq_printf(s, "%s: ", pchip->pins[i].name);
++			} else {
++				seq_printf(s, "%s[%d]: ", chip->label, i);
++			}
++
++			if(mode1) {
++				seq_printf(s, "output %s\n",
++					   mode0 ? "high" : "low");
++			} else {
++				if(mode0) {
++					seq_printf(s, "device function\n");
++				} else {
++					seq_printf(s, "input %s\n",
++						   state ? "high" : "low");
++				}
++			}
++		}
++	}
++}
++
++void __init lpc313x_gpiolib_init()
++{
++	int numchips = sizeof(gpio_chips) / sizeof(struct lpc313x_gpio_chip);
++	int i;
++
++	for(i = 0; i < numchips; i++) {
++		gpiochip_add(&gpio_chips[i].chip);
++	}
++}
+diff --git a/arch/arm/mach-lpc313x/include/mach/gpio.h b/arch/arm/mach-lpc313x/include/mach/gpio.h
+index 97381d1..a053f96 100644
+--- a/arch/arm/mach-lpc313x/include/mach/gpio.h
++++ b/arch/arm/mach-lpc313x/include/mach/gpio.h
+@@ -21,221 +21,214 @@
+  *
+  */
+ #ifndef _LPC313X_GPIO_H
++#define _LPC313X_GPIO_H
+ 
+-#include <mach/hardware.h>
+-
+-#define GPIO_PORT_MASK  0x0FE0
+-#define GPIO_PIN_MASK   0x001F
+-
+-
+-#define GPIO_MGPIO9           (IOCONF_EBI_MCI | 0)  
+-#define GPIO_MGPIO6           (IOCONF_EBI_MCI | 1)  
+-#define GPIO_MLCD_DB_7        (IOCONF_EBI_MCI | 2)  
+-#define GPIO_MLCD_DB_4        (IOCONF_EBI_MCI | 3)  
+-#define GPIO_MLCD_DB_2        (IOCONF_EBI_MCI | 4)  
+-#define GPIO_MNAND_RYBN0      (IOCONF_EBI_MCI | 5)  
+-#define GPIO_MI2STX_CLK0      (IOCONF_EBI_MCI | 6)  
+-#define GPIO_MI2STX_BCK0      (IOCONF_EBI_MCI | 7)  
+-#define GPIO_EBI_A_1_CLE      (IOCONF_EBI_MCI | 8)  
+-#define GPIO_EBI_NCAS_BLOUT   (IOCONF_EBI_MCI | 9)  
+-#define GPIO_MLCD_DB_0        (IOCONF_EBI_MCI | 10) 
+-#define GPIO_EBI_DQM_0_NOE    (IOCONF_EBI_MCI | 11) 
+-#define GPIO_MLCD_CSB         (IOCONF_EBI_MCI | 12) 
+-#define GPIO_MLCD_DB_1        (IOCONF_EBI_MCI | 13) 
+-#define GPIO_MLCD_E_RD        (IOCONF_EBI_MCI | 14) 
+-#define GPIO_MLCD_RS          (IOCONF_EBI_MCI | 15) 
+-#define GPIO_MLCD_RW_WR       (IOCONF_EBI_MCI | 16) 
+-#define GPIO_MLCD_DB_3        (IOCONF_EBI_MCI | 17) 
+-#define GPIO_MLCD_DB_5        (IOCONF_EBI_MCI | 18) 
+-#define GPIO_MLCD_DB_6        (IOCONF_EBI_MCI | 19) 
+-#define GPIO_MLCD_DB_8        (IOCONF_EBI_MCI | 20) 
+-#define GPIO_MLCD_DB_9        (IOCONF_EBI_MCI | 21) 
+-#define GPIO_MLCD_DB_10       (IOCONF_EBI_MCI | 22) 
+-#define GPIO_MLCD_DB_11       (IOCONF_EBI_MCI | 23) 
+-#define GPIO_MLCD_DB_12       (IOCONF_EBI_MCI | 24) 
+-#define GPIO_MLCD_DB_13       (IOCONF_EBI_MCI | 25) 
+-#define GPIO_MLCD_DB_14       (IOCONF_EBI_MCI | 26) 
+-#define GPIO_MLCD_DB_15       (IOCONF_EBI_MCI | 27) 
+-#define GPIO_MGPIO5           (IOCONF_EBI_MCI | 28) 
+-#define GPIO_MGPIO7           (IOCONF_EBI_MCI | 29) 
+-#define GPIO_MGPIO8           (IOCONF_EBI_MCI | 30) 
+-#define GPIO_MGPIO10          (IOCONF_EBI_MCI | 31) 
+-                
+-#define GPIO_MNAND_RYBN1      (IOCONF_EBI_I2STX_0 | 0) 
+-#define GPIO_MNAND_RYBN2      (IOCONF_EBI_I2STX_0 | 1) 
+-#define GPIO_MNAND_RYBN3      (IOCONF_EBI_I2STX_0 | 2) 
+-#define GPIO_MUART_CTS_N      (IOCONF_EBI_I2STX_0 | 3) 
+-#define GPIO_MUART_RTS_N      (IOCONF_EBI_I2STX_0 | 4) 
+-#define GPIO_MI2STX_DATA0     (IOCONF_EBI_I2STX_0 | 5) 
+-#define GPIO_MI2STX_WS0       (IOCONF_EBI_I2STX_0 | 6) 
+-#define GPIO_EBI_NRAS_BLOUT   (IOCONF_EBI_I2STX_0 | 7) 
+-#define GPIO_EBI_A_0_ALE      (IOCONF_EBI_I2STX_0 | 8) 
+-#define GPIO_EBI_NWE          (IOCONF_EBI_I2STX_0 | 9) 
+-                 
+-#define GPIO_CGU_SYSCLK_O     (IOCONF_CGU | 0) 
+-
+-#define GPIO_I2SRX_BCK0       (IOCONF_I2SRX_0 | 0) 
+-#define GPIO_I2SRX_DATA0      (IOCONF_I2SRX_0 | 1) 
+-#define GPIO_I2SRX_WS0        (IOCONF_I2SRX_0 | 2) 
+-                  
+-#define GPIO_I2SRX_DATA1      (IOCONF_I2SRX_1 | 0) 
+-#define GPIO_I2SRX_BCK1       (IOCONF_I2SRX_1 | 1) 
+-#define GPIO_I2SRX_WS1        (IOCONF_I2SRX_1 | 2) 
+-                  
+-#define GPIO_I2STX_DATA1      (IOCONF_I2STX_1 | 0) 
+-#define GPIO_I2STX_BCK1       (IOCONF_I2STX_1 | 1) 
+-#define GPIO_I2STX_WS1        (IOCONF_I2STX_1 | 2) 
+-#define GPIO_I2STX_256FS_O    (IOCONF_I2STX_1 | 3) 
+- 
+-#define GPIO_EBI_D_9          (IOCONF_EBI | 0)  
+-#define GPIO_EBI_D_10         (IOCONF_EBI | 1)  
+-#define GPIO_EBI_D_11         (IOCONF_EBI | 2)  
+-#define GPIO_EBI_D_12         (IOCONF_EBI | 3)  
+-#define GPIO_EBI_D_13         (IOCONF_EBI | 4)  
+-#define GPIO_EBI_D_14         (IOCONF_EBI | 5)  
+-#define GPIO_EBI_D_4          (IOCONF_EBI | 6)  
+-#define GPIO_EBI_D_0          (IOCONF_EBI | 7)  
+-#define GPIO_EBI_D_1          (IOCONF_EBI | 8)  
+-#define GPIO_EBI_D_2          (IOCONF_EBI | 9)  
+-#define GPIO_EBI_D_3          (IOCONF_EBI | 10) 
+-#define GPIO_EBI_D_5          (IOCONF_EBI | 11) 
+-#define GPIO_EBI_D_6          (IOCONF_EBI | 12) 
+-#define GPIO_EBI_D_7          (IOCONF_EBI | 13) 
+-#define GPIO_EBI_D_8          (IOCONF_EBI | 14) 
+-#define GPIO_EBI_D_15         (IOCONF_EBI | 15) 
+-                  
+-
+-#define GPIO_GPIO1            (IOCONF_GPIO | 0)  
+-#define GPIO_GPIO0            (IOCONF_GPIO | 1)  
+-#define GPIO_GPIO2            (IOCONF_GPIO | 2)  
+-#define GPIO_GPIO3            (IOCONF_GPIO | 3)  
+-#define GPIO_GPIO4            (IOCONF_GPIO | 4)  
+-#define GPIO_GPIO11           (IOCONF_GPIO | 5)  
+-#define GPIO_GPIO12           (IOCONF_GPIO | 6)  
+-#define GPIO_GPIO13           (IOCONF_GPIO | 7)  
+-#define GPIO_GPIO14           (IOCONF_GPIO | 8)  
+-#define GPIO_GPIO15           (IOCONF_GPIO | 9)  
+-#define GPIO_GPIO16           (IOCONF_GPIO | 10) 
+-#define GPIO_GPIO17           (IOCONF_GPIO | 11) 
+-#define GPIO_GPIO18           (IOCONF_GPIO | 12) 
+-#define GPIO_GPIO19           (IOCONF_GPIO | 13) 
+-#define GPIO_GPIO20           (IOCONF_GPIO | 14) 
+-                
+-#define GPIO_I2C_SDA1         (IOCONF_I2C1 | 0) 
+-#define GPIO_I2C_SCL1         (IOCONF_I2C1 | 1) 
+-                          
+-#define GPIO_SPI_MISO         (IOCONF_SPI | 0) 
+-#define GPIO_SPI_MOSI         (IOCONF_SPI | 1) 
+-#define GPIO_SPI_CS_IN        (IOCONF_SPI | 2) 
+-#define GPIO_SPI_SCK          (IOCONF_SPI | 3) 
+-#define GPIO_SPI_CS_OUT0      (IOCONF_SPI | 4) 
+-                 
+-#define GPIO_NAND_NCS_3       (IOCONF_NAND_CTRL | 0)
+-#define GPIO_NAND_NCS_0       (IOCONF_NAND_CTRL | 1)
+-#define GPIO_NAND_NCS_1       (IOCONF_NAND_CTRL | 2)
+-#define GPIO_NAND_NCS_2       (IOCONF_NAND_CTRL | 3)
+-                 
+-#define GPIO_PWM_DATA         (IOCONF_PWM | 0)
+-                  
+-#define GPIO_UART_RXD         (IOCONF_UART | 0)
+-#define GPIO_UART_TXD         (IOCONF_UART | 1)
+-                
+-                
+-                
+-static inline int lpc313x_gpio_direction_input(unsigned gpio)
+-{
+-	unsigned long flags;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin = 1 << (gpio & GPIO_PIN_MASK);
+-
+-	raw_local_irq_save(flags);
+-
+-	GPIO_M1_RESET(port) = pin; 
+-	GPIO_M0_RESET(port) = pin;
+-
+-	raw_local_irq_restore(flags);
+-	return 0;
+-}
+-
+-static inline int lpc313x_gpio_ip_driven(unsigned gpio)
+-{
+-	unsigned long flags;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin = 1 << (gpio & GPIO_PIN_MASK);
+-
+-	raw_local_irq_save(flags);
+ 
+-	GPIO_M1_RESET(port) = pin; 
+-	GPIO_M0_SET(port) = pin;
+-
+-	raw_local_irq_restore(flags);
+-	return 0;
+-}
++/* needed for IOCONF register definitions */
++#include <mach/hardware.h>
+ 
+ 
+-static inline int lpc313x_gpio_get_value(unsigned gpio)
+-{
+-	return (GPIO_STATE(gpio & GPIO_PORT_MASK) & (1 << (gpio & GPIO_PIN_MASK)));
+-}
++/* gpio defines (by group) */
++
++#define BASE_GPIO_GPIO 0
++#define NUM_GPIO_GPIO 15
++#define GPIO_GPIO1  (BASE_GPIO_GPIO + 0)
++#define GPIO_GPIO0  (BASE_GPIO_GPIO + 1)
++#define GPIO_GPIO2  (BASE_GPIO_GPIO + 2)
++#define GPIO_GPIO3  (BASE_GPIO_GPIO + 3)
++#define GPIO_GPIO4  (BASE_GPIO_GPIO + 4)
++#define GPIO_GPIO11 (BASE_GPIO_GPIO + 5)
++#define GPIO_GPIO12 (BASE_GPIO_GPIO + 6)
++#define GPIO_GPIO13 (BASE_GPIO_GPIO + 7)
++#define GPIO_GPIO14 (BASE_GPIO_GPIO + 8)
++#define GPIO_GPIO15 (BASE_GPIO_GPIO + 9)
++#define GPIO_GPIO16 (BASE_GPIO_GPIO + 10)
++#define GPIO_GPIO17 (BASE_GPIO_GPIO + 11)
++#define GPIO_GPIO18 (BASE_GPIO_GPIO + 12)
++#define GPIO_GPIO19 (BASE_GPIO_GPIO + 13)
++#define GPIO_GPIO20 (BASE_GPIO_GPIO + 14)
++
++#define BASE_GPIO_EBI_MCI 15
++#define NUM_GPIO_EBI_MCI 32
++#define GPIO_MGPIO9           (BASE_GPIO_EBI_MCI + 0)
++#define GPIO_MGPIO6           (BASE_GPIO_EBI_MCI + 1)
++#define GPIO_MLCD_DB_7        (BASE_GPIO_EBI_MCI + 2)
++#define GPIO_MLCD_DB_4        (BASE_GPIO_EBI_MCI + 3)
++#define GPIO_MLCD_DB_2        (BASE_GPIO_EBI_MCI + 4)
++#define GPIO_MNAND_RYBN0      (BASE_GPIO_EBI_MCI + 5)
++#define GPIO_MI2STX_CLK0      (BASE_GPIO_EBI_MCI + 6)
++#define GPIO_MI2STX_BCK0      (BASE_GPIO_EBI_MCI + 7)
++#define GPIO_EBI_A_1_CLE      (BASE_GPIO_EBI_MCI + 8)
++#define GPIO_EBI_NCAS_BLOUT   (BASE_GPIO_EBI_MCI + 9)
++#define GPIO_MLCD_DB_0        (BASE_GPIO_EBI_MCI + 10)
++#define GPIO_EBI_DQM_0_NOE    (BASE_GPIO_EBI_MCI + 11)
++#define GPIO_MLCD_CSB         (BASE_GPIO_EBI_MCI + 12)
++#define GPIO_MLCD_DB_1        (BASE_GPIO_EBI_MCI + 13)
++#define GPIO_MLCD_E_RD        (BASE_GPIO_EBI_MCI + 14)
++#define GPIO_MLCD_RS          (BASE_GPIO_EBI_MCI + 15)
++#define GPIO_MLCD_RW_WR       (BASE_GPIO_EBI_MCI + 16)
++#define GPIO_MLCD_DB_3        (BASE_GPIO_EBI_MCI + 17)
++#define GPIO_MLCD_DB_5        (BASE_GPIO_EBI_MCI + 18)
++#define GPIO_MLCD_DB_6        (BASE_GPIO_EBI_MCI + 19)
++#define GPIO_MLCD_DB_8        (BASE_GPIO_EBI_MCI + 20)
++#define GPIO_MLCD_DB_9        (BASE_GPIO_EBI_MCI + 21)
++#define GPIO_MLCD_DB_10       (BASE_GPIO_EBI_MCI + 22)
++#define GPIO_MLCD_DB_11       (BASE_GPIO_EBI_MCI + 23)
++#define GPIO_MLCD_DB_12       (BASE_GPIO_EBI_MCI + 24)
++#define GPIO_MLCD_DB_13       (BASE_GPIO_EBI_MCI + 25)
++#define GPIO_MLCD_DB_14       (BASE_GPIO_EBI_MCI + 26)
++#define GPIO_MLCD_DB_15       (BASE_GPIO_EBI_MCI + 27)
++#define GPIO_MGPIO5           (BASE_GPIO_EBI_MCI + 28)
++#define GPIO_MGPIO7           (BASE_GPIO_EBI_MCI + 29)
++#define GPIO_MGPIO8           (BASE_GPIO_EBI_MCI + 30)
++#define GPIO_MGPIO10          (BASE_GPIO_EBI_MCI + 31)
++
++#define BASE_GPIO_EBI_I2STX_0 47
++#define NUM_GPIO_EBI_I2STX_0 10
++#define GPIO_MNAND_RYBN1      (BASE_GPIO_EBI_I2STX_0 + 0)
++#define GPIO_MNAND_RYBN2      (BASE_GPIO_EBI_I2STX_0 + 1)
++#define GPIO_MNAND_RYBN3      (BASE_GPIO_EBI_I2STX_0 + 2)
++#define GPIO_MUART_CTS_N      (BASE_GPIO_EBI_I2STX_0 + 3)
++#define GPIO_MUART_RTS_N      (BASE_GPIO_EBI_I2STX_0 + 4)
++#define GPIO_MI2STX_DATA0     (BASE_GPIO_EBI_I2STX_0 + 5)
++#define GPIO_MI2STX_WS0       (BASE_GPIO_EBI_I2STX_0 + 6)
++#define GPIO_EBI_NRAS_BLOUT   (BASE_GPIO_EBI_I2STX_0 + 7)
++#define GPIO_EBI_A_0_ALE      (BASE_GPIO_EBI_I2STX_0 + 8)
++#define GPIO_EBI_NWE          (BASE_GPIO_EBI_I2STX_0 + 9)
++
++#define BASE_GPIO_CGU 57
++#define NUM_GPIO_CGU 1
++#define GPIO_CGU_SYSCLK       (BASE_GPIO_CGU + 0)
++
++#define BASE_GPIO_I2SRX_0 58
++#define NUM_GPIO_I2SRX_0 3
++#define GPIO_I2SRX_BCK0     (BASE_GPIO_I2SRX_0 + 0)
++#define GPIO_I2SRX_DATA0    (BASE_GPIO_I2SRX_0 + 1)
++#define GPIO_I2SRX_WS0      (BASE_GPIO_I2SRX_0 + 2)
++
++#define BASE_GPIO_I2SRX_1 61
++#define NUM_GPIO_I2SRX_1 3
++#define GPIO_I2SRX_DATA1    (BASE_GPIO_I2SRX_1 + 0)
++#define GPIO_I2SRX_BCK1     (BASE_GPIO_I2SRX_1 + 1)
++#define GPIO_I2SRX_WS1      (BASE_GPIO_I2SRX_1 + 2)
++
++#define BASE_GPIO_I2STX_1 64
++#define NUM_GPIO_I2STX_1 4
++#define GPIO_I2STX_DATA1      (BASE_GPIO_I2STX_1 + 0)
++#define GPIO_I2STX_BCK1       (BASE_GPIO_I2STX_1 + 1)
++#define GPIO_I2STX_WS1        (BASE_GPIO_I2STX_1 + 2)
++#define GPIO_I2STX_256FS_0    (BASE_GPIO_I2STX_1 + 3)
++
++#define BASE_GPIO_EBI 68
++#define NUM_GPIO_EBI 16
++#define GPIO_EBI_D_9          (BASE_GPIO_EBI + 0)
++#define GPIO_EBI_D_10         (BASE_GPIO_EBI + 1) 
++#define GPIO_EBI_D_11         (BASE_GPIO_EBI + 2)  
++#define GPIO_EBI_D_12         (BASE_GPIO_EBI + 3)
++#define GPIO_EBI_D_13         (BASE_GPIO_EBI + 4)
++#define GPIO_EBI_D_14         (BASE_GPIO_EBI + 5)
++#define GPIO_EBI_D_4          (BASE_GPIO_EBI + 6)
++#define GPIO_EBI_D_0          (BASE_GPIO_EBI + 7)
++#define GPIO_EBI_D_1          (BASE_GPIO_EBI + 8)
++#define GPIO_EBI_D_2          (BASE_GPIO_EBI + 9)
++#define GPIO_EBI_D_3          (BASE_GPIO_EBI + 10)
++#define GPIO_EBI_D_5          (BASE_GPIO_EBI + 11)
++#define GPIO_EBI_D_6          (BASE_GPIO_EBI + 12)
++#define GPIO_EBI_D_7          (BASE_GPIO_EBI + 13)
++#define GPIO_EBI_D_8          (BASE_GPIO_EBI + 14)
++#define GPIO_EBI_D_15         (BASE_GPIO_EBI + 15)
++
++#define BASE_GPIO_I2C1 84
++#define NUM_GPIO_I2C1 2
++#define GPIO_I2C_SDA1         (BASE_GPIO_I2C1 0)
++#define GPIO_I2C_SCL1         (BASE_GPIO_I2C1 1)
++
++#define BASE_GPIO_SPI 86
++#define NUM_GPIO_SPI 5
++#define GPIO_SPI_MISO         (BASE_GPIO_SPI + 0)
++#define GPIO_SPI_MOSI         (BASE_GPIO_SPI + 1)
++#define GPIO_SPI_CS_IN        (BASE_GPIO_SPI + 2)
++#define GPIO_SPI_SCK          (BASE_GPIO_SPI + 3)
++#define GPIO_SPI_CS_OUT0      (BASE_GPIO_SPI + 4)
++
++#define BASE_GPIO_NAND_CTRL 91
++#define NUM_GPIO_NAND_CTRL 4
++#define GPIO_NAND_NCS_3       (BASE_GPIO_NAND_CTRL + 0)
++#define GPIO_NAND_NCS_0       (BASE_GPIO_NAND_CTRL + 1)
++#define GPIO_NAND_NCS_1       (BASE_GPIO_NAND_CTRL + 2)
++#define GPIO_NAND_NCS_2       (BASE_GPIO_NAND_CTRL + 3)
++
++#define BASE_GPIO_PWM 95
++#define NUM_GPIO_PWM 1
++#define GPIO_PWM_DATA         (BASE_GPIO_PWM + 0)
++
++#define BASE_GPIO_UART 96
++#define NUM_GPIO_UART 2
++#define GPIO_UART_RXD         (BASE_GPIO_UART + 0)
++#define GPIO_UART_TXD         (BASE_GPIO_UART + 1)
++
++
++/* gpiolib init function */
++
++extern void lpc313x_gpiolib_init(void);
++
++
++/* gpiolib fastpath and aliases */
++
++#define IOCONF_FAST_GPIO IOCONF_GPIO
++#define NUM_FAST_GPIO NUM_GPIO_GPIO
++
++#include <asm-generic/gpio.h>
++
++/*
++ * The following functions provide "fastpath" access to the
++ * first group of pins, which are all exclusive GPIOs without
++ * device functions.
++ *
++ * Access to these pins will be faster than for other pins
++ * at the cost of proper gpiolib error handling.
++ *
++ * If you must use bit banging, use these pins preferentially.
++ */
+ 
+-static inline void lpc313x_gpio_set_value(unsigned gpio, int value)
++static inline int gpio_get_value(unsigned gpio)
+ {
+-	unsigned long flags;
+-	int port = (gpio & GPIO_PORT_MASK);
+-	int pin = 1 << (gpio & GPIO_PIN_MASK);
+-
+-	raw_local_irq_save(flags);
+-
+-	GPIO_M1_SET(port) = pin; 
+-
+-	if(value) {
+-		GPIO_M0_SET(port) = pin;
++	if(gpio < NUM_FAST_GPIO) {
++		unsigned bit = (1 << gpio);
++		if(GPIO_STATE(IOCONF_FAST_GPIO) & bit) {
++			return 1;
++		} else {
++			return 0;
++		}
+ 	} else {
+-		GPIO_M0_RESET(port) = pin;
++		return __gpio_get_value(gpio);
+ 	}
+-
+-	raw_local_irq_restore(flags);
+-}
+-
+-
+-/*-------------------------------------------------------------------------*/
+-
+-/* Wrappers for "new style" GPIO calls. These calls LPC313x specific versions
+- * to allow future extension of GPIO logic.
+-*/
+-static inline  int gpio_direction_input(unsigned gpio)
+-{
+-	return lpc313x_gpio_direction_input(gpio);
+ }
+ 
+-static inline int gpio_direction_output(unsigned gpio, int value)
++static inline void gpio_set_value(unsigned gpio, int value)
+ {
+-	lpc313x_gpio_set_value(gpio, value);
+-	return 0;
++	if(gpio < NUM_FAST_GPIO) {
++		unsigned bit = (1 << gpio);
++		if(value) {
++			GPIO_M0_SET(IOCONF_FAST_GPIO) = bit;
++		} else {
++			GPIO_M0_RESET(IOCONF_FAST_GPIO) = bit;
++		}
++	} else {
++		__gpio_set_value(gpio, value);
++	}
+ }
+ 
+-static inline int gpio_get_value(unsigned gpio)
++static inline int gpio_cansleep(unsigned gpio)
+ {
+-	return lpc313x_gpio_get_value(gpio);
++	/* gpio_cansleep() is non-trivial on lpc313x */
++	return __gpio_cansleep(gpio);
+ }
+ 
+-static inline void gpio_set_value(unsigned gpio, int value)
++static inline int gpio_to_irq(unsigned gpio)
+ {
+-	lpc313x_gpio_set_value(gpio, value);
++	/* gpio_to_irq() is non-trivial on lpc313x */
++	return __gpio_to_irq(gpio);
+ }
+-static inline int gpio_request(unsigned gpio, const char *label)
+-{
+-	return 0;
+-}
+-/**
+- * FIXME: It is assumed that freeing a gpio pin
+- * will set it to the default mode. eh?
+- **/
+-static inline void gpio_free( unsigned gpio)
+-{
+-	lpc313x_gpio_ip_driven(gpio);
+-}
+-int gpio_is_valid(unsigned pin);
+-
+ 
+ #endif /*_LPC313X_GPIO_H*/
+diff --git a/arch/arm/mach-lpc313x/include/mach/irqs.h b/arch/arm/mach-lpc313x/include/mach/irqs.h
+index 7d751eb..59d7f27 100644
+--- a/arch/arm/mach-lpc313x/include/mach/irqs.h
++++ b/arch/arm/mach-lpc313x/include/mach/irqs.h
+@@ -193,4 +193,7 @@
+ 
+ #define NR_IRQS		(NR_IRQ_CPU + NR_IRQ_CHIP_EVT + NR_IRQ_BOARD)
+ 
++
++#define IRQ_FOR_EVENT(irqnum) (-1)
++
+ #endif
+diff --git a/arch/arm/mach-lpc313x/val3153.c b/arch/arm/mach-lpc313x/val3153.c
+index 1f69285..5989975 100644
+--- a/arch/arm/mach-lpc313x/val3153.c
++++ b/arch/arm/mach-lpc313x/val3153.c
+@@ -203,7 +203,7 @@ static void spi_set_cs_state(int cs_num, int state)
+ 	(void) cs_num;
+ 
+ 	/* Set GPO state for CS0 */
+-	lpc313x_gpio_set_value(GPIO_SPI_CS_OUT0, state);
++	gpio_set_value(GPIO_SPI_CS_OUT0, state);
+ }
+ 
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+diff --git a/arch/arm/mach-lpc313x/val3154.c b/arch/arm/mach-lpc313x/val3154.c
+index 69a693b..6d37847 100644
+--- a/arch/arm/mach-lpc313x/val3154.c
++++ b/arch/arm/mach-lpc313x/val3154.c
+@@ -110,7 +110,7 @@ static void spi_set_cs_state(int cs_num, int state)
+ 	(void) cs_num;
+ 
+ 	/* Set GPO state for CS0 */
+-	lpc313x_gpio_set_value(GPIO_SPI_CS_OUT0, state);
++	gpio_set_value(GPIO_SPI_CS_OUT0, state);
+ }
+ 
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+-- 
+1.7.6.3
+
