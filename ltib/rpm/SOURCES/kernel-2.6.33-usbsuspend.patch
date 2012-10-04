@@ -94,7 +94,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/host/ehci-lpc.c 
 +
 +static int lpc_ehci_bus_resume(struct usb_hcd *hcd)
 +{
-+  if (power_down_on_suspend) lpc_usb_resume();
++  if (SYS_USB_ATX_PLL_PD_REG) lpc_usb_resume();
 +  return ehci_bus_resume(hcd); 
 +}
 +#endif
