@@ -1,0 +1,118 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c	2012-10-03 18:05:14.956880078 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c	2012-10-03 16:50:47.566015776 -0700
+@@ -89,7 +89,7 @@
+ #else
+ 	ret = g_leds[led_id >> 2];
+ #endif
+-	printk ("pca9532: r: 0x%x w: 0x%x reg:0x%x\n", (u8)(ret & 0xFF), reg, LED_REG(led_id));
++//	printk ("pca9532: r: 0x%x w: 0x%x reg:0x%x\n", (u8)(ret & 0xFF), reg, LED_REG(led_id));
+ 	  
+ 	if (ret != reg)
+ 		i2c_smbus_write_byte_data(client, LED_REG(led_id), reg);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/host/ehci-lpc.c linux-2.6.33.modified/drivers/usb/host/ehci-lpc.c
+--- linux-2.6.33/drivers/usb/host/ehci-lpc.c	2012-10-03 18:05:14.600887794 -0700
++++ linux-2.6.33.modified/drivers/usb/host/ehci-lpc.c	2012-10-03 16:10:37.313689640 -0700
+@@ -15,9 +15,17 @@
+ #include <linux/fsl_devices.h>
+ #include <linux/usb/otg.h>
+ #include <mach/board.h>
++#include <linux/moduleparam.h>
++
++static int power_down_on_suspend = 0;
++module_param(power_down_on_suspend, bool, 0644);
++MODULE_PARM_DESC(power_down_on_suspend, "Cut USB bus power on bus suspend")
+ 
+ static struct platform_driver ehci_lpc_driver;
+ 
++static int lpc_ehci_bus_suspend(struct usb_hcd *hcd);
++static int lpc_ehci_bus_resume(struct usb_hcd *hcd);
++
+ static int lpc_ehci_init(struct usb_hcd *hcd)
+ {
+ 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+@@ -67,8 +75,8 @@
+ 	.hub_status_data	= ehci_hub_status_data,
+ 	.hub_control		= ehci_hub_control,
+ #if defined(CONFIG_PM)
+-	.bus_suspend		= ehci_bus_suspend,
+-	.bus_resume		= ehci_bus_resume,
++	.bus_suspend		= lpc_ehci_bus_suspend,
++	.bus_resume		= lpc_ehci_bus_resume,
+ #endif
+ 	.relinquish_port	= ehci_relinquish_port,
+ 	.port_handed_over	= ehci_port_handed_over,
+@@ -295,15 +303,16 @@
+ 	return 0;
+ }
+ #endif				/* CONFIG_USB_OTG */
++
++#if defined(CONFIG_PM)
+ /**
+  * FIXME: This should get into a common header
+  * currently declared in arch/arm/mach-lpc313x/usb.c
+  **/
+ #define USB_DEV_PORTSC1			__REG(USBOTG_PHYS + 0x184)
+ #define USBPRTS_PLPSCD	_BIT(23)
+-static int lpc313x_ehci_suspend(struct platform_device *pdev, pm_message_t state)
++static void lpc_usb_suspend(void)
+ {
+-#ifdef CONFIG_PM
+ 	disable_irq(IRQ_VBUS_OVRC);
+ 	/* Shutoff vbus power */
+ 	lpc313x_vbus_power(0);
+@@ -313,13 +322,10 @@
+ 	SYS_USB_ATX_PLL_PD_REG = 0x1;
+ 	/* Shutoff IP Clock */
+ 	cgu_clk_en_dis(CGU_SB_USB_OTG_AHB_CLK_ID, 0);
+-#endif
+-	return 0;
+ }
+ 
+-static int lpc313x_ehci_resume(struct platform_device * pdev)
++static void lpc_usb_resume(void)
+ {
+-#ifdef CONFIG_PM
+ 	u32 bank = EVT_GET_BANK(EVT_usb_atx_pll_lock);
+ 	u32 bit_pos = EVT_usb_atx_pll_lock & 0x1F;
+ 	int tout = 100;
+@@ -338,9 +344,38 @@
+ 	USB_DEV_PORTSC1 &= ~USBPRTS_PLPSCD;
+ 	lpc313x_vbus_power(1);
+ 	enable_irq(IRQ_VBUS_OVRC);
++}
++
++/* turn off the vbus power when the root hub is suspended */
++static int lpc_ehci_bus_suspend(struct usb_hcd *hcd)
++{
++  int err = ehci_bus_suspend(hcd);
++  if (!err && power_down_on_suspend) 
++    lpc_usb_suspend();
++  return err;
++}
++
++static int lpc_ehci_bus_resume(struct usb_hcd *hcd)
++{
++  if (power_down_on_suspend) lpc_usb_resume();
++  return ehci_bus_resume(hcd); 
++}
++#endif
++
++static int lpc313x_ehci_suspend(struct platform_device *pdev, pm_message_t state)
++{
++#ifdef CONFIG_PM
++    lpc_usb_suspend();
+ #endif
+ 	return 0;
+ }
++static int lpc313x_ehci_resume(struct platform_device * pdev)
++{
++#ifdef CONFIG_PM
++    lpc_usb_resume();
++#endif
++    return 0;
++}
+ 
+ static struct platform_driver ehci_lpc_driver = {
+ 	.probe = lpc_ehci_probe,
