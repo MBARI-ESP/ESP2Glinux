@@ -7,6 +7,6 @@ cd $KERNELDIR && {
       ;;
     *)
       exec /usr/bin/make -j4 INSTALL_MOD_PATH=${INSTALL_MOD_PATH:-$DEV_IMAGE} \
-        ARCH=arm  HOSTCC="ccache /usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR "$@"
+        ARCH=arm  HOSTCC="/usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR "$@"
   esac
 }
