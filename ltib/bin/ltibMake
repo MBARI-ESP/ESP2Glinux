@@ -1,3 +1,4 @@
 #!/bin/sh
 [ -z "$DEV_IMAGE" ] && . `dirname $(readlink -mn $0)`/ltibenv
-exec /usr/bin/make -j4 ARCH=arm HOSTCC="ccache /usr/bin/gcc -B/usr/bin/" "$@"
+exec /usr/bin/make -j4 INSTALL_MOD_PATH=${INSTALL_MOD_PATH:-$DEV_IMAGE} \
+     ARCH=arm  HOSTCC="/usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR "$@"
