@@ -1,0 +1,13 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/net/wireless/zd1211rw/zd_usb.c linux-2.6.33.modified/drivers/net/wireless/zd1211rw/zd_usb.c
+--- linux-2.6.33/drivers/net/wireless/zd1211rw/zd_usb.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/net/wireless/zd1211rw/zd_usb.c	2012-10-16 14:18:41.003157429 -0700
+@@ -561,8 +561,7 @@
+ 
+ 	if (length < sizeof(struct rx_length_info)) {
+ 		/* It's not a complete packet anyhow. */
+-		printk("%s: invalid, small RX packet : %d\n",
+-		       __func__, length);
++		dev_dbg_f(zd_usb_dev(usb), "invalid, small RX packet : %d\n", length);
+ 		return;
+ 	}
+ 	length_info = (struct rx_length_info *)
