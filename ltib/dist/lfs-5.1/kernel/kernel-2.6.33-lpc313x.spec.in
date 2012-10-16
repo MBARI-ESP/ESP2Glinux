@@ -47,6 +47,7 @@ Patch31         : kernel-2.6.33-spansionSPIflash.patch
 Patch32         : kernel-2.6.33-gpios.patch
 Patch33         : kernel-2.6.33-i2sTriggerFix.patch
 Patch34         : kernel-2.6.33-usbsuspend.patch
+Patch35         : kernel-2.6.33-quiet_zd1211rw.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -84,4 +85,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch32 -p1
 %patch33 -p1
 %patch34 -p1
+%patch35 -p1
 
