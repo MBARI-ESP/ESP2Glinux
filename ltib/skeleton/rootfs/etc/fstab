@@ -22,12 +22,11 @@ tmpfs       /sd/var/lock    tmpfs   defaults
 
 #END nfsmount service ignores entries below this line END#
 
+atlasnfs:/ifs/mbari/Tempbox /tempbox nfs nosuid,nodev,noauto
+atlasnfs:/ifs/mbari/Engineering /engineering nfs nosuid,nodev,noauto
+atlasnfs:/ifs/mbari/ProjectLibrary /project nfs nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/ESP /ESP nfs nosuid,nodev,noauto
-tempest:/vol/tempbox /tempbox nfs nosuid,nodev,noauto
-tempest:/vol/vol0/users /u nfs nosuid,nodev,noauto
-tornado:/vol/vol0/Engineering /engineering nfs nosuid,nodev,noauto
-tornado:/vol/ProjectLibrary /project nfs nosuid,nodev,noauto
-tornado:/vol/vol0/FTP /ftp nfs nosuid,nodev,noauto
+atlasnfs:/ifs/mbarisnaponly/FTP /ftp nfs nosuid,nodev,noauto
 
 bufflehead:/home /bufflehead/home nfs noauto
 pippin:/home /pippin/home nfs noauto
