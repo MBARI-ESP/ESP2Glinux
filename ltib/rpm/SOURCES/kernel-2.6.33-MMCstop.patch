@@ -1,0 +1,17 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c
+--- linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c	2012-10-16 23:07:35.360547197 -0700
++++ linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c	2012-10-16 23:04:09.085264460 -0700
+@@ -618,11 +618,10 @@
+ 	if (data) //we may need to move this code to mci_start_command
+ 		lpc313x_mci_submit_data(host, data);
+ 
+-	lpc313x_mci_start_command(host, cmd, cmdflags);
+-
+ 	if (mrq->stop)
+ 		host->stop_cmdr = lpc313x_mci_prepare_command(slot->mmc, mrq->stop);
+ 
++	lpc313x_mci_start_command(host, cmd, cmdflags);
+ }
+ 
+ 
