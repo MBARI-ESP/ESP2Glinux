@@ -1,0 +1,19 @@
+#!/bin/sh
+PATH=/usr/sbin:/sbin:/bin:/usr/bin
+
+case "$1" in
+    start)
+      delay=${2-10}
+      echo "Delaying $delay seconds"
+      sleep $delay
+      ;;
+                         
+    stop)
+       :
+       ;;
+
+     *)
+       echo "usage: delay start {seconds} #defaults to 10"
+       ;;
+esac
+
