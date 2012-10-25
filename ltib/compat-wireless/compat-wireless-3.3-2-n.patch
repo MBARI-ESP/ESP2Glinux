@@ -1,0 +1,55 @@
+diff -ru compat-wireless-3.3-2-n.orig/compat/compat_atomic.c compat-wireless-3.3-2-n/compat/compat_atomic.c
+--- compat-wireless-3.3-2-n.orig/compat/compat_atomic.c	2012-03-28 00:34:57.000000000 -0700
++++ compat-wireless-3.3-2-n/compat/compat_atomic.c	2012-10-24 21:52:04.966790296 -0700
+@@ -1,7 +1,10 @@
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+ 
+-#if !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)) && (defined(CONFIG_UML) || defined(CONFIG_X86))) && !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)) && defined(CONFIG_ARM) && !defined(CONFIG_GENERIC_ATOMIC64))
++#if !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)) && (defined(CONFIG_UML) || defined(CONFIG_X86))) && !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34)) && defined(CONFIG_ARM) && !defined(CONFIG_GENERIC_ATOMIC64))
++#  ifndef ATOMIC64_INIT
++#    include <asm-generic/atomic64.h>
++#  endif
+ 
+ static DEFINE_SPINLOCK(lock);
+ 
+diff -ru compat-wireless-3.3-2-n.orig/drivers/net/wireless/rt2x00/rt2800usb.c compat-wireless-3.3-2-n/drivers/net/wireless/rt2x00/rt2800usb.c
+--- compat-wireless-3.3-2-n.orig/drivers/net/wireless/rt2x00/rt2800usb.c	2012-03-28 00:34:56.000000000 -0700
++++ compat-wireless-3.3-2-n/drivers/net/wireless/rt2x00/rt2800usb.c	2012-10-24 21:20:17.926669420 -0700
+@@ -1003,6 +1003,7 @@
+ 	{ USB_DEVICE(0x0471, 0x200f) },
+ 	/* Planex */
+ 	{ USB_DEVICE(0x2019, 0xab25) },
++	{ USB_DEVICE(0x2019, 0xab29) },
+ 	{ USB_DEVICE(0x2019, 0xed06) },
+ 	/* Quanta */
+ 	{ USB_DEVICE(0x1a32, 0x0304) },
+diff -ru compat-wireless-3.3-2-n.orig/net/mac80211/key.h compat-wireless-3.3-2-n/net/mac80211/key.h
+--- compat-wireless-3.3-2-n.orig/net/mac80211/key.h	2012-03-28 00:34:56.000000000 -0700
++++ compat-wireless-3.3-2-n/net/mac80211/key.h	2012-10-24 21:52:06.366758305 -0700
+@@ -11,6 +11,9 @@
+ #define IEEE80211_KEY_H
+ 
+ #include <linux/types.h>
++#ifndef ATOMIC64_INIT
++#  include <asm-generic/atomic64.h>
++#endif
+ #include <linux/list.h>
+ #include <linux/crypto.h>
+ #include <linux/rcupdate.h>
+diff -ru compat-wireless-3.3-2-n.orig/scripts/driver-select compat-wireless-3.3-2-n/scripts/driver-select
+--- compat-wireless-3.3-2-n.orig/scripts/driver-select	2012-03-28 00:33:49.000000000 -0700
++++ compat-wireless-3.3-2-n/scripts/driver-select	2012-10-24 21:20:18.218662675 -0700
+@@ -356,6 +356,12 @@
+ 		disable_bt_usb_ethernet_var
+ 		disable_lib80211
+ 		;;
++    esp)
++		select_drivers	CONFIG_RT2X00 AT76C50X
++		disable_staging
++		disable_bt_usb_ethernet
++		disable_var_02
++;;
+ 	wl12xx)
+ 		select_drivers		CONFIG_WL1251 \
+ 					CONFIG_WL12XX
