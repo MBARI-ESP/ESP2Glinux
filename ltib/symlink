@@ -1,4 +1,4 @@
 # to access ltib tools while keeping your sanity intact:
 
-ln -s /opt/freescale/usr/local/gcc-4.1.2-glibc-2.5-nptl-3/arm-none-linux-gnueabi/arm-none-linux-gnueabi/bin \
+ln -s /opt/freescale/usr/local/gcc-4.1.2-glibc-2.5-nptl-3/arm-none-linux-gnueabi/arm-none-linux-gnueabi \
   /tlibarm
