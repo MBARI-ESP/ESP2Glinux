@@ -1,0 +1,13 @@
+#  configure wireless-compat for ltibarm kernel
+#   to restore support for rt2800usb and old atmel usb adapters
+# -- 10/24/12 brent@mbari.org
+#
+: ${compat:=compat-wireless-3.3-2-n}
+: ${urlDir:=http://www.orbit-lab.org/kernel/compat-wireless-3-stable/v3.3}
+rm -rf ${compat} ${compat}.tar.bz2
+wget $urlDir/$compat.tar.bz2 &&
+tar xjf $compat.tar.bz2 &&
+cd $compat &&
+cat ../$compat.patch | patch -p1 && 
+scripts/driver-select esp &&
+echo Build ltibarm kernel sources and rootfs image, then arminstall

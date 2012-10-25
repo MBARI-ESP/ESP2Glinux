@@ -1,0 +1,22 @@
+#  build updated wireless-compat kernel modules for updating ltibarm kernel
+#   to restore support for rt2800usb and old atmel usb adapters
+# -- 10/24/12 brent@mbari.org
+#
+: ${compat:=compat-wireless-3.3-2-n}
+: ${ltib:=~/ltib}
+: ${ltibKernel:=$ltib/rpm/BUILD/linux}
+: ${ltibModules:=`eval echo $ltib/rootfs/lib/modules/2.6.3*`}
+
+[ -d $ltibKernel -a -d $ltibModules ] || {
+  echo "-->  You must first prep and build the ltib kernel with cmds below <--"
+  echo "$ cd $ltib"
+  echo "$ ltib -p kernel -m prep
+  echo "$ ltib -p kernel -m scbuild
+  echo "$ ltib"
+  exit 2
+}
+cd $compat &&
+: ${compatModules:=`pwd`/rootfs} &&
+: ${kmodPath:="KMODPATH_ARG=\"INSTALL_MOD_PATH=$compatModules\""} &&
+ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel &&
+ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel $kmodPath install-modules
