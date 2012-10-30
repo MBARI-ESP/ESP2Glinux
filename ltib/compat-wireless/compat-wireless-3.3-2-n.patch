@@ -45,7 +45,7 @@ diff -ru compat-wireless-3.3-2-n.orig/scripts/driver-select compat-wireless-3.3-
  		disable_lib80211
  		;;
 +    esp)
-+		select_drivers	CONFIG_RT2X00 AT76C50X
++		select_drivers	CONFIG_RT2X00 AT76C50X CONFIG_RTL8180 CONFIG_RTL8187
 +		disable_staging
 +		disable_bt_usb_ethernet
 +		disable_var_02
