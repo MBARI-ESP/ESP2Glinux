@@ -4,7 +4,10 @@
 #
 : ${compat:=compat-wireless-3.3-2-n}
 : ${urlDir:=http://www.orbit-lab.org/kernel/compat-wireless-3-stable/v3.3}
-[ -r $compat ] && wget $urlDir/$compat.tar.bz2 &&
+[ -r $compat.tar.bz2 ] || { 
+  wget $urlDir/$compat.tar.bz2 || exit 3
+}
+rm -rf $compat
 tar xjf $compat.tar.bz2 &&
 cd $compat &&
 cat ../$compat.patch | patch -p1 && 
