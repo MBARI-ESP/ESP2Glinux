@@ -56,7 +56,8 @@ EOC
 EOS
           ) && {
             set -- $result
-            [ -z "$3" -a "$1" = "=>" -a "$2" -eq "$offSecs" ] && return
+            [ "$1" = "=>" ] && shift  #arrow prefix is now optional
+            [ -z "$2" -a "$1" -eq "$offSecs" ] && return
           }
         fi
       done
