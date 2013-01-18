@@ -10,7 +10,6 @@ none /dev devfs remount,rw    #for case of sysmount restart
 
 bufflehead:/home /bufflehead/home nfs rsize=2048,intr,noauto
 
-tempest:/vol/vol0/users /u nfs rsize=2048,intr,nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/Tempbox /tempbox nfs rsize=2048,intr,nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/Engineering /engineering nfs rsize=2048,intr,nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/ProjectLibrary /project nfs rsize=2048,intr,nosuid,nodev,noauto

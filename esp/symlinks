@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 7/25/12 BAR
+Configuration symlinks for ESP embedded linux - 1/17/13 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -22,11 +22,15 @@ ESP ->
 flash ->
 project ->
 tempbox ->
-u ->
 
 ============================================================
 
 Next the symlinks:
+
+etc/localtime -> /usr/share/zoneinfo/PST8PDT
+
+usr/bin/ruby -> /opt/mbari/bin/ruby
+usr/bin/irb -> /opt/mbari/bin/irb
 
 etc/rc.d/rc0.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc0.d/K40nfsmount -> ../../init.d/nfsmount
@@ -90,5 +94,3 @@ home/preston/.irbrc -> /etc/esp/irbrc
 home/sjensen/bin/su -> /usr/bin/be
 home/sjensen/.profile -> /etc/esp/profile
 home/sjensen/.irbrc -> /etc/esp/irbrc
-
-etc/localtime -> /usr/share/zoneinfo/PST8PDT
