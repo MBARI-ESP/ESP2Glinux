@@ -1,0 +1,26 @@
+#!/bin/sh
+#each time called, tries a new interface to support the vpn
+cell=ppp8
+vpn=ppp9
+priority=/var/log/etc/gateway.priority
+
+read oldvpn phys < $priority
+if [ "$phys" ]; then
+  set -- $phys
+  badPhys=$1
+  shift
+  phys="$* $badPhys" 
+else
+  mkdir -p `dirname $priority`
+  phys="eth0 eth1 $cell"
+  set -- $phys
+fi
+echo $vpn $phys > $priority
+echo
+  
+ifdown $vpn
+ifdown $1
+[ "$cell" -a "$1" != "$cell" ] && ifdown $cell
+ifup $1
+sleep 30
+ifup $vpn
