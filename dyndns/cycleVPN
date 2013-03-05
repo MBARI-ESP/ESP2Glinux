@@ -1,23 +1,25 @@
 #!/bin/sh
-#each time called, tries a new interface to support the vpn
+#if no args given, tries a next listed network interface to support the vpn
+#any args are interpreted as a new list of interfaces (first is tried)
 cell=ppp8
 vpn=ppp9
-priority=/var/log/etc/gateway.priority
+priority=/etc/sysconfig/gateway.priority
 
-read oldvpn phys < $priority
-if [ "$phys" ]; then
+if [ "$1" ] || read oldvpn phys < $priority && [ "$phys" ]; then
   set -- $phys
   badPhys=$1
   shift
   phys="$* $badPhys" 
 else
   mkdir -p `dirname $priority`
-  phys="eth0 eth1 $cell"
+  phys=$*
+  : ${phys:=eth0 eth1 $cell}
   set -- $phys
 fi
 echo $vpn $phys > $priority
 echo
-  
+
+echo "===> Selecting network interface $1 to support VPN on $vpn <==="
 ifdown $vpn
 ifdown $1
 [ "$cell" -a "$1" != "$cell" ] && ifdown $cell
