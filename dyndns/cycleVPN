@@ -1,6 +1,7 @@
 #!/bin/sh
 #if no args given, tries a next listed network interface to support the vpn
 #any args are interpreted as a new list of interfaces (first is tried)
+#turn off persist option in ppp interfaces referenced by this script
 cell=ppp8
 vpn=ppp9
 priority=/etc/sysconfig/gateway.priority
