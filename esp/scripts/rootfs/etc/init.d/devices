@@ -8,7 +8,7 @@ ttyPort()
 {
   name=$1; port=$2
   [ -c "$port" ] || return
-  ln -s $port $name 
+  ln -s $port $name
   chgrp tty $port && chmod g+rw $port
 }
 
@@ -25,8 +25,8 @@ freewave=tts/15 	#serial port connected to the freewave radio modem
   done
 }
 
-ttyPort I2Cgate  tts/11   #core ESP gateway
-ttyPort DWSMgate tts/14   #Deep Water Sampler
 ttyPort ctd      tts/8    #CTD contextual sensor
 ttyPort isus     tts/9    #ISUS sensor
-
+ttyPort I2Cgate  tts/11   #core ESP gateway
+ttyPort pcr      tts/12   #PCR analytical module
+ttyPort DWSMgate tts/14   #Deep Water Sampler
