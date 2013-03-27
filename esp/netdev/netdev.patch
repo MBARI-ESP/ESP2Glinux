@@ -1,0 +1,152 @@
+diff -rNZu cyclades-serial-client-0.93/configure.in cyclades-serial-client/configure.in
+--- cyclades-serial-client-0.93/configure.in	2011-04-25 06:23:32.000000000 -0700
++++ cyclades-serial-client/configure.in	2013-03-26 15:08:34.019992245 -0700
+@@ -2,7 +2,7 @@
+ AC_INIT(cyclades-serial-client)
+ AC_CONFIG_HEADER(inc/conf.h)
+ AC_SUBST(version)
+-version="0.93"
++version="0.93-mbari"
+ AC_SUBST(date)
+ date=`date`
+ 
+diff -rNZu cyclades-serial-client-0.93/cyclades-ser-cli.c cyclades-serial-client/cyclades-ser-cli.c
+--- cyclades-serial-client-0.93/cyclades-ser-cli.c	2011-04-25 06:23:32.000000000 -0700
++++ cyclades-serial-client/cyclades-ser-cli.c	2013-03-26 16:15:30.577077758 -0700
+@@ -86,7 +86,7 @@
+     retrydelay = RETRY_DELAY;
+     nretries = NUM_RETRIES;
+     Nvt.servertype = SRV_RTELNET;
+-    devmodem = DEV_MODEM;
++    devmodem = DEV_LOCAL;  /* modem control check hangs - brent@mbari.org */
+     closemode = CLOSE_HANG;
+     baseport = 0;
+ 
+@@ -122,8 +122,6 @@
+ 	    break;
+ 	case 's':
+ 	    Nvt.servertype = SRV_SOCKET;
+-	    if (!baseport)
+-		baseport = SOCKET_BASE;
+ 	    break;
+ 	case 'm':
+ 	    devmodem = atoi(optarg);
+@@ -154,9 +152,6 @@
+ 	    exit(E_PARMINVAL);
+ 	}
+     }
+-    if (!baseport)
+-	baseport = RTELNET_BASE;
+-
+     argc -= optind;
+     argv += optind;
+ 
+@@ -173,18 +168,6 @@
+ 
+     physport = atoi(argv[2]);
+ 
+-    if (physport == 0) {
+-	if (Nvt.servertype == SRV_RTELNET) {
+-	    baseport = RTELNET_STD;
+-	}
+-	else {
+-	    fprintf(stderr,
+-		    "%s: Physical port must be > 0 for socket service\n",
+-		    Idmsg);
+-	    exit(E_PARMINVAL);
+-	}
+-    }
+-
+     init_system();
+ 
+ /* Get socket and device addresses */
+@@ -267,15 +250,13 @@
+ static void
+ helpmsg(void)
+ {
+-    fprintf(stderr,
+-	    "Usage: cyclades-ser-cli [options] devname rasname physport\n");
+-    fprintf(stderr, "\toptions:\n");
+-    fprintf(stderr, "\t\t[-h] [-v] [-x]\n");
+-    fprintf(stderr, "\t\t[-u ptyiosize]  [-n netiosize] [-i retrydelay]\n");
+-    fprintf(stderr, "\t\t[-r numretries] [-t devtype]   [-s servertype]\n");
+-    fprintf(stderr, "\t\t[-m devmodem]   [-c closemode] [-p startport]\n");
+-    fprintf(stderr, "\t\t[-d deblevel]\n");
+-    fprintf(stderr, "\t\t[-l logfile]\n");
++  fprintf(stderr, "Usage:  netdev [options] device hostname tcp_port\n");
++  fprintf(stderr, "\toptions:\n");
++  fprintf(stderr, "\t\t[-h] [-v] [-x]\n");
++  fprintf(stderr, "\t\t[-u ptyiosize]  [-n netiosize] [-i retrydelay]\n");
++  fprintf(stderr, "\t\t[-r numretries] [-t devtype]   [-s] (raw socket)\n");
++  fprintf(stderr, "\t\t[-m devmodem (0/1)] [-c closemode(0/1)]\n");
++  fprintf(stderr, "\t\t[-p startport] [-d deblevel (0-3)] [-l logfile]\n");
+ }
+ 
+ 
+diff -rNZu cyclades-serial-client-0.93/inc/misc.h cyclades-serial-client/inc/misc.h
+--- cyclades-serial-client-0.93/inc/misc.h	2011-04-25 06:23:32.000000000 -0700
++++ cyclades-serial-client/inc/misc.h	2013-03-26 16:25:54.659820242 -0700
+@@ -23,7 +23,7 @@
+ # undef EXTERN
+ 
+ #define TSRDEV_VERSION "0.93"
+-#define TSRDEV_DATE "Wed Jan 14 19:29:42 CET 2004"
++#define TSRDEV_DATE "Tue Mar 26 16:25:53 PDT 2013"
+ #define UNIX98
+ #define HAVE_DAEMON
+ #define LIBC "libc.so.6"
+diff -rNZu cyclades-serial-client-0.93/libcsc/Makefile.in cyclades-serial-client/libcsc/Makefile.in
+--- cyclades-serial-client-0.93/libcsc/Makefile.in	2011-04-25 06:23:32.000000000 -0700
++++ cyclades-serial-client/libcsc/Makefile.in	2013-03-26 12:48:41.686161915 -0700
+@@ -1,5 +1,6 @@
+ 
+ CC=@CC@
++LD=ld
+ CCFLAGS=@CCFLAGS@ @SOCFLAGS@
+ SOLFLAGS=@SOLFLAGS@ @LIBS@
+ 
+@@ -8,7 +9,7 @@
+ 
+ libcyclades-ser-cli.so: libcyclades-ser-cli.c
+ 	$(CC) -c $(CCFLAGS) libcyclades-ser-cli.c -o libcyclades-ser-cli.o
+-	ld libcyclades-ser-cli.o $(SOLFLAGS) -o libcyclades-ser-cli.so
++	$(LD) libcyclades-ser-cli.o $(SOLFLAGS) -o libcyclades-ser-cli.so
+ 
+ clean:
+ 	rm -f libcyclades-ser-cli.so libcyclades-ser-cli.o depends.bak
+diff -rNZu cyclades-serial-client-0.93/Makefile.in cyclades-serial-client/Makefile.in
+--- cyclades-serial-client-0.93/Makefile.in	2011-04-25 06:23:32.000000000 -0700
++++ cyclades-serial-client/Makefile.in	2013-03-26 12:33:34.882420501 -0700
+@@ -2,6 +2,9 @@
+ # Copyright (C) Cyclades Corporation, 1999-1999. All rights reserved.
+ #
+ 
++prefix=@prefix@
++exec_prefix=${prefix}
++
+ OFLAGS=@OFLAGS@
+ CC=@CC@
+ 
+@@ -62,14 +65,14 @@
+ 	$(CC) $(LDFLAGS) -o cyclades-ser-cli $(SOCKOBJS) $(AUXLIBS) $(LDLIBS)
+ 
+ install: cyclades-ser-cli libcsc/libcyclades-ser-cli.so
+-	mkdir -p $(prefix)/usr/lib $(prefix)/usr/sbin $(prefix)/etc
+-	cp cyclades-serial-client cyclades-ser-cli $(prefix)/usr/sbin
+-	cp libcsc/libcyclades-ser-cli.so $(prefix)/usr/lib
+-	cp -i cyclades-devices $(prefix)/etc
+-	mkdir -p $(prefix)/usr/share/man/man5
+-	mkdir -p $(prefix)/usr/share/man/man8
+-	cp man/*.5 $(prefix)/usr/share/man/man5
+-	cp man/*.8 $(prefix)/usr/share/man/man8
++	mkdir -p $(prefix)/lib $(prefix)/sbin /etc
++	cp cyclades-serial-client cyclades-ser-cli $(prefix)/sbin
++	cp libcsc/libcyclades-ser-cli.so $(prefix)/lib
++	cp -i cyclades-devices /etc
++	mkdir -p $(prefix)/share/man/man5
++	mkdir -p $(prefix)/share/man/man8
++	cp man/*.5 $(prefix)/share/man/man5
++	cp man/*.8 $(prefix)/share/man/man8
+ 
+ 
+ %.o: %.c
