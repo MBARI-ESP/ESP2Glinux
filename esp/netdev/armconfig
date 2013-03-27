@@ -1,0 +1,9 @@
+#!/bin/sh
+# unpack and patch netdev for arm-linux -- 3/26/12 brent@mbari.org
+# netdev is based on cyclades-serial-client
+
+: ${NETDEVVERS:=cyclades-serial-client-0.93}
+rm -rf $NETDEVVERS && tar xzf $NETDEVVERS.tar.gz && cd $NETDEVVERS &&
+patch -p1 < ../netdev.patch && 
+configure &&
+echo "Next, run arminstall here"
