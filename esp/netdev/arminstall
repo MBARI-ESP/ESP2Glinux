@@ -1,0 +1,25 @@
+#!/bin/sh
+# build & install ser2net daemon for arm-linux -- 3/26/13 brent@mbari.org
+
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${LD:=$ARMGCC/bin/ld}
+: ${CFLAGS:="-Os -fomit-frame-pointer"}
+: ${TARGETBIN:=${2-/usr/sbin}}
+: ${TARGETLIB:=${2-/usr/lib}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${NETDEVVERS:=cyclades-serial-client-0.93}
+HOSTBIN=$HOSTTOP/$TARGETBIN
+HOSTLIB=$HOSTTOP/$TARGETLIB
+echo "Installing in $HOSTBIN, libs to $HOSTLIB"
+echo "  for execution at $TARGETBIN on the ARM target"
+top=`pwd` &&
+cd ${NETDEVVERS} || exit 2
+make CC=$CC LD=$LD CCFLAGS="$CFLAGS" &&
+install -Dm 755 cyclades-ser-cli $HOSTBIN/netdev &&
+install -Dm 755 libcsc/libcyclades-ser-cli.so $HOSTLIB/netdev.so &&
+install -Dm 644 $top/netdev.conf $HOSTTOP/etc/netdev.conf &&
+install -Dm 755 $top/netdev $HOSTTOP/etc/init.d/netdev || exit 1
+cd $HOSTTOP/etc/rc.d/rc3.d &&
+ln -s ../../init.d/netdev S85netdev || exit 3
+echo "Done."
