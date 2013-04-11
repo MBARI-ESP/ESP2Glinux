@@ -1,13 +1,13 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  5/24/12 by brent@mbari.org
+# revised:  4/10/13 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] && 
   echo "Error: should be called from udhcpc" && exit 1
 
 . /usr/share/netutils.sh
 configfn=/etc/sysconfig/ifcfg-$interface
-[ -r $configfn ] && . $configfn
+[ -r $configfn ] && . $configfn && validIFconfig=1
 
 tracefn=/tmp/udhcpc.trace
 if [ -w $tracefn ]; then
@@ -21,7 +21,7 @@ leased=/var/run/$interface.lease
 case "$1" in  #ignore leasefail and renew
   deconfig)
     [ -f $leased ] && echo -n "$interface DHCP failed: "
-    if . /etc/sysconfig/ifcfg-$interface && ipUp; then
+    if [ "$validIFconfig" ] && ipUp; then
       [ -f $leased ] && echo "IP=$IPADDR"
     else
       ifconfig $interface 0
