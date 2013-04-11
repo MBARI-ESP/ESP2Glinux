@@ -50,9 +50,7 @@ gateUp() {
   local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
   [ "$1" ] && {
     echo "#$*"  #store device and gateway in leading comment of its resolv.conf
-    type resolv_conf >/dev/null 2>&1 && {
-      resolv_conf || return $?
-    }
+    type resolv_conf >/dev/null 2>&1 && resolv_conf
   } > $newIface
   local priorityFn=/etc/sysconfig/gateway.priority
   unset topIface
