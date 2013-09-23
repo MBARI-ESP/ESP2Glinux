@@ -9,7 +9,7 @@ ifPrep() {
   key="restricted FF42896D680E8DF7B2FE29BECB" #comment out for open wifi access
   modprobe at76c503-rfmd &&
   ifconfig wlan0 down &&
-  iwconfig wlan0 nick $DHCPNAME essid $essid key $key &&
+  iwconfig wlan0 nick $DHCPNAME essid "$essid" key $key &&
   ifconfig wlan0 up &&
   sleep 7
 }
