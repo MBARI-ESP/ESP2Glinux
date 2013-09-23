@@ -2,11 +2,12 @@ IFNAME=ppp9
 AUTOSTART=no
 
 provider=mbari
+username=scwharf
 
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
   modprobe arc4 && modprobe ppp_mppe_mppc &&
-  pppd call $provider unit ${IFNAME#ppp} name scwharf logfile /dev/null
+  pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
 }
 
 hosts() {    #add lines before EOS
