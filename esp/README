@@ -1,7 +1,30 @@
 Notes on how to configure the TS-7200 from Technologics as an ESP controller'
- -- revised:  3/2/12 brent@mbari.org
+ -- revised:  5/30/13 brent@mbari.org
+
+These instructions are intended to be run on an ESP Linux laptop.
+It assumes the following services and tools are already installed:
+
+  NFS server
+  TFTP server
+  GNU 'C' compiler targeting the ESP's ARM based host
+  CVS source control client providing read-only access to MBARI's ESP tree.
+
 
 0) delete or save any existing ~/armHost rootfs directory
+
+1) If you have not already done so, build the Linux kernel for the ESP:
+
+$ cd ~/linux/technologic
+$ armconfig  #see comments in armconfig for downloading the latest
+$ cd linux24
+$ make dep clean bzImage modules
+
+2) copy updated kernel image to the root of /tftp server:
+
+$ sudo cp linux24/arch/arm/boot/zImage  /tftp/ts7200-mbari5
+
+Note that the kernel does not change often.
+Rebuilding it is time consuming, so it is not part of the buildAll script.
 
 ** Note:
      Steps A - F are now automated by running the script:
@@ -9,82 +32,33 @@ Notes on how to configure the TS-7200 from Technologics as an ESP controller'
 
 A) Build the Flash Filesystem if its not up to date
 
-$ cd ~/linux/esp
-$ arminstall  #this builds the filesystem tree rooted at ~/armHost
+$  cd ~/linux/esp
+$  buildAll  #this takes about 15 minutes to complete
 
 
-B) Add Ruby and its supporting libs to the base tree
+B) Configure Redboot
 
-$ cd ~/ESP/gen2/software
-$ cd termcap
-$ arminstall
-$ cd ../readline
-$ armconfig && arminstall
-$ cd ../ruby
-$ armconfig && arminstall
-
-
-C) Add Tiff libraries and snap application
-
-$ cd ~/ESP/gen2/software/libtiff
-$ armconfig && arminstall
-
-$ cd ../camera/starlight
-$ make clean arm/snap
-$ /arm/bin/strip arm/snap
-$ mkdir -p ~/armHost/usr/local/bin
-$ cp arm/snap ~/armHost/usr/local/bin
-
-
-D) Add picocom and lrzsz
-
-$ cd ~/linux/picocom
-$ make CC=/arm/bin/gcc clean picocom
-$ /arm/bin/strip picocom
-$ cp picocom ~/armHost/usr/local/bin
-
-$ cd ~/linux/lrzsz
-$ armconfig && arminstall
-
-
-E) Build the kernel
-
-Build the kernel from source if necessary (see note below)
-$ cd ~/linux/technologic
-$ armconfig  #see comments in armconfig for downloading the latest
-$ cd linux24
-$ make dep clean bzImage modules modules_install
-
-Note that if the kernel is already up to date, you may
-save time by just installing the kernel modules:
-
-$ cd ~/linux/technologic/linux24
-$ make modules_install
-
-
-F) Create the JFFS2 filesystem image
-
-$ cd ../../esp
-$ buildjffs2 > armHost.jffs2
-
-
-G) Configure Redboot
+You must customize the IP addresses below for your networking environment.
+Configuring Redboot necessary only if the bootloader has never been configured
+or your networking IP addresses change.
 
 Automatic method:
+Edit ts7200.cfg to customize it for your network environment.
+
 Bring up picocom
 
-$ picocom --baud=115200 /dev/ttyS0  #or ttyS1
+$ picocom --baud=115200 /dev/XXX  #XXX depends on your serial device
+# the 1st USB serial dongle inserted is typically /dev/ttyUSB0
 # reset board, press control-C to stay in Redboot
 
-redboot>  #<cntrl-A><cntrl-S>  to sent ASCII file
+redboot>  #<cntrl-A><cntrl-S>  to send ASCII file
 file:  ts7200.cfg  #in this directory
 
 Manual Method:
-Bring up picocom
+Bring up picocom as above
 Reset the board and press Control-C to enter redboot
 redboot> fconfig  #to configure
 follow example redboot.cfg
-[Bufflehead is assumed to be the development server]
 define aliases
 alias name "string"  #remember to \escape all \" in strings
 
@@ -100,7 +74,7 @@ alias exec "exec -c \"console=%{console} root=%{root}\""
 n
 alias boot "%{kernel}; %{exec}"
 n
-alias nfsroot "134.89.10.91:/nfsroot/ts7200"
+alias nfsroot "IP.of.your.ESP_Linux_laptop:/nfsroot/ts7200"
 n
 alias nfsexec "exec -c \"console=%{console} ip=%{ip} root=/dev/nfs nfsroot=%{nfsroot}\""
 n
@@ -114,33 +88,14 @@ alias bootcf "%{kernel}; exec -c \"console=%{console} root=/dev/hda1\""
 y
 
 
-H) Install JP 4 to use COM2 as the console port
-   (move the serial connection to COM2)
-   reset the board and press Control-C to enter redboot
-   
-
-I) Replace the kernel with the one last built
+C) Replace the kernel with the one last built
 
 RedBoot>  %{getKernel} ts7200-mbari5
 RedBoot>  fis delete vmlinux
 RedBoot>  fis create vmlinux
 
 
-J) Install the staging Compact Flash and boot the board
-
-power off board, install CF card, power on
-control-C to enter redboot
-RedBoot> %{bootcf}
-on ESPstage as root:
-# flash_eraseall -j /dev/mtd/1
-
-on bufflehead:
-$ cat armHost.jffs2 | ssh root@ESPstage dd of=/dev/mtd/1 bs=128k
-
-
--- or --
-
-J) Boot from NFS root (on bufflehead)
+J) Boot from NFS root (served by your Linux laptop)
 
 On bufflehead:
 # cp ~/linux/esp/armHost.jff2 /nfsroot/ts7200/flash
