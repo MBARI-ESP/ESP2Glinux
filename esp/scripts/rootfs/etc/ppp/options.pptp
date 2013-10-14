@@ -1,17 +1,6 @@
-# Options common to all microsoft VPN servers
+# Options common to all all PPTP servers
 #
-# Turn off transmission protocols we know won't be used
-#
-nobsdcomp
-nodeflate
-
 mtu 1460
 
-#
-# We want MPPE
-#
 require-mppe
 require-mschap-v2
-refuse-eap
-refuse-chap
-refuse-mschap

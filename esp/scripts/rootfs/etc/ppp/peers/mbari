@@ -10,6 +10,7 @@ pty "exec pptp 134.89.19.10 --nolaunchpppd --idle-wait 180 --loglevel 0 --logstr
 linkname mbari
 remotename mbari
 ipparam mbari
+require-mppe-128
 
 noauth
 defaultroute
