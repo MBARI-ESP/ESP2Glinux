@@ -1,5 +1,8 @@
 #!/bin/sh
-# unpack and patch ser2net daemon for arm-linux -- 8/5/12 brent@mbari.org
-
-# this daemon has nothing to configure
-echo Done.
+# ser2net daemon for arm-linux -- 10/15/13 brent@mbari.org
+# do not unpack from archive in this case!
+: ${SER2NETVERS:=ser2net-2.7}
+# rm -rf $SER2NETVERS && tar xzf $SER2NETVERS.tar.gz
+cd $SER2NETVERS &&
+CC=/arm/bin/gcc configure --host=arm-softfloat-linux &&  
+echo "Done."

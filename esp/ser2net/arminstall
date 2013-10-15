@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install ser2net daemon for arm-linux -- 8/5/12 brent@mbari.org
+# build & install ser2net daemon for arm-linux -- 10/15/13 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -9,7 +9,7 @@ HOSTBIN=$HOSTTOP/$TARGETBIN
 echo "Installing in $HOSTBIN"
 echo "  for execution at $TARGETBIN on the ARM target"
 top=`pwd` &&
-cd ${PORTMAPVERS-ser2net-2.7} || exit 2
+cd ${SER2NETVERS-ser2net-2.7} || exit 2
 make clean all CFLAGS="-Os -fomit-frame-pointer" CC=/arm/bin/gcc &&
 $ARMSTRIP ser2net &&
 install -Dm 755 ser2net $HOSTBIN/ser2net &&
