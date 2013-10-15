@@ -1,17 +1,15 @@
 #!/bin/sh
-# unpack and configure linux24 for arm-linux -- 3/21/06 brent@mbari.org
-#  This is still not completely automated!
+# unpack and configure linux24 for arm-linux -- 10/14/13 brent@mbari.org
 #
-#  The patched kernel source from technologists can be downloaded with:
+#  The patched kernel source from Technologic Systems can be downloaded with:
 # wget http://www.embeddedarm.com/downloads/arm_sbc/linux24-ts9-ksrc.tar.gz
 
-# rm -rf linux24
-
-# (update linux24 subdir from CVS)
+rm -rf linux24
+git checkout -- linux24
 
 #  merge/untar source with:
-# tar --keep-old-files --exclude CVS -xzf linux24-ts9-ksrc.tar.gz
+tar --keep-old-files --exclude CVS -xzf linux24-ts9-ksrc.tar.gz
 
 cp ts7200.config linux24/.config
-#cd linux24 && make menuconfig #--simply save back the config to .config
+cd linux24 && make oldconfig
 
