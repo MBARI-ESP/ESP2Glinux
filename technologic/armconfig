@@ -11,5 +11,6 @@ git checkout -- linux24
 tar --keep-old-files --exclude CVS -xzf linux24-ts9-ksrc.tar.gz
 
 cp ts7200.config linux24/.config
-cd linux24 && make oldconfig
+cd linux24 && make oldconfig &&
+echo "Now, run arminstall"
 

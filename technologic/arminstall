@@ -1,0 +1,6 @@
+#!/bin/sh
+# build linux24 for arm-linux -- 10/14/13 brent@mbari.org
+#
+
+cd linux24
+make dep clean bzImage modules
