@@ -1,9 +1,11 @@
 #!/bin/sh
 #  unpack, patch, build and install all MBARI embedded linux packages 
 #  for now, we get away without dealing with interpackage build
-#  dependencies.  This may change in future...  -- 5/28/05 brent@mbari.org
-#  This future is now... -- 1/25/06 brent@mbari.org
-
+#  dependencies. 
+#
+#  Also remove read permissions from password files as git doesn't seem to 
+#  preserve permissions other than the executable bit.
+#
 if [ "$1" ]; then
   dirs="$*"
 else
@@ -14,6 +16,7 @@ else
 fi
 
 mksymlinks ~/armHost "rm -f" < symlinks
+
 for dir in $dirs; do
   [ -d $dir ] && [ $dir != CVS ] && (
     echo
@@ -23,5 +26,8 @@ for dir in $dirs; do
     [ -x arminstall ] && { arminstall || exit $?; }
   )
 done
+
+cd ~/armHost/etc
+chmod og-r shadow ppp/*secrets
 
 echo "now run buildjffs2 > [imageFile.jffs2]"
