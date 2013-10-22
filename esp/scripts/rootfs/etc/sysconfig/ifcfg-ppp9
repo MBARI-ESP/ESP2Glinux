@@ -1,8 +1,8 @@
 IFNAME=ppp9
 AUTOSTART=no
 
-provider=mbari
-username=scwharf
+provider=ESPshore
+username=`hostname`
 
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
