@@ -11,7 +11,7 @@ PPP_IPPARAM="$6"
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 
 . /usr/share/netutils.sh
-configfn=/etc/sysconfig/ifcfg-$IFNAME
+configfn=/etc/sysconfig/ifcfg-$PPP_IFACE
 [ -r $configfn ] && . $configfn
 
 tracefn=/tmp/ip-up.trace
@@ -53,5 +53,5 @@ fi
   }
 }
 
-gateUp $IFNAME $gateway
-hostsUp $IFNAME
+gateUp $PPP_IFACE $gateway
+hostsUp $PPP_IFACE

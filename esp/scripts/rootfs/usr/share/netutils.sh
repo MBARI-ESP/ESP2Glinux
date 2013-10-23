@@ -48,7 +48,7 @@ gateUp() {
     return 1
   }
   local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
-  [ "$1" ] && {
+  [ "$2" ] && {
     echo "#$*"  #store device and gateway in leading comment of its resolv.conf
     type resolv_conf >/dev/null 2>&1 && resolv_conf
   } > $newIface
@@ -95,7 +95,7 @@ gateUp() {
     fi
   } <$priorityFn
 }
-  
+
 gateDown() {
   rm -f /var/run/resolv/$1
 }
@@ -192,4 +192,4 @@ topIf() {
   echo ${iface###}
 }
 
-    
+
