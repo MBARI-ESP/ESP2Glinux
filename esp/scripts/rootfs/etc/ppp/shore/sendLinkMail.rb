@@ -1,8 +1,6 @@
 ###################  sendLinkMail -- bobh@mbari.org  #######################
-# $Source$
 #    Copyright (C) 2006 MBARI
 #    MBARI Proprietary Information. All rights reserved.
-# $Id$
 #
 #   Send mail to users specified in /tmp/<interface>.mail when link
 #   comes up

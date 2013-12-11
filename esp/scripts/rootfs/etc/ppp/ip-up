@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # executed after connecting the ppp interface.
 
 PPP_IFACE="$1"
