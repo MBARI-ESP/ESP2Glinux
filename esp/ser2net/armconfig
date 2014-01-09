@@ -3,6 +3,6 @@
 # do not unpack from archive in this case!
 : ${SER2NETVERS:=ser2net-2.7}
 # rm -rf $SER2NETVERS && tar xzf $SER2NETVERS.tar.gz
-cd $SER2NETVERS &&
+cd $SER2NETVERS && autoconf &&
 CC=/arm/bin/gcc configure --host=arm-softfloat-linux &&  
 echo "Done."
