@@ -2,14 +2,28 @@ OPTIONS=""
 daemon=inetd
 action="start-stop-daemon -x /usr/sbin/$daemon -p /var/run/$daemon.pid"
 
+rekey()
+{
+  keyDir=/etc/dropbear
+  for keyType; do
+    keyFn=$keyDir/dropbear_${keyType}_host_key
+    if [ ! -r $keyFn ]; then
+      logger -st dropbear -p warn "Generating $keyType key in $keyDir"
+      mkdir -p $keyDir && dropbearkey -t $keyType -f $keyFn >${keyFn}.pub &
+    fi
+  done
+}
+
 case "$1" in
     start)
+       rekey rsa
        echo "Starting $daemon..."
        [ -d /usr/share/empty ] || mkdir -m600 -p /usr/share/empty  #for vsftpd
        $action -S -- $OPTIONS
        ;;
                          
     restart)
+       rekey rsa
        echo "Sending SIGHUP to inetd"
        $action -K -s 1 | grep -q "none killed" && 
          $action -S -- $OPTIONS
