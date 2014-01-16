@@ -25,9 +25,11 @@ case $- in *i*)
   alias df='df -h'
 esac
 
-keyFn=.ssh/id_rsa
+keyFn=~/.ssh/id_rsa
 [ -r $keyFn ] || {
   logger -st dropbear -p warn "Generating rsa key for $USER"
-  mkdir -p .ssh && dropbearkey -t rsa -f $keyFn >${keyFn}.pub &
+  mkdir -p ~/.ssh
+  rm -f ${keyFn}.pub
+  dropbearkey -t rsa -f $keyFn >${keyFn}.pub
 }
 unset keyFn
