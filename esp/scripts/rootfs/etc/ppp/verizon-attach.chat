@@ -4,8 +4,8 @@
 TIMEOUT 10
 ABORT "ERROR"
 
-#return to factory defaults, echo off, show signal strength, disable IP stack
-"" AT&FE0+CSQ?+WOPEN=0
+#return to factory defaults, echo off, show signal strength
+"" AT&FE0+CSQ?
 OK\r \c
 
 ABORT "NO CARRIER"
