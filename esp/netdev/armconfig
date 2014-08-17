@@ -1,9 +1,13 @@
 #!/bin/sh
-# unpack and patch netdev for arm-linux -- 3/26/12 brent@mbari.org
+# unpack and patch netdev for arm-linux -- 8/16/14 brent@mbari.org
 # netdev is based on cyclades-serial-client
-
 : ${NETDEVVERS:=cyclades-serial-client-0.93}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+export CC CFLAGS
+
 rm -rf $NETDEVVERS && tar xzf $NETDEVVERS.tar.gz && cd $NETDEVVERS &&
 patch -p1 < ../netdev.patch && 
-configure &&
+configure --host=arm-softfloat-linux &&
 echo "Next, run arminstall here"
