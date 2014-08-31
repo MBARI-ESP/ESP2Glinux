@@ -21,6 +21,7 @@ leased=/var/run/$interface.lease
 case "$1" in  #ignore leasefail and renew
   deconfig)
     [ -f $leased ] && echo -n "$interface DHCP failed: "
+    rm -f /var/run/resolv/$interface
     if [ "$validIFconfig" ] && ipUp; then
       [ -f $leased ] && echo "IP=$IPADDR"
     else
