@@ -1,0 +1,1817 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/dma.c linux-2.6.33.modified/arch/arm/mach-lpc313x/dma.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/dma.c	2014-09-10 11:28:42.797725430 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/dma.c	2014-09-03 21:50:19.717093980 -0700
+@@ -547,6 +547,7 @@
+ EXPORT_SYMBOL(dma_request_specific_channel);
+ EXPORT_SYMBOL(dma_start_channel);
+ EXPORT_SYMBOL(dma_stop_channel);
++EXPORT_SYMBOL(dma_stop_channel_sg);
+ EXPORT_SYMBOL(dma_release_channel);
+ EXPORT_SYMBOL(dma_set_irq_mask);
+ EXPORT_SYMBOL(dma_read_counter);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2014-09-10 11:28:42.861724086 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2014-09-09 18:03:32.389694103 -0700
+@@ -29,6 +29,7 @@
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+ #include <linux/spi/spi.h>
++#include <linux/serial_8250.h>
+ 
+ #include <asm/system.h>
+ #include <mach/hardware.h>
+@@ -67,19 +68,41 @@
+ 	return pdata->irq_hdlr(irq, pdata->data);
+ }
+ 
++
++static void requestGPO(int gpio, const char *name, int on)
++{
++    gpio_request(gpio, name);
++    gpio_direction_output(gpio, on);
++}
++
++static void exportGPO(int gpio, const char *name, int on)
++{
++    requestGPO(gpio, name, on);
++    gpio_export(gpio, 0);
++}
++
++static void requestGPI(int gpio, const char *name)
++{
++    gpio_request(gpio, name);
++    gpio_direction_input(gpio);
++}
++
++static void exportGPI(int gpio, const char *name)
++{
++    requestGPI(gpio, name);
++    gpio_export(gpio, 0);
++}
++
+ static int mci_init(u32 slot_id, irq_handler_t irqhdlr, void *data)
+ {
+ 	int ret;
+ 	int level;
+ 
+ 	/* enable power to the slot */
+-    gpio_request(GPIO_MI2STX_DATA0, "MMCpower");
+-	gpio_direction_output(GPIO_MI2STX_DATA0, 0);
+-    gpio_export(GPIO_MI2STX_DATA0, 0);
++        exportGPO(GPIO_MI2STX_DATA0, "MMCpower", 0);
++
+ 	/* set cd pins as GPIO pins */
+-    gpio_request(GPIO_MI2STX_BCK0, "MMCdetect");
+-	gpio_direction_input(GPIO_MI2STX_BCK0);
+-    gpio_export(GPIO_MI2STX_BCK0, 0);
++        exportGPI(GPIO_MI2STX_BCK0, "MMCdetect");
+ 
+ 	/* select the opposite level senstivity */
+ 	level = mci_get_cd(0)?IRQ_TYPE_LEVEL_LOW:IRQ_TYPE_LEVEL_HIGH;
+@@ -90,7 +113,7 @@
+ 	ret = request_irq(irq_data.irq,
+ 			ea313x_mci_detect_interrupt,
+ 			level,
+-			"mmc-cd", 
++			"mmc-cd",
+ 			&irq_data);
+ 	/****temporary for PM testing */
+ 	enable_irq_wake(irq_data.irq);
+@@ -112,7 +135,7 @@
+ {
+ 	/* on current version of EA board the card detect
+ 	 * pull-up in on switched power side. So can't do
+-	 * power management so use the always enable power 
++	 * power management so use the always enable power
+ 	 * jumper.
+ 	 */
+ }
+@@ -165,7 +188,7 @@
+ /*
+  * DM9000 ethernet device
+  */
+-#if defined(CONFIG_DM9000)
++#if defined(CONFIG_DM9000) || defined(CONFIG_DM9000_MODULE)
+ static struct resource dm9000_resource[] = {
+ 	[0] = {
+ 		.start	= EXT_SRAM1_PHYS,
+@@ -183,10 +206,10 @@
+ 		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHLEVEL,
+ 	}
+ };
+-/* ARM MPMC contoller as part of low power design doesn't de-assert nCS and nOE for consecutive 
++/* ARM MPMC contoller as part of low power design doesn't de-assert nCS and nOE for consecutive
+ reads but just changes address. But DM9000 requires nCS and nOE change between address. So access
+-other chip select area (nCS0) to force de-assertion of nCS1 and nOE1. Or else wait for long time 
+-such as 80 usecs. 
++other chip select area (nCS0) to force de-assertion of nCS1 and nOE1. Or else wait for long time
++such as 80 usecs.
+ LPC313x has external logic outside of MPMC IP to toggle nOE to split consecutive reads.
+ The latest Apex bootloader pacth makes use of this feture.
+ For this to work SYS_MPMC_WTD_DEL0 & SYS_MPMC_WTD_DEL1 should be programmed with MPMC_STWTRD0
+@@ -242,18 +265,15 @@
+ 	 *  according to the DM9000 timings.
+ 	 */
+ 	MPMC_STCONFIG1 = 0x81;
+-	MPMC_STWTWEN1 = 1;
+ 	MPMC_STWTOEN1 = 1;
+-	MPMC_STWTRD1 = 4;
+-	MPMC_STWTPG1 = 1;
++	/* enable oe toggle between consec reads */
++	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 4);
++	MPMC_STWTWEN1 = 1;
+ 	MPMC_STWTWR1 = 1;
+ 	MPMC_STWTTURN1 = 2;
+-	/* enable oe toggle between consec reads */
+-	SYS_MPMC_WTD_DEL1 = _BIT(5) | 4;
+ 
+ 	/* Configure Interrupt pin as input, no pull-up */
+-    gpio_request(GPIO_MNAND_RYBN3, "DM9000IRQ");
+-	gpio_direction_input(GPIO_MNAND_RYBN3);
++        requestGPI(GPIO_MNAND_RYBN3, "DM9000IRQ");
+ 
+ 	platform_device_register(&dm9000_device);
+ }
+@@ -262,6 +282,120 @@
+ #endif /* CONFIG_DM9000 */
+ 
+ 
++
++/*
++ * KS8851_MLL ethernet device  -- alternative to DM9000
++ *  This chip is interfaced on the same CS line as the DM9000
++ *  Only one of the two may be populated
++ */
++#if defined(CONFIG_KS8851_MLL) || defined(CONFIG_KS8851_MLL_MODULE)
++
++#define IRQ_KS8851_ETH_INT IRQ_DM9000_ETH_INT
++
++static struct resource ks8851_resource[] = {
++	[0] = {
++		.start	= EXT_SRAM1_PHYS,
++		.end	= EXT_SRAM1_PHYS + 5,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= EXT_SRAM1_PHYS + 6,
++		.end	= EXT_SRAM1_PHYS + 0x1FFFF,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= IRQ_KS8851_ETH_INT,
++		.end	= IRQ_KS8851_ETH_INT,
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device ks8851_device = {
++	.name		= "ks8851_mll",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(ks8851_resource),
++	.resource	= ks8851_resource
++};
++
++static void __init ea_add_device_ks8851(void)
++{
++	/*
++	 * Configure Chip-Select 2 on SMC for the KS8851 w/16-bit parallel bus interface.
++	 * Note: These timings were calculated for MASTER_CLOCK = 90000000
++	 *  according to the KS8851_MLL timings.
++	 */
++	MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
++	MPMC_STWTOEN1 = 0;
++	/* enable oe toggle between consec reads */
++	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);
++	MPMC_STWTWEN1 = 0;
++	MPMC_STWTWR1 = 4;
++	MPMC_STWTTURN1 = 2;
++
++	/* Configure Interrupt pin as input */
++        requestGPI(GPIO_GPIO3, "KS8851IRQ");
++
++	platform_device_register(&ks8851_device);
++}
++#else
++static void __init ea_add_device_ks8851(void) {}
++#endif /* CONFIG_KS8851_MLL */
++
++
++#define XRport(offset) \
++	{						\
++		.membase = (void *)io_p2v(EXT_SRAM0_PHYS+offset),  \
++		.mapbase = (unsigned long)(EXT_SRAM0_PHYS+offset), \
++		.irq		= IRQ_XR16788_INT,	\
++		.uartclk	= 14745600,		\
++		.regshift       = 0,                    \
++		.iotype		= UPIO_MEM,		\
++		.type           = PORT_XR16788,         \
++		.flags		= UPF_BOOT_AUTOCONF, 	\
++		.pm = NULL,                             \
++	}
++
++static struct plat_serial8250_port exar_data[] = {
++	XRport(0x00),
++	XRport(0x10),
++	XRport(0x20),
++	XRport(0x30),
++	XRport(0x40),
++	XRport(0x50),
++	XRport(0x60),
++	XRport(0x70),
++	{ },
++};
++
++static struct platform_device xr16788_device = {
++	.name			= "serial8250",
++	.id			= PLAT8250_DEV_PLATFORM1,
++	.dev			= {
++		.platform_data	= exar_data,
++	},
++};
++
++
++static void __init ea_add_device_octalUart(void)
++{
++	/*
++	 * Configure Chip-Select 1 for the XR16788 on 8-bit bus
++	 */
++	MPMC_STCONFIG0 = 0x80;  /* 8-bit transfers */
++	MPMC_STWTOEN0 = 0;
++	/* enable oe toggle between consec reads */
++	SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = 6);
++	MPMC_STWTWEN0 = 0;
++	MPMC_STWTWR0 = 5;
++	MPMC_STWTTURN0 = 5;
++
++	/* Configure Interrupt pin as input, no pull-up */
++        requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
++
++	platform_device_register(&xr16788_device);
++}
++
++
+ #if defined (CONFIG_MTD_NAND_LPC313X)
+ static struct resource lpc313x_nand_resources[] = {
+ 	[0] = {
+@@ -344,7 +478,7 @@
+ 	.dev		= {
+ 		.dma_mask		= &nand_dmamask,
+ 		.coherent_dma_mask	= 0xffffffff,
+-				.platform_data	= &ea313x_plat_nand,
++		.platform_data	= &ea313x_plat_nand,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(lpc313x_nand_resources),
+ 	.resource	= lpc313x_nand_resources,
+@@ -365,13 +499,22 @@
+ 	},
+ };
+ 
+-static void spi_set_cs_state(int cs_num, int state)
++static void spi_set_cs_flash(int cs_num, int state)
+ {
+-	/* Only CS0 is supported, so no checks are needed */
+-	(void) cs_num;
++  (void) cs_num;
++  gpio_direction_output(GPIO_SPI_CS_OUT0, state);
++}
+ 
+-	/* Set GPO state for CS0 */
+-	gpio_direction_output(GPIO_SPI_CS_OUT0, state);
++static void spi_set_cs_rtc(int cs_num, int state)
++{
++  (void) cs_num;
++  gpio_direction_output(GPIO_MUART_CTS_N, state);
++}
++
++static void spi_set_cs_user(int cs_num, int state)
++{
++  (void) cs_num;
++  gpio_direction_output(GPIO_MUART_RTS_N, state);
+ }
+ 
+ struct lpc313x_spics_cfg lpc313x_stdspics_cfg[] =
+@@ -380,13 +523,25 @@
+ 	{
+ 		.spi_spo	= 0, /* Low clock between transfers */
+ 		.spi_sph	= 0, /* Data capture on first clock edge (high edge with spi_spo=0) */
+-		.spi_cs_set	= spi_set_cs_state,
++		.spi_cs_set	= spi_set_cs_flash,
++	},
++        /* SPI CS1 is for the DS3234 Real-Time Clock */
++	{
++		.spi_spo	= 0, /* Low clock between transfers */
++		.spi_sph	= 1, /* Data capture on first clock edge (high edge with spi_spo=0) */
++		.spi_cs_set	= spi_set_cs_rtc,
++	},
++        /* SPI CS2 is for user defined SPI device */
++	{
++		.spi_spo	= 0, /* Low clock between transfers */
++		.spi_sph	= 0, /* Data capture on first clock edge (high edge with spi_spo=0) */
++		.spi_cs_set	= spi_set_cs_user,
+ 	},
+-    /* use SPI CS1 only for probing two alternative NOR flash chips */
+-	{ 
++        /* use this virtual SPI CS as alias for Spansion NOR flash on CS0 */
++	{
+ 		.spi_spo	= 0, /* Low clock between transfers */
+ 		.spi_sph	= 0, /* Data capture on first clock edge (high edge with spi_spo=0) */
+-		.spi_cs_set	= spi_set_cs_state,
++		.spi_cs_set	= spi_set_cs_flash,
+ 	},
+ };
+ 
+@@ -419,10 +574,8 @@
+ 		.modalias = "spidev",
+ 		.max_speed_hz = 1000000,
+ 		.bus_num = 0,
+-		.chip_select = 0,
++		.chip_select = 2,
+ 	};
+-
+-    gpio_request(GPIO_SPI_CS_OUT0, "SPICS0");
+ 	return spi_register_board_info(&info, 1);
+ }
+ arch_initcall(lpc313x_spidev_register);
+@@ -446,7 +599,7 @@
+ 		.modalias = "m25p80",
+ 		.max_speed_hz = 30000000,
+ 		.bus_num = 0,
+-		.chip_select = 1,
++		.chip_select = 3,  /* alias for CS0 */
+ 	  }
+ #endif
+ 	};
+@@ -507,25 +660,117 @@
+ #endif
+ 
+ 
++/*
++   Group of gpios used for enabling RS-232 drivers on ESP 3G host
++   This group of bits read back as zeros initially on the ESP3G host
++   They read back as xxx on the PC104 carrier
++   They read back as TODO on the OEM board
++*/
++#define firstSerialGPIO GPIO_GPIO11
++#define numSerialChannels 8
++#define allSerialChannels ((1<<numSerialChannels)-1)
++
++static inline uint32_t getBoardId(void)
++{
++  return (GPIO_STATE(IOCONF_FAST_GPIO)>>firstSerialGPIO) & allSerialChannels;
++}
++
++extern int lpc313x_LED, lpc313x_USBpower;     /* from leds-pc9532.c */
++
++/* defined in irq.c */
++int replace_irq(u32 existingIrq, EVENT_T newEvent_pin, EVENT_TYPE_T newType);
++
++static uint16_t __initdata boardID;
++
++static void __init init_irq(void)
++{
++  switch(boardID = getBoardId()) {
++    case 0:
++    case 0104:
++      replace_irq(IRQ_DM9000_ETH_INT, EVT_GPIO3, EVT_ACTIVE_LOW);
++      replace_irq(IRQ_EA_VBUS_OVRC, EVT_NAND_NCS_2, EVT_ACTIVE_LOW);
++      replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
++  }
++  lpc313x_init_irq();
++}
++
++
++/*
++  initialization common to ESP3G and PC104 carrier
++*/
++static void __init pc104g3init(const char *signon)
++{
++  struct spi_board_info rtc = {
++          .modalias = "ds3234",
++          .max_speed_hz = 2500000,
++          .bus_num = 0,
++          .chip_select = 1,
++  };
++  printk(signon);
++  SYS_MUX_UART_SPI = 1;  //SPI CS1 & CS2 lines replace USART CTS & RTS
++  requestGPO(GPIO_MUART_CTS_N, "ds3234CS", 1);
++  requestGPO(GPIO_MUART_RTS_N, "SPIdevCS", 1);
++  spi_register_board_info(&rtc, 1);
++  exportGPO((lpc313x_USBpower = GPIO_GPIO19), "USB+5V", 1);
++  gpio_direction_input(lpc313x_LED); //revert LED output
++  exportGPO((lpc313x_LED = GPIO_GPIO20), "CPULED", 0);
++  ea_add_device_ks8851();
++  ea_add_device_octalUart();
++  requestGPI(GPIO_NAND_NCS_2, "USBoverload");
++}
++
++#define PeripheralReset  GPIO_I2SRX_BCK0
++
+ static void __init ea313x_init(void)
+ {
+-	lpc313x_init();
+-	/* register i2cdevices */
+-	lpc313x_register_i2c_devices();
+-	
+-
+-	platform_add_devices(devices, ARRAY_SIZE(devices));
+-
+-	/* add DM9000 device */
+-	ea_add_device_dm9000();
+-	
+-	i2c_register_board_info(0, ea313x_i2c_devices,
+-		ARRAY_SIZE(ea313x_i2c_devices));
++    unsigned long resetDone;
++    lpc313x_init();
++    requestGPO(PeripheralReset, "PeripheralReset", 0);  /* assert reset */
++    gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
++    resetDone = jiffies + HZ/100 + 1;  /* deassert > 10ms from now */
++    
++    requestGPO(GPIO_SPI_CS_OUT0, "SPIflashCS", 1);
++
++    /* register i2cdevices */
++    lpc313x_register_i2c_devices();
++
++    platform_add_devices(devices, ARRAY_SIZE(devices));
++
++         /* add other devices depending on carrier board type */
++    switch (boardID) {
++      case 0:  /* ESP 3G baseboard */
++        pc104g3init("MBARI ESP 3G\n");
++      /* enable power for each octal UART channels' RS-232 buffer chip */
++        exportGPO(GPIO_GPIO11, "ttyS1", 1);
++        exportGPO(GPIO_GPIO12, "ttyS2", 1);
++        exportGPO(GPIO_GPIO13, "ttyS3", 1);
++        exportGPO(GPIO_GPIO14, "ttyS4", 1);
++        exportGPO(GPIO_GPIO15, "ttyS5", 1);
++        exportGPO(GPIO_GPIO16, "ttyS6", 1);
++        exportGPO(GPIO_GPIO17, "ttyS7", 1);
++        exportGPO(GPIO_GPIO18, "ttyS8", 1);
++        break;
++
++      case 0104:  /* (octal 0104) PC/104 carrier */
++        pc104g3init("PC/104 Carrier\n");
++        break;
++
++      default:
++        printk("Embedded Artists LPC31xx (boardID=0x%02x)\n", boardID);
++	/* set the I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
++        requestGPI(GPIO_I2SRX_WS0, "USBoverload");
++        ea_add_device_dm9000();
++    }
++
++    i2c_register_board_info(0, ea313x_i2c_devices,
++            ARRAY_SIZE(ea313x_i2c_devices));
+ 
+ #if defined(CONFIG_MACH_EA3152)
+-	i2c_register_board_info(1, ea3152_i2c1_devices,
+-		ARRAY_SIZE(ea3152_i2c1_devices));
++    i2c_register_board_info(1, ea3152_i2c1_devices,
++	     ARRAY_SIZE(ea3152_i2c1_devices));
+ #endif
++    while (jiffies < resetDone) ;          /* deassert reset after > 10ms */
++    gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+ 
+ static void __init ea313x_map_io(void)
+@@ -554,7 +799,7 @@
+ 	.io_pg_offst	= (io_p2v(IO_APB01_PHYS) >> 18) & 0xfffc,
+ 	.boot_params	= 0x30000100,
+ 	.map_io		= ea313x_map_io,
+-	.init_irq	= lpc313x_init_irq,
++	.init_irq	= init_irq,
+ 	.timer		= &lpc313x_timer,
+ 	.init_machine	= ea313x_init,
+ MACHINE_END
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/gpiolib.c linux-2.6.33.modified/arch/arm/mach-lpc313x/gpiolib.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/gpiolib.c	2014-09-10 11:28:42.845724422 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/gpiolib.c	2014-08-28 22:00:19.259311632 -0700
+@@ -101,8 +101,8 @@
+ 		LPC313X_GPIO_PIN("GPIO16", EVT_GPIO16),
+ 		LPC313X_GPIO_PIN("GPIO17", EVT_GPIO17),
+ 		LPC313X_GPIO_PIN("GPIO18", EVT_GPIO18),
+-		LPC313X_GPIO_PIN("GPIO19", -1 /*EVT_GPIO19*/),
+-		LPC313X_GPIO_PIN("GPIO20", -1 /*EVT_GPIO20*/),
++		LPC313X_GPIO_PIN("GPIO19", EVT_GPIO19),
++		LPC313X_GPIO_PIN("GPIO20", EVT_GPIO20),
+ };
+ 
+ static struct lpc313x_gpio_pin gpio_pins_ebi_mci[] = {
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/include/mach/event_router.h linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/event_router.h
+--- linux-2.6.33/arch/arm/mach-lpc313x/include/mach/event_router.h	2014-09-10 11:28:42.809725178 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/event_router.h	2014-09-08 14:04:10.148434216 -0700
+@@ -163,6 +163,7 @@
+ /* External interrupt type enumerations */
+ typedef enum
+ {
++  EVT_IGNORE,
+   EVT_ACTIVE_LOW,
+   EVT_ACTIVE_HIGH,
+   EVT_FALLING_EDGE,
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/include/mach/irqs.h linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/irqs.h
+--- linux-2.6.33/arch/arm/mach-lpc313x/include/mach/irqs.h	2014-09-10 11:28:42.845724422 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/irqs.h	2014-09-08 14:06:22.057991902 -0700
+@@ -137,7 +137,8 @@
+ # define IRQ_DM9000_ETH_INT   IRQ_BOARD_START	/* Ethernet chip */
+ # define IRQ_SDMMC_CD         (IRQ_BOARD_START + 1)	/* SD card detect */
+ # define IRQ_EA_VBUS_OVRC     (IRQ_BOARD_START + 2)	/* Over current indicator */
+-# define NR_IRQ_BOARD         3
++# define IRQ_XR16788_INT      (IRQ_BOARD_START + 3)     /* octal UART */
++# define NR_IRQ_BOARD         4
+ 
+ /* now define board irq to event pin map */
+ #define BOARD_IRQ_EVENT_MAP	{ \
+@@ -145,7 +146,9 @@
+ 	{IRQ_DM9000_ETH_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_HIGH}, \
+ 	{IRQ_SDMMC_CD, EVT_mI2STX_BCK0, EVT_ACTIVE_LOW}, \
+ 	{IRQ_EA_VBUS_OVRC, EVT_I2SRX_WS0, EVT_ACTIVE_LOW}, \
+-	}
++	{IRQ_XR16788_INT, 0, EVT_IGNORE}, \
++}
++
+ /* Following defines group the board IRQs into 4 IRQ_EVNTR groups.
+    IRQ_EVT_ROUTERx IRQ is generated when event in the corresponding 
+    group triggers.
+@@ -153,9 +156,9 @@
+ #define IRQ_EVTR1_START        IRQ_DM9000_ETH_INT
+ #define IRQ_EVTR1_END          IRQ_DM9000_ETH_INT
+ #define IRQ_EVTR2_START        IRQ_SDMMC_CD
+-#define IRQ_EVTR2_END          IRQ_SDMMC_CD
+-#define IRQ_EVTR3_START        IRQ_EA_VBUS_OVRC
+-#define IRQ_EVTR3_END          IRQ_EA_VBUS_OVRC
++#define IRQ_EVTR2_END          IRQ_EA_VBUS_OVRC
++#define IRQ_EVTR3_START        IRQ_XR16788_INT
++#define IRQ_EVTR3_END          IRQ_XR16788_INT
+ 
+ #elif defined (CONFIG_MACH_VAL3154)
+ # define IRQ_SDMMC_CD	 IRQ_BOARD_START 	/* SD card detect */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/include/mach/registers.h linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/registers.h
+--- linux-2.6.33/arch/arm/mach-lpc313x/include/mach/registers.h	2014-09-10 11:28:42.821724926 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/registers.h	2014-09-04 21:26:02.691180114 -0700
+@@ -301,6 +301,8 @@
+ #define SYS_MUX_LCD_EBI     __REG (SYS_PHYS + 0x90)
+ #define SYS_MUX_GPIO_MCI    __REG (SYS_PHYS + 0x94)
+ #define SYS_MUX_NAND_MCI    __REG (SYS_PHYS + 0x98)
++#define SYS_MUX_UART_SPI    __REG (SYS_PHYS + 0x9C)
++#define SYS_MUX_I2STX_IPINT __REG (SYS_PHYS + 0xA0)
+ 
+ /***********************************************************************
+  * GPIO register definitions
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/irq.c linux-2.6.33.modified/arch/arm/mach-lpc313x/irq.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/irq.c	2014-09-10 11:28:42.661728281 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/irq.c	2014-09-08 15:57:34.796292435 -0700
+@@ -34,6 +34,32 @@
+ 
+ static IRQ_EVENT_MAP_T irq_2_event[] = BOARD_IRQ_EVENT_MAP;
+ 
++
++int __init replace_irq(u32 existingIRQ,
++                        EVENT_T newEvent_pin, EVENT_TYPE_T newType)
++/*
++   hack to replace existing irq to event mapping with that specified in args
++   return 0 if successful,  -1 if irq not found
++   used to adjust irq_2_event[] for slightly differing carrier boards
++   Must be called before lpc313x_init_irq() !!
++*/
++{
++  IRQ_EVENT_MAP_T *cursor = irq_2_event;
++  IRQ_EVENT_MAP_T *end = irq_2_event + NR_IRQ_CPU;
++  while(++cursor < end) {  /* skip unused event 0 */
++    if (cursor->irq == existingIRQ) {
++//printk("irq#%d.event_pin: changing event 0x%02x to 0x%02x\n", 
++//        existingIRQ, cursor->event_pin, newEvent_pin);
++      cursor->event_pin = newEvent_pin;
++      cursor->type = newType;
++      return 0;
++    }
++  }
++  printk(KERN_WARNING "replace_irq: no existingIRQ #%d\n", existingIRQ);
++  return -1;
++}
++
++
+ static void intc_mask_irq(unsigned int irq)
+ {
+ 	INTC_REQ_REG(irq) = INTC_REQ_WE_ENABLE;
+@@ -66,7 +92,7 @@
+ 		EVRT_OUT_MASK_CLR(4, EVT_GET_BANK(EVT_arm926_nirq)) = _BIT((EVT_arm926_nirq & 0x1F));
+ 	}
+ 
+-	//printk("wake on irq=%d value=%d 0x%08x/0x%08x/0x%08x 0x%08x/0x%08x\r\n", irq, value, 
++	//printk("wake on irq=%d value=%d 0x%08x/0x%08x/0x%08x 0x%08x/0x%08x\n", irq, value, 
+ 	//	EVRT_MASK(3), EVRT_APR(3), EVRT_ATR(3),
+ 	//	EVRT_OUT_MASK(4,3), EVRT_OUT_PEND(4,3));
+ 
+@@ -259,11 +285,6 @@
+ 		/* compute bank & bit position for the event_pin */
+ 		bank = EVT_GET_BANK(irq_2_event[irq - IRQ_EVT_START].event_pin);
+ 		bit_pos = irq_2_event[irq - IRQ_EVT_START].event_pin & 0x1F;
+-		
+-		printk("irq=%d Event=0x%x bank:%d bit:%d type:%d\r\n", irq,
+-			irq_2_event[irq - IRQ_EVT_START].event_pin, bank,
+-			bit_pos, irq_2_event[irq - IRQ_EVT_START].type);
+-
+ 		set_irq_chip(irq, &lpc313x_evtr_chip);
+ 		set_irq_flags(irq, IRQF_VALID);
+ 		/* configure the interrupt senstivity */
+@@ -292,9 +313,14 @@
+ 				EVRT_ATR(bank) |= _BIT(bit_pos);
+ 				set_irq_handler(irq, handle_edge_irq);
+ 			default:
+-				printk("Invalid Event type.\r\n");
+-				break;
++				printk(KERN_WARNING "Invalid Event type.\n");
++                        case EVT_IGNORE:
++				continue;
+ 		}
++		printk(KERN_INFO "irq=%d Event=0x%x bank:%d bit:%d type:%d\n",
++			irq, irq_2_event[irq - IRQ_EVT_START].event_pin, bank,
++			bit_pos, irq_2_event[irq - IRQ_EVT_START].type);
++
+ 		if ( (irq >= IRQ_EVTR0_START) && (irq <= IRQ_EVTR0_END) ) {
+ 			/* enable routing to vector 0 */
+ 			EVRT_OUT_MASK_SET(0, bank) = _BIT(bit_pos);
+@@ -308,7 +334,7 @@
+ 			/* enable routing to vector 3 */
+ 			EVRT_OUT_MASK_SET(3, bank) = _BIT(bit_pos);
+ 		} else {
+-			printk("Invalid Event router setup.\r\n");
++			printk(KERN_WARNING "Invalid Event router setup.\n");
+ 		}
+ 	}
+ 	/* for power management. Wake from internal irqs */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/leds-pca9532.c	2014-09-10 11:28:42.881723668 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/leds-pca9532.c	2014-08-28 23:30:16.816584232 -0700
+@@ -117,6 +117,10 @@
+ /*
+  * Handle LED events.
+  */
++ 
++int lpc313x_LED = GPIO_GPIO2;
++int lpc313x_USBpower = -1;
++
+ static void ea313x_leds_event(led_event_t evt)
+ {
+ 	unsigned long flags;
+@@ -127,22 +131,22 @@
+ #ifdef CONFIG_LEDS_TIMER
+ 	case led_timer:		/* Every 50 timer ticks */
+ 		{
+-			unsigned long is_off = gpio_get_value(GPIO_GPIO2);
++			unsigned long is_off = gpio_get_value(lpc313x_LED);
+ 			if (is_off)
+-				gpio_set_value(GPIO_GPIO2, 0);
++				gpio_set_value(lpc313x_LED, 0);
+ 			else
+-				gpio_set_value(GPIO_GPIO2, 1);
++				gpio_set_value(lpc313x_LED, 1);
+ 		}
+ 		break;
+ #endif
+ 
+ #ifdef CONFIG_LEDS_CPU
+ 	case led_idle_start:	/* Entering idle state */
+-		gpio_set_value(GPIO_GPIO2, 0);
++		gpio_set_value(lpc313x_LED, 0);
+ 		break;
+ 
+ 	case led_idle_end:	/* Exit idle state */
+-		gpio_set_value(GPIO_GPIO2, 1);
++		gpio_set_value(lpc313x_LED, 1);
+ 		break;
+ #endif
+ 
+@@ -232,10 +236,16 @@
+ {
+ 	if (enable) {
+ 		printk (KERN_INFO "enabling USB host vbus_power\n");
+-		pca9532_setgpio(VBUS_PWR_EN, PCA9532_LED_ON);
++                if (lpc313x_USBpower < 0)
++		  pca9532_setgpio(VBUS_PWR_EN, PCA9532_LED_ON);
++                else
++                  gpio_set_value(lpc313x_USBpower, 1);
+ 	} else {
+ 		printk (KERN_INFO "disabling USB host vbus_power\n");
+-		pca9532_setgpio(VBUS_PWR_EN, PCA9532_LED_OFF);
++                if (lpc313x_USBpower < 0)
++		  pca9532_setgpio(VBUS_PWR_EN, PCA9532_LED_OFF);
++                else
++                  gpio_set_value(lpc313x_USBpower, 0);
+ 	}
+ }
+ __initcall(pca9532_init);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/usb.c linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/usb.c	2014-09-10 11:28:42.865724003 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c	2014-09-03 18:28:49.288398926 -0700
+@@ -176,7 +176,7 @@
+ 	struct lpc313x_usb_board_t* brd =
+     			container_of(work, struct lpc313x_usb_board_t, nextOp.work);
+    	/* disable power */
+-	printk(KERN_WARNING "USB Overcurrent!\n");
++	printk(KERN_WARNING "LPC31xx USB Overcurrent!\n");
+ 	lpc313x_vbus_power(0);
+ 	/* queue next power up attempt */
+ 	INIT_DELAYED_WORK(&brd->nextOp, vbus_on);
+@@ -259,17 +259,14 @@
+ 		if ( 0 != retval )
+ 			printk(KERN_INFO "Can't register lpc313x_ehci_device device\n");
+ 
++lpc313x_usb_brd.vbus_ovrc_irq = 
+ #if defined(CONFIG_MACH_EA313X) || defined(CONFIG_MACH_EA3152)
+-		/* set thw I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
+-        gpio_request(GPIO_I2SRX_WS0, "USBoverload");
+-		gpio_direction_input(GPIO_I2SRX_WS0);
+-		lpc313x_usb_brd.vbus_ovrc_irq = IRQ_EA_VBUS_OVRC;
+-
++		                IRQ_EA_VBUS_OVRC;
+ #else
+ #ifdef IRQ_VBUS_OVRC
+-		lpc313x_usb_brd.vbus_ovrc_irq = IRQ_VBUS_OVRC;
++		                IRQ_VBUS_OVRC;
+ #else
+-		lpc313x_usb_brd.vbus_ovrc_irq = -1;
++		                -1;
+ #endif
+ #endif
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/net/wireless/rt2x00/rt2800usb.c linux-2.6.33.modified/drivers/net/wireless/rt2x00/rt2800usb.c
+--- linux-2.6.33/drivers/net/wireless/rt2x00/rt2800usb.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/net/wireless/rt2x00/rt2800usb.c	2012-10-23 14:42:08.565075906 -0700
+@@ -952,6 +952,7 @@
+ 	{ USB_DEVICE(0x2019, 0xed06), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x2019, 0xab24), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	{ USB_DEVICE(0x2019, 0xab25), USB_DEVICE_DATA(&rt2800usb_ops) },
++	{ USB_DEVICE(0x2019, 0xab29), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Qcom */
+ 	{ USB_DEVICE(0x18e8, 0x6259), USB_DEVICE_DATA(&rt2800usb_ops) },
+ 	/* Quanta */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2014-09-10 11:28:42.849724338 -0700
++++ linux-2.6.33.modified/drivers/serial/8250.c	2014-08-29 17:19:13.709056179 -0700
+@@ -20,72 +20,8 @@
+ 
+ /*
+  * NXP UART driver DMA modifications notification
+- *
+- * This driver has been modifed to use DMA for transfer of the
+- * serial buffers. These modifications are specific to the
+- * LPC31XX version of the 8250 UART.
+- *
+- * Specific driver modifications
+- *  General modifications
+- *   1) 8250 RX/RX timeout/TX interrupts are no longer used.
+- *   2) 8250 error status and break interrupts are still used,
+- *      but 'per character' status doesn't work with DMA, so
+- *      an error status is applied to the last DMA'd character
+- *      when the error occurs. This may not always be accurate,
+- *      but it's generally used for statistics only.
+- *   3) Breaks requires a flush of the RX FIFO and toss the
+- *      current DMA buffer. Because of the nature of breaks,
+- *      this is generally ok.
+- *   4) TX timeout logic (timer) no longer used.
+- *
+- *  RX side modifications
+- *   1) RX FIFO based mechanism replaced with DMA based circ
+- *      buffer logic.The DMA nevers stops servicing the FIFO
+- *      event when the DMA buffer is
+- *
+- *
+- *  TX side modifications
+- *   1) TX FIFO based logic removed. DMA block transfer of up
+- *      to 64 bytes per transfer occur now.
+- *   2) DMA transfer resets on empty TX FIFO transfer again
+- *      transferring up to 64 bytes. A single DMA transfer
+- *      will never exceed 64 bytes in a single transfer.
+- *   3) DMA TX transfers need to start when the UART TX FIFO
+- *      is empty, so the start od the DMA TX transfer is based
+- *      on the UART TX holding register empty interrupt.
+-
+- *
+- * The serial core does not support DMA transfer. Transmit buffers
+- * can be easily sent as a DMA buffer, but RX buffers require special
+- * handling and still need to be sent to the serial core a byte at a
+- * time. DMA transfer sizes vary per application. The size of the
+- * circular buffer in the serial core is fixed. Maximum DMA RX
+- * transfer size is limited to the serial core buffer sizes, while
+- * DMA TX size is limited to the TX FIFO size.
+- *
+- * For TX, a DMA transfer is complete when the entire DMA transfer
+- * has been sent to the UART FIFO via the DMA channel. However,
+- * the TX transfer cannot be restarted until the TX FIFO is again
+- * empty. Because of this, the DMA completion interrupt is ignored
+- * and the UART TX holding register interrupt is used instead.
+- *
+- * For RX, a DMA transfer is more complicated. To maintain the
+- * 'per byte' RX status, the circular buffer in the serial core
+- * cannot be used. Although DMA is used to process the transfer,
+- * each individual char received still needs to be individually
+- * processed and submitted to the serial core. The RX FIFO and
+- * RX timeout interrupts are no longer used. The RX error and
+- * break status interrupts are still used, but no longer apply to
+- * the currently received character. Because of this, the RX
+- * handler always applies the accumulated status to the last DMA
+- * character received. Since the RX timeout interrupt is no
+- * longer used, a timer is used to emulate the RX timeouot check.
+- * As the DMA will only generate an interrupt on a full RX buffer,
+- * this timers purpose is important to periodically check if the
+- * DMA has received characters.
+- *
+- * Early console support is unchanged. Non-DMA mode will be used
+- * for early console support until the driver is initialized.
++ *  was not generically implemented and therefore removed -- brent@mbari.org
++ * [broke support for other types of serial ports if LPC31xx DMA was enabled]
+  */
+ 
+ #if defined(CONFIG_SERIAL_8250_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
+@@ -108,11 +44,9 @@
+ #include <linux/serial_8250.h>
+ #include <linux/nmi.h>
+ #include <linux/mutex.h>
+-#include <linux/dma-mapping.h>
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
+-#include <mach/dma.h>
+ 
+ #include "8250.h"
+ 
+@@ -201,29 +135,6 @@
+ static unsigned int probe_rsa_count;
+ #endif /* CONFIG_SERIAL_8250_RSA  */
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-struct LPC31XX_DMA {
+-	dma_addr_t		dma_buff_p;
+-	void			*dma_buff_v;
+-	int			dmach;
+-	struct tasklet_struct	tasklet;
+-	int			count;
+-	struct timer_list	timer;		/* "no irq" timer */
+-	int			active;
+-};
+-
+-static DEFINE_MUTEX(dma_mutex);
+-#undef UART_FCR_ENABLE_FIFO
+-#define UART_FCR_ENABLE_FIFO (0x9 | (1 << 6)) /* FIFO enable + DMA */
+-#define UART_DMABUF_RX_SIZE (UART_XMIT_SIZE << 1)
+-
+-/*
+- * DMA RX character receive timeout in mS. 10mS is the best your
+- * going to get with a 100Hz tick clock.
+- */
+-#define LPC31XX_UART_RX_TIMEOUT 10
+-#endif
+-
+ struct uart_8250_port {
+ 	struct uart_port	port;
+ 	struct timer_list	timer;		/* "no irq" timer */
+@@ -254,12 +165,6 @@
+ 	 */
+ 	void			(*pm)(struct uart_port *port,
+ 				      unsigned int state, unsigned int old);
+-
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	struct LPC31XX_DMA dma_rx;
+-	struct LPC31XX_DMA dma_tx;
+-	int buff_half_offs;
+-#endif
+ };
+ 
+ struct irq_info {
+@@ -372,13 +277,6 @@
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+ 		.flags		= UART_CAP_FIFO | UART_NATSEMI,
+ 	},
+-	[PORT_XSCALE] = {
+-		.name		= "XScale",
+-		.fifo_size	= 32,
+-		.tx_loadsz	= 32,
+-		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+-		.flags		= UART_CAP_FIFO | UART_CAP_UUE,
+-	},
+ 	[PORT_RM9000] = {
+ 		.name		= "RM9000",
+ 		.fifo_size	= 16,
+@@ -407,6 +305,13 @@
+ 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
+ 		.flags		= UART_CAP_FIFO,
+ 	},
++	[PORT_XR16788] = {
++		.name		= "XR16788",
++		.fifo_size	= 64,
++		.tx_loadsz	= 64,
++		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
++		.flags		= UART_CAP_FIFO | UART_EXAR7,
++	},
+ };
+ 
+ #if defined (CONFIG_SERIAL_8250_AU1X00)
+@@ -1046,7 +951,6 @@
+ static void autoconfig_16550a(struct uart_8250_port *up)
+ {
+ 	unsigned char status1, status2;
+-	unsigned int iersave;
+ 
+ 	up->port.type = PORT_16550A;
+ 	up->capabilities |= UART_CAP_FIFO;
+@@ -1148,49 +1052,44 @@
+ 		return;
+ 	}
+ 
+-	/* Check if it is NXP IP 3106 UART */
+-	serial_outp(up, UART_SCR, 0xDF);
+-	status1 = serial_in(up, UART_SCR);
+-	if(status1 == 0xDF) {
+-		/*scratch register present */
+-		up->port.type = PORT_NXP16750;
+-		return;
+-	}
+-
+-	/*
+-	 * Try writing and reading the UART_IER_UUE bit (b6).
+-	 * If it works, this is probably one of the Xscale platform's
+-	 * internal UARTs.
+-	 * We're going to explicitly set the UUE bit to 0 before
+-	 * trying to write and read a 1 just to make sure it's not
+-	 * already a 1 and maybe locked there before we even start start.
+-	 */
+-	iersave = serial_in(up, UART_IER);
+-	serial_outp(up, UART_IER, iersave & ~UART_IER_UUE);
+-	if (!(serial_in(up, UART_IER) & UART_IER_UUE)) {
+-		/*
+-		 * OK it's in a known zero state, try writing and reading
+-		 * without disturbing the current state of the other bits.
+-		 */
+-		serial_outp(up, UART_IER, iersave | UART_IER_UUE);
+-		if (serial_in(up, UART_IER) & UART_IER_UUE) {
+-			/*
+-			 * It's an Xscale.
+-			 * We'll leave the UART_IER_UUE bit set to 1 (enabled).
+-			 */
+-			DEBUG_AUTOCONF("Xscale ");
+-			up->port.type = PORT_XSCALE;
+-			up->capabilities |= UART_CAP_UUE;
+-			return;
+-		}
+-	} else {
+-		/*
+-		 * If we got here we couldn't force the IER_UUE bit to 0.
+-		 * Log it and continue.
+-		 */
+-		DEBUG_AUTOCONF("Couldn't force IER_UUE to 0 ");
+-	}
+-	serial_outp(up, UART_IER, iersave);
++        /*
++         * Distinguish between the 16550A, the XR167xx and NXP16750
++         * The NXP16750 will resets its scratchpad reg to 0xDF
++         * The XR167xx resets its scratchpad rag to 0xFF and
++         * always has at least a 64 byte deep fifo
++         * however, we cannot check its size if the chip has already been
++         * setup.  So, we write a known value into the XR167xx's
++         * scratchpad register to identify it on a reboot (without H/W reset)
++         */
++
++    {
++      unsigned breadcrumb = serial_inp(up, UART_SCR);
++      switch (breadcrumb) {
++        case 0xff:
++          if (size_fifo(up) >= 64) {
++            serial_outp(up, UART_SCR, 0x78);  //in case of warm reboot!
++        case 0x78:
++            up->capabilities |= UART_EXAR7;
++            up->port.type = PORT_XR16788;
++          }else
++            serial_outp(up, UART_SCR, 0x55);  //so we don't size_fifo() again
++          break;
++
++        case 0x55:
++          break;
++
++        case 0xDF:  /* Check if it is NXP IP 3106 UART */
++	  up->port.type = PORT_NXP16750;
++	  break;
++
++        case 0x00:  /* lpc313x built-in USART resets its scratchpad to zero */
++          break;
++
++        default:
++          printk (KERN_WARNING "Unexpected UART_SCR value 0x%02x\n",breadcrumb);
++      }
++      DEBUG_AUTOCONF("scratch=0x%02x ", breadcrumb);
++    }
+ }
+ 
+ /*
+@@ -1433,288 +1332,10 @@
+ 	}
+ }
+ 
+-static void transmit_chars(struct uart_8250_port *up);
+-
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-static void lpc31xx_dma_lock(struct uart_8250_port *up)
+-{
+-	mutex_lock(&dma_mutex);
+-}
+-
+-static void lpc31xx_dma_unlock(struct uart_8250_port *up)
+-{
+-	mutex_unlock(&dma_mutex);
+-}
+-
+-static void lpc31xx_uart_tx_dma_start(struct uart_8250_port *up);
+-static void lpc31xx_dma_tx_tasklet_func(unsigned long data)
+-{
+-	struct uart_8250_port *up = (struct uart_8250_port *) data;
+-	struct circ_buf *xmit = &up->port.state->xmit;
+-
+-	if (dma_channel_enabled(up->dma_tx.dmach))
+-		return;
+-
+-	lpc31xx_dma_lock(up);
+-
+-	dma_stop_channel(up->dma_tx.dmach);
+-
+-	xmit->tail = (xmit->tail + up->dma_tx.count) & (UART_XMIT_SIZE - 1);
+-	up->port.icount.tx += up->dma_tx.count;
+-
+-	lpc31xx_uart_tx_dma_start(up);
+-
+-	lpc31xx_dma_unlock(up);
+-}
+-
+-static int lpc31xx_get_readl_rx_dma_count(struct uart_8250_port *up)
+-{
+-	int count;
+-
+-	/* The DMA hardware returns the number of bytes currently
+-	   transferred by the hardware. It will return 0 when the
+-	   channel has stopped (full DMA transfer) or when nothing
+-	   has been transferred. To tell the difference between
+-	   empty 0 and full 0, we need to examine the DMA enable
+-	   status. */
+-
+-	/* A race condition can exist where the DMA TCNT returns a
+-	   value right as the DMA is stopping. In this case, the
+-	   DMA is enabled during the check with a non-0 count
+-	   value. To get around this issue, the DMA count value
+-	   need to be verified again after disabling the DMA
+-	   channel. If it is 0, then the DMA completed and the
+-	   count is different. */
+-	dma_read_counter(up->dma_rx.dmach, &count);
+-	if ((!count) && (!dma_channel_enabled(up->dma_rx.dmach)))
+-		count = UART_XMIT_SIZE;
+-
+-	return count;
+-}
+-
+-static void serial8250_dma_rx_timer_check(unsigned long data)
+-{
+-	struct uart_8250_port *up = (struct uart_8250_port *) data;
+-
+-	/* Emulate RX timeout when DMA buffer is not full */
+-	if ((lpc31xx_get_readl_rx_dma_count(up)) && (up->dma_rx.active))
+-		tasklet_schedule(&up->dma_rx.tasklet);
+-	else
+-		mod_timer(&up->dma_rx.timer, jiffies +
+-			msecs_to_jiffies(LPC31XX_UART_RX_TIMEOUT));
+-}
+-
+-void lcp31xx_dma_rx_setup(struct uart_8250_port *up)
+-{
+-	dma_setup_t dmarx;
+-
+-	up->buff_half_offs = UART_XMIT_SIZE - up->buff_half_offs;
+-	dmarx.trans_length = UART_XMIT_SIZE - 1;
+-	dmarx.src_address = (u32) up->port.mapbase;
+-	dmarx.dest_address = (u32) up->dma_rx.dma_buff_p;
+-	dmarx.dest_address += up->buff_half_offs;
+-	dmarx.cfg = DMA_CFG_TX_BYTE | DMA_CFG_RD_SLV_NR(DMA_SLV_UART_RX) |
+-		DMA_CFG_WR_SLV_NR(0);
+-
+-	dma_prog_channel(up->dma_rx.dmach, &dmarx);
+-	dma_start_channel(up->dma_rx.dmach);
+-}
+-
+-/*
+- * DMA RX tasklet
+- */
+-static unsigned int check_modem_status(struct uart_8250_port *up);
+-static void lpc31xx_dma_rx_tasklet_func(unsigned long data)
+-{
+-	unsigned int status, lsr;
+-	int count, count2, i, maxcount = 64, breakflush = 0;
+-	char ch, flag = TTY_NORMAL, *buf;
+-	struct uart_8250_port *up = (struct uart_8250_port *) data;
+-	int buffhalf = up->buff_half_offs;
+-	u32 pbuf;
+-
+-	spin_lock(&up->port.lock);
+-
+-	/*
+-	 * Per char stats don't work with DMA, so the status flags
+-	 * don't apply to a specific character. We'll take a best
+-	 * guess that the accumulated status only applies to the
+-	 * last character in the DMA buffer.
+-	 */
+-	status = serial_inp(up, UART_LSR);
+-	lsr = status | up->lsr_saved_flags;
+-	up->lsr_saved_flags = 0;
+-
+-	if (unlikely(lsr & UART_LSR_BRK_ERROR_BITS)) {
+-		/*
+-		 * For statistics only
+-		 */
+-		if (lsr & UART_LSR_BI) {
+-			lsr &= ~(UART_LSR_FE | UART_LSR_PE);
+-			up->port.icount.brk++;
+-			breakflush = 1;
+-			/*
+-			 * Breaks are trouble! Toss everything if
+-			 * one occurs.
+-			 */
+-			uart_handle_break(&up->port);
+-		} else if (lsr & UART_LSR_PE)
+-			up->port.icount.parity++;
+-		else if (lsr & UART_LSR_FE)
+-			up->port.icount.frame++;
+-		if (lsr & UART_LSR_OE)
+-			up->port.icount.overrun++;
+-
+-		/*
+-		 * Mask off conditions which should be ignored.
+-		 */
+-		lsr &= up->port.read_status_mask;
+-
+-		if (lsr & UART_LSR_BI) {
+-			DEBUG_INTR("handling break....");
+-			flag = TTY_BREAK;
+-		} else if (lsr & UART_LSR_PE)
+-			flag = TTY_PARITY;
+-		else if (lsr & UART_LSR_FE)
+-			flag = TTY_FRAME;
+-	}
+-
+-	/* Disable DMA and get current DMA bytes transferred */
+-	count = lpc31xx_get_readl_rx_dma_count(up);
+-	dma_stop_channel(up->dma_rx.dmach);
+-	count2 = lpc31xx_get_readl_rx_dma_count(up);
+-	if (count != count2) {
+-		if (count2 == 0)
+-			count = UART_XMIT_SIZE;
+-		else
+-			count = count2;
+-	}
+-	dma_write_counter(up->dma_rx.dmach, 0);
+-
+-	/* Setup DMA again using unused buffer half */
+-	lcp31xx_dma_rx_setup(up);
+-	pbuf = (u32) up->dma_rx.dma_buff_p;
+-	pbuf += buffhalf;
+-	buf = (char *) up->dma_rx.dma_buff_v;
+-	buf += buffhalf;
+-
+-	if (breakflush) {
+-		/* Flush RX FIFO */
+-		while ((serial_inp(up, UART_LSR) & UART_LSR_DR) &&
+-			(maxcount-- > 0))
+-			ch = serial_inp(up, UART_RX);
+-	}
+-	else {
+-		for (i = 0; i < (count - 1); i++) {
+-			up->port.icount.rx++;
+-			if (uart_handle_sysrq_char(&up->port, buf[i]))
+-				continue;
+-
+-			uart_insert_char(&up->port, lsr, UART_LSR_OE, buf[i], TTY_NORMAL);
+-		}
+-
+-		up->port.icount.rx++;
+-		if (!uart_handle_sysrq_char(&up->port, buf[i]))
+-			uart_insert_char(&up->port, lsr, UART_LSR_OE, buf[i], flag);
+-	}
+-
+-	check_modem_status(up);
+-
+-	spin_unlock(&up->port.lock);
+-	tty_flip_buffer_push(up->port.state->port.tty);
+-	spin_lock(&up->port.lock);
+-
+-	mod_timer(&up->dma_rx.timer, jiffies +
+-		msecs_to_jiffies(LPC31XX_UART_RX_TIMEOUT));
+-
+-	/* Clear any pending RX error status and re-enable TX status interrupt */
+-	status = serial_inp(up, UART_LSR);
+-	serial_outp(up, UART_IER, up->ier);
+-
+-	spin_unlock(&up->port.lock);
+-}
+-
+-/*
+- * DMA UART TX completion interrupt - this interrupt is more of a spotholder
+- * as it is disabled and will never fire.
+- */
+-static void lpc31xx_dma_tx_interrupt(int ch, dma_irq_type_t dtype, void *handle)
+-{
+-	struct uart_8250_port *up = handle;
+-
+-	printk(KERN_INFO "serial DMA TX interrupt unexpected\n");
+-	tasklet_schedule(&up->dma_tx.tasklet);
+-}
+-
+-/*
+- * DMA UART RX completion interrupt - fires when the DMA RX transfer
+- * is complete.
+- */
+-static void lpc31xx_dma_rx_interrupt(int ch, dma_irq_type_t dtype, void *handle)
+-{
+-	struct uart_8250_port *up = handle;
+-
+-	tasklet_schedule(&up->dma_rx.tasklet);
+-}
+-
+-static void lpc31xx_uart_tx_dma_start(struct uart_8250_port *up)
+-{
+-	struct circ_buf *xmit = &up->port.state->xmit;
+-	dma_setup_t dmatx;
+-
+-	/* Start a DMA transfer, DMA is idle if this is called and
+-	   TX is enabled. */
+-	if (up->port.x_char) {
+-		serial_outp(up, UART_TX, up->port.x_char);
+-		up->port.icount.tx++;
+-		up->port.x_char = 0;
+-		return;
+-	}
+-
+-	if (!uart_circ_empty(xmit) && !uart_tx_stopped(&up->port)) {
+-		dma_sync_single_for_device(up->port.dev,
+-					   up->dma_tx.dma_buff_p,
+-					   UART_XMIT_SIZE,
+-					   DMA_TO_DEVICE);
+-
+-		up->dma_tx.count = CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE);
+-		if (up->dma_tx.count > 64)
+-			up->dma_tx.count = 64;
+-
+-		/* Note TX buffer is loaned to the DMA so the TX bytes can't
+-		   be released until the DMA transfer is complete. */
+-		dmatx.trans_length = up->dma_tx.count - 1;
+-		dmatx.src_address = (u32) up->dma_tx.dma_buff_p;
+-		dmatx.src_address += xmit->tail;
+-		dmatx.dest_address = (u32) up->port.mapbase;
+-		dmatx.cfg = DMA_CFG_TX_BYTE | DMA_CFG_RD_SLV_NR(0) |
+-			DMA_CFG_WR_SLV_NR(DMA_SLV_UART_TX);
+-
+-		dma_prog_channel(up->dma_tx.dmach, &dmatx);
+-		up->dma_tx.active = 1;
+-		dma_start_channel(up->dma_tx.dmach);
+-
+-		/* Enable TX interrupt on TX FIFO empty */
+-		up->ier |= UART_IER_THRI;
+-	}
+-	else {
+-		up->dma_tx.active = 0;
+-		up->ier &= ~UART_IER_THRI;
+-	}
+-
+-	serial_out(up, UART_IER, up->ier);
+-
+-	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
+-		uart_write_wakeup(&up->port);
+-}
+-#endif
+-
+ static void serial8250_stop_tx(struct uart_port *port)
+ {
+ 	struct uart_8250_port *up = (struct uart_8250_port *)port;
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	dma_stop_channel(up->dma_tx.dmach);
+-#endif
++
+ 	__stop_tx(up);
+ 
+ 	/*
+@@ -1726,21 +1347,12 @@
+ 	}
+ }
+ 
++static void transmit_chars(struct uart_8250_port *up);
++
+ static void serial8250_start_tx(struct uart_port *port)
+ {
+ 	struct uart_8250_port *up = (struct uart_8250_port *)port;
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	lpc31xx_dma_lock(up);
+-
+-	/*
+-	 * If a DMA TX transfer is currently in progress, then just
+-	 * exit and let the TX DMA handler transfer it.
+-	 */
+-	if (!up->dma_tx.active)
+-		lpc31xx_uart_tx_dma_start(up);
+ 
+-	lpc31xx_dma_unlock(up);
+-#else
+ 	if (!(up->ier & UART_IER_THRI)) {
+ 		up->ier |= UART_IER_THRI;
+ 		serial_out(up, UART_IER, up->ier);
+@@ -1763,21 +1375,15 @@
+ 		up->acr &= ~UART_ACR_TXDIS;
+ 		serial_icr_write(up, UART_ACR, up->acr);
+ 	}
+-#endif
+ }
+ 
+ static void serial8250_stop_rx(struct uart_port *port)
+ {
+ 	struct uart_8250_port *up = (struct uart_8250_port *)port;
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	dma_stop_channel(up->dma_rx.dmach);
+-
+-#else
+ 	up->ier &= ~UART_IER_RLSI;
+ 	up->port.read_status_mask &= ~UART_LSR_DR;
+ 	serial_out(up, UART_IER, up->ier);
+-#endif
+ }
+ 
+ static void serial8250_enable_ms(struct uart_port *port)
+@@ -1968,40 +1574,6 @@
+  */
+ static irqreturn_t serial8250_interrupt(int irq, void *dev_id)
+ {
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	struct irq_info *i = dev_id;
+-	struct uart_8250_port *up;
+-	unsigned int iir, status;
+-
+-	/*
+-	 * When using DMA, this interrupt only occurs on a RX status
+-	 * condition (break, frame error, parity error). Unfortunately,
+-	 * there is no way to clear the condition without popping the
+-	 * FIFO, so the DMA handle needs to be notified that it needs
+-	 * to wakeup and process the incoming data. Meanwhile, the
+-	 * RX status interrupt is temporarily disabled so the interrupt
+-	 * won't keep firing.
+-	 */
+-
+-	up = list_entry(i->head, struct uart_8250_port, list);
+-
+-	iir = serial_in(up, UART_IIR) & 0xf;
+-	if (!(iir & UART_IIR_NO_INT)) {
+-		status = serial_inp(up, UART_LSR);
+-		if (status & UART_LSR_THRE) {
+-			up->ier &= ~UART_IER_THRI;
+-			serial_out(up, UART_IER, up->ier);
+-			tasklet_schedule(&up->dma_tx.tasklet);
+-		} else {
+-			up->ier &= ~UART_IER_RLSI;
+-			serial_out(up, UART_IER, up->ier);
+-			tasklet_schedule(&up->dma_rx.tasklet);
+-		}
+-	}
+-
+-	return IRQ_HANDLED;
+-
+-#else
+ 	struct irq_info *i = dev_id;
+ 	struct list_head *l, *end = NULL;
+ 	int pass_counter = 0, handled = 0;
+@@ -2024,7 +1596,9 @@
+ 			handled = 1;
+ 
+ 			end = NULL;
+-		} else if (up->port.iotype == UPIO_DWAPB &&
++		}
++#if 0  //optimized this unused case out of the ISR -- brent@mbari.org
++                 else if (up->port.iotype == UPIO_DWAPB &&
+ 			  (iir & UART_IIR_BUSY) == UART_IIR_BUSY) {
+ 			/* The DesignWare APB UART has an Busy Detect (0x07)
+ 			 * interrupt meaning an LCR write attempt occured while the
+@@ -2037,7 +1611,9 @@
+ 			handled = 1;
+ 
+ 			end = NULL;
+-		} else if (end == NULL)
++		}
++#endif
++                 else if (end == NULL)
+ 			end = l;
+ 
+ 		l = l->next;
+@@ -2046,6 +1622,7 @@
+ 			/* If we hit this, we're dead. */
+ 			printk(KERN_ERR "serial8250: too much work for "
+ 				"irq%d\n", irq);
++//TODO:  try resetting and reinitializing the UART!!
+ 			break;
+ 		}
+ 	} while (l != end);
+@@ -2055,7 +1632,6 @@
+ 	DEBUG_INTR("end.\n");
+ 
+ 	return IRQ_RETVAL(handled);
+-#endif
+ }
+ 
+ /*
+@@ -2091,10 +1667,6 @@
+ 	struct hlist_node *n;
+ 	struct irq_info *i;
+ 	int ret, irq_flags = up->port.flags & UPF_SHARE_IRQ ? IRQF_SHARED : 0;
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	dma_addr_t dma_handle;
+-	struct circ_buf *xmit = &up->port.state->xmit;
+-#endif
+ 
+ 	mutex_lock(&hash_mutex);
+ 
+@@ -2129,69 +1701,6 @@
+ 		INIT_LIST_HEAD(&up->list);
+ 		i->head = &up->list;
+ 		spin_unlock_irq(&i->lock);
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	/* NOTE: The 31XX has only 1 UART channel, so the list head will
+-	   always point to that channel. This logic isn't quite right,
+-	   but its ok for a single UART */
+-
+-	/* Setup DMA channels */
+-	up->dma_tx.dmach = dma_request_channel("uart_tx",
+-		lpc31xx_dma_tx_interrupt, up);
+-	if (up->dma_tx.dmach < 0)
+-	{
+-		printk(KERN_ERR "serial: error getting TX DMA channel.\n");
+-		return -EBUSY;
+-	}
+-	up->dma_rx.dmach = dma_request_channel("uart_rx",
+-		lpc31xx_dma_rx_interrupt, up);
+-	if (up->dma_rx.dmach < 0)
+-	{
+-		dma_release_channel(up->dma_tx.dmach);
+-		printk(KERN_ERR "serial: error getting RX DMA channel.\n");
+-		return -EBUSY;
+-	}
+-
+-	/* dma_map_single() can be used for the TX buffer, but the RX
+-	  buffer needs it's own buffer */
+-	up->dma_rx.dma_buff_v = dma_alloc_coherent(NULL, UART_DMABUF_RX_SIZE,
+-		&dma_handle, GFP_KERNEL);
+-	if (up->dma_rx.dma_buff_v == NULL)
+-	{
+-		dma_release_channel(up->dma_tx.dmach);
+-		dma_release_channel(up->dma_rx.dmach);
+-		printk(KERN_ERR "serial: error getting DMA region.\n");
+-		return -ENOMEM;
+-	}
+-	up->dma_rx.dma_buff_p = dma_handle;
+-
+-	tasklet_init(&up->dma_tx.tasklet, lpc31xx_dma_tx_tasklet_func,
+-			(unsigned long) up);
+-	tasklet_init(&up->dma_rx.tasklet, lpc31xx_dma_rx_tasklet_func,
+-			(unsigned long) up);
+-
+-	mutex_init(&dma_mutex);
+-
+-	/* Map DMA buffer to UART circular buffer */
+-	up->dma_tx.dma_buff_p = dma_map_single(up->port.dev,
+-				       (void*)xmit->buf,
+-				       UART_XMIT_SIZE,
+-				       DMA_TO_DEVICE);
+-	if (dma_mapping_error(up->port.dev, up->dma_tx.dma_buff_p)){
+-		dma_release_channel(up->dma_tx.dmach);
+-		dma_release_channel(up->dma_rx.dmach);
+-		dma_free_coherent(NULL, UART_DMABUF_RX_SIZE,
+-			(void *) up->dma_rx.dma_buff_v,
+-			up->dma_rx.dma_buff_p);
+-		printk(KERN_ERR "serial: error mapping DMA region.\n");
+-		return -ENOMEM;
+-	}
+-
+-	dma_set_irq_mask(up->dma_tx.dmach, 1, 1);
+-	dma_set_irq_mask(up->dma_rx.dmach, 1, 0);
+-
+-	up->dma_rx.active = 1;
+-
+-#endif
+ 		irq_flags |= up->port.irqflags;
+ 		ret = request_irq(up->port.irq, serial8250_interrupt,
+ 				  irq_flags, "serial", i);
+@@ -2218,32 +1727,6 @@
+ 			break;
+ 	}
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	/* NOTE: The 31XX has only 1 UART channel, so the list head will
+-	   always point to that channel. This logic isn't quite right,
+-	   but its ok for a single UART */
+-
+-	up->dma_rx.active = 0;
+-
+-	/* Delete Rx Timer */
+-	del_timer(&up->dma_rx.timer);
+-
+-	/* Disable DMA channels */
+-	dma_set_irq_mask(up->dma_tx.dmach, 1, 1);
+-	dma_set_irq_mask(up->dma_rx.dmach, 1, 1);
+-	dma_stop_channel(up->dma_tx.dmach);
+-	dma_stop_channel(up->dma_rx.dmach);
+-	dma_release_channel(up->dma_tx.dmach);
+-	dma_release_channel(up->dma_rx.dmach);
+-
+-	dma_unmap_single(up->port.dev, up->dma_tx.dma_buff_p, UART_XMIT_SIZE,
+-		DMA_TO_DEVICE);
+-
+-	dma_free_coherent(NULL, UART_DMABUF_RX_SIZE,
+-		(void *) up->dma_rx.dma_buff_v,
+-		up->dma_rx.dma_buff_p);
+-#endif
+-
+ 	BUG_ON(n == NULL);
+ 	BUG_ON(i->head == NULL);
+ 
+@@ -2276,52 +1759,6 @@
+ 		serial8250_handle_port(up);
+ 	mod_timer(&up->timer, jiffies + poll_timeout(up->port.timeout));
+ }
+-#ifndef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-static void serial8250_backup_timeout(unsigned long data)
+-{
+-	struct uart_8250_port *up = (struct uart_8250_port *)data;
+-	unsigned int iir, ier = 0, lsr;
+-	unsigned long flags;
+-
+-	/*
+-	 * Must disable interrupts or else we risk racing with the interrupt
+-	 * based handler.
+-	 */
+-	if (is_real_interrupt(up->port.irq)) {
+-		ier = serial_in(up, UART_IER);
+-		serial_out(up, UART_IER, 0);
+-	}
+-
+-	iir = serial_in(up, UART_IIR);
+-
+-	/*
+-	 * This should be a safe test for anyone who doesn't trust the
+-	 * IIR bits on their UART, but it's specifically designed for
+-	 * the "Diva" UART used on the management processor on many HP
+-	 * ia64 and parisc boxes.
+-	 */
+-	spin_lock_irqsave(&up->port.lock, flags);
+-	lsr = serial_in(up, UART_LSR);
+-	up->lsr_saved_flags |= lsr & LSR_SAVE_FLAGS;
+-	spin_unlock_irqrestore(&up->port.lock, flags);
+-	if ((iir & UART_IIR_NO_INT) && (up->ier & UART_IER_THRI) &&
+-	    (!uart_circ_empty(&up->port.state->xmit) || up->port.x_char) &&
+-	    (lsr & UART_LSR_THRE)) {
+-		iir &= ~(UART_IIR_ID | UART_IIR_NO_INT);
+-		iir |= UART_IIR_THRI;
+-	}
+-
+-	if (!(iir & UART_IIR_NO_INT))
+-		serial8250_handle_port(up);
+-
+-	if (is_real_interrupt(up->port.irq))
+-		serial_out(up, UART_IER, ier);
+-
+-	/* Standard timer interval plus 0.2s to keep the port running */
+-	mod_timer(&up->timer,
+-		jiffies + poll_timeout(up->port.timeout) + HZ / 5);
+-}
+-#endif
+ 
+ static unsigned int serial8250_tx_empty(struct uart_port *port)
+ {
+@@ -2595,25 +2032,14 @@
+ 	}
+ 
+ 	/*
+-	 * The above check will only give an accurate result the first time
+-	 * the port is opened so this value needs to be preserved.
+-	 */
+-#ifndef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	if (up->bugs & UART_BUG_THRE) {
+-		up->timer.function = serial8250_backup_timeout;
+-		up->timer.data = (unsigned long)up;
+-		mod_timer(&up->timer, jiffies +
+-			  poll_timeout(up->port.timeout) + HZ / 5);
+-	}
+-#endif
+-
+-	/*
+ 	 * If the "interrupt" for this port doesn't correspond with any
+ 	 * hardware interrupt, we use a timer-based system.  The original
+ 	 * driver used to do this with IRQ0.
+ 	 */
+ 	if (!is_real_interrupt(up->port.irq)) {
+ 		up->timer.data = (unsigned long)up;
++                printk(KERN_WARNING "Invalid serial8250IRQ#%d @%p\n",
++                        up->port.irq, up->port.membase);
+ 		mod_timer(&up->timer, jiffies + poll_timeout(up->port.timeout));
+ 	} else {
+ 		retval = serial_link_irq_chain(up);
+@@ -2621,13 +2047,6 @@
+ 			return retval;
+ 	}
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	init_timer(&up->dma_rx.timer);
+-	up->dma_rx.timer.function = serial8250_dma_rx_timer_check;
+-	up->dma_rx.timer.data = (unsigned long)up;
+-	mod_timer(&up->dma_rx.timer, jiffies + 5);
+-#endif
+-
+ 	/*
+ 	 * Now, initialize the UART
+ 	 */
+@@ -2699,12 +2118,7 @@
+ 	 * are set via set_termios(), which will be occurring imminently
+ 	 * anyway, so we don't enable them here.
+ 	 */
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	up->ier = UART_IER_RLSI;
+-
+-#else
+ 	up->ier = UART_IER_RLSI | UART_IER_RDI;
+-#endif
+ 	serial_outp(up, UART_IER, up->ier);
+ 
+ 	if (up->port.flags & UPF_FOURPORT) {
+@@ -2796,12 +2210,6 @@
+ 	unsigned long flags;
+ 	unsigned int baud, quot;
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	dma_stop_channel(up->dma_rx.dmach);
+-	dma_stop_channel(up->dma_tx.dmach);
+-	up->dma_tx.active = 0;
+-#endif
+-
+ 	switch (termios->c_cflag & CSIZE) {
+ 	case CS5:
+ 		cval = UART_LCR_WLEN5;
+@@ -2915,38 +2323,53 @@
+ 
+ 	serial_out(up, UART_IER, up->ier);
+ 
+-	if (up->capabilities & UART_CAP_EFR) {
+-		unsigned char efr = 0;
+-		/*
+-		 * TI16C752/Startech hardware flow control.  FIXME:
+-		 * - TI16C752 requires control thresholds to be set.
+-		 * - UART_MCR_RTS is ineffective if auto-RTS mode is enabled.
+-		 */
+-		if (termios->c_cflag & CRTSCTS)
+-			efr |= UART_EFR_CTS;
+ 
+-		serial_outp(up, UART_LCR, 0xBF);
+-		serial_outp(up, UART_EFR, efr);
+-	}
++        if (up->capabilities & UART_EXAR7) {
++            unsigned char efr = 0;
++        /*
++         * EXAR 7xx hardware flow control
++         */
++            //RXTRG and TXRTG registers to determine fifo trigger points
++            serial_outp(up, 11,  20);  //RX interrupt when fifo has >=20 bytes
++            serial_outp(up, 10,  10);  //refill TX fifo when <10 bytes remain
++            serial_outp(up,  8,0xC2);  //+/- 6 byte auto-CTS hysterisis
++            if (termios->c_cflag & CRTSCTS)
++              efr |= UART_EFR_CTS|UART_EFR_RTS;
++            serial_outp(up, 9, efr);   //setup the EFR register
++
++        }else{
++	  if (up->capabilities & UART_CAP_EFR) {
++		  unsigned char efr = 0;
++		  /*
++		   * TI16C752/Startech hardware flow control.  FIXME:
++		   * - TI16C752 requires control thresholds to be set.
++		   * - UART_MCR_RTS is ineffective if auto-RTS mode is enabled.
++		   */
++		  if (termios->c_cflag & CRTSCTS)
++			  efr |= UART_EFR_CTS;
++
++		  serial_outp(up, UART_LCR, 0xBF);
++		  serial_outp(up, UART_EFR, efr);
++	  }
+ 
+ #ifdef CONFIG_ARCH_OMAP
+-	/* Workaround to enable 115200 baud on OMAP1510 internal ports */
+-	if (cpu_is_omap1510() && is_omap_port(up)) {
+-		if (baud == 115200) {
+-			quot = 1;
+-			serial_out(up, UART_OMAP_OSC_12M_SEL, 1);
+-		} else
+-			serial_out(up, UART_OMAP_OSC_12M_SEL, 0);
+-	}
+-#endif
++	  /* Workaround to enable 115200 baud on OMAP1510 internal ports */
++	  if (cpu_is_omap1510() && is_omap_port(up)) {
++		  if (baud == 115200) {
++			  quot = 1;
++			  serial_out(up, UART_OMAP_OSC_12M_SEL, 1);
++		  } else
++			  serial_out(up, UART_OMAP_OSC_12M_SEL, 0);
++	  }
++ #endif
+ 
+-	if (up->capabilities & UART_NATSEMI) {
++        }
++        if (up->capabilities & UART_NATSEMI) {
+ 		/* Switch to bank 2 not bank 1, to avoid resetting EXCR2 */
+ 		serial_outp(up, UART_LCR, 0xe0);
+ 	} else {
+ 		serial_outp(up, UART_LCR, cval | UART_LCR_DLAB);/* set DLAB */
+ 	}
+-
+ 	serial_dl_write(up, quot);
+ 
+ 	/*
+@@ -2966,12 +2389,6 @@
+ 		serial_outp(up, UART_FCR, fcr);		/* set fcr */
+ 	}
+ 	serial8250_set_mctrl(&up->port, up->port.mctrl);
+-
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	dma_write_counter(up->dma_rx.dmach, 0);
+-	lcp31xx_dma_rx_setup(up);
+-#endif
+-
+ 	spin_unlock_irqrestore(&up->port.lock, flags);
+ 	/* Don't rewrite B0 */
+ 	if (tty_termios_baud_rate(termios))
+@@ -2986,15 +2403,6 @@
+ 
+ 	serial8250_set_sleep(p, state != 0);
+ 
+-#ifdef CONFIG_LPC31XX_SERIAL_DMA_SUPPORT
+-	if (state == 0) {
+-		dma_write_counter(p->dma_rx.dmach, 0);
+-		lcp31xx_dma_rx_setup(p);
+-	} else
+-		dma_stop_channel(p->dma_rx.dmach);
+-
+-#endif
+-
+ 	if (p->pm)
+ 		p->pm(port, state, oldstate);
+ }
+@@ -3737,8 +3145,7 @@
+ 		uart_add_one_port(&serial8250_reg, &uart->port);
+ 	} else {
+ 		uart->port.dev = NULL;
+-	}	/* Setup DMA channels */
+-
++	}
+ 	mutex_unlock(&serial_mutex);
+ }
+ EXPORT_SYMBOL(serial8250_unregister_port);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.h linux-2.6.33.modified/drivers/serial/8250.h
+--- linux-2.6.33/drivers/serial/8250.h	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/serial/8250.h	2014-08-26 20:49:20.322716432 -0700
+@@ -49,6 +49,7 @@
+ #define UART_BUG_TXEN	(1 << 1)	/* UART has buggy TX IIR status */
+ #define UART_BUG_NOMSR	(1 << 2)	/* UART has buggy MSR status bits (Au1x00) */
+ #define UART_BUG_THRE	(1 << 3)	/* UART has buggy THRE reassertion */
++#define UART_EXAR7      (1 << 4)        /* UART has EXAR FIFO threshold regs */
+ 
+ #define PROBE_RSA	(1 << 0)
+ #define PROBE_ANY	(~0)
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/include/linux/serial_core.h linux-2.6.33.modified/include/linux/serial_core.h
+--- linux-2.6.33/include/linux/serial_core.h	2014-09-10 11:28:42.709727275 -0700
++++ linux-2.6.33.modified/include/linux/serial_core.h	2014-08-26 20:46:07.038588617 -0700
+@@ -44,8 +44,9 @@
+ #define PORT_RM9000	16	/* PMC-Sierra RM9xxx internal UART */
+ #define PORT_OCTEON	17	/* Cavium OCTEON internal UART */
+ #define PORT_AR7	18	/* Texas Instruments AR7 internal UART */
+-#define PORT_NXP16750	19	
+-#define PORT_MAX_8250	19	/* max port ID */
++#define PORT_NXP16750	19	/* LPC31xx internal UART */
++#define PORT_XR16788    20
++#define PORT_MAX_8250	20	/* max port ID */
+ 
+ /*
+  * ARM specific type numbers.  These are not currently guaranteed
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/sound/soc/lpc313x/lpc313x-i2s-clocking.c linux-2.6.33.modified/sound/soc/lpc313x/lpc313x-i2s-clocking.c
+--- linux-2.6.33/sound/soc/lpc313x/lpc313x-i2s-clocking.c	2014-09-10 11:28:42.721727023 -0700
++++ linux-2.6.33.modified/sound/soc/lpc313x/lpc313x-i2s-clocking.c	2014-09-03 21:46:50.473712865 -0700
+@@ -184,7 +184,7 @@
+ 	NULL
+ };
+ 
+-#if defined(CONFIG_SND_LPC315X_SOC)
++#if defined(CONFIG_SND_LPC315X_SOC) || defined(CONFIG_SND_LPC315X_SOC_MODULE)
+ /* For LPC315X Analog CODEC 128FS clock has to be used */
+ static const u32 fsdiv =
+ #if defined (CONFIG_SND_CODEC_FS128)
+@@ -192,7 +192,7 @@
+ #endif
+ #endif
+ 
+-#if defined(CONFIG_SND_LPC313X_SOC)
++#if defined(CONFIG_SND_LPC313X_SOC) || defined(CONFIG_SND_LPC313X_SOC_MODULE)
+ static const u32 fsdiv =
+ #if defined (CONFIG_SND_CODEC_FS256)
+ 	256;

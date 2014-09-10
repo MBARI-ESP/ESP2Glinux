@@ -49,6 +49,8 @@ Patch33         : kernel-2.6.33-i2sTriggerFix.patch
 Patch34         : kernel-2.6.33-usbsuspend.patch
 Patch35         : kernel-2.6.33-quiet_zd1211rw.patch
 Patch36         : kernel-2.6.33-MMCstop.patch
+Patch37         : kernel-2.6.33-usbDevice.patch
+Patch38         : kernel-2.6.33-ESP3Ghost.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -88,3 +90,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch34 -p1
 %patch35 -p1
 %patch36 -p1
+%patch37 -p1
+%patch38 -p1

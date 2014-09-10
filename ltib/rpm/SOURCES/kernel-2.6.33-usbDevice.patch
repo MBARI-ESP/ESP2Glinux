@@ -1,0 +1,31 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/core/hub.c linux-2.6.33.modified/drivers/usb/core/hub.c
+--- linux-2.6.33/drivers/usb/core/hub.c	2014-09-10 11:28:42.693727611 -0700
++++ linux-2.6.33.modified/drivers/usb/core/hub.c	2013-10-30 19:11:37.331929044 -0700
+@@ -1714,6 +1714,7 @@
+ 		}
+ 	}
+ 
++#if defined(CONFIG_USB_OTG_WHITELIST)
+ 	if (!is_targeted(udev)) {
+ 
+ 		/* Maybe it can talk to us, though we can't talk to it.
+@@ -1727,6 +1728,7 @@
+ 		err = -ENOTSUPP;
+ 		goto fail;
+ 	}
++#endif
+ #elif defined(CONFIG_USB_OTG_WHITELIST)
+ 	if (!is_targeted(udev)) {
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/host/ehci-lpc.c linux-2.6.33.modified/drivers/usb/host/ehci-lpc.c
+--- linux-2.6.33/drivers/usb/host/ehci-lpc.c	2014-09-10 11:28:42.881723668 -0700
++++ linux-2.6.33.modified/drivers/usb/host/ehci-lpc.c	2013-10-30 16:53:45.522317395 -0700
+@@ -273,6 +273,8 @@
+ 	struct platform_device *pdev = to_platform_device(dev);
+ 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+ 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
++	struct fsl_usb2_platform_data *pdata = 
++          (struct fsl_usb2_platform_data *)pdev->dev.platform_data;
+ 	u32 tmp;
+ 
+ 	dbg("%s pdev=0x%p  pdata=0x%p  ehci=0x%p  hcd=0x%p\n",

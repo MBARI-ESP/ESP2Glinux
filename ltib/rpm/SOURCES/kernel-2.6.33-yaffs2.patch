@@ -933,7 +933,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_checkptrw.c 
 + */
 +
 +const char *yaffs_checkptrw_c_version =
-+	"$Id$";
++	"2011/05/02 brent@mbari.org";
 +
 +
 +#include "yaffs_checkptrw.h"
@@ -1398,7 +1398,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_ecc.c linux-
 + */
 +
 +const char *yaffs_ecc_c_version =
-+	"$Id$";
++	"2011/05/02 brent@mbari.org";
 +
 +#include "yportenv.h"
 +
@@ -1779,7 +1779,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_fs.c linux-2
 + */
 +
 +const char *yaffs_fs_c_version =
-+    "$Id$";
++    "2011/05/02 brent@mbari.org";
 +extern const char *yaffs_guts_c_version;
 +
 +#include <linux/version.h>
@@ -4831,7 +4831,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_guts.c linux
 + */
 +
 +const char *yaffs_guts_c_version =
-+    "$Id$";
++    "2011/05/02 brent@mbari.org";
 +
 +#include "yportenv.h"
 +#include "yaffs_trace.h"
@@ -13909,7 +13909,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_mtdif.c linu
 + */
 +
 +const char *yaffs_mtdif_c_version =
-+	"$Id$";
++	"2011/05/02 brent@mbari.org";
 +
 +#include "yportenv.h"
 +
@@ -14029,7 +14029,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_mtdif1.c lin
 +/* Don't compile this module if we don't have MTD's mtd_oob_ops interface */
 +#if (MTD_VERSION_CODE > MTD_VERSION(2, 6, 17))
 +
-+const char *yaffs_mtdif1_c_version = "$Id$";
++const char *yaffs_mtdif1_c_version = "2011/05/02 brent@mbari.org";
 +
 +#ifndef CONFIG_YAFFS_9BYTE_TAGS
 +# define YTAG1_SIZE 8
@@ -14404,7 +14404,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_mtdif2.c lin
 +/* mtd interface for YAFFS2 */
 +
 +const char *yaffs_mtdif2_c_version =
-+	"$Id$";
++	"2011/05/02 brent@mbari.org";
 +
 +#include "yportenv.h"
 +#include "yaffs_trace.h"
@@ -14693,7 +14693,7 @@ diff --exclude CVS --exclude .git -uNr linux-2.6.33/fs/yaffs2/yaffs_nand.c linux
 + */
 +
 +const char *yaffs_nand_c_version =
-+	"$Id$";
++	"2011/05/02 brent@mbari.org";
 +
 +#include "yaffs_nand.h"
 +#include "yaffs_tagscompat.h"
