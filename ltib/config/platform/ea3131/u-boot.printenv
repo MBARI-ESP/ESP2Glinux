@@ -1,39 +1,52 @@
-baudrate=115200
-loadaddr=0x31000000
-rd_addr=0x32000000
-usbtty=cdc_acm
-ramargs=setenv bootargs console=ttyS0,115200n8 root=/dev/ram0 rw ip=dhcp loglevel=7
-nfsargs=setenv bootargs console=ttyS0,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${rootpath} ip=dhcp loglevel=7
-ramfile=rootfs.ext2.gz.uboot
-net_boot=dhcp; run nfsargs; bootm $(loadaddr)
-spi_boot= sf probe 0 0 0; sf read $(loadaddr) 0x42000 0x200000; run nfsargs; bootm $(loadaddr)
-nand_boot= nand read $(loadaddr) 0x80000 0x200000; run nfsargs; bootm $(loadaddr)
-sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)
-usbdfu_boot= usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)
-usb_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)
-uart_boot= loady; run nfsargs; bootm $(loadaddr)
-netram_boot=dhcp; tftp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
-spiram_boot= sf probe 0 0 0; sf read $(loadaddr) 0x42000 0x200000; sf read $(rd_addr) 0x243000 0x400000; run ramargs; bootm $(loadaddr) $(rd_addr)
-nandram_boot= nand read $(loadaddr) 0x80000 0x200000; nand read $(rd_addr) 0x2a0000 0x400000; run ramargs; bootm $(loadaddr) $(rd_addr)
-sdmmcram_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
-usbdfuram_boot= usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)
-usbram_boot= usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
-uartram_boot= loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)
-ethact=dm9000
-bootcmd=run flash_boot
-flashargs=setenv bootargs $(console) $(flash_root) loglevel=7
-rootpath=/nfsroot/ltib
-ethaddr=00:08:e6:b4:db:7d
-console=console=ttyS0,115200n8
-testKernel=dhcp; run flashargs; bootm $(loadaddr)
-maxKernLen=0x200000
 bootdelay=1
-flash_root=root=/dev/mtdblock0 ro
-flashNewKernel=dhcp; sf probe 0 0 0; sf erase 0x42000 $(maxKernLen); sf write $(loadaddr) 0x42000 $(maxKernLen); saveenv
-flash_boot=sf probe 0 0 0; echo \\cLoading kernel from SPI flash...; sf read $(loadaddr) 0x42000 $(filesize); echo done; run flashargs; bootm $(loadaddr)
+baudrate=115200
+loadaddr=31000000
+rd_addr=32000000
+envOffset=40000
+envSize=10000
+ubootFile=u-boot.bin
+kernFile=uImage
+ramfile=rootfs.ext2.gz.uboot
+kernBase=50000
+maxKernSize=200000
+usbtty=cdc_acm
+console=console=ttyS0,115200n8 loglevel=5
+ramargs=setenv bootargs $(console) root=/dev/ram0 rw ip=dhcp
+nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) ip=dhcp
+net_boot=dhcp $(kernFile); run nfsargs; bootm $(loadaddr)
+spi_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsargs; bootm $(loadaddr)
+nand_boot=nand read $(loadaddr) 80000 $(kernSize); run nfsargs; bootm $(loadaddr)
+sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)
+usbdfu_boot=usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)
+usb_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)
+uart_boot=loady; run nfsargs; bootm $(loadaddr)
+netram_boot=dhcp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
+spiram_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); sf read $(rd_addr) 243000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)
+nandram_boot=nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)
+sdmmcram_boot=mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
+sbdfuram_boot=usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)
+usbram_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)
+uartram_boot=loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)
+flashargs=setenv bootargs $(console) $(flash_root)
+rootpath=/nfsroot/ea313x
+testKernel=dhcp $(kernFile); run flashargs; bootm $(loadaddr)
+flash_root=root=/dev/mtdblock2 ro
+flash_boot=sf probe 0 0 0; echo \\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)
+flashNewKernel=dhcp $(kernFile); sf probe 0 0 0; echo \\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv
+flashNewUboot=dhcp $(ubootFile); sf probe 0 0 0; echo \\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo
+resetEnvironment=sf probe 0 0 0; echo \\cErasing environment...;  sf erase $(envOffset) $(envSize); reset
+ethaddr=00:08:04:cc:e6:71
+ethact=dm9000
+sdargs=setenv bootargs $(console) $(sd_root)
+sd_boot=mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run sdargs; bootm $(loadaddr)
+sd_root=root=/dev/mmcblk0p2 ro rootdelay=1
 bootfile=uImage
-filesize=1BD514
+bootcmd=run sd_boot
+bootargs=console=ttyS0,115200n8 loglevel=5 root=/dev/mmcblk0p2 ro rootdelay=1
+bootfile=uImage
+filesize=1A2E34
 fileaddr=31000000
 netmask=255.255.254.0
-ipaddr=134.89.11.57
+ipaddr=134.89.11.212
 serverip=134.89.10.31
+kernSize=1A2E34
