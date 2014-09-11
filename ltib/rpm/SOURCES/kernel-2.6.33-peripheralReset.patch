@@ -1,0 +1,74 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2014-09-10 23:08:27.118713696 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2014-09-10 22:31:38.852851608 -0700
+@@ -773,6 +773,24 @@
+     gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+ 
++
++void __init awaitPeripheralReset(void)
++/*
++  wait up to 1 second for RTC to deassert reset
++*/
++{
++  unsigned consecutive = 0;
++  unsigned long resetDone = jiffies+HZ;
++  while (jiffies < resetDone)
++    if (gpio_get_value(PeripheralReset)) {
++      if (++consecutive >= 5)
++        return;  /* reset deasserted for 5 consecutive samples */
++    }else
++      consecutive = 0;
++  printk(KERN_ERR "Peripheral Reset stuck asserted(low)!!\n");
++}
++
++
+ static void __init ea313x_map_io(void)
+ {
+ 	lpc313x_map_io();
+@@ -792,6 +810,8 @@
+ MACHINE_END
+ #endif
+ 
++
++
+ #if defined(CONFIG_MACH_EA313X)
+ MACHINE_START(EA313X, "NXP EA313X")
+ 	/* Maintainer: Durgesh Pattamatta, NXP */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/Makefile linux-2.6.33.modified/drivers/Makefile
+--- linux-2.6.33/drivers/Makefile	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/Makefile	2014-09-10 22:14:12.503001059 -0700
+@@ -35,7 +35,6 @@
+ obj-$(CONFIG_FB_I810)           += video/i810/
+ obj-$(CONFIG_FB_INTEL)          += video/intelfb/
+ 
+-obj-y				+= serial/
+ obj-$(CONFIG_PARPORT)		+= parport/
+ obj-y				+= base/ block/ misc/ mfd/
+ obj-$(CONFIG_NUBUS)		+= nubus/
+@@ -111,3 +110,4 @@
+ obj-$(CONFIG_STAGING)		+= staging/
+ obj-y				+= platform/
+ obj-y				+= ieee802154/
++obj-y				+= serial/
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2014-09-10 23:08:27.138713277 -0700
++++ linux-2.6.33.modified/drivers/serial/8250.c	2014-09-10 22:33:07.558975035 -0700
+@@ -3150,6 +3150,8 @@
+ }
+ EXPORT_SYMBOL(serial8250_unregister_port);
+ 
++void awaitPeripheralReset(void);  //wait for peripheral reset pulse to end
++
+ static int __init serial8250_init(void)
+ {
+ 	int ret;
+@@ -3161,6 +3163,8 @@
+ 		"%d ports, IRQ sharing %sabled\n", nr_uarts,
+ 		share_irqs ? "en" : "dis");
+ 
++        awaitPeripheralReset();
++
+ #ifdef CONFIG_SPARC
+ 	ret = sunserial_register_minors(&serial8250_reg, UART_NR);
+ #else
