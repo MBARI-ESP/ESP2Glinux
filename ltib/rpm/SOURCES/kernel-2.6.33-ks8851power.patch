@@ -1,0 +1,373 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/net/ks8851_mll.c linux-2.6.33.modified/drivers/net/ks8851_mll.c
+--- linux-2.6.33/drivers/net/ks8851_mll.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/net/ks8851_mll.c	2014-09-16 15:32:05.245842774 -0700
+@@ -21,6 +21,22 @@
+  * KS8851 16bit MLL chip from Micrel Inc.
+  */
+ 
++/**
++ * Revised:  9/16/14 brent@mbari.org
++ *  Added support for setting MAC address via bootline option
++ *  Added support for setting power saving mode
++ *  Added support for agressive power saving (energy detect mode)
++ *    Note that in agressive power saving mode, the chip will be
++ *    unresponsive when there is no ethernet carrier (cable unplugged)
++ *    If you try to reload the driver, the chip will not be recognized.
++ *    The only way to recover is to restore the ethernet carrier or to
++ *    reset the chip via hardware.
++ *  Incorporated patch for handling many short frames:
++ *    https://github.com/Angstrom-distribution/meta-ti/blob/master/recipes-kernel/linux/linux-ti33x-psp-3.2/3.2.17/0076-net-ethernet-ks8851_mll-fix-rx-frame-buffer-overflow.patch
++ *  Incorporated patch eliminating redundant irq storage in private ks struct
++ *    http://linux-kernel.2935.n7.nabble.com/PATCH-2-6-32-rc6-drivers-net-ks8851-mll-ethernet-network-driver-td522012.html
++ */
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/netdevice.h>
+@@ -34,8 +50,7 @@
+ 
+ #define	DRV_NAME	"ks8851_mll"
+ 
+-static u8 KS_DEFAULT_MAC_ADDRESS[] = { 0x00, 0x10, 0xA1, 0x86, 0x95, 0x11 };
+-#define MAX_RECV_FRAMES			32
++#define MAX_RECV_FRAMES			192  /* in case short frames queued */
+ #define MAX_BUF_SIZE			2048
+ #define TX_BUF_SIZE			2000
+ #define RX_BUF_SIZE			2000
+@@ -362,6 +377,13 @@
+ #define HW_MCAST_SIZE			8
+ #define MAC_ADDR_LEN			6
+ 
++static const u16 pmModes[] = {
++  PMECR_PM_NORMAL,
++  PMECR_PM_POWERSAVE,
++  PMECR_PM_ENERGY | PMECR_AUTO_WAKE_EN
++};
++static int pmMode = 1;  /* default to POWERSAVE */
++
+ /**
+  * union ks_tx_hdr - tx header data
+  * @txb: The header as bytes
+@@ -390,7 +412,6 @@
+  * @msg_enable	: The message flags controlling driver output (see ethtool).
+  * @frame_cnt  	: number of frames received.
+  * @bus_width  	: i/o bus width.
+- * @irq    	: irq number assigned to this device.
+  * @rc_rxqcr	: Cached copy of KS_RXQCR.
+  * @rc_txcr	: Cached copy of KS_TXCR.
+  * @rc_ier	: Cached copy of KS_IER.
+@@ -437,7 +458,6 @@
+ 	u32			msg_enable;
+ 	u32			frame_cnt;
+ 	int			bus_width;
+-	int             	irq;
+ 
+ 	u16			rc_rxqcr;
+ 	u16			rc_txcr;
+@@ -622,17 +642,16 @@
+  */
+ static void ks_set_powermode(struct ks_net *ks, unsigned pwrmode)
+ {
+-	unsigned pmecr;
++  u16 pmecr, oldpme;
+ 
+-	if (netif_msg_hw(ks))
+-		ks_dbg(ks, "setting power mode %d\n", pwrmode);
+-
+-	ks_rdreg16(ks, KS_GRR);
+-	pmecr = ks_rdreg16(ks, KS_PMECR);
+-	pmecr &= ~PMECR_PM_MASK;
+-	pmecr |= pwrmode;
+-
+-	ks_wrreg16(ks, KS_PMECR, pmecr);
++  ks_rdreg16(ks, KS_GRR);
++  oldpme = ks_rdreg16(ks, KS_PMECR);
++  pmecr = (oldpme & ~(PMECR_PM_MASK | PMECR_AUTO_WAKE_EN)) | pwrmode;
++  if (oldpme != pmecr) {
++    if (netif_msg_hw(ks))
++      ks_dbg(ks, "setting power mode 0x%x\n", pwrmode & ~PMECR_PM_MASK);
++    ks_wrreg16(ks, KS_PMECR, pmecr);
++  }
+ }
+ 
+ /**
+@@ -640,7 +659,7 @@
+  * @ks: The chip information
+  *
+  */
+-static void ks_read_config(struct ks_net *ks)
++static void __devinit ks_read_config(struct ks_net *ks)
+ {
+ 	u16 reg_data = 0;
+ 
+@@ -667,6 +686,22 @@
+ 	}
+ }
+ 
++
++/**
++ * ks_wake - wake up from a SOFT POWERDOWN state
++ * @ks: The device state.
++ *
++ * This wakes the devices from the POWERDOWN state, but it does not
++ * seem to wake it from the ENERGY saving state which is entered
++ * when the ethernet carrier fails in agressive power savings mode
++ */
++static void ks_wake(struct ks_net *ks)
++{
++        ks_rdreg16(ks, KS_GRR);
++        mdelay(1);	/* wait to wake up */
++}
++
++
+ /**
+  * ks_soft_reset - issue one of the soft reset to the device
+  * @ks: The device state.
+@@ -912,23 +947,27 @@
+ 		ks_dbg(ks, "%s - entry\n", __func__);
+ 
+ 	/* reset the HW */
+-	err = request_irq(ks->irq, ks_irq, KS_INT_FLAGS, DRV_NAME, netdev);
++	err = request_irq(netdev->irq, ks_irq, KS_INT_FLAGS, DRV_NAME, netdev);
+ 
+ 	if (err) {
+ 		printk(KERN_ERR "Failed to request IRQ: %d: %d\n",
+-			ks->irq, err);
++			netdev->irq, err);
+ 		return err;
+ 	}
+ 
+-	/* wake up powermode to normal mode */
+-	ks_set_powermode(ks, PMECR_PM_NORMAL);
+-	mdelay(1);	/* wait for normal mode to take effect */
++        netif_carrier_off(netdev);  /* block xmit until link comes up */
+ 
++        ks_wake(ks);
+ 	ks_wrreg16(ks, KS_ISR, 0xffff);
+ 	ks_enable_int(ks);
+ 	ks_enable_qmu(ks);
+ 	netif_start_queue(ks->netdev);
+ 
++        /* switch to selected power saving mode */
++        if (pmMode >= ARRAY_SIZE(pmModes))
++          pmMode=0;
++        ks_set_powermode(ks, pmModes[pmMode]);
++
+ 	if (netif_msg_ifup(ks))
+ 		ks_dbg(ks, "network device %s up\n", netdev->name);
+ 
+@@ -950,6 +989,7 @@
+ 	if (netif_msg_ifdown(ks))
+ 		ks_info(ks, "%s: shutting down\n", netdev->name);
+ 
++        ks_wake(ks);
+ 	netif_stop_queue(netdev);
+ 
+ 	mutex_lock(&ks->lock);
+@@ -963,7 +1003,7 @@
+ 
+ 	/* set powermode to soft power down to save power */
+ 	ks_set_powermode(ks, PMECR_PM_SOFTDOWN);
+-	free_irq(ks->irq, netdev);
++	free_irq(netdev->irq, netdev);
+ 	mutex_unlock(&ks->lock);
+ 	return 0;
+ }
+@@ -1419,7 +1459,7 @@
+  *
+  * Read and check the TX/RX memory selftest information.
+  */
+-static int ks_read_selftest(struct ks_net *ks)
++static int __devinit ks_read_selftest(struct ks_net *ks)
+ {
+ 	unsigned both_done = MBIR_TXMBF | MBIR_RXMBF;
+ 	int ret = 0;
+@@ -1442,11 +1482,11 @@
+ 		ret |= 2;
+ 	}
+ 
+-	ks_info(ks, "the selftest passes\n");
++	ks_info(ks, "passed selftest\n");
+ 	return ret;
+ }
+ 
+-static void ks_setup(struct ks_net *ks)
++static void __devinit ks_setup(struct ks_net *ks)
+ {
+ 	u16	w;
+ 
+@@ -1493,7 +1533,7 @@
+ }  /*ks_setup */
+ 
+ 
+-static void ks_setup_int(struct ks_net *ks)
++static void __devinit ks_setup_int(struct ks_net *ks)
+ {
+ 	ks->rc_ier = 0x00;
+ 	/* Clear the interrupts status of the hardware. */
+@@ -1503,7 +1543,7 @@
+ 	ks->rc_ier = (IRQ_LCI | IRQ_TXI | IRQ_RXI);
+ }  /* ks_setup_int */
+ 
+-static int ks_hw_init(struct ks_net *ks)
++static int __devinit ks_hw_init(struct ks_net *ks)
+ {
+ #define	MHEADER_SIZE	(sizeof(struct type_frame_head) * MAX_RECV_FRAMES)
+ 	ks->promiscuous = 0;
+@@ -1516,11 +1556,41 @@
+ 		printk(KERN_ERR "Error: Fail to allocate frame memory\n");
+ 		return false;
+ 	}
+-
+-	ks_set_mac(ks, KS_DEFAULT_MAC_ADDRESS);
+ 	return true;
+ }
+ 
++#define macParmTag DRV_NAME".mac="
++
++static int __devinit parseMAC(u8 *mac, const char *cursor, unsigned id)
++/*
++  extract the id'th element from ASCII comma list at cursor.
++  Each list element is a MAC address of the form hh:hh:hh:hh:hh:hh
++  if empty string, check the kernel's bootline!
++  Store MAC address as six bytes at mac
++  returns nonzero value on failure
++*/
++{
++  char *end;
++  if (!*cursor && (end = strstr(saved_command_line, macParmTag)))
++    cursor = end + sizeof(macParmTag) - 1;
++  while(id > 0) {
++    if (!(cursor=strchr(cursor,',')))
++      return -1;
++    cursor++;
++    --id;
++  }
++  id=6;  /* mac address has six byte fields */
++  do {
++    unsigned long byte = simple_strtoul(cursor, &end, 16);
++    if (cursor == end || byte > 0xff)
++      break;
++    *mac++ = byte;
++    cursor = end+1;
++  } while(--id && *end);
++  return id || (u8)(*end)>' ';
++}
++
++static char __devinitdata MACstring[128];
+ 
+ static int __devinit ks8851_probe(struct platform_device *pdev)
+ {
+@@ -1556,10 +1626,10 @@
+ 	if (!ks->hw_addr_cmd)
+ 		goto err_ioremap1;
+ 
+-	ks->irq = platform_get_irq(pdev, 0);
++	netdev->irq = platform_get_irq(pdev, 0);
+ 
+-	if (ks->irq < 0) {
+-		err = ks->irq;
++	if (netdev->irq < 0) {
++		err = netdev->irq;
+ 		goto err_get_irq;
+ 	}
+ 
+@@ -1584,21 +1654,23 @@
+ 	ks->msg_enable = netif_msg_init(msg_enable, (NETIF_MSG_DRV |
+ 						     NETIF_MSG_PROBE |
+ 						     NETIF_MSG_LINK));
++        ks_wake(ks);
+ 	ks_read_config(ks);
+ 
+ 	/* simple check for a valid chip being connected to the bus */
+-	if ((ks_rdreg16(ks, KS_CIDER) & ~CIDER_REV_MASK) != CIDER_ID) {
++	id = ks_rdreg16(ks, KS_CIDER);
++	if ((id & ~CIDER_REV_MASK) != CIDER_ID) {
+ 		ks_err(ks, "failed to read device ID\n");
+ 		err = -ENODEV;
+ 		goto err_register;
+ 	}
+-
++	ks_info(ks,
++		" Found chip, family: 0x%x, id: 0x%x, rev: 0x%x\n",
++		(id >> 8) & 0xff, (id >> 4) & 0xf, (id >> 1) & 0x7);
+ 	if (ks_read_selftest(ks)) {
+-		ks_err(ks, "failed to read device ID\n");
+ 		err = -ENODEV;
+ 		goto err_register;
+ 	}
+-
+ 	err = register_netdev(netdev);
+ 	if (err)
+ 		goto err_register;
+@@ -1610,24 +1682,19 @@
+ 	ks_disable_qmu(ks);
+ 	ks_setup(ks);
+ 	ks_setup_int(ks);
+-	memcpy(netdev->dev_addr, ks->mac_addr, 6);
+ 
+ 	data = ks_rdreg16(ks, KS_OBCR);
+ 	ks_wrreg16(ks, KS_OBCR, data | OBCR_ODS_16MA);
+ 
+-	/**
+-	 * If you want to use the default MAC addr,
+-	 * comment out the 2 functions below.
+-	 */
+-
+-	random_ether_addr(netdev->dev_addr);
++        if (parseMAC(netdev->dev_addr, MACstring, pdev->id) ||
++            !is_valid_ether_addr(netdev->dev_addr)) {
++         /* Use a random MAC address if no valid one specified */
++	  random_ether_addr(netdev->dev_addr);
++          ks_info(ks, "Assigned random MAC address\n");
++        }
+ 	ks_set_mac(ks, netdev->dev_addr);
+-
+-	id = ks_rdreg16(ks, KS_CIDER);
+-
+-	printk(KERN_INFO DRV_NAME
+-		" Found chip, family: 0x%x, id: 0x%x, rev: 0x%x\n",
+-		(id >> 8) & 0xff, (id >> 4) & 0xf, (id >> 1) & 0x7);
++	/* set powermode to soft power down to save power */
++	ks_set_powermode(ks, PMECR_PM_SOFTDOWN);
+ 	return 0;
+ 
+ err_register:
+@@ -1650,12 +1717,15 @@
+ 	struct net_device *netdev = platform_get_drvdata(pdev);
+ 	struct ks_net *ks = netdev_priv(netdev);
+ 	struct resource *iomem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	struct resource *cmdmem = platform_get_resource(pdev,IORESOURCE_MEM, 1);
+ 
+ 	kfree(ks->frame_head_info);
+ 	unregister_netdev(netdev);
+ 	iounmap(ks->hw_addr);
++        iounmap(ks->hw_addr_cmd);
+ 	free_netdev(netdev);
+ 	release_mem_region(iomem->start, resource_size(iomem));
++	release_mem_region(cmdmem->start, resource_size(cmdmem));
+ 	platform_set_drvdata(pdev, NULL);
+ 	return 0;
+ 
+@@ -1688,4 +1758,9 @@
+ MODULE_LICENSE("GPL");
+ module_param_named(message, msg_enable, int, 0);
+ MODULE_PARM_DESC(message, "Message verbosity level (0=none, 31=all)");
++module_param_named(power, pmMode, int, 0644);
++MODULE_PARM_DESC(power, "power management (0=none, 1=saver, 2=agressive)");
++module_param_string(mac, MACstring, sizeof(MACstring), 0);
++MODULE_PARM_DESC(mac,
++ "comma list MAC addresses, one per chip; e.g. 11:67:BC:F1:4:a2,22:...");
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/init/main.c linux-2.6.33.modified/init/main.c
+--- linux-2.6.33/init/main.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/init/main.c	2014-09-12 22:00:39.473150003 -0700
+@@ -116,6 +116,7 @@
+ char __initdata boot_command_line[COMMAND_LINE_SIZE];
+ /* Untouched saved command line (eg. for /proc) */
+ char *saved_command_line;
++EXPORT_SYMBOL(saved_command_line);  /* so modules can parse command_line !! */
+ /* Command line for parameter parsing */
+ static char *static_command_line;
+ 
