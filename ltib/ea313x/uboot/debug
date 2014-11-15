@@ -1,0 +1,13 @@
+#!/bin/sh
+#Start a gdb session with the (local) openocd target -- 11/15/14 brent@mbari.org
+cd `dirname $0`
+: ${targetLog:=lpc313x.log}
+: ${GDBstart:=start.gdb}
+: ${GDB:=/ltibarm/bin/gdb}
+
+openocd --log $targetLog &
+ocdpid=$!
+trap "exec 2>/dev/null; kill $ocdpid && wait $!" EXIT INT QUIT HUP PIPE
+
+echo "==>  \`tail -f $targetLog\` to monitor target debug log  <=="
+$GDB -x $GDBstart "$@"
