@@ -2,9 +2,10 @@
 #Start a gdb session with the (local) openocd target -- 11/19/14 brent@mbari.org
 #***  unplug/replug USB to JTAG dongle before running ***
 cd `dirname $0`
+export CROSS_COMPILE=arm-none-linux-gnueabi-
 : ${targetLog:=lpc313x.log}
 : ${GDBstart:=start.gdb}
-: ${GDB:=/ltibarm/bin/gdb}
+: ${GDB:=${CROSS_COMPILE}gdb}
 
 openocd --log $targetLog &
 ocdpid=$!

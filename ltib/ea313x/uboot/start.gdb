@@ -19,8 +19,8 @@ define startboot
 end
 
 define restart
-  #we load the code where it needs to run
-  #but, as a result, we must carefully avoid copying it
+  #we load the code where it needs to run, but, as a result...
+  #we must skip the code that normally copies the loader into DRAM
   monitor reset halt
   file u-boot
   load
@@ -37,6 +37,22 @@ define restart
   echo Stopped at top of start_armboot()\n
 end
 define remake
-  make "CROSS_COMPILE=arm-none-linux-gnueabi-"
-  restart
+  if $argc == 0
+    make
+  end
+  if $argc == 1
+    make $arg0
+  end
+  if $argc == 2
+    make $arg0 $arg1
+  end
+  if $argc == 3
+    make $arg0 $arg1 $arg2
+  end
+  if $argc == 4
+    make $arg0 $arg1 $arg2 $arg3
+  end
+  if $argc == 5
+    make $arg0 $arg1 $arg2 $arg3 $arg4
+  end
 end
