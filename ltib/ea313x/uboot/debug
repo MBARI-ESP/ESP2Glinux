@@ -1,5 +1,6 @@
 #!/bin/sh
-#Start a gdb session with the (local) openocd target -- 11/15/14 brent@mbari.org
+#Start a gdb session with the (local) openocd target -- 11/19/14 brent@mbari.org
+#***  unplug/replug USB to JTAG dongle before running ***
 cd `dirname $0`
 : ${targetLog:=lpc313x.log}
 : ${GDBstart:=start.gdb}
@@ -10,4 +11,5 @@ ocdpid=$!
 trap "exec 2>/dev/null; kill $ocdpid && wait $!" EXIT INT QUIT HUP PIPE
 
 echo "==>  \`tail -f $targetLog\` to monitor target debug log  <=="
+sleep 2
 $GDB -x $GDBstart "$@"

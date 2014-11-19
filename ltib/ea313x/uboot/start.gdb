@@ -1,9 +1,11 @@
+# revised:  11/19/14 brent@mbari.org
+
 source target.gdb
 cd ~/ltib/rpm/BUILD/u-boot-2009.11
 
 define bootload
   #this load offset puts it at 0x1102900 -- see jump below
-  monitor reset init
+  monitor reset halt
   file
   file u-boot
   load u-boot 0xdda29000
@@ -19,13 +21,16 @@ end
 define restart
   #we load the code where it needs to run
   #but, as a result, we must carefully avoid copying it
-  monitor reset init
+  monitor reset halt
   file u-boot
   load
   thbreak start.S:135
   continue
-  thbreak mmc_legacy_init
   set $pc = stack_setup
+  thbreak lpc313x_init
+  continue
+  thbreak drv_usbtty_init
+  continue
   finish
   set $pc = start_armboot
   step
