@@ -27,8 +27,8 @@ define restart
   thbreak start.S:135
   continue
   set $pc = stack_setup
-  thbreak lpc313x_init
-  continue
+#  thbreak lpc313x_init
+#  continue
   thbreak drv_usbtty_init
   continue
   finish
