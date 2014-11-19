@@ -1,6 +1,15 @@
-#  build updated wireless-compat kernel modules for updating ltibarm kernel
+#  Build updated wireless-compat kernel modules for updating ltibarm kernel
 #   to restore support for rt2800usb and old atmel usb adapters
-# -- 10/24/12 brent@mbari.org
+#  Binaries for from mod-init-tools 
+#    should already be installed in ~/linux/ltib/bin
+#    (configure and make in ltib/rpm/BUILD/mod-init-tools-3.* to generate these)
+#
+#  WARNINGS about missing crc_* symbols are expected
+#
+#  install all modules in /lib/modules/*/updates directory
+#  Many wireless devices require firmware which can be simply copied 
+#  from desktop linux into /lib/firmware (see also the firmware directory here)
+# -- 9/17/14 brent@mbari.org
 #
 : ${compat:=compat-wireless-3.3-2-n}
 : ${ltib:=~/ltib}
