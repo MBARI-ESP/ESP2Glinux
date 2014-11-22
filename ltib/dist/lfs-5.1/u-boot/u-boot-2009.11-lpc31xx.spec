@@ -15,6 +15,7 @@ Patch2          : u-boot-2009.11-disable_NAND_hardware_ecc.patch
 Patch3          : u-boot-2009.11-spansionSPIflash.patch
 Patch4          : u-boot-2009.11-mbari3.patch
 Patch5          : u-boot-2009.11-mbari4.patch
+Patch6          : u-boot-2009.11-mbari5.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -32,6 +33,7 @@ needed for boards using u-boot and the LPC31XX.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 %Build
 : ${PKG_U_BOOT_CONFIG_TYPE:?must be set, e.g. MPC8548CDS_config}

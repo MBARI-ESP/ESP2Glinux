@@ -1,0 +1,1494 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2014-11-21 15:58:12.939258425 -0800
++++ u-boot-2009.11.modified/Makefile	2014-11-13 09:29:53.857285246 -0800
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbari4
++EXTRAVERSION = -mbari5
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2014-11-21 15:58:12.531265643 -0800
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2014-11-21 15:55:29.618146221 -0800
+@@ -1,4 +1,6 @@
+ /*
++* revised:  11/21/14 brent@mbari.org for ESP3G host boards
++*
+ * (C) Copyright 2007-2008
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
+ * Lead Tech Design <www.leadtechdesign.com>
+@@ -30,6 +32,12 @@
+ #include <net.h>
+ #include <netdev.h>
+ 
++#include <nand.h>
++#include <spi.h>
++#include <asm-arm/arch-lpc313x/nand.h>
++
++#include "../drivers/net/ks8851_mll.h"
++
+ /* Event router macros */
+ #define EVRT_VBUS_BANK                  3
+ #define EVRT_VBUS_BIT			(1 << 23)
+@@ -39,6 +47,43 @@
+ #define PCA9532_USB_VBUS_PWR_REG	0x07
+ #define PCA9532_USB_VBUS_PWR_VAL	0x10
+ 
++
++/***********************************************************************
++ * GPIO register definitions
++ **********************************************************************/
++#define GPIO_PHYS         (0x13003000)
++#define GPIO_STATE(port)     __REG (GPIO_PHYS + (port) + 0x00)  //input state
++#define GPIO_STATE_M0(port)  __REG (GPIO_PHYS + (port) + 0x10)  //output state
++#define GPIO_STATE_M1(port)  __REG (GPIO_PHYS + (port) + 0x20)  //output enable
++#define GPIO_STATE(port)     __REG (GPIO_PHYS + (port) + 0x00)
++#define GPIO_STATE_M0(port)  __REG (GPIO_PHYS + (port) + 0x10)
++#define GPIO_M0_SET(port)    __REG (GPIO_PHYS + (port) + 0x14)
++#define GPIO_M0_RESET(port)  __REG (GPIO_PHYS + (port) + 0x18)
++#define GPIO_STATE_M1(port)  __REG (GPIO_PHYS + (port) + 0x20)
++#define GPIO_M1_SET(port)    __REG (GPIO_PHYS + (port) + 0x24)
++#define GPIO_M1_RESET(port)  __REG (GPIO_PHYS + (port) + 0x28)
++
++#define GPIO_OUT_LOW(port, pin)  do { GPIO_M1_SET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
++#define GPIO_OUT_HIGH(port, pin) do { GPIO_M1_SET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
++#define GPIO_IN(port, pin)       do { GPIO_M1_RESET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
++#define GPIO_DRV_IP(port, pin)   do { GPIO_M1_RESET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
++
++#define IOCONF_EBI_MCI       (0x000)
++#define IOCONF_EBI_I2STX_0   (0x040)
++#define IOCONF_CGU           (0x080)
++#define IOCONF_I2SRX_0       (0x0c0)
++#define IOCONF_I2SRX_1       (0x100)
++#define IOCONF_I2STX_1       (0x140)
++#define IOCONF_EBI           (0x180)
++#define IOCONF_GPIO          (0x1c0)
++#define IOCONF_I2C1          (0x200)
++#define IOCONF_SPI           (0x240)
++#define IOCONF_NAND_CTRL     (0x280)
++#define IOCONF_PWM           (0x2c0)
++#define IOCONF_UART          (0x300)
++
++
++
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ const SPI_SLAVE_CONFIG_T slavecfg =
+@@ -56,63 +101,124 @@
+ extern int is_nand_init_done;
+ extern int is_spi_init_done;
+ 
+-#ifdef CONFIG_DRIVER_DM9000
+-int board_eth_init(bd_t *bis)
++/*
++   Group of 8 gpios used for enabling RS-232 drivers on ESP 3G host
++   This group of bits reads back as zeros initially on the ESP3G host
++   They read back as 0104 (octal) on the PC104 carrier
++   If any other value, we assume we're on the EA eval board
++*/
++
++static uint16_t boardID;
++
++static inline uint16_t getBoardId(void)
+ {
+-	return dm9000_initialize(bis);
++  return boardID = (GPIO_STATE(IOCONF_GPIO)>>5) & 0xff;
+ }
+-#endif
+ 
+-int misc_init_r(void)
++static inline void assertPeripheralReset(void)
+ {
+-	unsigned char i = 0;
+-	unsigned char oft = 0;
+-	uchar env_enetaddr[6];
+-	char enetvar[32] = "ethaddr";
+-	unsigned int rnd_num = 0;
+-	char buf[32] = {0};
+-
+-	/*
+-	* If "ethaddr" environment variable is 00:00:00:00:00:00,
+-	* generate a random MAC address using Random Number Gen Module.
+-	*/
+-	eth_getenv_enetaddr(enetvar, env_enetaddr);
+-	if((env_enetaddr[0] | env_enetaddr[1] | env_enetaddr[2] |
+-		env_enetaddr[3] | env_enetaddr[4] | env_enetaddr[5]) == 0x0) {
+-
+-			/* Enable clock for Random Number Generator Module */
+-			cgu_clk_en_dis(CGU_SB_RNG_PCLK_ID, 1);
+-			rnd_num = *((volatile u32 *)(CIC_RNG_BASE));
+-
+-			env_enetaddr[0] = 0x00;
+-			env_enetaddr[1] = 0x08;
+-			for (i = 2; i < 6; i++) {
+-				env_enetaddr[i] = ((rnd_num >> ((i - 2) * 8)) & 0xFF);
+-			}
++  GPIO_OUT_LOW(IOCONF_I2SRX_0, 1);  //I2SRX_BCK0
++}
+ 
+-			sprintf(buf,"%02x:%02x:%02x:%02x:%02x:%02x",
+-				env_enetaddr[0], env_enetaddr[1],
+-				env_enetaddr[2], env_enetaddr[3],
+-				env_enetaddr[4], env_enetaddr[5]);
+-			setenv(enetvar, buf);
+-	}
++static inline void releasePeripheralReset(void)
++{
++  GPIO_IN(IOCONF_I2SRX_0, 1);       //I2SRX_BCK0
++}
+ 
+-	/* fill device MAC address registers */
+-	for (i = 0, oft = 0x10; i < 6; i++, oft++) {
+-		*(volatile u8 *)DM9000_IO = oft;
+-		*(volatile u8 *)DM9000_DATA = env_enetaddr[i];
+-	}
+ 
+-	for (i = 0, oft = 0x16; i < 8; i++, oft++) {
+-		*(volatile u8 *)DM9000_IO = oft;
+-		*(volatile u8 *)DM9000_DATA = 0xff;
+-	}
++int board_eth_init(bd_t *bis)
++{
++#ifdef CONFIG_KS8851_MLL
++  switch (boardID) {
++    case 0:
++    case 0104:
++      /*
++       * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
++       * Note: These timings were calculated for MASTER_CLOCK = 90000000
++       *  according to the KS8851_MLL timings.
++       */
++      MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
++      MPMC_STWTOEN1 = 0;
++      /* enable oe toggle between consec reads */
++      SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);  //57ns read strobe
++      MPMC_STWTWEN1 = 0;
++      MPMC_STWTWR1 = 4;  //57ns WR strobe
++
++      udelay(110*1000);  //110ms for reset generator to release peripheral reset
++      return ks8851_mll_initialize(0, EXT_SRAM0_1_BASE);
++  }
++#endif
++#ifdef CONFIG_DRIVER_DM9000
++  return dm9000_initialize(bis);
++#else
++  return -1;
++#endif
++}
+ 
+-	return 0;
++
++int misc_init_r(void)
++{
++  unsigned char i = 0;
++  uchar env_enetaddr[6];
++  char enetvar[32] = "ethaddr";
++  unsigned int rnd_num = 0;
++  char buf[32] = {0};
++
++  /*
++  * If "ethaddr" environment variable is 00:00:00:00:00:00,
++  * generate a random MAC address using Random Number Gen Module.
++  */
++  eth_getenv_enetaddr(enetvar, env_enetaddr);
++  if((env_enetaddr[0] | env_enetaddr[1] | env_enetaddr[2] |
++          env_enetaddr[3] | env_enetaddr[4] | env_enetaddr[5]) == 0x0) {
++
++                  /* Enable clock for Random Number Generator Module */
++                  cgu_clk_en_dis(CGU_SB_RNG_PCLK_ID, 1);
++                  rnd_num = *((volatile u32 *)(CIC_RNG_BASE));
++
++                  env_enetaddr[0] = 0x00;
++                  env_enetaddr[1] = 0x08;
++                  for (i = 2; i < 6; i++) {
++                          env_enetaddr[i] = ((rnd_num >> ((i - 2) * 8)) & 0xFF);
++                  }
++
++                  sprintf(buf,"%02x:%02x:%02x:%02x:%02x:%02x",
++                          env_enetaddr[0], env_enetaddr[1],
++                          env_enetaddr[2], env_enetaddr[3],
++                          env_enetaddr[4], env_enetaddr[5]);
++                  setenv(enetvar, buf);
++  }
++  return 0;
++}
++
++/*
++  initialization common to ESP3G and PC104 carrier
++*/
++static void pc104g3init(const char *signon)
++{
++  assertPeripheralReset();
++  udelay(10*1000);
++  releasePeripheralReset();
++  printf(signon);
+ }
+ 
++
+ int board_init(void)
+ {
++         /* add other devices depending on carrier board type */
++    switch (getBoardId()) {
++      case 0:  /* ESP 3G baseboard */
++        pc104g3init("LPC31xx for MBARI ESP 3G\n");
++        break;
++
++      case 0104:  /* (octal 0104) PC/104 carrier */
++        pc104g3init("LPC31xx on MBARI PC/104 Carrier\n");
++        break;
++
++      default:
++        printf("Embedded Artists LPC31xx (board=0x%02x)\n", boardID);
++    }
++
+ #ifdef CONFIG_EA3152
+ 	gd->bd->bi_arch_number = MACH_TYPE_EA3152;
+ #else
+@@ -174,7 +280,7 @@
+ 			}
+ 		} else {
+ 			/* enable VBUS power */
+-			i2c_write(I2C0_CTRL, PCA9532_SLAVE_ADDR, PCA9532_USB_VBUS_PWR_REG, 
++			i2c_write(I2C0_CTRL, PCA9532_SLAVE_ADDR, PCA9532_USB_VBUS_PWR_REG,
+ 				1, PCA9532_USB_VBUS_PWR_VAL, 1);
+ 			init = 1;
+ 			while (!(EVRT_RSR(EVRT_VBUS_BANK) & EVRT_VBUS_BIT)) {
+@@ -183,7 +289,7 @@
+ 		}
+ 	} else {
+ 		/* disable VBUS power */
+-		i2c_write(I2C0_CTRL, PCA9532_SLAVE_ADDR, PCA9532_USB_VBUS_PWR_REG, 
++		i2c_write(I2C0_CTRL, PCA9532_SLAVE_ADDR, PCA9532_USB_VBUS_PWR_REG,
+ 			1, 0x00, 1);
+ 		init = 0;
+ 		while (EVRT_RSR(EVRT_VBUS_BANK) & EVRT_VBUS_BIT) {
+@@ -203,4 +309,3 @@
+ 	gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
+ 	return 0;
+ }
+-
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/init.c u-boot-2009.11.modified/cpu/lpc313x/init.c
+--- u-boot-2009.11/cpu/lpc313x/init.c	2014-11-21 15:58:12.675263095 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/init.c	2014-11-18 16:57:25.742366738 -0800
+@@ -171,6 +171,7 @@
+ static int sdmmc_copy_boot_image(ulong image_length, volatile unsigned char * loadPointer)
+ {
+ #ifdef CONFIG_CPU_MMC_BOOT
++unsigned int mmc_get_card_size(int dev);
+ 	unsigned int partition_number;
+ 	partition_t partitionInfo;
+ 	unsigned int max_num_sectors = mmc_get_card_size((int)mmc_get_dev(0));
+@@ -423,7 +424,7 @@
+ #endif
+ 
+ #ifdef CONFIG_CPU_SPI_BOOT
+-	/* Inialize SPI NOR flah*/
++	/* Inialize SPI NOR flash*/
+ 	spi_init();
+ 	is_spi_init_done = 1;
+ #endif
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/mci.c u-boot-2009.11.modified/cpu/lpc313x/mci.c
+--- u-boot-2009.11/cpu/lpc313x/mci.c	2014-11-21 15:58:12.683262953 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/mci.c	2014-11-18 19:50:50.648599037 -0800
+@@ -613,8 +613,11 @@
+ }
+ 
+ ulong mci_read_blocks( int devid, ulong start_block,
+-		long blkcnt, void* buffer)
++						lbaint_t blkcnt, void* buffer)
+ {
++  if (!blkcnt)
++  	return 0;
++  {
+ 	MCI_CARD_INFO_T* pdev = &g_card_info;
+ 	long end_block = start_block + blkcnt - 1; 
+ 	long cbRead = (end_block - start_block + 1) << 9; /*(end_block - start_block) * 512 */
+@@ -623,8 +626,6 @@
+ 
+ 	/* if card is not acquired return immediately */
+ 	if ((prv_card_acquired(pdev) == 0)
+-			|| (end_block < start_block) /* check block index in range */
+-			|| (start_block < 0)
+ 			|| (end_block > pdev->blocknr)) {
+ 		printf("Invalid parameters or Card is not aquired\n");
+ 		return -1;
+@@ -662,11 +663,15 @@
+ 		cbRead = 0; /* return error if command fails */
+ 
+ 	return cbRead >> 9;
++  }
+ }
+ 
+ ulong mci_write_blocks(int devid, ulong start_block,
+-		long blkcnt, void* buffer)
++						lbaint_t blkcnt, const void* buffer)
+ {
++  if (!blkcnt)
++  	return 0;
++  {
+ 	MCI_CARD_INFO_T* pdev = &g_card_info;
+ 	/*(end_block - start_block) * 512 */
+ 	long end_block = start_block + blkcnt - 1; 
+@@ -676,11 +681,8 @@
+ 
+ 	/* if card is not acquired return immediately */
+ 	if ((prv_card_acquired(pdev) == 0)
+-			|| (end_block < start_block) /* check block index in range */
+-			|| (start_block < 0)
+-			|| (end_block > pdev->blocknr)) {
++			|| (end_block > pdev->blocknr))
+ 		return 0;
+-	}
+ 
+ 	/* put card in trans state */
+ 	if (prv_set_trans_state(pdev) != _NO_ERROR)
+@@ -716,6 +718,7 @@
+ 	}
+ 
+ 	return cbWrote >> 9;
++  }
+ }
+
+
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/Makefile u-boot-2009.11.modified/drivers/net/Makefile
+--- u-boot-2009.11/drivers/net/Makefile	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/drivers/net/Makefile	2014-11-12 15:10:40.704465025 -0800
+@@ -44,6 +44,7 @@
+ COBJS-$(CONFIG_INCA_IP_SWITCH) += inca-ip_sw.o
+ COBJS-$(CONFIG_KIRKWOOD_EGIGA) += kirkwood_egiga.o
+ COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
++COBJS-$(CONFIG_KS8851_MLL) += ks8851_mll.o
+ COBJS-$(CONFIG_DRIVER_LAN91C96) += lan91c96.o
+ COBJS-$(CONFIG_MACB) += macb.o
+ COBJS-$(CONFIG_MCFFEC) += mcffec.o mcfmii.o
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/Makefile.rej u-boot-2009.11.modified/drivers/net/Makefile.rej
+--- u-boot-2009.11/drivers/net/Makefile.rej	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/drivers/net/Makefile.rej	2014-11-12 15:05:20.007242156 -0800
+@@ -0,0 +1,10 @@
++--- drivers/net/Makefile
+++++ drivers/net/Makefile
++@@ -50,6 +50,7 @@
++ COBJS-$(CONFIG_GRETH) += greth.o
++ COBJS-$(CONFIG_INCA_IP_SWITCH) += inca-ip_sw.o
++ COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
+++COBJS-$(CONFIG_KS8851_MLL) += ks8851_mll.o
++ COBJS-$(CONFIG_LAN91C96) += lan91c96.o
++ COBJS-$(CONFIG_MACB) += macb.o
++ COBJS-$(CONFIG_MCFFEC) += mcffec.o mcfmii.o
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/dm9000x.c u-boot-2009.11.modified/drivers/net/dm9000x.c
+--- u-boot-2009.11/drivers/net/dm9000x.c	2014-11-21 15:58:12.715262388 -0800
++++ u-boot-2009.11.modified/drivers/net/dm9000x.c	2014-11-12 23:43:22.061663882 -0800
+@@ -603,7 +603,6 @@
+ static void
+ phy_write(int reg, u16 value)
+ {
+-
+ 	/* Fill the phyxcer register into REG_0C */
+ 	DM9000_iow(DM9000_EPAR, DM9000_PHY | reg);
+ 
+@@ -616,6 +615,24 @@
+ 	DM9000_DBG("phy_write(reg:0x%x, value:0x%x)\n", reg, value);
+ }
+ 
++
++static int dm9000_write_hwaddr(struct eth_device *dev)
++{
++  /* fill device MAC address registers */
++  unsigned char i, oft;
++  for (i = 0, oft = 0x10; i < 6; i++, oft++) {
++          *(volatile u8 *)DM9000_IO = oft;
++          *(volatile u8 *)DM9000_DATA = dev->enetaddr[i];
++  }
++
++  for (i = 0, oft = 0x16; i < 8; i++, oft++) {
++          *(volatile u8 *)DM9000_IO = oft;
++          *(volatile u8 *)DM9000_DATA = 0xff;
++  }
++  return 0;
++}
++
++
+ int dm9000_initialize(bd_t *bis)
+ {
+ 	struct eth_device *dev = &(dm9000_info.netdev);
+@@ -627,6 +644,7 @@
+ 	dev->halt = dm9000_halt;
+ 	dev->send = dm9000_send;
+ 	dev->recv = dm9000_rx;
++        dev->write_hwaddr = dm9000_write_hwaddr;
+ 	sprintf(dev->name, "dm9000");
+ 
+ 	eth_register(dev);
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/ks8851_mll.c u-boot-2009.11.modified/drivers/net/ks8851_mll.c
+--- u-boot-2009.11/drivers/net/ks8851_mll.c	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/drivers/net/ks8851_mll.c	2014-11-21 15:55:23.266258482 -0800
+@@ -0,0 +1,605 @@
++/*
++ * Micrel KS8851_MLL 16bit Network driver
++ * Copyright (c) 2011 Roberto Cerati <roberto.cerati@bticino.it>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#include <asm/io.h>
++#include <common.h>
++#include <command.h>
++#include <malloc.h>
++#include <net.h>
++#include <miiphy.h>
++
++#include "ks8851_mll.h"
++
++#define mdelay(ms) udelay(1000*(ms))
++
++#define DRIVERNAME			"ks8851_mll"
++
++#define MAX_RECV_FRAMES			32
++#define MAX_BUF_SIZE			2048
++#define TX_BUF_SIZE			2000
++#define RX_BUF_SIZE			2000
++
++static const struct chip_id chip_ids[] =  {
++	{CIDER_ID, "KSZ8851"},
++	{0, NULL},
++};
++
++/*
++ * union ks_tx_hdr - tx header data
++ * @txb: The header as bytes
++ * @txw: The header as 16bit, little-endian words
++ *
++ * A dual representation of the tx header data to allow
++ * access to individual bytes, and to allow 16bit accesses
++ * with 16bit alignment.
++ */
++union ks_tx_hdr {
++	u8      txb[4];
++	__le16  txw[2];
++};
++
++/*
++ * struct ks_net - KS8851 driver private data
++ * @net_device	: The network device we're bound to
++ * @txh		: temporaly buffer to save status/length.
++ * @frame_head_info	: frame header information for multi-pkt rx.
++ * @statelock	: Lock on this structure for tx list.
++ * @msg_enable	: The message flags controlling driver output (see ethtool).
++ * @frame_cnt	: number of frames received.
++ * @irq		: irq number assigned to this device.
++ * @rc_rxqcr	: Cached copy of KS_RXQCR.
++ * @rc_txcr	: Cached copy of KS_TXCR.
++ * @rc_ier	: Cached copy of KS_IER.
++ * @sharedbus	: Multipex(addr and data bus) mode indicator.
++ * @cmd_reg_cache	: command register cached.
++ * @cmd_reg_cache_int	: command register cached. Used in the irq handler.
++ * @promiscuous	: promiscuous mode indicator.
++ * @all_mcast	: mutlicast indicator.
++ * @mcast_lst_size	: size of multicast list.
++ * @mcast_lst		: multicast list.
++ * @mcast_bits		: multicast enabed.
++ * @mac_addr		: MAC address assigned to this device.
++ * @fid			: frame id.
++ * @enabled		: indicator this device works.
++ */
++
++/* Receive multiplex framer header info */
++struct type_frame_head {
++	u16	sts;         /* Frame status */
++	u16	len;         /* Byte count */
++} fr_h_i[MAX_RECV_FRAMES];
++
++struct ks_net {
++	struct net_device	*netdev;
++	union ks_tx_hdr		txh;
++	struct type_frame_head	*frame_head_info;
++	u32			msg_enable;
++	u32			frame_cnt;
++	int			irq;
++	u16			rc_rxqcr;
++	u16			rc_txcr;
++	u16			rc_ier;
++	u16			sharedbus;
++	u16			cmd_reg_cache;
++	u16			cmd_reg_cache_int;
++	u16			promiscuous;
++	u16			all_mcast;
++	u16			mcast_lst_size;
++	u8			mcast_lst[MAX_MCAST_LST][MAC_ADDR_LEN];
++	u8			mcast_bits[HW_MCAST_SIZE];
++	u8			mac_addr[6];
++	u8                      fid;
++	u8			enabled;
++} ks_str, *ks;
++
++#define BE3             0x8000      /* Byte Enable 3 */
++#define BE2             0x4000      /* Byte Enable 2 */
++#define BE1             0x2000      /* Byte Enable 1 */
++#define BE0             0x1000      /* Byte Enable 0 */
++
++#define CMD    6     /* command address = iobase+CMD */
++
++static u8 ks_rdreg8(struct eth_device *dev, u16 offset)
++{
++	u8 shift_bit = offset & 0x03;
++	u8 shift_data = (offset & 1) << 3;
++
++	writew(offset | (BE0 << shift_bit), dev->iobase + CMD);
++	return (u8)(readw(dev->iobase) >> shift_data);
++}
++
++static u16 ks_rdreg16(struct eth_device *dev, u16 offset)
++{
++	writew(offset | ((BE1 | BE0) << (offset & 0x02)), dev->iobase + CMD);
++	return readw(dev->iobase);
++}
++
++static void ks_wrreg8(struct eth_device *dev, u16 offset, u8 val)
++{
++	u8 shift_bit = (offset & 0x03);
++	u16 value_write = (u16)(val << ((offset & 1) << 3));
++
++	writew(offset | (BE0 << shift_bit), dev->iobase + CMD);
++	writew(value_write, dev->iobase);
++}
++
++static void ks_wrreg16(struct eth_device *dev, u16 offset, u16 val)
++{
++	writew(offset | ((BE1 | BE0) << (offset & 0x02)), dev->iobase + CMD);
++	writew(val, dev->iobase);
++}
++
++/*
++ * ks_inblk - read a block of data from QMU. This is called after sudo DMA mode
++ * enabled.
++ * @ks: The chip state
++ * @wptr: buffer address to save data
++ * @len: length in byte to read
++ */
++static inline void ks_inblk(struct eth_device *dev, u16 *wptr, u32 len)
++{
++	len >>= 1;
++
++	while (len--)
++		*wptr++ = readw(dev->iobase);
++}
++
++/*
++ * ks_outblk - write data to QMU. This is called after sudo DMA mode enabled.
++ * @ks: The chip information
++ * @wptr: buffer address
++ * @len: length in byte to write
++ */
++static inline void ks_outblk(struct eth_device *dev, u16 *wptr, u32 len)
++{
++	len >>= 1;
++
++	while (len--)
++		writew(*wptr++, dev->iobase);
++}
++
++static void ks_enable_int(struct eth_device *dev)
++{
++	ks_wrreg16(dev, KS_IER, ks->rc_ier);
++}
++
++static void ks_set_powermode(struct eth_device *dev, unsigned pwrmode)
++{
++	unsigned pmecr;
++
++	ks_rdreg16(dev, KS_GRR);
++	pmecr = ks_rdreg16(dev, KS_PMECR);
++	pmecr &= ~PMECR_PM_MASK;
++	pmecr |= pwrmode;
++
++	ks_wrreg16(dev, KS_PMECR, pmecr);
++}
++
++
++/*
++ * ks_soft_reset - issue one of the soft reset to the device
++ * @ks: The device state.
++ * @op: The bit(s) to set in the GRR
++ *
++ * Issue the relevant soft-reset command to the device's GRR register
++ * specified by @op.
++ *
++ * Note, the delays are in there as a caution to ensure that the reset
++ * has time to take effect and then complete. Since the datasheet does
++ * not currently specify the exact sequence, we have chosen something
++ * that seems to work with our device.
++ */
++static void ks_soft_reset(struct eth_device *dev, unsigned op)
++{
++	/* Disable interrupt first */
++	ks_wrreg16(dev, KS_IER, 0x0000);
++	ks_wrreg16(dev, KS_GRR, op);
++	mdelay(1);	/* wait a short time to effect reset */
++	ks_wrreg16(dev, KS_GRR, 0);
++	mdelay(1);	/* wait for condition to clear */
++}
++
++void ks_enable_qmu(struct eth_device *dev)
++{
++	u16 w;
++
++	w = ks_rdreg16(dev, KS_TXCR);
++
++	/* Enables QMU Transmit (TXCR). */
++	ks_wrreg16(dev, KS_TXCR, w | TXCR_TXE);
++
++	/* Enable RX Frame Count Threshold and Auto-Dequeue RXQ Frame */
++	w = ks_rdreg16(dev, KS_RXQCR);
++	ks_wrreg16(dev, KS_RXQCR, w | RXQCR_RXFCTE);
++
++	/* Enables QMU Receive (RXCR1). */
++	w = ks_rdreg16(dev, KS_RXCR1);
++	ks_wrreg16(dev, KS_RXCR1, w | RXCR1_RXE);
++}
++
++static void ks_disable_qmu(struct eth_device *dev)
++{
++	u16 w;
++
++	w = ks_rdreg16(dev, KS_TXCR);
++
++	/* Disables QMU Transmit (TXCR). */
++	w &= ~TXCR_TXE;
++	ks_wrreg16(dev, KS_TXCR, w);
++
++	/* Disables QMU Receive (RXCR1). */
++	w = ks_rdreg16(dev, KS_RXCR1);
++	w &= ~RXCR1_RXE;
++	ks_wrreg16(dev, KS_RXCR1, w);
++}
++
++static inline void ks_read_qmu(struct eth_device *dev, u16 *buf, u32 len)
++{
++	/* 1. set sudo DMA mode */
++	ks_wrreg16(dev, KS_RXFDPR, RXFDPR_RXFPAI);
++	ks_wrreg8(dev, KS_RXQCR, (ks->rc_rxqcr | RXQCR_SDA) & 0xff);
++
++	/*
++	 * 2. read prepend data
++	 *
++	 * read 4 + extra bytes and discard them.
++	 * extra bytes for dummy, 2 for status, 2 for len
++	 */
++
++	ks_inblk(dev, buf, 4 + 2);
++
++	/* 3. read pkt data */
++	ks_inblk(dev, buf, ALIGN(len, 4));
++
++	/* 4. reset sudo DMA Mode */
++	ks_wrreg8(dev, KS_RXQCR, (ks->rc_rxqcr & ~RXQCR_SDA) & 0xff);
++}
++
++static void ks_rcv(struct eth_device *dev, uchar **pv_data)
++{
++	struct type_frame_head *frame_hdr = ks->frame_head_info;
++	int i;
++
++	ks->frame_cnt = ks_rdreg16(dev, KS_RXFCTR) >> 8;
++
++	/* read all header information */
++	for (i = 0; i < ks->frame_cnt; i++) {
++		/* Checking Received packet status */
++		frame_hdr->sts = ks_rdreg16(dev, KS_RXFHSR);
++		/* Get packet len from hardware */
++		frame_hdr->len = ks_rdreg16(dev, KS_RXFHBCR);
++		frame_hdr++;
++	}
++
++	frame_hdr = ks->frame_head_info;
++	while (ks->frame_cnt--) {
++		if ((frame_hdr->sts & RXFSHR_RXFV) &&
++		    (frame_hdr->len < RX_BUF_SIZE) &&
++		    frame_hdr->len) {
++			/* read data block including CRC 4 bytes */
++			ks_read_qmu(dev, (u16 *)(*pv_data), frame_hdr->len);
++
++			/* NetRxPackets buffer size is ok (*pv_data pointer) */
++			NetReceive(*pv_data, frame_hdr->len);
++			pv_data++;
++		} else {
++			ks_wrreg16(dev, KS_RXQCR, (ks->rc_rxqcr | RXQCR_RRXEF));
++			printf(DRIVERNAME ": bad packet\n");
++		}
++		frame_hdr++;
++	}
++}
++
++/*
++ * ks_read_selftest - read the selftest memory info.
++ * @ks: The device state
++ *
++ * Read and check the TX/RX memory selftest information.
++ */
++static int ks_read_selftest(struct eth_device *dev)
++{
++	u16 both_done = MBIR_TXMBF | MBIR_RXMBF;
++	u16 mbir;
++	int ret = 0;
++
++	mbir = ks_rdreg16(dev, KS_MBIR);
++
++	if ((mbir & both_done) != both_done) {
++		printf(DRIVERNAME ": Memory selftest not finished\n");
++		return 0;
++	}
++
++	if (mbir & MBIR_TXMBFA) {
++		printf(DRIVERNAME ": TX memory selftest fails\n");
++		ret |= 1;
++	}
++
++	if (mbir & MBIR_RXMBFA) {
++		printf(DRIVERNAME ": RX memory selftest fails\n");
++		ret |= 2;
++	}
++
++	debug(DRIVERNAME ": the selftest passes\n");
++
++	return ret;
++}
++
++static void ks_setup(struct eth_device *dev)
++{
++	u16 w;
++
++	/* Setup Transmit Frame Data Pointer Auto-Increment (TXFDPR) */
++	ks_wrreg16(dev, KS_TXFDPR, TXFDPR_TXFPAI);
++
++	/* Setup Receive Frame Data Pointer Auto-Increment */
++	ks_wrreg16(dev, KS_RXFDPR, RXFDPR_RXFPAI);
++
++	/* Setup Receive Frame Threshold - 1 frame (RXFCTFC) */
++	ks_wrreg16(dev, KS_RXFCTR, 1 & RXFCTR_THRESHOLD_MASK);
++
++	/* Setup RxQ Command Control (RXQCR) */
++	ks->rc_rxqcr = RXQCR_CMD_CNTL;
++	ks_wrreg16(dev, KS_RXQCR, ks->rc_rxqcr);
++
++	/*
++	 * set the force mode to half duplex, default is full duplex
++	 * because if the auto-negotiation fails, most switch uses
++	 * half-duplex.
++	 */
++	w = ks_rdreg16(dev, KS_P1MBCR);
++	w &= ~P1MBCR_FORCE_FDX;
++	ks_wrreg16(dev, KS_P1MBCR, w);
++
++	w = TXCR_TXFCE | TXCR_TXPE | TXCR_TXCRC | TXCR_TCGIP;
++	ks_wrreg16(dev, KS_TXCR, w);
++
++	w = RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE | RXCR1_RXME | RXCR1_RXIPFCC;
++
++	/* Normal mode */
++	w |= RXCR1_RXPAFMA;
++
++	ks_wrreg16(dev, KS_RXCR1, w);
++}
++
++static void ks_setup_int(struct eth_device *dev)
++{
++	ks->rc_ier = 0x00;
++
++	/* Clear the interrupts status of the hardware. */
++	ks_wrreg16(dev, KS_ISR, 0xffff);
++
++	/* Enables the interrupts of the hardware. */
++	ks->rc_ier = (IRQ_LCI | IRQ_TXI | IRQ_RXI);
++}
++
++static int ks8851_mll_detect_chip(struct eth_device *dev)
++{
++	unsigned short val, i;
++
++	val = ks_rdreg16(dev, KS_CIDER);
++
++	if (val == 0xffff) {
++		/* Special case -- no chip present */
++		printf(DRIVERNAME ":  is chip mounted ?\n");
++		return -1;
++	} else if ((val & 0xfff0) != CIDER_ID) {
++		printf(DRIVERNAME ": Invalid chip id 0x%04x\n", val);
++		return -1;
++	}
++
++	debug("Read back KS8851 id 0x%x\n", val);
++
++	/* only one entry in the table */
++	val &= 0xfff0;
++	for (i = 0; chip_ids[i].id != 0; i++) {
++		if (chip_ids[i].id == val)
++			break;
++	}
++	if (!chip_ids[i].id) {
++		printf(DRIVERNAME ": Unknown chip ID %04x\n", val);
++		return -1;
++	}
++
++	dev->priv = (void *)&chip_ids[i];
++
++	return 0;
++}
++
++static void ks8851_mll_reset(struct eth_device *dev)
++{
++	/* wake up powermode to normal mode */
++	ks_set_powermode(dev, PMECR_PM_NORMAL);
++	mdelay(1);	/* wait for normal mode to take effect */
++
++	/* Disable interrupt and reset */
++	ks_soft_reset(dev, GRR_GSR);
++
++	/* turn off the IRQs and ack any outstanding */
++	ks_wrreg16(dev, KS_IER, 0x0000);
++	ks_wrreg16(dev, KS_ISR, 0xffff);
++
++	/* shutdown RX/TX QMU */
++	ks_disable_qmu(dev);
++}
++
++static void ks8851_mll_phy_configure(struct eth_device *dev)
++{
++	u16 data;
++
++	ks_setup(dev);
++	ks_setup_int(dev);
++
++	/* Probing the phy */
++	data = ks_rdreg16(dev, KS_OBCR);
++	ks_wrreg16(dev, KS_OBCR, data | OBCR_ODS_16MA);
++
++	debug(DRIVERNAME ": phy initialized\n");
++}
++
++static void ks8851_mll_enable(struct eth_device *dev)
++{
++	ks_wrreg16(dev, KS_ISR, 0xffff);
++	ks_enable_int(dev);
++	ks_enable_qmu(dev);
++}
++
++static int ks8851_mll_init(struct eth_device *dev, bd_t *bd)
++{
++	debug(DRIVERNAME ": detected %s controller\n",
++              (struct chip_id *)(dev->priv)->name);
++
++	if (ks_read_selftest(dev)) {
++		printf(DRIVERNAME ": Selftest failed\n");
++		return -1;
++	}
++
++	ks8851_mll_reset(dev);
++
++	/* Configure the PHY, initialize the link state */
++	ks8851_mll_phy_configure(dev);
++
++	/* static allocation of private informations */
++	ks->frame_head_info = fr_h_i;
++
++	/* Turn on Tx + Rx */
++	ks8851_mll_enable(dev);
++
++	return 0;
++}
++
++static void ks_write_qmu(struct eth_device *dev, u8 *pdata, u16 len)
++{
++	/* start header at txb[0] to align txw entries */
++	ks->txh.txw[0] = 0;
++	ks->txh.txw[1] = cpu_to_le16(len);
++
++	/* 1. set sudo-DMA mode */
++	ks_wrreg16(dev, KS_TXFDPR, TXFDPR_TXFPAI);
++	ks_wrreg8(dev, KS_RXQCR, (ks->rc_rxqcr | RXQCR_SDA) & 0xff);
++	/* 2. write status/lenth info */
++	ks_outblk(dev, ks->txh.txw, 4);
++	/* 3. write pkt data */
++	ks_outblk(dev, (u16 *)pdata, ALIGN(len, 4));
++	/* 4. reset sudo-DMA mode */
++	ks_wrreg8(dev, KS_RXQCR, (ks->rc_rxqcr & ~RXQCR_SDA) & 0xff);
++	/* 5. Enqueue Tx(move the pkt from TX buffer into TXQ) */
++	ks_wrreg16(dev, KS_TXQCR, TXQCR_METFE);
++	/* 6. wait until TXQCR_METFE is auto-cleared */
++	do { } while (ks_rdreg16(dev, KS_TXQCR) & TXQCR_METFE);
++}
++
++static int ks8851_mll_send(struct eth_device *dev,
++                            volatile void *packet, int length)
++{
++	u8 *data = (u8 *)packet;
++	u16 tmplen = (u16)length;
++	u16 retv;
++
++	/*
++	 * Extra space are required:
++	 * 4 byte for alignment, 4 for status/length, 4 for CRC
++	 */
++	retv = ks_rdreg16(dev, KS_TXMIR) & 0x1fff;
++	if (retv >= tmplen + 12) {
++		ks_write_qmu(dev, data, tmplen);
++		return 0;
++	} else {
++		printf(DRIVERNAME ": failed to send packet: No buffer\n");
++		return -1;
++	}
++}
++
++static void ks8851_mll_halt(struct eth_device *dev)
++{
++	ks8851_mll_reset(dev);
++}
++
++/*
++ * Maximum receive ring size; that is, the number of packets
++ * we can buffer before overflow happens. Basically, this just
++ * needs to be enough to prevent a packet being discarded while
++ * we are processing the previous one.
++ */
++static int ks8851_mll_recv(struct eth_device *dev)
++{
++	u16 status;
++
++	status = ks_rdreg16(dev, KS_ISR);
++
++	ks_wrreg16(dev, KS_ISR, status);
++
++	if ((status & IRQ_RXI))
++		ks_rcv(dev, (uchar **)NetRxPackets);
++
++	if ((status & IRQ_LDI)) {
++		u16 pmecr = ks_rdreg16(dev, KS_PMECR);
++		pmecr &= ~PMECR_WKEVT_MASK;
++		ks_wrreg16(dev, KS_PMECR, pmecr | PMECR_WKEVT_LINK);
++	}
++
++	return 0;
++}
++
++static int ks8851_mll_write_hwaddr(struct eth_device *dev)
++{
++	u16 addrl, addrm, addrh;
++
++	addrh = (dev->enetaddr[0] << 8) | dev->enetaddr[1];
++	addrm = (dev->enetaddr[2] << 8) | dev->enetaddr[3];
++	addrl = (dev->enetaddr[4] << 8) | dev->enetaddr[5];
++
++	ks_wrreg16(dev, KS_MARH, addrh);
++	ks_wrreg16(dev, KS_MARM, addrm);
++	ks_wrreg16(dev, KS_MARL, addrl);
++
++	return 0;
++}
++
++int ks8851_mll_initialize(u8 dev_num, int base_addr)
++{
++	struct eth_device *dev;
++
++	dev = malloc(sizeof(*dev));
++	if (!dev) {
++		printf("Error: Failed to allocate memory\n");
++		return -1;
++	}
++	memset(dev, 0, sizeof(*dev));
++
++	dev->iobase = base_addr;
++
++	ks = &ks_str;
++
++	/* Try to detect chip. Will fail if not present. */
++	if (ks8851_mll_detect_chip(dev)) {
++		free(dev);
++		return -1;
++	}
++
++	dev->init = ks8851_mll_init;
++	dev->halt = ks8851_mll_halt;
++	dev->send = ks8851_mll_send;
++	dev->recv = ks8851_mll_recv;
++	dev->write_hwaddr = ks8851_mll_write_hwaddr;
++	sprintf(dev->name, "%s-%hu", DRIVERNAME, dev_num);
++
++	eth_register(dev);
++
++	return 0;
++}
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/ks8851_mll.h u-boot-2009.11.modified/drivers/net/ks8851_mll.h
+--- u-boot-2009.11/drivers/net/ks8851_mll.h	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/drivers/net/ks8851_mll.h	2014-11-12 15:05:20.011242071 -0800
+@@ -0,0 +1,357 @@
++/*
++ * drivers/net/ks8851_mll.c
++ *
++ * Supports:
++ * KS8851 16bit MLL chip from Micrel Inc.
++ *
++ * Copyright (c) 2009 Micrel Inc.
++ *
++ * modified by
++ * (c) 2011 Bticino s.p.a, Roberto Cerati <roberto.cerati@bticino.it>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++#ifndef _KS8851_MLL_H_
++#define _KS8851_MLL_H_
++
++#include <linux/types.h>
++
++#define KS_CCR				0x08
++#define CCR_EEPROM			(1 << 9)
++#define CCR_SPI				(1 << 8)
++#define CCR_8BIT			(1 << 7)
++#define CCR_16BIT			(1 << 6)
++#define CCR_32BIT			(1 << 5)
++#define CCR_SHARED			(1 << 4)
++#define CCR_32PIN			(1 << 0)
++
++/* MAC address registers */
++#define KS_MARL				0x10
++#define KS_MARM				0x12
++#define KS_MARH				0x14
++
++#define KS_OBCR				0x20
++#define OBCR_ODS_16MA			(1 << 6)
++
++#define KS_EEPCR			0x22
++#define EEPCR_EESA			(1 << 4)
++#define EEPCR_EESB			(1 << 3)
++#define EEPCR_EEDO			(1 << 2)
++#define EEPCR_EESCK			(1 << 1)
++#define EEPCR_EECS			(1 << 0)
++
++#define KS_MBIR				0x24
++#define MBIR_TXMBF			(1 << 12)
++#define MBIR_TXMBFA			(1 << 11)
++#define MBIR_RXMBF			(1 << 4)
++#define MBIR_RXMBFA			(1 << 3)
++
++#define KS_GRR				0x26
++#define GRR_QMU				(1 << 1)
++#define GRR_GSR				(1 << 0)
++
++#define KS_WFCR				0x2A
++#define WFCR_MPRXE			(1 << 7)
++#define WFCR_WF3E			(1 << 3)
++#define WFCR_WF2E			(1 << 2)
++#define WFCR_WF1E			(1 << 1)
++#define WFCR_WF0E			(1 << 0)
++
++#define KS_WF0CRC0			0x30
++#define KS_WF0CRC1			0x32
++#define KS_WF0BM0			0x34
++#define KS_WF0BM1			0x36
++#define KS_WF0BM2			0x38
++#define KS_WF0BM3			0x3A
++
++#define KS_WF1CRC0			0x40
++#define KS_WF1CRC1			0x42
++#define KS_WF1BM0			0x44
++#define KS_WF1BM1			0x46
++#define KS_WF1BM2			0x48
++#define KS_WF1BM3			0x4A
++
++#define KS_WF2CRC0			0x50
++#define KS_WF2CRC1			0x52
++#define KS_WF2BM0			0x54
++#define KS_WF2BM1			0x56
++#define KS_WF2BM2			0x58
++#define KS_WF2BM3			0x5A
++
++#define KS_WF3CRC0			0x60
++#define KS_WF3CRC1			0x62
++#define KS_WF3BM0			0x64
++#define KS_WF3BM1			0x66
++#define KS_WF3BM2			0x68
++#define KS_WF3BM3			0x6A
++
++#define KS_TXCR				0x70
++#define TXCR_TCGICMP			(1 << 8)
++#define TXCR_TCGUDP			(1 << 7)
++#define TXCR_TCGTCP			(1 << 6)
++#define TXCR_TCGIP			(1 << 5)
++#define TXCR_FTXQ			(1 << 4)
++#define TXCR_TXFCE			(1 << 3)
++#define TXCR_TXPE			(1 << 2)
++#define TXCR_TXCRC			(1 << 1)
++#define TXCR_TXE			(1 << 0)
++
++#define KS_TXSR				0x72
++#define TXSR_TXLC			(1 << 13)
++#define TXSR_TXMC			(1 << 12)
++#define TXSR_TXFID_MASK			(0x3f << 0)
++#define TXSR_TXFID_SHIFT		(0)
++#define TXSR_TXFID_GET(_v)		(((_v) >> 0) & 0x3f)
++
++
++#define KS_RXCR1			0x74
++#define RXCR1_FRXQ			(1 << 15)
++#define RXCR1_RXUDPFCC			(1 << 14)
++#define RXCR1_RXTCPFCC			(1 << 13)
++#define RXCR1_RXIPFCC			(1 << 12)
++#define RXCR1_RXPAFMA			(1 << 11)
++#define RXCR1_RXFCE			(1 << 10)
++#define RXCR1_RXEFE			(1 << 9)
++#define RXCR1_RXMAFMA			(1 << 8)
++#define RXCR1_RXBE			(1 << 7)
++#define RXCR1_RXME			(1 << 6)
++#define RXCR1_RXUE			(1 << 5)
++#define RXCR1_RXAE			(1 << 4)
++#define RXCR1_RXINVF			(1 << 1)
++#define RXCR1_RXE			(1 << 0)
++#define RXCR1_FILTER_MASK		(RXCR1_RXINVF | RXCR1_RXAE | \
++					 RXCR1_RXMAFMA | RXCR1_RXPAFMA)
++
++#define KS_RXCR2			0x76
++#define RXCR2_SRDBL_MASK		(0x7 << 5)
++#define RXCR2_SRDBL_SHIFT		(5)
++#define RXCR2_SRDBL_4B			(0x0 << 5)
++#define RXCR2_SRDBL_8B			(0x1 << 5)
++#define RXCR2_SRDBL_16B			(0x2 << 5)
++#define RXCR2_SRDBL_32B			(0x3 << 5)
++/* #define RXCR2_SRDBL_FRAME		(0x4 << 5) */
++#define RXCR2_IUFFP			(1 << 4)
++#define RXCR2_RXIUFCEZ			(1 << 3)
++#define RXCR2_UDPLFE			(1 << 2)
++#define RXCR2_RXICMPFCC			(1 << 1)
++#define RXCR2_RXSAF			(1 << 0)
++
++#define KS_TXMIR			0x78
++
++#define KS_RXFHSR			0x7C
++#define RXFSHR_RXFV			(1 << 15)
++#define RXFSHR_RXICMPFCS		(1 << 13)
++#define RXFSHR_RXIPFCS			(1 << 12)
++#define RXFSHR_RXTCPFCS			(1 << 11)
++#define RXFSHR_RXUDPFCS			(1 << 10)
++#define RXFSHR_RXBF			(1 << 7)
++#define RXFSHR_RXMF			(1 << 6)
++#define RXFSHR_RXUF			(1 << 5)
++#define RXFSHR_RXMR			(1 << 4)
++#define RXFSHR_RXFT			(1 << 3)
++#define RXFSHR_RXFTL			(1 << 2)
++#define RXFSHR_RXRF			(1 << 1)
++#define RXFSHR_RXCE			(1 << 0)
++#define RXFSHR_ERR			(RXFSHR_RXCE | RXFSHR_RXRF |\
++					RXFSHR_RXFTL | RXFSHR_RXMR |\
++					RXFSHR_RXICMPFCS | RXFSHR_RXIPFCS |\
++					RXFSHR_RXTCPFCS)
++#define KS_RXFHBCR			0x7E
++#define RXFHBCR_CNT_MASK		0x0FFF
++
++#define KS_TXQCR			0x80
++#define TXQCR_AETFE			(1 << 2)
++#define TXQCR_TXQMAM			(1 << 1)
++#define TXQCR_METFE			(1 << 0)
++
++#define KS_RXQCR			0x82
++#define RXQCR_RXDTTS			(1 << 12)
++#define RXQCR_RXDBCTS			(1 << 11)
++#define RXQCR_RXFCTS			(1 << 10)
++#define RXQCR_RXIPHTOE			(1 << 9)
++#define RXQCR_RXDTTE			(1 << 7)
++#define RXQCR_RXDBCTE			(1 << 6)
++#define RXQCR_RXFCTE			(1 << 5)
++#define RXQCR_ADRFE			(1 << 4)
++#define RXQCR_SDA			(1 << 3)
++#define RXQCR_RRXEF			(1 << 0)
++#define RXQCR_CMD_CNTL			(RXQCR_RXFCTE|RXQCR_ADRFE)
++
++#define KS_TXFDPR			0x84
++#define TXFDPR_TXFPAI			(1 << 14)
++#define TXFDPR_TXFP_MASK		(0x7ff << 0)
++#define TXFDPR_TXFP_SHIFT		(0)
++
++#define KS_RXFDPR			0x86
++#define RXFDPR_RXFPAI			(1 << 14)
++
++#define KS_RXDTTR			0x8C
++#define KS_RXDBCTR			0x8E
++
++#define KS_IER				0x90
++#define KS_ISR				0x92
++#define IRQ_LCI				(1 << 15)
++#define IRQ_TXI				(1 << 14)
++#define IRQ_RXI				(1 << 13)
++#define IRQ_RXOI			(1 << 11)
++#define IRQ_TXPSI			(1 << 9)
++#define IRQ_RXPSI			(1 << 8)
++#define IRQ_TXSAI			(1 << 6)
++#define IRQ_RXWFDI			(1 << 5)
++#define IRQ_RXMPDI			(1 << 4)
++#define IRQ_LDI				(1 << 3)
++#define IRQ_EDI				(1 << 2)
++#define IRQ_SPIBEI			(1 << 1)
++#define IRQ_DEDI			(1 << 0)
++
++#define KS_RXFCTR			0x9C
++#define RXFCTR_THRESHOLD_MASK		0x00FF
++
++#define KS_RXFC				0x9D
++#define RXFCTR_RXFC_MASK		(0xff << 8)
++#define RXFCTR_RXFC_SHIFT		(8)
++#define RXFCTR_RXFC_GET(_v)		(((_v) >> 8) & 0xff)
++#define RXFCTR_RXFCT_MASK		(0xff << 0)
++#define RXFCTR_RXFCT_SHIFT		(0)
++
++#define KS_TXNTFSR			0x9E
++
++#define KS_MAHTR0			0xA0
++#define KS_MAHTR1			0xA2
++#define KS_MAHTR2			0xA4
++#define KS_MAHTR3			0xA6
++
++#define KS_FCLWR			0xB0
++#define KS_FCHWR			0xB2
++#define KS_FCOWR			0xB4
++
++#define KS_CIDER			0xC0
++#define CIDER_ID			0x8870
++#define CIDER_REV_MASK			(0x7 << 1)
++#define CIDER_REV_SHIFT			(1)
++#define CIDER_REV_GET(_v)		(((_v) >> 1) & 0x7)
++
++#define KS_CGCR				0xC6
++#define KS_IACR				0xC8
++#define IACR_RDEN			(1 << 12)
++#define IACR_TSEL_MASK			(0x3 << 10)
++#define IACR_TSEL_SHIFT			(10)
++#define IACR_TSEL_MIB			(0x3 << 10)
++#define IACR_ADDR_MASK			(0x1f << 0)
++#define IACR_ADDR_SHIFT			(0)
++
++#define KS_IADLR			0xD0
++#define KS_IAHDR			0xD2
++
++#define KS_PMECR			0xD4
++#define PMECR_PME_DELAY			(1 << 14)
++#define PMECR_PME_POL			(1 << 12)
++#define PMECR_WOL_WAKEUP		(1 << 11)
++#define PMECR_WOL_MAGICPKT		(1 << 10)
++#define PMECR_WOL_LINKUP		(1 << 9)
++#define PMECR_WOL_ENERGY		(1 << 8)
++#define PMECR_AUTO_WAKE_EN		(1 << 7)
++#define PMECR_WAKEUP_NORMAL		(1 << 6)
++#define PMECR_WKEVT_MASK		(0xf << 2)
++#define PMECR_WKEVT_SHIFT		(2)
++#define PMECR_WKEVT_GET(_v)		(((_v) >> 2) & 0xf)
++#define PMECR_WKEVT_ENERGY		(0x1 << 2)
++#define PMECR_WKEVT_LINK		(0x2 << 2)
++#define PMECR_WKEVT_MAGICPKT		(0x4 << 2)
++#define PMECR_WKEVT_FRAME		(0x8 << 2)
++#define PMECR_PM_MASK			(0x3 << 0)
++#define PMECR_PM_SHIFT			(0)
++#define PMECR_PM_NORMAL			(0x0 << 0)
++#define PMECR_PM_ENERGY			(0x1 << 0)
++#define PMECR_PM_SOFTDOWN		(0x2 << 0)
++#define PMECR_PM_POWERSAVE		(0x3 << 0)
++
++/* Standard MII PHY data */
++#define KS_P1MBCR			0xE4
++#define P1MBCR_FORCE_FDX		(1 << 8)
++
++#define KS_P1MBSR			0xE6
++#define P1MBSR_AN_COMPLETE		(1 << 5)
++#define P1MBSR_AN_CAPABLE		(1 << 3)
++#define P1MBSR_LINK_UP			(1 << 2)
++
++#define KS_PHY1ILR			0xE8
++#define KS_PHY1IHR			0xEA
++#define KS_P1ANAR			0xEC
++#define KS_P1ANLPR			0xEE
++
++#define KS_P1SCLMD			0xF4
++#define P1SCLMD_LEDOFF			(1 << 15)
++#define P1SCLMD_TXIDS			(1 << 14)
++#define P1SCLMD_RESTARTAN		(1 << 13)
++#define P1SCLMD_DISAUTOMDIX		(1 << 10)
++#define P1SCLMD_FORCEMDIX		(1 << 9)
++#define P1SCLMD_AUTONEGEN		(1 << 7)
++#define P1SCLMD_FORCE100		(1 << 6)
++#define P1SCLMD_FORCEFDX		(1 << 5)
++#define P1SCLMD_ADV_FLOW		(1 << 4)
++#define P1SCLMD_ADV_100BT_FDX		(1 << 3)
++#define P1SCLMD_ADV_100BT_HDX		(1 << 2)
++#define P1SCLMD_ADV_10BT_FDX		(1 << 1)
++#define P1SCLMD_ADV_10BT_HDX		(1 << 0)
++
++#define KS_P1CR				0xF6
++#define P1CR_HP_MDIX			(1 << 15)
++#define P1CR_REV_POL			(1 << 13)
++#define P1CR_OP_100M			(1 << 10)
++#define P1CR_OP_FDX			(1 << 9)
++#define P1CR_OP_MDI			(1 << 7)
++#define P1CR_AN_DONE			(1 << 6)
++#define P1CR_LINK_GOOD			(1 << 5)
++#define P1CR_PNTR_FLOW			(1 << 4)
++#define P1CR_PNTR_100BT_FDX		(1 << 3)
++#define P1CR_PNTR_100BT_HDX		(1 << 2)
++#define P1CR_PNTR_10BT_FDX		(1 << 1)
++#define P1CR_PNTR_10BT_HDX		(1 << 0)
++
++/* TX Frame control */
++#define TXFR_TXIC			(1 << 15)
++#define TXFR_TXFID_MASK			(0x3f << 0)
++#define TXFR_TXFID_SHIFT		(0)
++
++#define KS_P1SR				0xF8
++#define P1SR_HP_MDIX			(1 << 15)
++#define P1SR_REV_POL			(1 << 13)
++#define P1SR_OP_100M			(1 << 10)
++#define P1SR_OP_FDX			(1 << 9)
++#define P1SR_OP_MDI			(1 << 7)
++#define P1SR_AN_DONE			(1 << 6)
++#define P1SR_LINK_GOOD			(1 << 5)
++#define P1SR_PNTR_FLOW			(1 << 4)
++#define P1SR_PNTR_100BT_FDX		(1 << 3)
++#define P1SR_PNTR_100BT_HDX		(1 << 2)
++#define P1SR_PNTR_10BT_FDX		(1 << 1)
++#define P1SR_PNTR_10BT_HDX		(1 << 0)
++
++#define ENUM_BUS_NONE			0
++#define ENUM_BUS_8BIT			1
++#define ENUM_BUS_16BIT			2
++#define ENUM_BUS_32BIT			3
++
++#define MAX_MCAST_LST			32
++#define HW_MCAST_SIZE			8
++#define MAC_ADDR_LEN			6
++
++/* Chip ID values */
++struct chip_id {
++	u16 id;
++	char *name;
++};
++
++#endif
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/asm-arm/arch-lpc313x/hardware.h u-boot-2009.11.modified/include/asm-arm/arch-lpc313x/hardware.h
+--- u-boot-2009.11/include/asm-arm/arch-lpc313x/hardware.h	2014-11-21 15:58:12.727262175 -0800
++++ u-boot-2009.11.modified/include/asm-arm/arch-lpc313x/hardware.h	2014-11-13 00:14:53.473796879 -0800
+@@ -98,5 +98,30 @@
+ #define EVRT_OUT_MASK_CLR(vec,bank) __REG (EVENT_ROUTER_BASE + 0x1800 + ((vec) << 5) + ((bank) << 2))
+ #define EVRT_OUT_MASK_SET(vec,bank) __REG (EVENT_ROUTER_BASE + 0x1C00 + ((vec) << 5) + ((bank) << 2))
+ 
++/***********************************************************************
++ * subset of MPMC memory controller register definitions
++ **********************************************************************/
++#define MPMC_STCONFIG0      __REG (MPMC_CFG_BASE + 0x200)
++#define MPMC_STWTWEN0       __REG (MPMC_CFG_BASE + 0x204)
++#define MPMC_STWTOEN0       __REG (MPMC_CFG_BASE + 0x208)
++#define MPMC_STWTRD0        __REG (MPMC_CFG_BASE + 0x20C)
++#define MPMC_STWTPG0        __REG (MPMC_CFG_BASE + 0x210)
++#define MPMC_STWTWR0        __REG (MPMC_CFG_BASE + 0x214)
++#define MPMC_STWTTURN0      __REG (MPMC_CFG_BASE + 0x218)
++#define MPMC_STCONFIG1      __REG (MPMC_CFG_BASE + 0x220)
++#define MPMC_STWTWEN1       __REG (MPMC_CFG_BASE + 0x224)
++#define MPMC_STWTOEN1       __REG (MPMC_CFG_BASE + 0x228)
++#define MPMC_STWTRD1        __REG (MPMC_CFG_BASE + 0x22C)
++#define MPMC_STWTPG1        __REG (MPMC_CFG_BASE + 0x230)
++#define MPMC_STWTWR1        __REG (MPMC_CFG_BASE + 0x234)
++#define MPMC_STWTTURN1      __REG (MPMC_CFG_BASE + 0x238)
++
++/***********************************************************************
++ * subset of SYS_REG register definitions
++ **********************************************************************/
++#define SYS_MPMC_DELAY      __REG (SYSCREG_BASE + 0x68)
++#define SYS_MPMC_WTD_DEL0   __REG (SYSCREG_BASE + 0x6C)
++#define SYS_MPMC_WTD_DEL1   __REG (SYSCREG_BASE + 0x70)
++
+ #endif /* ASM_ARCH_HARDWARE_H */
+ 
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/asm-arm/arch-lpc313x/mci.h u-boot-2009.11.modified/include/asm-arm/arch-lpc313x/mci.h
+--- u-boot-2009.11/include/asm-arm/arch-lpc313x/mci.h	2014-11-21 15:58:12.731262104 -0800
++++ u-boot-2009.11.modified/include/asm-arm/arch-lpc313x/mci.h	2014-11-18 15:39:12.812827217 -0800
+@@ -192,11 +192,11 @@
+ 
+ /* MCI read function - read all 16 data registers */
+ ulong mci_read_blocks(int devid, ulong start_block,
+-		long blkcnt, void* buffer);
++		lbaint_t blkcnt, void* buffer);
+ 
+ /* MCI write function - writes all 16 data registers */
+ ulong mci_write_blocks(int devid, ulong start_block,
+-		long blkcnt, void* buffer);
++		lbaint_t blkcnt, const void* buffer);
+ /* MCI command execution */
+ long mci_execute_command(MCI_CARD_INFO_T* pdev, ulong cmd,
+ 		ulong arg, ulong wait_status);
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2014-11-21 15:58:12.967257930 -0800
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2014-11-12 20:25:45.093561979 -0800
+@@ -77,9 +77,10 @@
+ #define CONFIG_SYS_MEMTEST_END		0x33FFFFFF	/* 64MB of DRAM */
+ 
+ /* 
+- * Ethernet Driver 7 Network Configuratin.
++ * Ethernet Driver / Network Configuration
+  * */
+ #define CONFIG_CMD_NET
++#define CONFIG_KS8851_MLL		1
+ #define CONFIG_DRIVER_DM9000		1
+ #define CONFIG_DM9000_BASE		0x20020000
+ #define DM9000_IO			CONFIG_DM9000_BASE
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/net.h u-boot-2009.11.modified/include/net.h
+--- u-boot-2009.11/include/net.h	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/include/net.h	2014-11-12 23:32:58.860288365 -0800
+@@ -105,6 +105,7 @@
+ #ifdef CONFIG_MCAST_TFTP
+ 	int (*mcast) (struct eth_device*, u32 ip, u8 set);
+ #endif
++	int  (*write_hwaddr) (struct eth_device*);
+ 	struct eth_device *next;
+ 	void *priv;
+ };
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/netdev.h u-boot-2009.11.modified/include/netdev.h
+--- u-boot-2009.11/include/netdev.h	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/include/netdev.h	2014-11-12 15:07:46.732140925 -0800
+@@ -82,6 +82,7 @@
+ int uli526x_initialize(bd_t *bis);
+ int sh_eth_initialize(bd_t *bis);
+ int dm9000_initialize(bd_t *bis);
++int ks8851_mll_initialize(u8 dev_num, int base_addr);
+ 
+ /* Boards with PCI network controllers can call this from their board_eth_init()
+  * function to initialize whatever's on board.
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/net/eth.c u-boot-2009.11.modified/net/eth.c
+--- u-boot-2009.11/net/eth.c	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/net/eth.c	2014-11-12 23:31:02.183025830 -0800
+@@ -242,6 +242,8 @@
+ 				}
+ 
+ 				memcpy(dev->enetaddr, env_enetaddr, 6);
++                if (dev->write_hwaddr)
++                  dev->write_hwaddr(dev);
+ 			}
+ 
+ 			eth_number++;
