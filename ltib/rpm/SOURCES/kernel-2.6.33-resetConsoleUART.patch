@@ -1,0 +1,226 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2014-12-01 13:45:08.747050021 -0800
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2014-11-21 18:24:59.448946960 -0800
+@@ -270,7 +270,6 @@
+ 	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 4);
+ 	MPMC_STWTWEN1 = 1;
+ 	MPMC_STWTWR1 = 1;
+-	MPMC_STWTTURN1 = 2;
+ 
+ 	/* Configure Interrupt pin as input, no pull-up */
+         requestGPI(GPIO_MNAND_RYBN3, "DM9000IRQ");
+@@ -320,17 +319,16 @@
+ static void __init ea_add_device_ks8851(void)
+ {
+ 	/*
+-	 * Configure Chip-Select 2 on SMC for the KS8851 w/16-bit parallel bus interface.
++	 * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
+ 	 * Note: These timings were calculated for MASTER_CLOCK = 90000000
+ 	 *  according to the KS8851_MLL timings.
+ 	 */
+ 	MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
+ 	MPMC_STWTOEN1 = 0;
+ 	/* enable oe toggle between consec reads */
+-	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);
++	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);  //57ns read strobe
+ 	MPMC_STWTWEN1 = 0;
+-	MPMC_STWTWR1 = 4;
+-	MPMC_STWTTURN1 = 2;
++	MPMC_STWTWR1 = 4;  //57ns WR strobe
+ 
+ 	/* Configure Interrupt pin as input */
+         requestGPI(GPIO_GPIO3, "KS8851IRQ");
+@@ -387,10 +385,9 @@
+ 	SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = 6);
+ 	MPMC_STWTWEN0 = 0;
+ 	MPMC_STWTWR0 = 5;
+-	MPMC_STWTTURN0 = 5;
+ 
+ 	/* Configure Interrupt pin as input, no pull-up */
+-        requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
++	requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
+ 
+ 	platform_device_register(&xr16788_device);
+ }
+@@ -670,6 +667,8 @@
+ #define numSerialChannels 8
+ #define allSerialChannels ((1<<numSerialChannels)-1)
+ 
++#define PeripheralReset  GPIO_I2SRX_BCK0  //resets KS8851 ethernet chip
++
+ static inline uint32_t getBoardId(void)
+ {
+   return (GPIO_STATE(IOCONF_FAST_GPIO)>>firstSerialGPIO) & allSerialChannels;
+@@ -706,28 +705,35 @@
+           .bus_num = 0,
+           .chip_select = 1,
+   };
++  /*  Note that reset generator chip may extend reset by 100ms
++      Therefore, it it important to hold off initializing the KS8851 ethernet
++      Loading the KS8851 driver from a kernel module ensures this
++  */
++  unsigned long resetDone;
++  requestGPO(PeripheralReset, "PeripheralReset", 0);  /* assert reset */
++  gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
++  resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+   printk(signon);
+   SYS_MUX_UART_SPI = 1;  //SPI CS1 & CS2 lines replace USART CTS & RTS
+   requestGPO(GPIO_MUART_CTS_N, "ds3234CS", 1);
+   requestGPO(GPIO_MUART_RTS_N, "SPIdevCS", 1);
+   spi_register_board_info(&rtc, 1);
++  exportGPI(GPIO_GPIO2, "boardID");
+   exportGPO((lpc313x_USBpower = GPIO_GPIO19), "USB+5V", 1);
+-  gpio_direction_input(lpc313x_LED); //revert LED output
+   exportGPO((lpc313x_LED = GPIO_GPIO20), "CPULED", 0);
+   ea_add_device_ks8851();
+   ea_add_device_octalUart();
+   requestGPI(GPIO_NAND_NCS_2, "USBoverload");
++  while (jiffies < resetDone) ;          /* deassert reset after > 10ms */
++  gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+ 
+-#define PeripheralReset  GPIO_I2SRX_BCK0
+ 
+ static void __init ea313x_init(void)
+ {
+-    unsigned long resetDone;
++    extern unsigned int nr_uarts;  //kludge to avoid extra /dev/ttyS* nodes
++
+     lpc313x_init();
+-    requestGPO(PeripheralReset, "PeripheralReset", 0);  /* assert reset */
+-    gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
+-    resetDone = jiffies + HZ/100 + 1;  /* deassert > 10ms from now */
+     
+     requestGPO(GPIO_SPI_CS_OUT0, "SPIflashCS", 1);
+ 
+@@ -736,6 +742,14 @@
+ 
+     platform_add_devices(devices, ARRAY_SIZE(devices));
+ 
++    i2c_register_board_info(0, ea313x_i2c_devices,
++            ARRAY_SIZE(ea313x_i2c_devices));
++
++#if defined(CONFIG_MACH_EA3152)
++    i2c_register_board_info(1, ea3152_i2c1_devices,
++	     ARRAY_SIZE(ea3152_i2c1_devices));
++#endif
++
+          /* add other devices depending on carrier board type */
+     switch (boardID) {
+       case 0:  /* ESP 3G baseboard */
+@@ -757,20 +771,12 @@
+ 
+       default:
+         printk("Embedded Artists LPC31xx (boardID=0x%02x)\n", boardID);
+-	/* set the I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
++		/* set the I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
+         requestGPI(GPIO_I2SRX_WS0, "USBoverload");
++        requestGPO(GPIO_GPIO2, "CPULED", 1);
+         ea_add_device_dm9000();
++      	nr_uarts = 1;  //avoids having 8 unintialized ports under /dev/ttyS*
+     }
+-
+-    i2c_register_board_info(0, ea313x_i2c_devices,
+-            ARRAY_SIZE(ea313x_i2c_devices));
+-
+-#if defined(CONFIG_MACH_EA3152)
+-    i2c_register_board_info(1, ea3152_i2c1_devices,
+-	     ARRAY_SIZE(ea3152_i2c1_devices));
+-#endif
+-    while (jiffies < resetDone) ;          /* deassert reset after > 10ms */
+-    gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+ 
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/generic.c linux-2.6.33.modified/arch/arm/mach-lpc313x/generic.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/generic.c	2014-12-01 13:45:08.663051701 -0800
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/generic.c	2014-11-26 18:50:21.683277221 -0800
+@@ -83,7 +83,7 @@
+ 		.regshift = 2,
+ 		.iotype = UPIO_MEM,
+ 		.type	= PORT_NXP16750,
+-		.flags = UPF_BOOT_AUTOCONF | UPF_BUGGY_UART | UPF_SKIP_TEST,
++		.flags = UPF_FIXED_TYPE|UPF_FIXED_PORT | UPF_BUGGY_UART|UPF_SKIP_TEST,
+ 		.pm = lpc313x_uart_pm,
+ 	},
+ 	{
+@@ -201,14 +201,13 @@
+ 	gpio_request(GPIO_BOOT1, "boot1");
+ 	gpio_direction_input(GPIO_BOOT1);
+ 	gpio_export(GPIO_BOOT1, 1);
+-   gpio_request(GPIO_BOOT2, "boot2");  //cpu idle indicator drives this
+-   gpio_direction_output(GPIO_BOOT2, 1);
+-	gpio_export(GPIO_BOOT2, 0);
++        //boot2's direction depends on baseboard type -- init it later..
+ }
+ 
+ 
+ void __init lpc313x_uart_init(void)
+ {
++#ifndef CONFIG_SERIAL_8250_CONSOLE
+ 	int mul, div;
+ 
+ 	/* check what FDR bootloader is using */
+@@ -217,6 +216,7 @@
+ 	if (div != 0)  {
+ 		platform_serial_ports[0].uartclk = (XTAL_CLOCK * mul) / (mul + div);
+ 	}
++#endif
+ }
+ 
+ int __init lpc313x_init(void)
+@@ -277,11 +277,15 @@
+ 		KERN_ERR "Serial port #%u setup failed\n";
+ 	struct uart_port up;
+ 	int mul, div;
++       unsigned bootFDR;
+ 
+-	/* Switch on the UART clocks */
++	/* Switch on the UART clocks and reset it */
+ 	cgu_clk_en_dis(CGU_SB_UART_APB_CLK_ID, 1);
+ 	cgu_clk_en_dis(CGU_SB_UART_U_CLK_ID, 1);
+-
++       bootFDR = UART_FDR_REG;
++	cgu_soft_reset_module(UART_SYS_RST_AN_SOFT);
++       UART_FDR_REG = bootFDR;  //restore bootloader's FDR
++ 
+  	/*
+ 	 * Set up serial port #0. Do not use autodetection; the result is
+ 	 * not what we want.
+@@ -292,16 +296,19 @@
+ 	up.mapbase = (unsigned long)UART_PHYS,
+ 	up.irq = IRQ_UART;
+ 	up.uartclk = XTAL_CLOCK;
+-	/* check what FDR bootloader is using */
+-	mul = (UART_FDR_REG >> 4) & 0xF;
+-	div = UART_FDR_REG & 0xF;
++
++	/* use bootloader's FDR */
++	mul = (bootFDR >> 4) & 0xF;
++	div = bootFDR & 0xF;
+ 	if (div != 0)  {
+ 		up.uartclk = (XTAL_CLOCK * mul) / (mul + div);
+ 	}
++
+ 	up.regshift = 2;
+ 	up.iotype = UPIO_MEM;
+ 	up.type	= PORT_NXP16750;
+-	up.flags = UPF_BOOT_AUTOCONF | UPF_BUGGY_UART | UPF_SKIP_TEST;
++	up.flags = UPF_BOOT_AUTOCONF| UPF_FIXED_TYPE | UPF_FIXED_PORT |
++    			 UPF_BUGGY_UART|UPF_SKIP_TEST;
+ 	up.line	= 0;
+ 	platform_serial_ports[0].uartclk = up.uartclk;
+ 	if (early_serial_setup(&up))
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2014-12-01 13:45:08.747050021 -0800
++++ linux-2.6.33.modified/drivers/serial/8250.c	2014-12-01 13:31:26.867493019 -0800
+@@ -61,7 +61,8 @@
+  */
+ static unsigned int share_irqs = SERIAL8250_SHARE_IRQS;
+ 
+-static unsigned int nr_uarts = CONFIG_SERIAL_8250_RUNTIME_UARTS;
++//allow this to be overridden by platform initialization -- brent@mbari.org
++unsigned int nr_uarts = CONFIG_SERIAL_8250_RUNTIME_UARTS;
+ 
+ static struct uart_driver serial8250_reg;
+ 
