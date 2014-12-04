@@ -18,13 +18,23 @@ define startboot
   continue
 end
 
-define restart
+define reload
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  monitor reset halt
   file u-boot
   load
   thbreak start.S:135
+end
+
+define reset
+  #we load the code where it needs to run, but, as a result...
+  #we must skip the code that normally copies the loader into DRAM
+  monitor reset halt
+  reload
+end
+
+define restart
+  reset
   continue
   set $pc = stack_setup
 #  thbreak lpc313x_init
@@ -36,6 +46,7 @@ define restart
   step
   echo Stopped at top of start_armboot()\n
 end
+
 define remake
   if $argc == 0
     make
