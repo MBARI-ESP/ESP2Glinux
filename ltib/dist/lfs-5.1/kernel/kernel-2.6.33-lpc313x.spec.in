@@ -54,6 +54,7 @@ Patch38         : kernel-2.6.33-ESP3Ghost.patch
 Patch39         : kernel-2.6.33-peripheralReset.patch
 Patch40         : kernel-2.6.33-ks8851power.patch
 Patch41         : kernel-2.6.33-resetConsoleUART.patch
+Patch42         : kernel-2.6.33-modularSound.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -98,3 +99,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch39 -p1
 %patch40 -p1
 %patch41 -p1
+%patch42 -p1
