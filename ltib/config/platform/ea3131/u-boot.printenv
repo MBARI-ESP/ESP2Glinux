@@ -29,24 +29,20 @@ usbram_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd
 uartram_boot=loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)
 flashargs=setenv bootargs $(console) $(flash_root)
 rootpath=/nfsroot/ea313x
-testKernel=dhcp $(kernFile); run flashargs; bootm $(loadaddr)
 flash_root=root=/dev/mtdblock2 ro
 flash_boot=sf probe 0 0 0; echo \\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)
 flashNewKernel=dhcp $(kernFile); sf probe 0 0 0; echo \\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv
 flashNewUboot=dhcp $(ubootFile); sf probe 0 0 0; echo \\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo
 resetEnvironment=sf probe 0 0 0; echo \\cErasing environment...;  sf erase $(envOffset) $(envSize); reset
-ethaddr=00:08:04:cc:e6:71
+ethaddr=00:00:00:00:00:00
 ethact=dm9000
-sdargs=setenv bootargs $(console) $(sd_root)
+testKernel=dhcp $(kernFile)-test; run flashargs; bootm $(loadaddr)
+bootfile=uImage
 sd_boot=mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run sdargs; bootm $(loadaddr)
+sdargs=setenv bootargs $(console) $(sd_root)
+test_boot=dhcp $(kernFile); run sdargs; bootm $(loadaddr)
 sd_root=root=/dev/mmcblk0p2 ro rootdelay=1
-bootfile=uImage
 bootcmd=run sd_boot
-bootargs=console=ttyS0,115200n8 loglevel=5 root=/dev/mmcblk0p2 ro rootdelay=1
 bootfile=uImage
-filesize=1A2E34
 fileaddr=31000000
-netmask=255.255.254.0
-ipaddr=134.89.11.212
 serverip=134.89.10.31
-kernSize=1A2E34
