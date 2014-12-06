@@ -1,0 +1,16 @@
+#!/bin/sh
+#Start a gdb session with the (local) openocd target -- 12/5/14 brent@mbari.org
+#***  unplug/replug USB to JTAG dongle before running ***
+cd `dirname $0`
+export CROSS_COMPILE=arm-none-linux-gnueabi-
+: ${targetLog:=lpc313x.log}
+: ${GDBstart:=jlink.gdb}
+: ${GDB:=${CROSS_COMPILE}gdb}
+
+JLinkGDBServer > $targetLog &
+ocdpid=$!
+trap "exec 2>/dev/null; kill $ocdpid && wait $!" EXIT INT QUIT HUP PIPE
+
+echo "==>  \`tail -f $targetLog\` to monitor target debug log  <=="
+sleep 2
+$GDB -x $GDBstart "$@"
