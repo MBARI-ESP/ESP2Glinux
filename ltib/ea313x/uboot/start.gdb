@@ -4,6 +4,8 @@ source target.gdb
 cd ~/ltib/rpm/BUILD/u-boot-2009.11
 
 define bootload
+  #load bootloader into SRAM
+  #uboot must have been built with -Os optimization, or it will not fit
   #this load offset puts it at 0x1102900 -- see jump below
   monitor reset halt
   file
@@ -31,6 +33,15 @@ define reset
   #we must skip the code that normally copies the loader into DRAM
   monitor reset halt
   reload
+end
+
+define reinit
+  reset
+  continue
+  set $pc = stack_setup
+  thbreak lpc313x_init
+  continue
+  echo At top of lpc313x_init().  You must SKIP ...copy_boot_image()\n
 end
 
 define restart

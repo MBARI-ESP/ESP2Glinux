@@ -4,8 +4,10 @@ source jlinktarget.gdb
 cd ~/ltib/rpm/BUILD/u-boot-2009.11
 
 define bootload
+  #load bootloader into SRAM
+  #uboot must have been built with -Os optimization, or it will not fit
   #this load offset puts it at 0x1102900 -- see jump below
-  monitor reset
+  monitor reset 0 300
   file
   file u-boot
   load u-boot 0xdda29000
@@ -29,8 +31,17 @@ end
 define reset
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  monitor reset
+  monitor reset 0 300
   reload
+end
+
+define reinit
+  reset
+  continue
+  set $pc = stack_setup
+  thbreak lpc313x_init
+  continue
+  echo At top of lpc313x_init().  You must SKIP ...copy_boot_image()\n
 end
 
 define restart
