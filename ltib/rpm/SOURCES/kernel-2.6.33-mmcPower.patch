@@ -1,0 +1,322 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2014-12-30 11:34:36.261235000 -0800
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2014-12-30 11:15:23.995185738 -0800
+@@ -46,6 +46,16 @@
+ #include <mach/i2c.h>
+ #include <mach/board.h>
+ 
++// board identification code read at reset
++static uint8_t boardID;
++
++static inline int mbariBoard(uint8_t id)
++// return 1 for mbariBoard, 0 for non-mbari (Embedded Artists?) origin board
++{
++  return id == 0 || id == 0104;
++}
++
++
+ static struct lpc313x_mci_irq_data irq_data = {
+ 	.irq = IRQ_SDMMC_CD,
+ };
+@@ -90,29 +100,24 @@
+ static void exportGPI(int gpio, const char *name)
+ {
+     requestGPI(gpio, name);
+-    gpio_export(gpio, 0);
++    gpio_export(gpio, 1);  //allow redefinition as an output
+ }
+ 
+ static int mci_init(u32 slot_id, irq_handler_t irqhdlr, void *data)
+ {
+-	int ret;
+-	int level;
+-
+-	/* enable power to the slot */
+-        exportGPO(GPIO_MI2STX_DATA0, "MMCpower", 0);
++	/* disable power to the slot */
++        exportGPO(GPIO_MI2STX_DATA0, "MMCpower", 1);
++        gpio_sysfs_set_active_low(GPIO_MI2STX_DATA0, 1);
+ 
+ 	/* set cd pins as GPIO pins */
+-        exportGPI(GPIO_MI2STX_BCK0, "MMCdetect");
++        exportGPI(GPIO_MI2STX_BCK0, "MMCabsent");
+ 
+-	/* select the opposite level senstivity */
+-	level = mci_get_cd(0)?IRQ_TYPE_LEVEL_LOW:IRQ_TYPE_LEVEL_HIGH;
+ 	/* set card detect irq info */
+ 	irq_data.data = data;
+ 	irq_data.irq_hdlr = irqhdlr;
+-	set_irq_type(irq_data.irq, level);
+-	ret = request_irq(irq_data.irq,
++	request_irq(irq_data.irq,
+ 			ea313x_mci_detect_interrupt,
+-			level,
++			IRQ_TYPE_LEVEL_LOW,
+ 			"mmc-cd",
+ 			&irq_data);
+ 	/****temporary for PM testing */
+@@ -121,24 +126,23 @@
+ 	return irq_data.irq;
+ }
+ 
+-static int mci_get_ro(u32 slot_id)
+-{
+-	return 0;
+-}
+ 
+-static int mci_get_ocr(u32 slot_id)
++static void mci_setpower(u32 ignored_slot, u32 volt)
++/*
++  any non-zero volt switches 3.3V power on
++  when power off, ground all mci lines to prevent backflow
++*/
+ {
+-	return MMC_VDD_32_33 | MMC_VDD_33_34;
++  (void) ignored_slot;
++  if (volt) {
++    GPIO_DRV_IP(IOCONF_EBI_MCI, 0xF0000003);
++    gpio_set_value(GPIO_MI2STX_DATA0, 0);
++  }else{
++    gpio_set_value(GPIO_MI2STX_DATA0, 1);  
++    GPIO_OUT_LOW(IOCONF_EBI_MCI, 0xF0000003);
++  }
+ }
+ 
+-static void mci_setpower(u32 slot_id, u32 volt)
+-{
+-	/* on current version of EA board the card detect
+-	 * pull-up in on switched power side. So can't do
+-	 * power management so use the always enable power
+-	 * jumper.
+-	 */
+-}
+ static int mci_get_bus_wd(u32 slot_id)
+ {
+ 	return 4;
+@@ -165,9 +169,7 @@
+ 	.num_slots		= 1,
+ 	.detect_delay_ms	= 250,
+ 	.init 			= mci_init,
+-	.get_ro			= mci_get_ro,
+ 	.get_cd 		= mci_get_cd,
+-	.get_ocr		= mci_get_ocr,
+ 	.get_bus_wd		= mci_get_bus_wd,
+ 	.setpower 		= mci_setpower,
+ 	.exit			= mci_exit,
+@@ -316,7 +318,7 @@
+ 	.resource	= ks8851_resource
+ };
+ 
+-static void __init ea_add_device_ks8851(void)
++static void __init ea_add_device_ks8851(int stretch)
+ {
+ 	/*
+ 	 * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
+@@ -326,9 +328,9 @@
+ 	MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
+ 	MPMC_STWTOEN1 = 0;
+ 	/* enable oe toggle between consec reads */
+-	SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);  //57ns read strobe
+-	MPMC_STWTWEN1 = 0;
+-	MPMC_STWTWR1 = 4;  //57ns WR strobe
++        SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5+stretch);
++        MPMC_STWTWEN1 = 0;
++        MPMC_STWTWR1 = 4+stretch;
+ 
+ 	/* Configure Interrupt pin as input */
+         requestGPI(GPIO_GPIO3, "KS8851IRQ");
+@@ -336,7 +338,7 @@
+ 	platform_device_register(&ks8851_device);
+ }
+ #else
+-static void __init ea_add_device_ks8851(void) {}
++static void __init ea_add_device_ks8851(unsigned ignored) {}
+ #endif /* CONFIG_KS8851_MLL */
+ 
+ 
+@@ -374,7 +376,7 @@
+ };
+ 
+ 
+-static void __init ea_add_device_octalUart(void)
++static void __init ea_add_device_octalUart(unsigned stretch)
+ {
+ 	/*
+ 	 * Configure Chip-Select 1 for the XR16788 on 8-bit bus
+@@ -382,9 +384,9 @@
+ 	MPMC_STCONFIG0 = 0x80;  /* 8-bit transfers */
+ 	MPMC_STWTOEN0 = 0;
+ 	/* enable oe toggle between consec reads */
+-	SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = 6);
++	SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = 6+stretch);
+ 	MPMC_STWTWEN0 = 0;
+-	MPMC_STWTWR0 = 5;
++	MPMC_STWTWR0 = 5+stretch;
+ 
+ 	/* Configure Interrupt pin as input, no pull-up */
+ 	requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
+@@ -669,26 +671,18 @@
+ 
+ #define PeripheralReset  GPIO_I2SRX_BCK0  //resets KS8851 ethernet chip
+ 
+-static inline uint32_t getBoardId(void)
+-{
+-  return (GPIO_STATE(IOCONF_FAST_GPIO)>>firstSerialGPIO) & allSerialChannels;
+-}
+-
+ extern int lpc313x_LED, lpc313x_USBpower;     /* from leds-pc9532.c */
+ 
+ /* defined in irq.c */
+ int replace_irq(u32 existingIrq, EVENT_T newEvent_pin, EVENT_TYPE_T newType);
+ 
+-static uint16_t __initdata boardID;
+-
+ static void __init init_irq(void)
+ {
+-  switch(boardID = getBoardId()) {
+-    case 0:
+-    case 0104:
+-      replace_irq(IRQ_DM9000_ETH_INT, EVT_GPIO3, EVT_ACTIVE_LOW);
+-      replace_irq(IRQ_EA_VBUS_OVRC, EVT_NAND_NCS_2, EVT_ACTIVE_LOW);
+-      replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
++  boardID = (GPIO_STATE(IOCONF_FAST_GPIO)>>firstSerialGPIO) & allSerialChannels;
++  if (mbariBoard(boardID)) {
++    replace_irq(IRQ_DM9000_ETH_INT, EVT_GPIO3, EVT_ACTIVE_LOW);
++    replace_irq(IRQ_EA_VBUS_OVRC, EVT_NAND_NCS_2, EVT_ACTIVE_LOW);
++    replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
+   }
+   lpc313x_init_irq();
+ }
+@@ -697,7 +691,10 @@
+ /*
+   initialization common to ESP3G and PC104 carrier
+ */
+-static void __init pc104g3init(const char *signon)
++static void __init pc104g3init(const char *signon, unsigned stretch)
++/*
++  stretch parameter adds specified number of (90Mhz) clocks to strobes
++*/
+ {
+   struct spi_board_info rtc = {
+           .modalias = "ds3234",
+@@ -718,12 +715,12 @@
+   requestGPO(GPIO_MUART_CTS_N, "ds3234CS", 1);
+   requestGPO(GPIO_MUART_RTS_N, "SPIdevCS", 1);
+   spi_register_board_info(&rtc, 1);
+-  exportGPI(GPIO_GPIO2, "boardID");
+   exportGPO((lpc313x_USBpower = GPIO_GPIO19), "USB+5V", 1);
+   exportGPO((lpc313x_LED = GPIO_GPIO20), "CPULED", 0);
+-  ea_add_device_ks8851();
+-  ea_add_device_octalUart();
++  ea_add_device_ks8851(stretch);
++  ea_add_device_octalUart(stretch);
+   requestGPI(GPIO_NAND_NCS_2, "USBoverload");
++  exportGPO(GPIO_GPIO2, "boardID", 1);   /* stop driving GPIOs with board ID */
+   while (jiffies < resetDone) ;          /* deassert reset after > 10ms */
+   gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+@@ -753,7 +750,7 @@
+          /* add other devices depending on carrier board type */
+     switch (boardID) {
+       case 0:  /* ESP 3G baseboard */
+-        pc104g3init("MBARI ESP 3G\n");
++        pc104g3init("MBARI ESP 3G\n", 0);   //short, directly connected strobes
+       /* enable power for each octal UART channels' RS-232 buffer chip */
+         exportGPO(GPIO_GPIO11, "ttyS1", 1);
+         exportGPO(GPIO_GPIO12, "ttyS2", 1);
+@@ -766,7 +763,7 @@
+         break;
+ 
+       case 0104:  /* (octal 0104) PC/104 carrier */
+-        pc104g3init("PC/104 Carrier\n");
++        pc104g3init("PC/104 Carrier\n", 1);  //longer strobes routed via FPGA
+         break;
+ 
+       default:
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mmc/core/sd.c linux-2.6.33.modified/drivers/mmc/core/sd.c
+--- linux-2.6.33/drivers/mmc/core/sd.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/mmc/core/sd.c	2014-12-19 18:16:40.000000000 -0800
+@@ -497,20 +497,17 @@
+ 	 * Check if read-only switch is active.
+ 	 */
+ 	if (!oldcard) {
+-		if (!host->ops->get_ro || host->ops->get_ro(host) < 0) {
+-			printk(KERN_WARNING "%s: host does not "
+-				"support reading read-only "
+-				"switch. assuming write-enable.\n",
+-				mmc_hostname(host));
+-		} else {
+-			if (host->ops->get_ro(host) > 0)
++      if (host->ops->get_ro) {
++        int ro = host->ops->get_ro(host);
++		if (ro < 0)
++	  		printk(KERN_INFO
++            	   "%s: no r/o switch -- assuming write-enabled\n",
++			 		mmc_hostname(host));
++		else if (ro > 0)
+ 				mmc_card_set_readonly(card);
+-		}
++	  }
++      host->card = card;
+ 	}
+-
+-	if (!oldcard)
+-		host->card = card;
+-
+ 	return 0;
+ 
+ free_card:
+@@ -712,4 +709,3 @@
+ 
+ 	return err;
+ }
+-
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c
+--- linux-2.6.33/drivers/mmc/host/lpc313x_mmc.c	2014-12-30 11:34:36.249235312 -0800
++++ linux-2.6.33.modified/drivers/mmc/host/lpc313x_mmc.c	2014-12-19 18:41:31.000000000 -0800
+@@ -196,8 +196,6 @@
+ 
+ static int lpc313x_mci_regs_show(struct seq_file *s, void *v)
+ {
+-	struct lpc313x_mci	*host = s->private;
+-
+ 	seq_printf(s, "STATUS:\t0x%08x\n",SDMMC_STATUS);
+ 	seq_printf(s, "RINTSTS:\t0x%08x\n",SDMMC_RINTSTS);
+ 	seq_printf(s, "CMD:\t0x%08x\n", SDMMC_CMD);
+@@ -1365,9 +1363,6 @@
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+ 	mmc->max_seg_size = mmc->max_req_size;
+ 
+-	/* call board init */
+-	slot->irq = host->pdata->init(id, lpc313x_mci_detect_interrupt, slot);
+-	/* Assume card is present initially */
+ 	if(!host->pdata->get_cd(id))
+ 		set_bit(LPC313x_MMC_CARD_PRESENT, &slot->flags);
+ 	else
+@@ -1376,7 +1371,6 @@
+ 	host->slot[id] = slot;
+ 	mmc_add_host(mmc);
+ 
+-
+ #if defined (CONFIG_DEBUG_FS)
+ 	lpc313x_mci_init_debugfs(slot);
+ #endif
+@@ -1385,6 +1379,8 @@
+ 	setup_timer(&slot->detect_timer, lpc313x_mci_detect_change,
+ 			(unsigned long)slot);
+ 
++	/* call board init to enable card detect interrupt */
++	slot->irq = host->pdata->init(id, lpc313x_mci_detect_interrupt, slot);
+ 	return 0;
+ }
+ 
+@@ -1436,7 +1432,7 @@
+ 	}
+ 
+ 	if (((pdata->num_slots > 1) && !(pdata->select_slot)) ||
+-	     !(pdata->get_ro) || !(pdata->get_cd) || !(pdata->init)) {
++	     !(pdata->get_cd) || !(pdata->init)) {
+ 		dev_err(&pdev->dev, "Platform data wrong\n");
+ 		ret = -ENODEV;
+ 		goto err_freehost;
