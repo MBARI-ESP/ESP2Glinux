@@ -1,0 +1,291 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2014-12-30 11:52:44.253008134 -0800
++++ u-boot-2009.11.modified/Makefile	2014-12-15 20:35:48.000000000 -0800
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbari5
++EXTRAVERSION = -mbari6
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2014-12-30 11:52:44.253008134 -0800
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2014-12-29 17:54:39.490894218 -0800
+@@ -108,11 +108,17 @@
+    If any other value, we assume we're on the EA eval board
+ */
+ 
+-static uint16_t boardID;
++static uint8_t boardID;
+ 
+-static inline uint16_t getBoardId(void)
++static inline uint8_t getBoardId(void)
+ {
+-  return boardID = (GPIO_STATE(IOCONF_GPIO)>>5) & 0xff;
++  return boardID = GPIO_STATE(IOCONF_GPIO)>>5;
++}
++
++static inline int mbariBoard(uint8_t id)
++// return 1 for mbariBoard, 0 for non-mbari (Embedded Artists?) origin board
++{
++  return id == 0 || id == 0104;
+ }
+ 
+ static inline void assertPeripheralReset(void)
+@@ -129,23 +135,35 @@
+ int board_eth_init(bd_t *bis)
+ {
+ #ifdef CONFIG_KS8851_MLL
++  int stretch = 0;
+   switch (boardID) {
+-    case 0:
+     case 0104:
++      stretch++;  //longer strobes needed for FPGA on PC/104 board
++    case 0: {
++      int ms = 1000;
+       /*
+        * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
+        * Note: These timings were calculated for MASTER_CLOCK = 90000000
+        *  according to the KS8851_MLL timings.
++       * 57ns strobes for 3G board, 68ns strobes for PC/104 carrier.
+        */
+       MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
+       MPMC_STWTOEN1 = 0;
+       /* enable oe toggle between consec reads */
+-      SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5);  //57ns read strobe
++      SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5+stretch);
+       MPMC_STWTWEN1 = 0;
+-      MPMC_STWTWR1 = 4;  //57ns WR strobe
++      MPMC_STWTWR1 = 4+stretch;
+ 
+-      udelay(110*1000);  //110ms for reset generator to release peripheral reset
++      while (!GPIO_STATE(IOCONF_I2SRX_0)) { //wait up to 1 second for reset
++        if (--ms) {
++          printf(" ... Peripheral Reset stuck!\n");
++          break;
++        }
++        udelay(1000);
++      }
++      udelay(10000);
+       return ks8851_mll_initialize(0, EXT_SRAM0_1_BASE);
++    }
+   }
+ #endif
+ #ifdef CONFIG_DRIVER_DM9000
+@@ -191,10 +209,29 @@
+   return 0;
+ }
+ 
++
++void mciPowerOn(void)
+ /*
+-  initialization common to ESP3G and PC104 carrier
++  power on mmc card  (GPIO_MI2STX_DATA0)
++*/
++{
++  GPIO_DRV_IP(IOCONF_EBI_MCI, 0xF0000003);
++  GPIO_OUT_LOW(IOCONF_EBI_I2STX_0, 1<<5);
++}
++
++void mciPowerOff(void)
++/*
++  power off mmc card (GPIO_MI2STX_DATA0)
+ */
++{
++  GPIO_OUT_HIGH(IOCONF_EBI_I2STX_0, 1<<5);
++  GPIO_OUT_LOW(IOCONF_EBI_MCI, 0xF0000003);
++}
++
+ static void pc104g3init(const char *signon)
++/*
++  initialization common to ESP3G and PC104 carrier
++*/
+ {
+   assertPeripheralReset();
+   udelay(10*1000);
+@@ -205,6 +242,7 @@
+ 
+ int board_init(void)
+ {
++    mciPowerOff();
+          /* add other devices depending on carrier board type */
+     switch (getBoardId()) {
+       case 0:  /* ESP 3G baseboard */
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/mci.c u-boot-2009.11.modified/cpu/lpc313x/mci.c
+--- u-boot-2009.11/cpu/lpc313x/mci.c	2014-12-30 11:52:44.253008134 -0800
++++ u-boot-2009.11.modified/cpu/lpc313x/mci.c	2014-12-30 11:05:51.170069438 -0800
+@@ -29,6 +29,10 @@
+ 
+ #ifdef CONFIG_MMC
+ 
++// board specific
++extern void mciPowerOn(void);
++extern void mciPowerOff(void);
++
+ /* give 1 atleast 1 sec for the card to respond */
+ #define US_TIMEOUT		1000000
+ /* inter-command acquire oper condition delay in msec*/
+@@ -410,7 +414,8 @@
+ 	/* clear card type */
+ 	MCI->ctype = 0;
+ 
+-	/* we could call board specific card detect routine here */
++        /* power up mmc card and enable I/O */
++	mciPowerOn();
+ 
+ 	/* set high speed for the card as 20MHz */
+ 	pdev->speed = MMC_MAX_CLOCK;
+@@ -544,7 +549,8 @@
+ 		 * based on CSD response recived.
+ 		 */
+ 		prv_process_csd(pdev);
+-	}
++	}else
++          mciPowerOff();
+ }
+ 
+ int mmc_legacy_init(int verbose)
+@@ -560,10 +566,7 @@
+ 	/* Set IOCONF to MCI pins */
+ 	SYS_REGS->mci_delaymodes = 0;
+ 	SYS_REGS->mux_gpio_mci_sel = 1;
+-	/* set the pins as driven by IP in IOCONF */
+-	IOCONF->block[IOCONF_MUX0].mode1_clear = 0xF0000003;
+-	IOCONF->block[IOCONF_MUX0].mode0_set = 0xF0000003;
+-
++        
+ 	/* set delay gates */
+ 	SYS_REGS->mci_delaymodes = SYS_REG_SD_CARD_DELAY;
+ 
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/net/ks8851_mll.c u-boot-2009.11.modified/drivers/net/ks8851_mll.c
+--- u-boot-2009.11/drivers/net/ks8851_mll.c	2014-12-30 11:52:44.253008134 -0800
++++ u-boot-2009.11.modified/drivers/net/ks8851_mll.c	2014-12-18 14:37:36.000000000 -0800
+@@ -597,7 +597,7 @@
+ 	dev->send = ks8851_mll_send;
+ 	dev->recv = ks8851_mll_recv;
+ 	dev->write_hwaddr = ks8851_mll_write_hwaddr;
+-	sprintf(dev->name, "%s-%hu", DRIVERNAME, dev_num);
++	sprintf(dev->name, dev_num ? "%s-%hu" : "%s", DRIVERNAME, dev_num);
+ 
+ 	eth_register(dev);
+ 
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2014-12-30 11:52:44.253008134 -0800
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2014-12-18 15:55:01.000000000 -0800
+@@ -42,7 +42,7 @@
+  */
+ #define CONFIG_LPC313X		1		/* This is a ARM926EJS CPU */
+ #define CONFIG_ARM_THUMB	1		/* Use Thumb instruction set */
+-/*#define CONFIG_PLL_270		1		* Use 270MHz Clk Freq */
++#define CONFIG_PLL_270		1		/* Use 270MHz Clk Freq */
+ #define XTAL_IN			12000000	/* Crystal clk freq */
+ #define CONFIG_SYS_HZ		(XTAL_IN / 256)	/* decrementer freq in Hz */
+ #define CONFIG_SYS_NO_FLASH			/* No NOR flash */
+@@ -76,7 +76,7 @@
+ #define CONFIG_SYS_MEMTEST_START	0x30000000	/* memtest works on */
+ #define CONFIG_SYS_MEMTEST_END		0x33FFFFFF	/* 64MB of DRAM */
+ 
+-/* 
++/*
+  * Ethernet Driver / Network Configuration
+  * */
+ #define CONFIG_CMD_NET
+@@ -102,7 +102,7 @@
+ #endif
+ 
+ /* Linux boot using network */
+-#define CONFIG_BOOTCOMMAND		"run flash_boot"
++#define CONFIG_BOOTCOMMAND		"run flashBoot"
+ 
+ /*
+  * Serial Driver Console
+@@ -122,8 +122,11 @@
+ "rd_addr=32000000\0" \
+ "envOffset=40000\0" \
+ "envSize=10000\0" \
++"serverip=134.89.10.31\0" \
++"rootPath=/nfsroot/ea313x\0" \
+ "ubootFile=u-boot.bin\0" \
+-"kernFile=uImage\0" \
++"kernel=uImage\0" \
++"nfsKernel=nfsImage\0" \
+ "bootfile=uImage\0" \
+ "ramfile=rootfs.ext2.gz.uboot\0" \
+ "kernBase=50000\0" \
+@@ -131,31 +134,34 @@
+ "kernSize=200000\0" \
+ "usbtty=cdc_acm\0" \
+ "console=console=ttyS0,115200n8 loglevel=5\0" \
+-"ramargs=setenv bootargs $(console) root=/dev/ram0 rw ip=dhcp\0" \
+-"nfsargs=setenv bootargs $(console) root=/dev/nfs rw nfsroot=$(serverip):$(rootpath) ip=dhcp\0" \
+-"net_boot=dhcp $(kernFile); run nfsargs; bootm $(loadaddr)\0" \
+-"spi_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
+-"nand_boot=nand read $(loadaddr) 80000 $(kernSize); run nfsargs; bootm $(loadaddr)\0" \
+-"sdmmc_boot= mmc init; fatload mmc 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+-"usbdfu_boot=usbpoll $(loadaddr); run nfsargs; bootm $(loadaddr)\0" \
+-"usb_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); run nfsargs; bootm $(loadaddr)\0" \
+-"uart_boot=loady; run nfsargs; bootm $(loadaddr)\0" \
+-"netram_boot=dhcp $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"spiram_boot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); sf read $(rd_addr) 243000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"nandram_boot=nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"sdmmcram_boot=mmc init; fatload mmc 0 $(loadaddr) $(bootfile); fatload mmc 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"sbdfuram_boot=usbpoll $(loadaddr); usbpoll $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"usbram_boot=usb start; fatload usb 0 $(loadaddr) $(bootfile); fatload usb 0 $(rd_addr) $(ramfile); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"uartram_boot=loady; loady $(rd_addr); run ramargs; bootm $(loadaddr) $(rd_addr)\0" \
+-"flashargs=setenv bootargs $(console) $(flash_root)\0" \
+-"rootpath=/nfsroot/ea313x\0" \
+-"testKernel=dhcp $(kernFile); run flashargs; bootm $(loadaddr)\0" \
+-"flash_root=root=/dev/mtdblock2 ro\0" \
+-"flash_boot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashargs; bootm $(loadaddr)\0" \
+-"flashNewKernel=dhcp $(kernFile); sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
++"args=set root $(console) $(ethact).mac=$(ethaddr) root=\0" \
++"ramArgs=run args; set bootargs $(root)/dev/ram0 rw ip=dhcp\0" \
++"nfsArgs=run args; set bootargs $(root)/dev/nfs rw nfsroot=$(serverip):$(rootPath) ip=dhcp\0" \
++"nfsBoot=dhcp $(nfsKernel); run nfsArgs; bootm $(loadaddr)\0" \
++"spiBoot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); run nfsArgs; bootm $(loadaddr)\0" \
++"nandBoot=nand read $(loadaddr) 80000 $(kernSize); run nfsArgs; bootm $(loadaddr)\0" \
++"sdmmcBoot=mmc init; fatload mmc 0 $(loadaddr) $(nfsKernel); run nfsArgs; bootm $(loadaddr)\0" \
++"usbdfuBoot=usbpoll $(loadaddr); run nfsArgs; bootm $(loadaddr)\0" \
++"usbBoot=usb start; fatload usb 0 $(loadaddr) $(nfsKernel); run nfsArgs; bootm $(loadaddr)\0" \
++"uartBoot=loady; run nfsArgs; bootm $(loadaddr)\0" \
++"nfsramBoot=dhcp $(rd_addr) $(ramfile); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"spiramBoot=sf probe 0 0 0; sf read $(loadaddr) $(kernBase) $(kernSize); sf read $(rd_addr) 243000 400000; run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"nandramBoot=nand read $(loadaddr) 80000 200000; nand read $(rd_addr) 2a0000 400000; run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"sdmmcramBoot=mmc init; fatload mmc 0 $(loadaddr) $(kernel); fatload mmc 0 $(rd_addr) $(ramfile); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"sbdfuramBoot=usbpoll $(loadaddr); usbpoll $(rd_addr); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"usbramBoot=usb start; fatload usb 0 $(loadaddr) $(kernel); fatload usb 0 $(rd_addr) $(ramfile); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"uartramBoot=loady; loady $(rd_addr); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
++"flashArgs=run args; set bootargs $(root)$(flashRoot)\0" \
++"testKernel=dhcp $(kernel); run flashArgs; bootm $(loadaddr)\0" \
++"flashRoot=/dev/mtdblock2 ro\0" \
++"flashBoot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashArgs; bootm $(loadaddr)\0" \
++"flashNewKernel=dhcp $(kernel); sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
+ "flashNewUboot=dhcp $(ubootFile); sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
++"sdBoot=mmc init; fatload mmc 0 $(loadaddr) $(kernel); run sdArgs; bootm $(loadaddr)\0" \
++"sdArgs=run args; set bootargs $(root)$(sdRoot)\0" \
++"sdRoot=/dev/mmcblk0p2 ro rootdelay=1\0" \
++"testBoot=dhcp $(kernel); run sdArgs; bootm $(loadaddr)\0" \
+ "resetEnvironment=sf probe 0 0 0; echo \\\\cErasing environment...;  sf erase $(envOffset) $(envSize); reset\0" \
+-"serverip=134.89.10.31\0" \
+ ""
+ 
+ /*
+@@ -172,13 +178,13 @@
+  */
+ #define CONFIG_SYS_LONGHELP				/* undef to save memory */
+ #ifndef CONFIG_EA3152
+-#define CONFIG_SYS_PROMPT		"EA3131/41-MBARI # "/* Monitor Command Prompt */
++#define CONFIG_SYS_PROMPT		"EA3141-MBARI: "/* Monitor Command Prompt */
+ #else
+-#define CONFIG_SYS_PROMPT		"EA3152-MBARI    # "/* Monitor Command Prompt */
++#define CONFIG_SYS_PROMPT		"EA3152-MBARI: "/* Monitor Command Prompt */
+ #endif
+ 
+ #define CONFIG_SYS_CBSIZE		256		/* Console I/O Buffer Size */
+-#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16) 
++#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE+sizeof(CONFIG_SYS_PROMPT)+16)
+ #define CONFIG_SYS_LOAD_ADDR		11029000
+ #define CONFIG_ENV_OVERWRITE		/* allow to overwrite serial and ethaddr */
+ #define CONFIG_AUTO_COMPLETE
