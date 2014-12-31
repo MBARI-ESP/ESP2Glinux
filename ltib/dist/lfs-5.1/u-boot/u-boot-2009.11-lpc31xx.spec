@@ -17,6 +17,7 @@ Patch4          : u-boot-2009.11-mbari3.patch
 Patch5          : u-boot-2009.11-mbari4.patch
 Patch6          : u-boot-2009.11-mbari5.patch
 Patch7          : u-boot-2009.11-270mhz.patch
+Patch8          : u-boot-2009.11-mbari6.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -36,6 +37,7 @@ needed for boards using u-boot and the LPC31XX.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 %Build
 : ${PKG_U_BOOT_CONFIG_TYPE:?must be set, e.g. MPC8548CDS_config}

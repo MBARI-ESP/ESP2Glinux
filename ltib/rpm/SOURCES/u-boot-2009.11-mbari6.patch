@@ -1,0 +1,113 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2014-12-31 14:47:59.648010802 -0800
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2014-12-31 14:40:32.783406942 -0800
+@@ -55,11 +55,8 @@
+ #define GPIO_STATE(port)     __REG (GPIO_PHYS + (port) + 0x00)  //input state
+ #define GPIO_STATE_M0(port)  __REG (GPIO_PHYS + (port) + 0x10)  //output state
+ #define GPIO_STATE_M1(port)  __REG (GPIO_PHYS + (port) + 0x20)  //output enable
+-#define GPIO_STATE(port)     __REG (GPIO_PHYS + (port) + 0x00)
+-#define GPIO_STATE_M0(port)  __REG (GPIO_PHYS + (port) + 0x10)
+ #define GPIO_M0_SET(port)    __REG (GPIO_PHYS + (port) + 0x14)
+ #define GPIO_M0_RESET(port)  __REG (GPIO_PHYS + (port) + 0x18)
+-#define GPIO_STATE_M1(port)  __REG (GPIO_PHYS + (port) + 0x20)
+ #define GPIO_M1_SET(port)    __REG (GPIO_PHYS + (port) + 0x24)
+ #define GPIO_M1_RESET(port)  __REG (GPIO_PHYS + (port) + 0x28)
+ 
+@@ -131,6 +128,41 @@
+   GPIO_IN(IOCONF_I2SRX_0, 1);       //I2SRX_BCK0
+ }
+ 
++static inline int peripheralResetAsserted(void)
++{
++  return ~GPIO_STATE(IOCONF_I2SRX_0) & 1;
++}
++
++void mciPowerOn(void)
++/*
++  power on mmc card  (GPIO_MI2STX_DATA0)
++*/
++{
++  GPIO_DRV_IP(IOCONF_EBI_MCI, 0xF0000003);
++  GPIO_OUT_LOW(IOCONF_EBI_I2STX_0, 1<<5);
++}
++
++void mciPowerOff(void)
++/*
++  power off mmc card (GPIO_MI2STX_DATA0)
++*/
++{
++  GPIO_OUT_HIGH(IOCONF_EBI_I2STX_0, 1<<5);
++  GPIO_OUT_LOW(IOCONF_EBI_MCI, 0xF0000003);
++}
++
++
++static void pc104g3init(const char *signon)
++/*
++  initialization common to ESP3G and PC104 carrier
++*/
++{
++  assertPeripheralReset();
++  udelay(10*1000);
++  releasePeripheralReset();
++  printf(signon);
++}
++
+ 
+ int board_eth_init(bd_t *bis)
+ {
+@@ -154,14 +186,14 @@
+       MPMC_STWTWEN1 = 0;
+       MPMC_STWTWR1 = 4+stretch;
+ 
+-      while (!GPIO_STATE(IOCONF_I2SRX_0)) { //wait up to 1 second for reset
+-        if (--ms) {
+-          printf(" ... Peripheral Reset stuck!\n");
++      while (peripheralResetAsserted()) { //wait up to 1 sec for reset release
++        if (!--ms) {
++          printf("[Reset stuck!]\n");
+           break;
+         }
+         udelay(1000);
+       }
+-      udelay(10000);
++      udelay(10*1000);
+       return ks8851_mll_initialize(0, EXT_SRAM0_1_BASE);
+     }
+   }
+@@ -210,36 +242,6 @@
+ }
+ 
+ 
+-void mciPowerOn(void)
+-/*
+-  power on mmc card  (GPIO_MI2STX_DATA0)
+-*/
+-{
+-  GPIO_DRV_IP(IOCONF_EBI_MCI, 0xF0000003);
+-  GPIO_OUT_LOW(IOCONF_EBI_I2STX_0, 1<<5);
+-}
+-
+-void mciPowerOff(void)
+-/*
+-  power off mmc card (GPIO_MI2STX_DATA0)
+-*/
+-{
+-  GPIO_OUT_HIGH(IOCONF_EBI_I2STX_0, 1<<5);
+-  GPIO_OUT_LOW(IOCONF_EBI_MCI, 0xF0000003);
+-}
+-
+-static void pc104g3init(const char *signon)
+-/*
+-  initialization common to ESP3G and PC104 carrier
+-*/
+-{
+-  assertPeripheralReset();
+-  udelay(10*1000);
+-  releasePeripheralReset();
+-  printf(signon);
+-}
+-
+-
+ int board_init(void)
+ {
+     mciPowerOff();
