@@ -67,6 +67,13 @@
 #ifndef max
 #define max(a,b)                    ((a) > (b) ? (a) : (b))
 #endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0))
+# define TTYport
+#else
+# define TTYport  ->port
+#endif
+
 /*
  * IOCTL commands specific to this device.
  */
@@ -251,7 +258,7 @@ static int devnum[NR_SX] = { [0 ... NR_SX-1] = -1 };
 static int force_load[NR_SX] = { [0 ... NR_SX-1] = 0 };
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 MODULE_AUTHOR("David Schmenk, dschmenk@earthlink.net");
-MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari");
+MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari2");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(model, "SX camera model");
 MODULE_PARM_DESC(color, "SX camera one-shot color flag");
@@ -486,31 +493,38 @@ static unsigned char *sx_read_pixels(struct sx_device_t *sx, unsigned int bytes)
         printk(KERN_ERR "%s: requesting pixels beyond end of buffer\n", sx->id_string);
         return (sx->pixel_buf);
     }
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     while ((sx->read_offset + bytes > sx->bytes_rcved) && (sx->state_flags & SX_STATE_CONNECTED))
     {
         interruptible_sleep_on(&sx->read_wait);
-        if (sx->state_flags & SX_STATE_RCV_ERR)
-        {
-            /*
-             * Attempt a camera reset.
-             */
-            unsigned long   cpu_flags;
-            unsigned char   setup_data[8];
-            int             len;
-            setup_data[0] = USB_TYPE_VENDOR | USB_DIR_OUT;
-            setup_data[1] = SX_USB_RESET;
-            setup_data[2] = 0x00;
-            setup_data[3] = 0x00;
-            setup_data[4] = 0x00;
-            setup_data[5] = 0x00;
-            setup_data[6] = 0x00;
-            setup_data[7] = 0x00;
-            usb_bulk_msg(sx->usbdev, usb_sndbulkpipe(sx->usbdev, sx->snd_endpoint), setup_data, 8, &len, 1*HZ);
-            spin_lock_irqsave(&sx->lock, cpu_flags);
-            sx->state_flags &= ~SX_STATE_RCV_ERR;
-            spin_unlock_irqrestore(&sx->lock, cpu_flags);
-        }
+#else
+    wait_event_interruptible(sx->read_wait,
+       sx->read_offset + bytes <= sx->bytes_rcved || ~sx->state_flags & SX_STATE_CONNECTED);
+#endif
+      if (sx->state_flags & SX_STATE_RCV_ERR)
+      {
+          /*
+           * Attempt a camera reset.
+           */
+          unsigned long   cpu_flags;
+          unsigned char   setup_data[8];
+          int             len;
+          setup_data[0] = USB_TYPE_VENDOR | USB_DIR_OUT;
+          setup_data[1] = SX_USB_RESET;
+          setup_data[2] = 0x00;
+          setup_data[3] = 0x00;
+          setup_data[4] = 0x00;
+          setup_data[5] = 0x00;
+          setup_data[6] = 0x00;
+          setup_data[7] = 0x00;
+          usb_bulk_msg(sx->usbdev, usb_sndbulkpipe(sx->usbdev, sx->snd_endpoint), setup_data, 8, &len, 1*HZ);
+          spin_lock_irqsave(&sx->lock, cpu_flags);
+          sx->state_flags &= ~SX_STATE_RCV_ERR;
+          spin_unlock_irqrestore(&sx->lock, cpu_flags);
+      }
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     }
+#endif
     sx->read_offset += bytes;
     return (sx->pixel_buf + sx->read_offset - bytes);
 }
@@ -734,12 +748,15 @@ static void sx_new_frame(void *vp, unsigned int xoffset, unsigned int yoffset, u
                 setup_data[5] = 0x00;
                 setup_data[6] = 0x00;
                 setup_data[7] = 0x00;
-                if (usb_bulk_msg(sx->usbdev, usb_sndbulkpipe(sx->usbdev, sx->snd_endpoint), setup_data, 8, &len, 1*HZ))
+                if (usb_bulk_msg(sx->usbdev, usb_sndbulkpipe(sx->usbdev, sx->snd_endpoint),
+                                  setup_data, 8, &len, 1*HZ))
                 {
-                    printk(KERN_ERR "%s: read timer send failed\n", sx->id_string);
+#if 0  //ignore errors from this dummy operation -- brent@mbari.org 1/5/15
+                    printk(KERN_INFO "%s: read timer send failed\n", sx->id_string);
                     sx_usb_dbg(sx->usbdev);
-                }
-                if (usb_bulk_msg(sx->usbdev, usb_rcvbulkpipe(sx->usbdev, sx->rcv_endpoint), setup_data, 4, &len, 1*HZ))
+#endif
+                }else if (usb_bulk_msg(sx->usbdev, usb_rcvbulkpipe(sx->usbdev, sx->rcv_endpoint),
+                                        setup_data, 4, &len, 1*HZ))
                 {
                     printk(KERN_ERR "%s: read timer receive failed\n", sx->id_string);
                     sx_usb_dbg(sx->usbdev);
@@ -864,28 +881,22 @@ static int sx_close(void *vp)
          * Force closure and respect the open flag all over the driver.
          */
         printk(KERN_ERR "%s: unable to acquire camera during close!\n", sx->id_string);
-        sx_reset(sx);
         /*
          * Check for disconnection.
          */
-        if (!(sx->state_flags & SX_STATE_CONNECTED))
-        {
-            ccd_unregister_device((void *)sx);
-            if (sx->rcv_buf)
-            {
-                kfree(sx->rcv_buf);
-                sx->rcv_buf = NULL;
-            }
-            if (sx->pixel_buf)
-            {
-                vfree(sx->pixel_buf);
-                sx->pixel_buf = NULL;
-            }
-            sx->usbdev = NULL;
-            sx_free_struct(sx);
-        }
         spin_lock_irqsave(&sx->lock, cpu_flags);
-        sx->state_flags &= ~(SX_STATE_SND | SX_STATE_RCV | SX_STATE_CCD_OPEN);
+        if (sx->state_flags & SX_STATE_CONNECTED) {
+          sx_reset(sx);
+          ccd_unregister_device((void *)sx);
+        }
+        kfree(sx->rcv_buf);
+        sx->rcv_buf = NULL;
+        vfree(sx->pixel_buf);
+        sx->pixel_buf = NULL;
+        sx->usbdev = NULL;
+        sx_free_struct(sx);
+        sx->state_flags &=
+          ~(SX_STATE_CONNECTED|SX_STATE_SND|SX_STATE_RCV|SX_STATE_CCD_OPEN);
         spin_unlock_irqrestore(&sx->lock, cpu_flags);
     }
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
@@ -973,10 +984,10 @@ static void sx_tty_check_input(void *param)
 #else
                             if (sx_devices[i].tty_ser[j]->flip.count >= TTY_FLIPBUF_SIZE)
 #endif
-                                tty_flip_buffer_push(sx_devices[i].tty_ser[j]);
-                            tty_insert_flip_char(sx_devices[i].tty_ser[j], data[c], 0);
+                                tty_flip_buffer_push(sx_devices[i].tty_ser[j] TTYport);
+                            tty_insert_flip_char(sx_devices[i].tty_ser[j] TTYport, data[c], 0);
                         }
-                        tty_flip_buffer_push(sx_devices[i].tty_ser[j]);
+                        tty_flip_buffer_push(sx_devices[i].tty_ser[j] TTYport);
                         /*
                          * Poll again real soon in case more data is available and get the buffer flipped.
                          */
@@ -1150,14 +1161,14 @@ static int sx_tty_open(struct tty_struct *tty, struct file *filp)
             add_timer(&do_sx_tty_timer);
         }
     }
-    tty->low_latency = 1;
+    tty TTYport->low_latency = 1;
     tty->driver_data = &sx_devices[dev];
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     MOD_INC_USE_COUNT;
 #endif
     return (0);
 }
-static int sx_tty_ioctl(struct tty_struct *tty, 
+static int sx_tty_ioctl(struct tty_struct *tty,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0)
                          struct file *file,
 #endif
@@ -1500,7 +1511,7 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
 #else
 	    sx->snd_urb = usb_alloc_urb(0, GFP_KERNEL);
 	    sx->rcv_urb = usb_alloc_urb(0, GFP_KERNEL);
-#endif	   
+#endif
             init_waitqueue_head(&(sx->read_wait));
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
             FILL_BULK_URB_TO(sx->snd_urb,
@@ -1772,7 +1783,7 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                     sxg->rcv_buf       = (unsigned char *)kmalloc(SX_BULK_READ_SIZE, GFP_KERNEL);
                     sxg->state_flags   = SX_STATE_CONNECTED;
                     spin_lock_init(&sxg->lock);
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))		  
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
 		    sxg->snd_urb       = usb_alloc_urb(0);
 	            sxg->rcv_urb       = usb_alloc_urb(0);
 #else
@@ -1905,32 +1916,25 @@ static void sx_usb_disconnect(struct usb_interface *intf)
     else
 #endif
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-// relict, should be removed	    
+// relic, should be removed
     {
-#endif	    
+#endif
         for (i = 0; i < NR_SX; i++)
         {
             if (sx_devices[i].in_use && sx_devices[i].usbdev == usbdev)
             {
                 spin_lock_irqsave (&sx_devices[i].lock, cpu_flags);
-                if (sx_devices[i].state_flags & SX_STATE_CONNECTED)
-                    sx_devices[i].state_flags &= ~SX_STATE_CONNECTED;
                 if (!(sx_devices[i].state_flags & SX_STATE_BUSY))
                 {
                     ccd_unregister_device((void *)&sx_devices[i]);
-                    if (sx_devices[i].rcv_buf)
-                    {
-                        kfree(sx_devices[i].rcv_buf);
-                        sx_devices[i].rcv_buf = NULL;
-                    }
-                    if (sx_devices[i].pixel_buf)
-                    {
-                        vfree(sx_devices[i].pixel_buf);
-                        sx_devices[i].pixel_buf = NULL;
-                    }
+                    kfree(sx_devices[i].rcv_buf);
+                    sx_devices[i].rcv_buf = NULL;
+                    vfree(sx_devices[i].pixel_buf);
+                    sx_devices[i].pixel_buf = NULL;
                     sx_devices[i].usbdev = NULL;
                     sx_free_struct(&sx_devices[i]);
                 }
+                sx_devices[i].state_flags &= ~SX_STATE_CONNECTED;
                 spin_unlock_irqrestore(&sx_devices[i].lock, cpu_flags);
                 /*
                  * Wake any sleeping process.
@@ -2062,4 +2066,3 @@ void cleanup_module(void)
 	}
     kfree(sx_devices);
 }
-

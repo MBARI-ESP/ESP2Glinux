@@ -239,12 +239,19 @@ void start_exposure(struct ccd_exposure *exposure)
     /*
      * Do any processing and set exposure times.
      */
-    exposure->device->new_frame(exposure->device->param, exposure->xoffset, exposure->yoffset, exposure->width, exposure->height, exposure->xbin, exposure->ybin, exposure->dac_bits, exposure->msec, exposure->flags);
-    exposure->begin                           = jiffies;
-    exposure->end                             = exposure->begin + MSEC2JIFFY(exposure->msec);
+    exposure->device->new_frame(exposure->device->param,
+      exposure->xoffset, exposure->yoffset, exposure->width, exposure->height,
+      exposure->xbin, exposure->ybin,
+      exposure->dac_bits, exposure->msec, exposure->flags);
+    exposure->begin = jiffies;
+    exposure->end   = exposure->begin + MSEC2JIFFY(exposure->msec);
     exposure->device->exposure_timer.expires  = exposure->end;
     exposure->device->exposure_timer.data     = (unsigned long)exposure;
-    add_timer(&(exposure->device->exposure_timer));
+    {
+      struct timer_list *expTimer = &exposure->device->exposure_timer;
+      del_timer(expTimer);  //in case previous exposure is still active!
+      add_timer(expTimer);
+    }
 }
 /*
  * Complete exposure and prepare for reading.
@@ -253,7 +260,9 @@ void complete_exposure(unsigned long ptr)
 {
     struct ccd_exposure *exposure = (struct ccd_exposure *)ptr;
 
-    if (exposure && !exposure->complete && exposure->device && exposure->device->exposure_list && (exposure->device->exposure_list == exposure))
+    if (exposure && !exposure->complete && exposure->device &&
+        exposure->device->exposure_list &&
+        (exposure->device->exposure_list == exposure))
     {
         /*
          * Latch the integrated frame.
@@ -284,7 +293,8 @@ void update_exposures(struct ccd_exposure *exposure)
  */
 void del_exposure(struct ccd_exposure *exposure)
 {
-    struct ccd_exposure *prev_exposure, **exposure_list = &(exposure->device->exposure_list);
+    struct ccd_exposure *prev_exposure,
+                        **exposure_list = &(exposure->device->exposure_list);
 
     if (*exposure_list == exposure)
     {
@@ -651,8 +661,10 @@ void abort_exposures(struct ccd_client *client)
             }
             client->device->current_read_row = CCD_END_FRAME_LOAD;
         }
-        if (!client->exposure_list->complete)
-            wake_up_interruptible(&(client->read_wait));
+        if (!client->exposure_list->complete) {
+          client->exposure_list->complete = -1;
+          wake_up_interruptible(&(client->read_wait));
+        }
     }
     /*
      * Remove all the exposures.
@@ -733,7 +745,7 @@ int parse_binary_msg(struct ccd_client *client)
 	    else if (client->in_buf_len >= CCD_MSG_TEMP_LEN && msg[CCD_MSG_INDEX] == CCD_MSG_TEMP)
 	    {
 		int temp = msg[CCD_TEMP_SET_LO_INDEX] | (msg[CCD_TEMP_SET_HI_INDEX] << 16);
-		client->device->temp_control(client->device->param, &(msg[CCD_TEMP_FAN_INDEX]), &temp); 
+		client->device->temp_control(client->device->param, &(msg[CCD_TEMP_FAN_INDEX]), &temp);
                 /*
                  * Put CCD temp in read buffer.
                  */
@@ -1135,11 +1147,16 @@ static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offs
             /*
              * Exposure not ready for reading so block.
              */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
             interruptible_sleep_on(&(client->read_wait));
+#else
+            wait_event_interruptible(client->read_wait,
+                  dev->exposure_list->client == client && dev->exposure_list->complete);
+#endif
             if (signal_pending(current))
                 return (-EINTR);
         }
-        if (dev->exposure_list && (dev->exposure_list->client == client) && dev->exposure_list->complete)
+        if (dev->exposure_list && (dev->exposure_list->client == client) && dev->exposure_list->complete == 1)
         {
             if (mode == MODE_BINARY)
                 rcount = read_binary_exposure(dev->exposure_list, buf, count);
