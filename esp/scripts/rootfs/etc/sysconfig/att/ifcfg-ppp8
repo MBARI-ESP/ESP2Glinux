@@ -1,0 +1,15 @@
+IFNAME=ppp8
+AUTOSTART=no
+
+provider=att #works with either AT&T or T-Mobile network
+
+ifPrep() {
+  modprobe ppp_async && modprobe ppp_deflate &&
+  pppd call $provider unit ${IFNAME#ppp} logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
+EOS
+}
