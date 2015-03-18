@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 7/29/12 brent@mbari.org
+# -- revised: 3/17/15 brent@mbari.org
 #
 
 ipUp() {
@@ -48,6 +48,7 @@ gateUp() {
     return 1
   }
   local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
+  rm -f $newIface
   [ "$2" ] && {
     echo "#$*"  #store device and gateway in leading comment of its resolv.conf
     type resolv_conf >/dev/null 2>&1 && resolv_conf
@@ -191,5 +192,3 @@ topIf() {
   read iface gateways < /etc/resolv.conf
   echo ${iface###}
 }
-
-
