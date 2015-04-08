@@ -7,7 +7,7 @@ define bootload
   #load bootloader into SRAM
   #uboot must have been built with -Os optimization, or it will not fit
   #this load offset puts it at 0x1102900 -- see jump below
-  monitor reset 0 300
+  monitor reset 9
   file
   file u-boot
   load u-boot 0xdda29000
@@ -31,7 +31,7 @@ end
 define reset
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  monitor reset 0 300
+  monitor reset 9
   reload
 end
 

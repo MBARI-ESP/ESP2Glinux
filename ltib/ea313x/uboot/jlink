@@ -12,5 +12,5 @@ ocdpid=$!
 trap "exec 2>/dev/null; kill $ocdpid && wait $!" EXIT INT QUIT HUP PIPE
 
 echo "==>  \`tail -f $targetLog\` to monitor target debug log  <=="
-sleep 2
+sleep 4
 $GDB -x $GDBstart "$@"
