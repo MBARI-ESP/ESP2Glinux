@@ -1,0 +1,27 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2015-03-26 10:18:16.805161247 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2015-03-26 10:02:00.482706935 -0700
+@@ -152,15 +152,19 @@
+ "usbramBoot=usb start; fatload usb 0 $(loadaddr) $(kernel); fatload usb 0 $(rd_addr) $(ramfile); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
+ "uartramBoot=loady; loady $(rd_addr); run ramArgs; bootm $(loadaddr) $(rd_addr)\0" \
+ "flashArgs=run args; set bootargs $(root)$(flashRoot)\0" \
+-"testKernel=dhcp $(kernel); run flashArgs; bootm $(loadaddr)\0" \
+ "flashRoot=/dev/mtdblock2 ro\0" \
+ "flashBoot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashArgs; bootm $(loadaddr)\0" \
+-"flashNewKernel=dhcp $(kernel); sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
+-"flashNewUboot=dhcp $(ubootFile); sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
+ "sdBoot=mmc init; fatload mmc 0 $(loadaddr) $(kernel); run sdArgs; bootm $(loadaddr)\0" \
+ "sdArgs=run args; set bootargs $(root)$(sdRoot)\0" \
+ "sdRoot=/dev/mmcblk0p2 ro rootdelay=1\0" \
+-"testBoot=dhcp $(kernel); run sdArgs; bootm $(loadaddr)\0" \
++"netSDboot=dhcp $(kernel); run sdArgs; bootm $(loadaddr)\0" \
++"netFlashBoot=dhcp $(kernel); run flashArgs; bootm $(loadaddr)\0" \
++"flashNewKernel=sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
++"flashNewUboot=sf probe 0 0 0; echo \\\\cWriting U-Boot to SPI flash...; sf erase 0 $(envOffset); sf write $(loadaddr) 0 $(envOffset); echo\0" \
++"flashNetKernel=dhcp $(kernel); run flashNewKernel\0" \
++"flashNetUboot=dhcp $(ubootFile); run flashNewUboot\0" \
++"flashSDkernel=mmc init; fatload mmc 0 $(loadaddr) $(kernel); run flashNewKernel\0" \
++"flashSDuboot=mmc init; fatload mmc 0 $(loadaddr) $(ubootFile); run flashNewUboot\0" \
+ "resetEnvironment=sf probe 0 0 0; echo \\\\cErasing environment...;  sf erase $(envOffset) $(envSize); reset\0" \
+ ""
+ 

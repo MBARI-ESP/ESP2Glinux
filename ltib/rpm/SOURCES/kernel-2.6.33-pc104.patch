@@ -1,0 +1,419 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2015-03-25 13:31:07.272650293 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2015-03-25 13:30:35.777466338 -0700
+@@ -2,6 +2,7 @@
+  *
+  *  Author:	Durgesh Pattamatta
+  *  Copyright (C) 2009 NXP semiconductors
++ *  Revised:  2/2/15  brent@mbari.org
+  *
+  *  ea313x board init routines.
+  *
+@@ -46,6 +47,48 @@
+ #include <mach/i2c.h>
+ #include <mach/board.h>
+ 
++/*  PC/104 carrier board constants */
++#define PC104base8  EXT_SRAM0_PHYS           //base address for 8-bit I/O
++#define PC104base16 (PC104base8+_BIT(15))    //base address for 16-bit I/O
++
++#define PC104FPGAadr (EXT_SRAM1_PHYS+0x8000) //PC104 FPGA control register
++#define PC104FPGA   __REG16(PC104FPGAadr)
++enum {
++  PC104IRQID     = _BIT(0),  //0 selects board id, 1 selects PC/104 IRQs
++  PC104ENETRESET = _BIT(1),  //1 resets on board (micrel) ethernet chip
++  PC104RESET     = _BIT(2),  //1 resets PC/104 bus
++  PC104force16   = _BIT(3),  //force sixteen bit access on PC/104 bus
++  PC104force8    = _BIT(4)   //force eight bit access on PC/104 bus
++};
++#define PC104TEST   __REG16(EXT_SRAM1_PHYS+0xC000) //PC104 FPGA test register
++
++#define XRbase (PC104base8 + 0x400) //base address of EXAR octal UART
++//note: not decoded on ESP3G board, so this address used for it as well
++#define XR_IRQ  PC104_IRQ7
++#define XR_EVT  PC104_EVT7
++
++
++//PC104 EVT/IRQ mapping -- all are active high
++#define PC104_EVT3   EVT_GPIO11
++#define PC104_EVT4   EVT_GPIO12
++#define PC104_EVT5   EVT_GPIO13
++#define PC104_EVT7   EVT_GPIO14
++#define PC104_EVT10  EVT_GPIO15
++#define PC104_EVT11  EVT_GPIO16
++#define PC104_EVT14  EVT_GPIO17
++#define PC104_EVT15  EVT_GPIO18
++
++#define PC104_IRQ3   GPIO_GPIO11
++#define PC104_IRQ4   GPIO_GPIO12
++#define PC104_IRQ5   GPIO_GPIO13
++#define PC104_IRQ7   GPIO_GPIO14
++#define PC104_IRQ10  GPIO_GPIO15
++#define PC104_IRQ11  GPIO_GPIO16
++#define PC104_IRQ14  GPIO_GPIO17
++#define PC104_IRQ15  GPIO_GPIO18
++
++
++
+ // board identification code read at reset
+ static uint8_t boardID;
+ 
+@@ -138,7 +181,7 @@
+     GPIO_DRV_IP(IOCONF_EBI_MCI, 0xF0000003);
+     gpio_set_value(GPIO_MI2STX_DATA0, 0);
+   }else{
+-    gpio_set_value(GPIO_MI2STX_DATA0, 1);  
++    gpio_set_value(GPIO_MI2STX_DATA0, 1);
+     GPIO_OUT_LOW(IOCONF_EBI_MCI, 0xF0000003);
+   }
+ }
+@@ -293,15 +336,17 @@
+ 
+ #define IRQ_KS8851_ETH_INT IRQ_DM9000_ETH_INT
+ 
++#define KS8851_base  EXT_SRAM1_PHYS
++
+ static struct resource ks8851_resource[] = {
+ 	[0] = {
+-		.start	= EXT_SRAM1_PHYS,
+-		.end	= EXT_SRAM1_PHYS + 5,
++		.start	= KS8851_base,
++		.end	= KS8851_base + 5,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= EXT_SRAM1_PHYS + 6,
+-		.end	= EXT_SRAM1_PHYS + 0x1FFFF,
++		.start	= KS8851_base + 6,
++		.end	= KS8851_base + 0x3fff,
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[2] = {
+@@ -318,19 +363,24 @@
+ 	.resource	= ks8851_resource
+ };
+ 
+-static void __init ea_add_device_ks8851(int stretch)
++static void __init ea_add_device_ks8851(u32 timing)
++/*
++ * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
++ *  and the FPGA control register in case of the PC/104 bus carrier board.
++ * Note: These timings were calculated for MASTER_CLOCK = 90000000
++ *  according to the KS8851_MLL timings.
++ * 57ns strobes for 3G board
++ *  timing spec'd in pairs of octal digits (from most to least significant):
++ *     WTTURN WTOEN WTRD WTWEN WTWR
++ */
+ {
+-	/*
+-	 * Configure Chip-Select 2 for the KS8851 w/16-bit parallel bus interface.
+-	 * Note: These timings were calculated for MASTER_CLOCK = 90000000
+-	 *  according to the KS8851_MLL timings.
+-	 */
+-	MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
+-	MPMC_STWTOEN1 = 0;
+-	/* enable oe toggle between consec reads */
+-        SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = 5+stretch);
+-        MPMC_STWTWEN1 = 0;
+-        MPMC_STWTWR1 = 4+stretch;
++  MPMC_STCONFIG1 = 0x81;  /* 16-bit transfers */
++  MPMC_STWTWR1 = timing & 037;  //4 for 3G board
++  MPMC_STWTWEN1 = (timing >>= 6) & 017;
++  /* enable oe toggle between consec reads */
++  SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = (timing>>=6)&037);  //5 for 3G
++  MPMC_STWTOEN1 = (timing >>= 6) & 017;
++  MPMC_STWTTURN1 = timing >>= 6;   //2 for 3G
+ 
+ 	/* Configure Interrupt pin as input */
+         requestGPI(GPIO_GPIO3, "KS8851IRQ");
+@@ -338,15 +388,27 @@
+ 	platform_device_register(&ks8851_device);
+ }
+ #else
+-static void __init ea_add_device_ks8851(unsigned ignored) {}
++static void __init ea_add_device_ks8851(u32 ignored) {}
+ #endif /* CONFIG_KS8851_MLL */
+ 
++//for legacy PC/AT style ports
++#define ISAport(_base,_irq)   \
++	{		      \
++		.membase = (void *)io_p2v(PC104base8+_base),  \
++		.mapbase = (unsigned long)(PC104base8+_base), \
++		.irq		= _irq,		        \
++		.uartclk	= 1843200,	        \
++		.regshift       = 0,                    \
++		.iotype		= UPIO_MEM,		\
++		.flags		= UPF_BOOT_AUTOCONF,    \
++		.pm = NULL,                             \
++	}
+ 
+ #define XRport(offset) \
+ 	{						\
+-		.membase = (void *)io_p2v(EXT_SRAM0_PHYS+offset),  \
+-		.mapbase = (unsigned long)(EXT_SRAM0_PHYS+offset), \
+-		.irq		= IRQ_XR16788_INT,	\
++		.membase = (void *)io_p2v(XRbase+offset),  \
++		.mapbase = (unsigned long)(XRbase+offset), \
++		.irq		= IRQ_XR16788_INT,      \
+ 		.uartclk	= 14745600,		\
+ 		.regshift       = 0,                    \
+ 		.iotype		= UPIO_MEM,		\
+@@ -375,21 +437,37 @@
+ 	},
+ };
+ 
++static struct plat_serial8250_port isa_data[] = {
++	ISAport(0x3f8, IRQ_XR16788_INT),
++	ISAport(0x2f8, IRQ_XR16788_INT),
++	ISAport(0x3e8, IRQ_XR16788_INT),
++	ISAport(0x2e8, IRQ_XR16788_INT),
++	{ },
++};
+ 
+-static void __init ea_add_device_octalUart(unsigned stretch)
+-{
+-	/*
+-	 * Configure Chip-Select 1 for the XR16788 on 8-bit bus
+-	 */
+-	MPMC_STCONFIG0 = 0x80;  /* 8-bit transfers */
+-	MPMC_STWTOEN0 = 0;
+-	/* enable oe toggle between consec reads */
+-	SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = 6+stretch);
+-	MPMC_STWTWEN0 = 0;
+-	MPMC_STWTWR0 = 5+stretch;
++static struct platform_device isa_device = {
++	.name			= "serial8250",
++	.id			= PLAT8250_DEV_PLATFORM2,
++	.dev			= {
++		.platform_data	= isa_data,
++	},
++};
+ 
+-	/* Configure Interrupt pin as input, no pull-up */
+-	requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
++
++static void __init ea_add_device_octalUart(u32 timing)
++/*
++ * Configure Chip-Select 1 for the XR16L788 USART w/8-bit parallel bus interface.
++ *  timing spec'd in pairs of octal digits (from most to least significant):
++ *     WTTURN WTOEN WTRD WTWEN WTWR
++ */
++{
++  MPMC_STCONFIG0 = 0x80;  /* 8-bit transfers */
++  MPMC_STWTWR0 = timing & 037;     //5 for 3G board
++  MPMC_STWTWEN0 = (timing >>= 6) & 017;
++  /* enable oe toggle between consec reads */
++  SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = (timing>>=6)&037);  //6 for 3G
++  MPMC_STWTOEN0 = (timing >>= 6) & 017;
++  MPMC_STWTTURN0 = timing >>= 6;   //2 for 3G
+ 
+ 	platform_device_register(&xr16788_device);
+ }
+@@ -642,6 +720,12 @@
+ 		.length		= IO_USB_SIZE,
+ 		.type		= MT_DEVICE
+ 	},
++	{
++		.virtual	= io_p2v(PC104FPGAadr),
++		.pfn		= __phys_to_pfn(PC104FPGAadr),
++		.length		= 2,
++		.type		= MT_DEVICE
++	},
+ };
+ 
+ static struct i2c_board_info ea313x_i2c_devices[] __initdata = {
+@@ -669,7 +753,7 @@
+ #define numSerialChannels 8
+ #define allSerialChannels ((1<<numSerialChannels)-1)
+ 
+-#define PeripheralReset  GPIO_I2SRX_BCK0  //resets KS8851 ethernet chip
++#define PeripheralReset  GPIO_I2SRX_BCK0  //resets KS8851 chip on 3G host board
+ 
+ extern int lpc313x_LED, lpc313x_USBpower;     /* from leds-pc9532.c */
+ 
+@@ -682,7 +766,10 @@
+   if (mbariBoard(boardID)) {
+     replace_irq(IRQ_DM9000_ETH_INT, EVT_GPIO3, EVT_ACTIVE_LOW);
+     replace_irq(IRQ_EA_VBUS_OVRC, EVT_NAND_NCS_2, EVT_ACTIVE_LOW);
+-    replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
++    if (boardID) //PC/104 carrier with octal USART on the ESP2G baseboard
++      replace_irq(IRQ_XR16788_INT, XR_EVT, EVT_ACTIVE_HIGH);
++    else         //ESP 3G with on board octal USART
++      replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
+   }
+   lpc313x_init_irq();
+ }
+@@ -691,9 +778,9 @@
+ /*
+   initialization common to ESP3G and PC104 carrier
+ */
+-static void __init pc104g3init(const char *signon, unsigned stretch)
++static void __init boardInit(const char *signon, u32 timing)
+ /*
+-  stretch parameter adds specified number of (90Mhz) clocks to strobes
++  stretch parameter adds specified number of (90Mhz) clocks to enet strobe
+ */
+ {
+   struct spi_board_info rtc = {
+@@ -706,10 +793,6 @@
+       Therefore, it it important to hold off initializing the KS8851 ethernet
+       Loading the KS8851 driver from a kernel module ensures this
+   */
+-  unsigned long resetDone;
+-  requestGPO(PeripheralReset, "PeripheralReset", 0);  /* assert reset */
+-  gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
+-  resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+   printk(signon);
+   SYS_MUX_UART_SPI = 1;  //SPI CS1 & CS2 lines replace USART CTS & RTS
+   requestGPO(GPIO_MUART_CTS_N, "ds3234CS", 1);
+@@ -717,63 +800,79 @@
+   spi_register_board_info(&rtc, 1);
+   exportGPO((lpc313x_USBpower = GPIO_GPIO19), "USB+5V", 1);
+   exportGPO((lpc313x_LED = GPIO_GPIO20), "CPULED", 0);
+-  ea_add_device_ks8851(stretch);
+-  ea_add_device_octalUart(stretch);
++  ea_add_device_ks8851(timing);
+   requestGPI(GPIO_NAND_NCS_2, "USBoverload");
+-  exportGPO(GPIO_GPIO2, "boardID", 1);   /* stop driving GPIOs with board ID */
+-  while (jiffies < resetDone) ;          /* deassert reset after > 10ms */
+-  gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
+ }
+ 
+ 
+ static void __init ea313x_init(void)
+ {
+-    extern unsigned int nr_uarts;  //kludge to avoid extra /dev/ttyS* nodes
++  extern unsigned int nr_uarts;  //kludge to avoid extra /dev/ttyS* nodes
++  unsigned long resetDone;
++
++  lpc313x_init();
+ 
+-    lpc313x_init();
+-    
+-    requestGPO(GPIO_SPI_CS_OUT0, "SPIflashCS", 1);
++  requestGPO(GPIO_SPI_CS_OUT0, "SPIflashCS", 1);
+ 
+-    /* register i2cdevices */
+-    lpc313x_register_i2c_devices();
++  /* register i2cdevices */
++  lpc313x_register_i2c_devices();
+ 
+-    platform_add_devices(devices, ARRAY_SIZE(devices));
++  platform_add_devices(devices, ARRAY_SIZE(devices));
+ 
+-    i2c_register_board_info(0, ea313x_i2c_devices,
+-            ARRAY_SIZE(ea313x_i2c_devices));
++  i2c_register_board_info(0, ea313x_i2c_devices,
++          ARRAY_SIZE(ea313x_i2c_devices));
+ 
+ #if defined(CONFIG_MACH_EA3152)
+-    i2c_register_board_info(1, ea3152_i2c1_devices,
+-	     ARRAY_SIZE(ea3152_i2c1_devices));
++  i2c_register_board_info(1, ea3152_i2c1_devices,
++	   ARRAY_SIZE(ea3152_i2c1_devices));
+ #endif
+ 
+-         /* add other devices depending on carrier board type */
+-    switch (boardID) {
+-      case 0:  /* ESP 3G baseboard */
+-        pc104g3init("MBARI ESP 3G\n", 0);   //short, directly connected strobes
+-      /* enable power for each octal UART channels' RS-232 buffer chip */
+-        exportGPO(GPIO_GPIO11, "ttyS1", 1);
+-        exportGPO(GPIO_GPIO12, "ttyS2", 1);
+-        exportGPO(GPIO_GPIO13, "ttyS3", 1);
+-        exportGPO(GPIO_GPIO14, "ttyS4", 1);
+-        exportGPO(GPIO_GPIO15, "ttyS5", 1);
+-        exportGPO(GPIO_GPIO16, "ttyS6", 1);
+-        exportGPO(GPIO_GPIO17, "ttyS7", 1);
+-        exportGPO(GPIO_GPIO18, "ttyS8", 1);
+-        break;
+-
+-      case 0104:  /* (octal 0104) PC/104 carrier */
+-        pc104g3init("PC/104 Carrier\n", 1);  //longer strobes routed via FPGA
+-        break;
+-
+-      default:
+-        printk("Embedded Artists LPC31xx (boardID=0x%02x)\n", boardID);
+-		/* set the I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
+-        requestGPI(GPIO_I2SRX_WS0, "USBoverload");
+-        requestGPO(GPIO_GPIO2, "CPULED", 1);
+-        ea_add_device_dm9000();
+-      	nr_uarts = 1;  //avoids having 8 unintialized ports under /dev/ttyS*
+-    }
++       /* add other devices depending on carrier board type */
++  switch (boardID) {
++    case 0:  /* ESP 3G baseboard */
++      exportGPO(GPIO_GPIO2, "boardID", 1);  //stop driving GPIOs with board ID
++      requestGPO(PeripheralReset, "PeripheralReset", 0);  /* assert reset */
++      gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
++      resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
++      boardInit("MBARI ESP 3G\n", 0000050004); //fast directly connected strobes
++      ea_add_device_octalUart(0000060005);
++      /* Configure UART Interrupt pin as input, no pull-up */
++      requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
++
++    /* enable power for each octal UART channels' RS-232 buffer chip */
++      exportGPO(GPIO_GPIO11, "ttyS1", 1);
++      exportGPO(GPIO_GPIO12, "ttyS2", 1);
++      exportGPO(GPIO_GPIO13, "ttyS3", 1);
++      exportGPO(GPIO_GPIO14, "ttyS4", 1);
++      exportGPO(GPIO_GPIO15, "ttyS5", 1);
++      exportGPO(GPIO_GPIO16, "ttyS6", 1);
++      exportGPO(GPIO_GPIO17, "ttyS7", 1);
++      exportGPO(GPIO_GPIO18, "ttyS8", 1);
++      while (jiffies < resetDone) ;          /* deassert reset after 10ms */
++      gpio_direction_input(PeripheralReset); /* echo in > gpio58/direction */
++      break;
++
++    case 0104:  /* octal 0104 denotes PC/104 carrier */
++      PC104FPGA = PC104IRQID | PC104ENETRESET | PC104RESET;
++      resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
++      boardInit("PC/104 Carrier\n", 0000070006);  //slower when routed via FPGA
++      ea_add_device_octalUart(0000070006);    //slower via FPGA on PC/104 bus
++      if (nr_uarts > 9)  //if there are sufficient I/O ports allocated...
++        platform_device_register(&isa_device);  //add legacy ISA ports
++      /* Configure UART Interrupt pin as input, no pull-up */
++      requestGPI(XR_IRQ, "XR16788IRQ");
++      while (jiffies < resetDone) ;      /* wait 10ms */
++      PC104FPGA = PC104IRQID;            /* deassert enet and PC/104 resets */
++      break;
++
++    default:
++      printk("Embedded Artists LPC31xx (boardID=0x%02x)\n", boardID);
++	      /* set the I2SRX_WS0 pin as GPIO_IN for vbus overcurrent flag */
++      requestGPI(GPIO_I2SRX_WS0, "USBoverload");
++      requestGPO(GPIO_GPIO2, "CPULED", 1);
++      ea_add_device_dm9000();
++      nr_uarts = 1;  //avoids having unintialized ports under /dev/ttyS*
++  }
+ }
+ 
+ 
+@@ -782,15 +881,17 @@
+   wait up to 1 second for RTC to deassert reset
+ */
+ {
+-  unsigned consecutive = 0;
+-  unsigned long resetDone = jiffies+HZ;
+-  while (jiffies < resetDone)
+-    if (gpio_get_value(PeripheralReset)) {
+-      if (++consecutive >= 5)
+-        return;  /* reset deasserted for 5 consecutive samples */
+-    }else
+-      consecutive = 0;
+-  printk(KERN_ERR "Peripheral Reset stuck asserted(low)!!\n");
++  if (boardID == 0) {  //only the 3G host board requires this delay
++    unsigned consecutive = 0;
++    unsigned long resetDone = jiffies+HZ;
++    while (jiffies < resetDone)
++      if (gpio_get_value(PeripheralReset)) {
++        if (++consecutive >= 5)
++          return;  /* reset deasserted for 5 consecutive samples */
++      }else
++        consecutive = 0;
++    printk(KERN_ERR "Peripheral Reset stuck asserted(low)!!\n");
++  }
+ }
+ 
+ 

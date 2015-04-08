@@ -56,6 +56,8 @@ Patch40         : kernel-2.6.33-ks8851power.patch
 Patch41         : kernel-2.6.33-resetConsoleUART.patch
 Patch42         : kernel-2.6.33-modularSound.patch
 Patch43         : kernel-2.6.33-mmcPower.patch
+Patch44         : kernel-2.6.33-pc104.patch
+Patch45         : kernel-2.6.33-ks8851parm.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -102,3 +104,5 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch41 -p1
 %patch42 -p1
 %patch43 -p1
+%patch44 -p1
+%patch45 -p1

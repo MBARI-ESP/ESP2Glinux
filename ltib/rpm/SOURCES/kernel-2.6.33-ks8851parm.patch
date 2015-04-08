@@ -1,0 +1,139 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2015-04-07 17:58:59.451686593 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2015-04-07 17:56:46.187212206 -0700
+@@ -856,6 +856,7 @@
+       PC104FPGA = PC104IRQID | PC104ENETRESET | PC104RESET;
+       resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+       boardInit("PC/104 Carrier\n", 0000070006);  //slower when routed via FPGA
++//ea_add_device_octalUart(01706370636);    //slower via FPGA on PC/104 bus
+       ea_add_device_octalUart(0000070006);    //slower via FPGA on PC/104 bus
+       if (nr_uarts > 9)  //if there are sufficient I/O ports allocated...
+         platform_device_register(&isa_device);  //add legacy ISA ports
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/net/ks8851_mll.c linux-2.6.33.modified/drivers/net/ks8851_mll.c
+--- linux-2.6.33/drivers/net/ks8851_mll.c	2015-04-07 17:58:59.443686804 -0700
++++ linux-2.6.33.modified/drivers/net/ks8851_mll.c	2015-04-07 14:56:46.631238708 -0700
+@@ -320,33 +320,40 @@
+ #define KS_P1ANLPR			0xEE
+ 
+ #define KS_P1SCLMD			0xF4
+-#define P1SCLMD_LEDOFF			(1 << 15)
+-#define P1SCLMD_TXIDS			(1 << 14)
+-#define P1SCLMD_RESTARTAN		(1 << 13)
+-#define P1SCLMD_DISAUTOMDIX		(1 << 10)
+-#define P1SCLMD_FORCEMDIX		(1 << 9)
+-#define P1SCLMD_AUTONEGEN		(1 << 7)
+-#define P1SCLMD_FORCE100		(1 << 6)
+-#define P1SCLMD_FORCEFDX		(1 << 5)
+-#define P1SCLMD_ADV_FLOW		(1 << 4)
+-#define P1SCLMD_ADV_100BT_FDX		(1 << 3)
+-#define P1SCLMD_ADV_100BT_HDX		(1 << 2)
+-#define P1SCLMD_ADV_10BT_FDX		(1 << 1)
+-#define P1SCLMD_ADV_10BT_HDX		(1 << 0)
++#define P1SCLMD_RESULT			(3 << 14)
++#define P1SCLMD_START			(1 << 12)
++#define P1SCLMD_FORCEPASS		(1 << 11)
++#define P1SCLMD_LOOPBACK		(1 << 9)
++#define P1SCLMD_FAULTS			(0x1ff)
+ 
+ #define KS_P1CR				0xF6
+-#define P1CR_HP_MDIX			(1 << 15)
+-#define P1CR_REV_POL			(1 << 13)
+-#define P1CR_OP_100M			(1 << 10)
+-#define P1CR_OP_FDX			(1 << 9)
+-#define P1CR_OP_MDI			(1 << 7)
+-#define P1CR_AN_DONE			(1 << 6)
+-#define P1CR_LINK_GOOD			(1 << 5)
+-#define P1CR_PNTR_FLOW			(1 << 4)
+-#define P1CR_PNTR_100BT_FDX		(1 << 3)
+-#define P1CR_PNTR_100BT_HDX		(1 << 2)
+-#define P1CR_PNTR_10BT_FDX		(1 << 1)
+-#define P1CR_PNTR_10BT_HDX		(1 << 0)
++#define P1CR_LEDOFF			(1 << 15)
++#define P1CR_TXIDS			(1 << 14)
++#define P1CR_RESTARTAN		        (1 << 13)
++#define P1CR_DISAUTOMDIX		(1 << 10)
++#define P1CR_FORCEMDIX		        (1 << 9)
++#define P1CR_AUTONEGEN		        (1 << 7)
++#define P1CR_FORCE100		        (1 << 6)
++#define P1CR_FORCEFDX		        (1 << 5)
++#define P1CR_ADV_FLOW		        (1 << 4)
++#define P1CR_ADV_100BT_FDX		(1 << 3)
++#define P1CR_ADV_100BT_HDX		(1 << 2)
++#define P1CR_ADV_10BT_FDX		(1 << 1)
++#define P1CR_ADV_10BT_HDX		(1 << 0)
++
++#define KS_P1SR			        0xF8
++#define P1SR_HP_MDIX			(1 << 15)
++#define P1SR_REV_POL			(1 << 13)
++#define P1SR_OP_100M			(1 << 10)
++#define P1SR_OP_FDX			(1 << 9)
++#define P1SR_OP_MDI			(1 << 7)
++#define P1SR_AN_DONE			(1 << 6)
++#define P1SR_LINK_GOOD			(1 << 5)
++#define P1SR_PNTR_FLOW			(1 << 4)
++#define P1SR_PNTR_100BT_FDX		(1 << 3)
++#define P1SR_PNTR_100BT_HDX		(1 << 2)
++#define P1SR_PNTR_10BT_FDX		(1 << 1)
++#define P1SR_PNTR_10BT_HDX		(1 << 0)
+ 
+ /* TX Frame control */
+ 
+@@ -385,6 +392,15 @@
+ static int pmMode = 1;  /* default to POWERSAVE */
+ 
+ /**
++ * set the force mode to half duplex, default is full duplex
++ *  because if the auto-negotiation fails, most switch uses
++ *  half-duplex.
++ */
++#define p1crDefault  (0xff & ~P1CR_FORCEFDX)
++static u16 p1cr = p1crDefault;  /* Port 1 Control Register mask */
++
++
++/**
+  * union ks_tx_hdr - tx header data
+  * @txb: The header as bytes
+  * @txw: The header as 16bit, little-endian words
+@@ -958,6 +974,7 @@
+         netif_carrier_off(netdev);  /* block xmit until link comes up */
+ 
+         ks_wake(ks);
++	ks_wrreg16(ks, KS_P1CR, p1cr);
+ 	ks_wrreg16(ks, KS_ISR, 0xffff);
+ 	ks_enable_int(ks);
+ 	ks_enable_qmu(ks);
+@@ -1507,16 +1524,6 @@
+ 	ks->rc_rxqcr = RXQCR_CMD_CNTL;
+ 	ks_wrreg16(ks, KS_RXQCR, ks->rc_rxqcr);
+ 
+-	/**
+-	 * set the force mode to half duplex, default is full duplex
+-	 *  because if the auto-negotiation fails, most switch uses
+-	 *  half-duplex.
+-	 */
+-
+-	w = ks_rdreg16(ks, KS_P1MBCR);
+-	w &= ~P1MBCR_FORCE_FDX;
+-	ks_wrreg16(ks, KS_P1MBCR, w);
+-
+ 	w = TXCR_TXFCE | TXCR_TXPE | TXCR_TXCRC | TXCR_TCGIP;
+ 	ks_wrreg16(ks, KS_TXCR, w);
+ 
+@@ -1756,11 +1763,13 @@
+ MODULE_DESCRIPTION("KS8851 MLL Network driver");
+ MODULE_AUTHOR("David Choi <david.choi@micrel.com>");
+ MODULE_LICENSE("GPL");
+-module_param_named(message, msg_enable, int, 0);
++module_param(p1cr, ushort, 0644);
++MODULE_PARM_DESC(p1cr,
++  "Mask written to Port 1 Control Register (see datasheet p69)");
++module_param_named(message, msg_enable, int, 0644);
+ MODULE_PARM_DESC(message, "Message verbosity level (0=none, 31=all)");
+ module_param_named(power, pmMode, int, 0644);
+-MODULE_PARM_DESC(power, "power management (0=none, 1=saver, 2=agressive)");
++MODULE_PARM_DESC(power, "Power management (0=none, 1=saver, 2=agressive)");
+ module_param_string(mac, MACstring, sizeof(MACstring), 0);
+ MODULE_PARM_DESC(mac,
+- "comma list MAC addresses, one per chip; e.g. 11:67:BC:F1:4:a2,22:...");
+-
++ "Comma list MAC addresses, one per chip; e.g. 11:67:BC:F1:4:a2,22:...");
