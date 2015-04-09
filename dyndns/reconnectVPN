@@ -1,5 +1,5 @@
 #!/bin/sh
-#cell=ppp8   
+cell=ppp8   
 vpn=ppp9   
 ifdown $vpn
 [ "$cell" ] && {
