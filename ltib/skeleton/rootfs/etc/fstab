@@ -1,7 +1,7 @@
 #
 # /etc/fstab: static file system information.
 #
-# file sys  mount           type    options   
+# file sys  mount           type    options
 proc        /proc           proc    defaults
 devpts      /dev/pts        devpts  gid=5,mode=620
 usbfs       /proc/bus/usb   usbfs   defaults
@@ -12,13 +12,15 @@ shm         /dev/shm        tmpfs   defaults
 
 #try to mount /sd at boot time
 /dev/mmcblk0p2 /sd          auto    defaults
+/dev/mtdblock2 /flash	    auto    ro,noauto
 tmpfs       /sd/var/run     tmpfs   defaults
 tmpfs       /sd/var/lock    tmpfs   defaults
 
-/dev/mmcblk0p1 /windows     vfat    noauto
+/dev/mmcblk0p1 /boot	    vfat    noauto
+none	    /debug	   debugfs  noauto
 
 #optional swapfile on sd card
-/sd/.SWAP   swap            swap 
+/sd/.SWAP   swap            swap
 
 #END nfsmount service ignores entries below this line END#
 
@@ -29,4 +31,4 @@ atlasnfs:/ifs/mbari/ESP /ESP nfs nosuid,nodev,noauto
 atlasnfs:/ifs/mbarisnaponly/FTP /ftp nfs nosuid,nodev,noauto
 
 bufflehead:/home /bufflehead/home nfs noauto
-pippin:/home /pippin/home nfs noauto
+raven:/home /raven/home nfs noauto

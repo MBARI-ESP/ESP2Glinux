@@ -1,7 +1,7 @@
 #!/bin/sh
 #sychronize real-time with network
 
-ntpserver=clock.via.net
+ntpserver=us.pool.ntp.org
 rdateserver=bufflehead
 
 PATH=/usr/sbin:/sbin:/bin
@@ -11,7 +11,7 @@ OPTIONS=""
 case "$1" in
     start|"")
       if grep -qv '^[[:space:]]*#' /etc/resolv.conf; then
-        if [ -n $ntpserver ] && ntpclient -s -h $ntpserver >/dev/null; then
+        if [ -n $ntpserver ] && timelimit -t30 -T3 ntpclient -s -h $ntpserver >/dev/null; then
           echo "Clock sycn'd with $ntpserver at `date` via ntp"
           exit 0
         fi

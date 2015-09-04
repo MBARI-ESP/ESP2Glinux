@@ -58,6 +58,9 @@ Patch42         : kernel-2.6.33-modularSound.patch
 Patch43         : kernel-2.6.33-mmcPower.patch
 Patch44         : kernel-2.6.33-pc104.patch
 Patch45         : kernel-2.6.33-ks8851parm.patch
+Patch46         : kernel-2.6.33-serialUSB.patch
+Patch47         : kernel-2.6.33-telit.patch
+Patch48         : kernel-2.6.33-irq6.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -106,3 +109,6 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch43 -p1
 %patch44 -p1
 %patch45 -p1
+%patch46 -p1
+%patch47 -p1
+%patch48 -p1

@@ -9,6 +9,15 @@
 [ -z "$KERNEL_VER" ] &&
   KERNEL_VER=`grep "Linux kernel version" $KERNEL_DIR/.config | 
               cut -sf2 -d: | tr -d "[:space:]"` &&
+: ${INSTALL_DIR:=`echo ~/ltib/rootfs.tmp/lib/modules/${KERNEL_VER}*`} &&
+
 cd kernel &&
 make clean &&
-ltibMake all KERNEL_DIR=$KERNEL_DIR KERNEL_VER=$KERNEL_VER obj-m="$objs"
+ltibMake all KERNEL_DIR=$KERNEL_DIR KERNEL_VER=$KERNEL_VER obj-m="$objs" &&
+[ -e "$INSTALL_DIR" ] || exit 2
+
+echo "Installing kernel modules in $INSTALL_DIR"
+
+mkdir $INSTALL_DIR/starlightXpress &&
+cp -r *.ko $INSTALL_DIR/starlightXpress
+

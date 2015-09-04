@@ -18,7 +18,7 @@ ifAliasDown() {
   fn=/var/run/*$1.pid
   pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || for pidfn in $pidfns; do
-    daemon=`cat $pidfn`
+    daemon=`head -n1 $pidfn`
     case $1 in
       ppp*)  signal=TERM ;;
       *)     signal=HUP  ;;
@@ -57,7 +57,11 @@ eachAlias() {
 
 case "$1" in
   -*|*/*|'') #any flag is a request for help
-    usage    
+    echo "
+usage:  ifdown [network interface or alias name]
+        disable the specified network interface or alias
+"
+    return 1
   ;;
   
   *:*) #an interface alias

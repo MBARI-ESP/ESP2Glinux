@@ -1,1 +1,10 @@
-eth* wlan* sl* ppp* lo
+ppp9 eth* wlan* sl* ppp* lo
+
+
+Whenever a network interface comes up or goes down, the first network interface
+listed on the first line that has an associated default gateway
+is selected for the network gateway and DNS (in /etc/resolv.conf)
+
+The second line determines which interface to use for
+DNS when no active interface has an associated gateway.
+If the second line is blank, the list of interfaces on the first line is reused.

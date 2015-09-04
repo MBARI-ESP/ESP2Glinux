@@ -1,12 +1,12 @@
-#!/bin/bash
+#!/bin/bash -e
 here=`dirname $0`
 home=`eval echo ~${SUDO_USER}`
 LTIB=$home/ltib
 IMAGE=${2-$LTIB/rootfs.tmp}
-[ -z $1 ] && { 
+[ -z $1 ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 5/4/11 brent@mbari.org
-Usage: 
+Create new ltib root filesystem  -- 9/3/15 brent@mbari.org
+Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
 EOS
@@ -14,9 +14,14 @@ EOS
 }
 
 [ -e $1 ] && {
-  echo "Destination directory \"$1\" must first be removed." >&2
-  exit 2
+  read -p "Remove existing destination directory: $1 (y/N)? " yn
+  case $yn in
+    Y|y|yes|YES|Yes)  sudo rm -rf $1;;
+    *) exit 2;;
+  esac
 }
 
-cp -r --preserve=mode --no-preserve=ownership $IMAGE $1 && 
-exec `dirname $0`/replaceSkeleton $1
+sudo sh -c "cp -a $IMAGE $1 && $here/replaceSkeleton $1"
+[ -z "$BAREBONES" ] && $here/augmentSkeleton $1
+echo "Setting owner of all files in $1 to root"
+sudo sh -c "chown -R root:root $1 && cd $1/bin && chmod +s busybox mount umount"

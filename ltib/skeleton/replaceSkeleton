@@ -1,8 +1,8 @@
 #!/bin/bash
-[ -z $1 ] && { 
+[ -z $1 ] && {
   cat <<EOS >&2
 Replace ltib skeleton in the rootfs the directory given as an argument
-with the MBARI one for the ea31xx base board  -- 10/17/13 brent@mbari.org
+with the MBARI one for the ea31xx base board  -- 9/2/15 brent@mbari.org
 EOS
   exit 2
 }
@@ -23,7 +23,7 @@ here=`dirname $0`
 home=`eval echo ~${SUDO_USER}`
 LTIB=$home/ltib
 DEV_IMAGE=$LTIB/rootfs
-cp -af $DEV_IMAGE/dev/* $dst/dev 2>/dev/null   #recover needed dev entries
+cp -af $DEV_IMAGE/dev/* $dst/dev   #recover needed dev entries
 
 mksymlinks() {
   [ -z "$1" -o "$1" = "--help" ] && {
@@ -63,19 +63,26 @@ rm $dst/usr/lib/{*.so.bak,*.so_orig,e2initrd*}
 rm $dst/usr/sbin/tunelp
 rm $dst/usr/bin/{unubi,pddcustomize,chkdupexe,*ftl_*,setarch,linux{32,64}}
 rm $dst/usr/bin/{recv_image,rfd{dump,format},cytune}  #ubi + cyclades serial
+rm $dst/usr/bin/gdbtui
+rm $dst/etc/devfsd.conf
+rm $dst/etc/udhcpd.conf
+rm $dst/etc/sysctl.conf
+rm $dst/etc/modprobe.conf.dist
+chmod a-x $dst/etc/ltib-release
 
-chmod og-r $dst/etc/ppp/*secrets  #don't let passwords be read by others
+chmod og-r $dst/etc/ppp/*secrets 2>/dev/null #passwords not to be read by others
+
 
 # preserve the initial state of the /var dir so new sd cards can be initialized
 initial=etc/initial
 log=$initial/var/log
 mkdir $dst/$initial &&
 mv $dst/var $dst/$initial &&
-cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst && 
+cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst &&
 rm -rf `find $dst -name CVS` &&
-mksymlinks $dst < $here/symlinks && 
+mksymlinks $dst < $here/symlinks &&
 ldconfig -r . &&
-mkdir -p $log && chmod g-w $log && cd $log && { 
+mkdir -p $log && chmod g-w $log && cd $log && {
       d=`date  -uIseconds` &&
       echo ${d%+*}UTC > birth &&
       echo "Image Built at  `date`"

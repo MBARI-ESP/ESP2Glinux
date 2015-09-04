@@ -1,7 +1,7 @@
 IFNAME=ppp0
 AUTOSTART=inittab
 ifPrep() {
-  pppd call shore unit 0 logfile /dev/null
+  pppd call shore unit ${IFNAME#ppp} logfile /dev/null
 }
 
 hosts() {    #add lines before EOS

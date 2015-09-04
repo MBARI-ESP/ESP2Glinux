@@ -1,5 +1,5 @@
-# set up environment for ESP gen2 target -- 5/6/05 Brent@mbari.org
-export PATH=.:$HOME/bin:${PATH#.:$HOME/bin:}
+# set up environment for ESP gen2 target -- 10/27/11 Brent@mbari.org
+export PATH=.:$HOME/bin:/opt/mbari/bin:${PATH#.:$HOME/bin:/opt/mbari/bin}
 if [ ! \( -e esp2 \) -o -L esp2 ]; then
   for home in esp2@* esp2local; do
     if [ -r $home/bin/ESPenv ]; then

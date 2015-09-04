@@ -1,8 +1,13 @@
 #!/bin/sh
-# ser2net daemon for arm-linux -- 10/15/13 brent@mbari.org
+# ser2net daemon for arm-linux -- 9/1/15 brent@mbari.org
 # do not unpack from archive in this case!
 : ${SER2NETVERS:=ser2net-2.7}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+export CC CFLAGS
+
 # rm -rf $SER2NETVERS && tar xzf $SER2NETVERS.tar.gz
 cd $SER2NETVERS && autoconf &&
-CC=/arm/bin/gcc configure --host=arm-softfloat-linux &&  
+configure --host=arm-softfloat-linux &&  
 echo "Done."

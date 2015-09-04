@@ -1,16 +1,19 @@
 #!/bin/sh
-# build & install ser2net daemon for arm-linux -- 10/15/13 brent@mbari.org
+# build & install ser2net daemon for arm-linux -- 9/1/15 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${TARGETBIN:=${2-/usr/sbin}}
 : ${HOSTTOP:=${1-$HOME/armHost}}
+: ${CC:=$ARMGCC/bin/gcc}
+export CC CFLAGS
 HOSTBIN=$HOSTTOP/$TARGETBIN
 echo "Installing in $HOSTBIN"
 echo "  for execution at $TARGETBIN on the ARM target"
 top=`pwd` &&
 cd ${SER2NETVERS-ser2net-2.7} || exit 2
-make clean all CFLAGS="-Os -fomit-frame-pointer" CC=/arm/bin/gcc &&
+make CFLAGS="$CFLAGS" clean all &&
 $ARMSTRIP ser2net &&
 install -Dm 755 ser2net $HOSTBIN/ser2net &&
 install -Dm 644 $top/ser2net.conf $HOSTTOP/etc/ser2net.conf &&

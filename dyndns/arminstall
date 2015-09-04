@@ -1,10 +1,11 @@
 #!/bin/sh
-# build & install dnydns update daemon for arm-linux -- 2/10/12 brent@mbari.org
+# build & install dnydns update daemon for arm-linux -- 9/1/15 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${TARGETTOP:=${2-usr/sbin}}
 : ${HOSTTOP:=${1-$HOME/armHost}}
+: ${CC:=$ARMGCC/bin/gcc}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
@@ -14,7 +15,7 @@ cp reconnectVPN $TOP &&
 cp dyndns $HOSTTOP/etc/init.d &&
 chmod 600 $HOSTTOP/etc/$prog.conf &&
 cd inadyn-1.98.1 || exit 2
-make CC=/arm/bin/gcc || exit 1
+make CC=$CC || exit 1
 mkdir -p $TOP || exit 4
 $ARMSTRIP src/$prog -o $TOP/$prog || exit 3
 echo "Done."

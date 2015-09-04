@@ -42,7 +42,7 @@ set +f
   [ "$pidfns" = "$fn" ] || {  #check for active locks...
     unset owners
     for pidfn in $pidfns; do  #while removing stale ones
-      owner=`cat $pidfn` 2>/dev/null && {
+      owner=`head -n1 $pidfn` 2>/dev/null && {
         if kill -0 $owner 2>/dev/null; then
           owners="$owners $owner"
         else
@@ -51,8 +51,8 @@ set +f
       }
     done
     [ "$owners" ] && {
-      echo "$IFNAME is already in use by process: $owners"
-      return 0
+      echo "$IFNAME is already in use by process: $owners" >&2
+      return 7
     }
   }
   echo "Bringing up interface $IFNAME ..."
@@ -66,12 +66,12 @@ set +f
           if test -x $daemon  ; then
             pidfn=/var/run/udhcpc-$IFNAME.pid
             if [ -r $pidfn ]; then
-              kill `cat $pidfn` 2>/dev/null
+              kill `head -n1 $pidfn` 2>/dev/null
             else
               mkdir -p `dirname $pidfn`
             fi
             echo -n "Determining IP configuration for $IFNAME...."
-	    insmod af_packet >/dev/null 2>&1
+            insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
             [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
@@ -90,7 +90,9 @@ set +f
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
         false
       ;;
-    esac && type ifPost >/dev/null 2>&1 && ifPost
+    esac || return $?
+    type ifPost >/dev/null 2>&1 || return 0
+    ifPost
   }
 }
 

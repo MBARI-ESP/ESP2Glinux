@@ -9,12 +9,12 @@
 #  install all modules in /lib/modules/*/updates directory
 #  Many wireless devices require firmware which can be simply copied 
 #  from desktop linux into /lib/firmware (see also the firmware directory here)
-# -- 9/17/14 brent@mbari.org
+# -- 9/1/15 brent@mbari.org
 #
 : ${compat:=compat-wireless-3.3-2-n}
 : ${ltib:=~/ltib}
 : ${ltibKernel:=$ltib/rpm/BUILD/linux}
-: ${ltibModules:=`eval echo $ltib/rootfs/lib/modules/2.6.3*`}
+: ${ltibModules:=`eval echo $ltib/rootfs.tmp/lib/modules/2.6.3*`}
 
 [ -d $ltibKernel -a -d $ltibModules ] || {
   echo "-->  You must first prep and build the ltib kernel with cmds below <--"
@@ -25,7 +25,7 @@
   exit 2
 }
 cd $compat &&
-: ${compatModules:=`pwd`/rootfs} &&
+: ${compatModules:=~/ltib/rootfs.tmp} &&
 : ${kmodPath:="KMODPATH_ARG=\"INSTALL_MOD_PATH=$compatModules\""} &&
 ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel &&
 ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel $kmodPath install-modules

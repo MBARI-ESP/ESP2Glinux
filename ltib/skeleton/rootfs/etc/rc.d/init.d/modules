@@ -17,6 +17,10 @@ case "$1" in
            modprobe "$@"
          }
        done < $modlist
+       #load platform dependent modules
+       for module in ks8851_mll dm9000; do
+         [ -e /sys/bus/platform/devices/$module.* ] && modprobe $module
+       done
        :
        ;;                         
     stop)

@@ -75,7 +75,7 @@ case "$1" in
           lock=`realPath $var/lock` &&
             redoIfRO $lock \
              "rm -rf $lock/* $lock/.[^.]* && {
-               mkdir -p $lock && chgrp tty $lock && chmod g+rwx $lock
+               mkdir -p $lock && chgrp uucp $lock && chmod g+rwx $lock
              }"
         }
       }

@@ -1,7 +1,11 @@
 #!/bin/sh
-# unpack and patch vsftpd daemon for arm-linux -- 3/15/05 brent@mbari.org
+# unpack and patch vsftpd daemon for arm-linux -- 9/1/15 brent@mbari.org
 
 : ${HTTPDVERS:=thttpd-2.25b}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${ARMGCC:=/arm}
+: ${CC:=$ARMGCC/bin/gcc}
+export CC CFLAGS
 rm -rf $HTTPDVERS && tar xzf $HTTPDVERS.tar.gz && cd $HTTPDVERS &&
-CC=/arm/bin/gcc configure --host=arm-softfloat-linux &&  
+configure --host=arm-softfloat-linux &&  
 echo "Done."

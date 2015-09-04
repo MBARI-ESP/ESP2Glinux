@@ -4,7 +4,7 @@
 #		Please read a standard system's man pages for inittab
 #
 
-# Runlevels. Only these runlevels used:
+# Runlevels. Only these runlevels used by MBARI embedded systems:
 #   0 - halt
 #   3 - (default) multiuser mode
 #   6 - reboot 
@@ -33,6 +33,9 @@ co:12345:respawn:/sbin/getty -L 115200 ttyS0
 
 # Keep the freewave slip interface up
 #sl0:12345:respawn:/sbin/slattach -P /var/run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
+
+# Indirectly brings up VPN link to MBARI
+#vpn:12345:respawn:/usr/sbin/inadyn
 
 # Trap CTRL-ALT-DELETE
 ca::ctrlaltdel:/sbin/init 6
