@@ -1,0 +1,30 @@
+#!/bin/bash -e
+here=`dirname $0`
+: ${LTIB:=$HOME/ltib}
+: ${HOSTTOP=${1-$LTIB/rootfs.tmp}}
+: ${ARMGCC:=/ltibarm}
+: ${ARMHOST:=arm-unknown-linux}
+: ${ARMPREFIX:=$LTIB/rootfs/usr}
+export ARMGCC HOSTTOP ARMHOST ARMPREFIX
+cat <<EOS >&2
+Augment root filesystem at $HOSTTOP for ESP application
+  -- 9/8/15 brent@mbari.org
+Usage:
+  `basename $0` {root.tmp dir}
+ltib root.tmp defaults to $HOSTTOP
+EOS
+
+echo "  ===>  Building dyndns  <==="
+cd ~/linux/dyndns && armconfig && arminstall
+
+cd ~/linux/esp && back=$PWD
+for package in netdev ser2net ppp thttpd; do
+  echo
+  echo "  ===>  Building $package  <==="
+  cd $package && armconfig && arminstall
+  cd $back
+done
+
+echo
+echo "  ===>  Building Ruby 1.8.7-mbari  <==="
+cd ~/ruby/ruby-1.8.7-mbari && armconfig && arminstall

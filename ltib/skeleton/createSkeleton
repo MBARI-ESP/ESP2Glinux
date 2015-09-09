@@ -1,11 +1,12 @@
 #!/bin/bash -e
+#set -x
 here=`dirname $0`
-home=`eval echo ~${SUDO_USER}`
-LTIB=$home/ltib
+: ${LTIB=~/ltib}
 IMAGE=${2-$LTIB/rootfs.tmp}
+export LTIB IMAGE
 [ -z $1 ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 9/3/15 brent@mbari.org
+Create new ltib root filesystem  -- 9/8/15 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
@@ -16,12 +17,45 @@ EOS
 [ -e $1 ] && {
   read -p "Remove existing destination directory: $1 (y/N)? " yn
   case $yn in
-    Y|y|yes|YES|Yes)  sudo rm -rf $1;;
+    Y|y|yes|YES|Yes)  ;;
     *) exit 2;;
   esac
 }
 
-sudo sh -c "cp -a $IMAGE $1 && $here/replaceSkeleton $1"
+group=`id -gn $USER`
+sudo sh <<END
+  rm -rf $1 &&
+  mkdir $1 &&
+  chown $USER:$group $1
+END
+cp -a --no-preserve=owner $IMAGE/. $1
+
+$here/replaceSkeleton $1
 [ -z "$BAREBONES" ] && $here/augmentSkeleton $1
-echo "Setting owner of all files in $1 to root"
-sudo sh -c "chown -R root:root $1 && cd $1/bin && chmod +s busybox mount umount"
+
+#strip unneeded symbols from all unstripped ARM EABI4 binaries
+cd $1 &&
+chmod u+w sbin/mount.nfs
+find -type f -exec file {} \; |
+  grep "ARM, EABI4" | grep "not stripped" | cut -f 1 -d ":" | while read tostrip
+    do
+      libPath=${tostrip#./}
+      if [ "${libPath#lib/modules/}" != "$libPath" ]; then
+        echo Stripping unneeded symbols from $libPath
+        unneeded=--strip-unneeded
+      else
+        echo Stripping symbols from $libPath
+        unneeded=
+      fi
+      /ltibarm/bin/strip $unneeded "$libPath" #|| exit 9
+    done
+
+
+echo Changing ownership of $1 to root and finalizing image
+sudo sh <<END
+  chown -Rh root:root $1 &&
+  #recover needed dev entries
+  cp -af --no-preserve=owner $LTIB/rootfs/dev/* $1/dev &&
+  ldconfig -r $1 &&
+  cd $1/bin && chmod +s busybox mount umount
+END

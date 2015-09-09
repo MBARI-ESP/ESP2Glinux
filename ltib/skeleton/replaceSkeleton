@@ -1,13 +1,16 @@
-#!/bin/bash
+#!/bin/bash -e
+#set -x
 [ -z $1 ] && {
   cat <<EOS >&2
 Replace ltib skeleton in the rootfs the directory given as an argument
-with the MBARI one for the ea31xx base board  -- 9/2/15 brent@mbari.org
+with the MBARI one for the ea31xx base board  -- 9/8/15 brent@mbari.org
 EOS
   exit 2
 }
 
 dst=$1
+here=`dirname $0`
+
 etc=$1/etc
 rcd=$etc/rc.d
 rm $2 $rcd/rc.conf $rcd/rcS $rcd/rc.serial $rcd/rc.modules $rcd/init.d/* || {
@@ -19,11 +22,6 @@ EOS
 }
 rm -rf $dst/home/* $dst/lost+found $dst/mnt/*  #remove ltib's users & mount pts
 
-here=`dirname $0`
-home=`eval echo ~${SUDO_USER}`
-LTIB=$home/ltib
-DEV_IMAGE=$LTIB/rootfs
-cp -af $DEV_IMAGE/dev/* $dst/dev   #recover needed dev entries
 
 mksymlinks() {
   [ -z "$1" -o "$1" = "--help" ] && {
@@ -70,18 +68,13 @@ rm $dst/etc/sysctl.conf
 rm $dst/etc/modprobe.conf.dist
 chmod a-x $dst/etc/ltib-release
 
-chmod og-r $dst/etc/ppp/*secrets 2>/dev/null #passwords not to be read by others
-
-
 # preserve the initial state of the /var dir so new sd cards can be initialized
 initial=etc/initial
 log=$initial/var/log
 mkdir $dst/$initial &&
 mv $dst/var $dst/$initial &&
-cp -r --preserve=mode --no-preserve=ownership $here/rootfs/.  $dst &&
-rm -rf `find $dst -name CVS` &&
+cp -a --no-preserve=ownership $here/rootfs/.  $dst &&
 mksymlinks $dst < $here/symlinks &&
-ldconfig -r . &&
 mkdir -p $log && chmod g-w $log && cd $log && {
       d=`date  -uIseconds` &&
       echo ${d%+*}UTC > birth &&
