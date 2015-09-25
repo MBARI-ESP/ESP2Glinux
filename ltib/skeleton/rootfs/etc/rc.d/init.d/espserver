@@ -1,0 +1,23 @@
+#!/bin/sh
+#Start/Stop ESP server
+
+PATH=/usr/sbin:/sbin:/bin
+user=esp
+server=~${user}/esp2/bin/espserver
+
+case "$1" in
+    start)
+      su - $user -c "$server $*"
+      :      
+       ;;
+                         
+    stop)
+      su - $user -c "$server $*"
+       :
+       ;;
+
+     *)
+       echo "usage: espserver {start|stop} {client}"
+       ;;
+esac
+
