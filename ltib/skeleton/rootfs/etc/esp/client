@@ -3,4 +3,4 @@
 #intended to be invoked from /etc/inittab as:
 # esp:3:respawn:/sbin/getty -L baud -nl /etc/esp/client ttyDevice
  
-su - brent -c "exec sh -ic \"espclient --wait brent\""
+su - esp -c "exec sh -ic \"espclient --wait mooring\""
