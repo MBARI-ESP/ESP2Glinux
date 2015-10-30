@@ -1,0 +1,8 @@
+*.o
+*.ko.cmd
+*.o.cmd
+*.ko
+*.cache
+*.status
+*.deps
+technologic/
