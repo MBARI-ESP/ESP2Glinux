@@ -1,0 +1,2 @@
+#rules for Starlight Xpress cameras
+ENV{PRODUCT}=="1278/119/*|1278/200/*|1278/100/*", ENV{DEVTYPE}=="usb_device", ACTION=="add|remove", RUN+="/etc/udev/starlightXpress $env{ACTION}"
