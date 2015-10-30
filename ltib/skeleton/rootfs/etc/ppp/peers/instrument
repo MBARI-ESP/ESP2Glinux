@@ -1,0 +1,41 @@
+# pppd configuration for esp<->auv 3-wire serial link -- 5/9/15 brent@mbari.org
+
+#connection
+linkname esp
+noauth       #no password authorization
+persist      #don't terminate if the link breaks
+holdoff 10   #try to reestablish link waiting this many seconds
+maxfail 0    #never give up!
+
+#debugging options
+#debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+#dump
+
+#RS-232 port configuration
+ttyUSB0	#symlink /dev/freewave to the modem's serial port
+#460800
+115200       #baud rate
+local        #no carrier detect
+crtscts asyncmap 0
+#xonxoff asyncmap A0000  #use XON/XOFF characters to control flow
+lock         #request exclusive access to the port
+
+#detect dropped link
+lcp-echo-interval 60
+#lcp-echo-adaptive
+lcp-echo-failure 3
+
+#IP addressing
+#name .drifter.esp
+134.89.10.51:134.89.10.60
+ms-dns 134.89.10.32	#offer up our local DNS server
+ms-dns 134.89.10.10
+proxyarp     #make far end look like it is on our network
+ktune        #turn on IP forwarding for routing to remote host
+
+#compression
+deflate 12  #deflate in 4k byte blocks

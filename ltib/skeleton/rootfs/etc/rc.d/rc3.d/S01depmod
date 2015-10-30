@@ -1,0 +1,8 @@
+#!/bin/sh
+#  first-time boot kernel module configuration
+
+echo "Making / writable for first-time boot configuration"
+mount -oremount,rw / && {
+  depmod -a
+  rm $0  #this script will self-destruct...
+}

@@ -1,0 +1,34 @@
+# initialize /dev symlinks on every reboot
+PATH=/usr/sbin:/sbin:/bin
+
+espPort()
+{
+  name=$1; port=$2
+  [ -c "$port" ] || return
+  ln -s $port $name
+  chgrp esp $port && chmod g+rw $port
+}
+
+
+case "$1" in
+  start)
+    cd /dev
+    mknod ppp c 108 0
+    modem=ttyS8 	#serial port connected to the freewave radio modem
+    [ -c "$modem" ] && {
+      ln -s $modem freewave
+      stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
+    }
+
+    espPort I2Cgate  ttyS4   #core ESP gateway
+    espPort AUVgate  ttyS5   #AUV command/status port
+     ;;
+
+  stop)
+     :
+     ;;
+
+   *)
+       echo "usage: local {start}"
+       ;;
+esac

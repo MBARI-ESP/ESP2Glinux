@@ -1,0 +1,6 @@
+# Options common to all all PPTP servers
+#
+mtu 1460
+
+require-mppe
+require-mschap-v2

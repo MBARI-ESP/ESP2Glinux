@@ -1,0 +1,10 @@
+#!/bin/sh
+#  first-time boot system and users configuration
+
+echo "Setting up users"
+cd /home
+for user in *; do
+  chown -Rh $user:mbari $user
+done
+
+rm $0  #this script will self-destruct...

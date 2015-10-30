@@ -1,0 +1,21 @@
+# Purpose: Verizon PPP Attach Script
+#
+# Activate the device and pause before sending additional AT commands.
+TIMEOUT 10
+ABORT "ERROR"
+
+#return to factory defaults, echo off, show signal strength
+"" AT&FE0+CSQ?
+OK\r \c
+
+ABORT "NO CARRIER"
+ABORT "NO DIALTONE"
+ABORT "NO ANSWER"
+ABORT "BUSY"
+ABORT "Username/Password Incorrect"
+ABORT "\nRINGING\r\n\r\nRINGING\r"
+
+TIMEOUT 60
+# Log signal strength, connect 
+"" ATD#777
+CONNECT \c

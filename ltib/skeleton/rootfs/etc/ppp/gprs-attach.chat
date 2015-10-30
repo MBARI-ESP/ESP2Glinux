@@ -1,0 +1,28 @@
+# Purpose: Generic GPRS PPP Attach Script
+#
+#  APN environment variable should be set appropriately for
+#   T-Mobile:  epc.tmobile.com
+#   AT&T:      Broadband
+#
+# Activate the device and pause before sending additional AT commands.
+TIMEOUT 10
+ABORT "ERROR"
+
+#send carridge return, then delay for autobaud
+"" ""
+#return to factory defaults, echo off
+"" \pAT&FE0
+
+# Define the PDP Context: Context ID, Routing Protocol, APN
+OK\r \d\dAT+CGDCONT=1,"IP","$APN"
+
+ABORT "NO CARRIER"
+ABORT "NO DIALTONE"
+ABORT "NO ANSWER"
+ABORT "BUSY"
+ABORT "Username/Password Incorrect"
+ABORT "\nRINGING\r\n\r\nRINGING\r"
+
+# Log signal strength, connect with the PDP Context definition above.
+OK\r AT+CSQ;D*99***1#
+CONNECT \c
