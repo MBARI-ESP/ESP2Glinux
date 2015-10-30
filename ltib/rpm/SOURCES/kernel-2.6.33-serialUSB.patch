@@ -1,0 +1,169 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/usb.c linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/usb.c	2015-05-09 12:20:09.500989528 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/usb.c	2015-04-28 10:41:44.666393523 -0700
+@@ -249,6 +249,7 @@
+ #endif
+ 	} else {
+ #if defined(CONFIG_USB_EHCI_HCD)
++	        USB_DEV_OTGSC &= ~OTGSC_IDPU;  //turn off the pullup if grounded
+ 		/* enable VBUS power */
+ 		lpc313x_vbus_power(1);
+ 		msleep(2);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2015-05-09 12:20:09.508989328 -0700
++++ linux-2.6.33.modified/drivers/serial/8250.c	2015-05-09 11:07:40.722209013 -0700
+@@ -44,6 +44,7 @@
+ #include <linux/serial_8250.h>
+ #include <linux/nmi.h>
+ #include <linux/mutex.h>
++#include <linux/ratelimit.h>
+ 
+ #include <asm/io.h>
+ #include <asm/irq.h>
+@@ -88,7 +89,7 @@
+ #define DEBUG_INTR(fmt...)	do { } while (0)
+ #endif
+ 
+-#define PASS_LIMIT	256
++#define PASS_LIMIT	64
+ 
+ #define BOTH_EMPTY 	(UART_LSR_TEMT | UART_LSR_THRE)
+ 
+@@ -310,7 +311,7 @@
+ 		.name		= "XR16788",
+ 		.fifo_size	= 64,
+ 		.tx_loadsz	= 64,
+-		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
++		.fcr		= UART_FCR_ENABLE_FIFO,
+ 		.flags		= UART_CAP_FIFO | UART_EXAR7,
+ 	},
+ };
+@@ -1576,14 +1577,15 @@
+ static irqreturn_t serial8250_interrupt(int irq, void *dev_id)
+ {
+ 	struct irq_info *i = dev_id;
+-	struct list_head *l, *end = NULL;
+-	int pass_counter = 0, handled = 0;
++	struct list_head *l, *end;
++	int pass_counter = 0;
++    struct uart_8250_port *lastHandled = NULL;
+ 
+ 	DEBUG_INTR("serial8250_interrupt(%d)...", irq);
+ 
+ 	spin_lock(&i->lock);
+ 
+-	l = i->head;
++	l = end = i->head;
+ 	do {
+ 		struct uart_8250_port *up;
+ 		unsigned int iir;
+@@ -1592,38 +1594,27 @@
+ 
+ 		iir = serial_in(up, UART_IIR);
+ 		if (!(iir & UART_IIR_NO_INT)) {
+-			serial8250_handle_port(up);
+-
+-			handled = 1;
+-
+-			end = NULL;
+-		}
+-#if 0  //optimized this unused case out of the ISR -- brent@mbari.org
+-                 else if (up->port.iotype == UPIO_DWAPB &&
+-			  (iir & UART_IIR_BUSY) == UART_IIR_BUSY) {
+-			/* The DesignWare APB UART has an Busy Detect (0x07)
+-			 * interrupt meaning an LCR write attempt occured while the
+-			 * UART was busy. The interrupt must be cleared by reading
+-			 * the UART status register (USR) and the LCR re-written. */
+-			unsigned int status;
+-			status = *(volatile u32 *)up->port.private_data;
+-			serial_out(up, UART_LCR, up->lcr);
+-
+-			handled = 1;
+-
++			serial8250_handle_port(lastHandled=up);
+ 			end = NULL;
+-		}
+-#endif
+-                 else if (end == NULL)
++		} else if (end == NULL)
+ 			end = l;
+ 
+ 		l = l->next;
+ 
+ 		if (l == i->head && pass_counter++ > PASS_LIMIT) {
+-			/* If we hit this, we're dead. */
+-			printk(KERN_ERR "serial8250: too much work for "
+-				"irq%d\n", irq);
+-//TODO:  try resetting and reinitializing the UART!!
++			/* If we hit this, we've got a stuck IRQ. */
++            iir = serial_in(lastHandled, UART_IIR);
++//TODO:  try resetting and reinitializing the UART?!
++			if (up->capabilities & UART_EXAR7 && iir & 0x1C) {
++				printk_ratelimited(KERN_ERR
++            		"ttyS%d: irq %d stuck with IIR=0x%02x (purging rcv fifo)\n",
++                	lastHandled->port.line, irq, iir);
++           		serial_outp(lastHandled, UART_FCR,
++                			UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR);
++            }else
++				printk_ratelimited(KERN_ERR
++            		"ttyS%d: irq %d stuck with IIR=0x%02x\n",
++                	lastHandled->port.line, irq, iir);            
+ 			break;
+ 		}
+ 	} while (l != end);
+@@ -1632,7 +1623,7 @@
+ 
+ 	DEBUG_INTR("end.\n");
+ 
+-	return IRQ_RETVAL(handled);
++	return IRQ_RETVAL(lastHandled);
+ }
+ 
+ /*
+@@ -1976,10 +1967,16 @@
+ 		return -ENODEV;
+ 	}
+ 
++	if (up->port.type == PORT_XR16788) {
++		//RXTRG and TXRTG registers to determine fifo trigger points
++		serial_outp(up, 11,  20);  //RX interrupt when fifo has >=20 bytes
++		serial_outp(up, 10,  10);  //refill TX fifo when <10 bytes remain
++		serial_outp(up,  8,0xC2);  //+/- 6 byte auto-CTS hysterisis
++	}
+ 	/*
+ 	 * For a XR16C850, we need to set the trigger levels
+ 	 */
+-	if (up->port.type == PORT_16850) {
++	else if (up->port.type == PORT_16850) {
+ 		unsigned char fctr;
+ 
+ 		serial_outp(up, UART_LCR, 0xbf);
+@@ -2325,20 +2322,13 @@
+ 	serial_out(up, UART_IER, up->ier);
+ 
+ 
+-        if (up->capabilities & UART_EXAR7) {
+-            unsigned char efr = 0;
+-        /*
+-         * EXAR 7xx hardware flow control
+-         */
+-            //RXTRG and TXRTG registers to determine fifo trigger points
+-            serial_outp(up, 11,  20);  //RX interrupt when fifo has >=20 bytes
+-            serial_outp(up, 10,  10);  //refill TX fifo when <10 bytes remain
+-            serial_outp(up,  8,0xC2);  //+/- 6 byte auto-CTS hysterisis
+-            if (termios->c_cflag & CRTSCTS)
+-              efr |= UART_EFR_CTS|UART_EFR_RTS;
+-            serial_outp(up, 9, efr);   //setup the EFR register
+-
+-        }else{
++    if (up->capabilities & UART_EXAR7) {
++    /*
++     * EXAR 7xx automatic hardware flow control
++     */
++        serial_outp(up, 9,   //xr16788 EFR register
++          termios->c_cflag & CRTSCTS ? UART_EFR_CTS|UART_EFR_RTS : 0);
++    }else{
+ 	  if (up->capabilities & UART_CAP_EFR) {
+ 		  unsigned char efr = 0;
+ 		  /*

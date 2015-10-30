@@ -1,0 +1,39 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2015-08-28 11:53:18.418821983 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2015-08-27 10:49:41.431446711 -0700
+@@ -2,7 +2,7 @@
+  *
+  *  Author:	Durgesh Pattamatta
+  *  Copyright (C) 2009 NXP semiconductors
+- *  Revised:  2/2/15  brent@mbari.org
++ *  Revised:  8/26/15  brent@mbari.org
+  *
+  *  ea313x board init routines.
+  *
+@@ -64,14 +64,15 @@
+ 
+ #define XRbase (PC104base8 + 0x400) //base address of EXAR octal UART
+ //note: not decoded on ESP3G board, so this address used for it as well
+-#define XR_IRQ  PC104_IRQ7
+-#define XR_EVT  PC104_EVT7
++#define XR_IRQ  PC104_IRQ6
++#define XR_EVT  PC104_EVT6
+ 
+ 
+ //PC104 EVT/IRQ mapping -- all are active high
+ #define PC104_EVT3   EVT_GPIO11
+ #define PC104_EVT4   EVT_GPIO12
+ #define PC104_EVT5   EVT_GPIO13
++#define PC104_EVT6   EVT_mNAND_RYBN3
+ #define PC104_EVT7   EVT_GPIO14
+ #define PC104_EVT10  EVT_GPIO15
+ #define PC104_EVT11  EVT_GPIO16
+@@ -81,6 +82,7 @@
+ #define PC104_IRQ3   GPIO_GPIO11
+ #define PC104_IRQ4   GPIO_GPIO12
+ #define PC104_IRQ5   GPIO_GPIO13
++#define PC104_IRQ6   GPIO_MNAND_RYBN3
+ #define PC104_IRQ7   GPIO_GPIO14
+ #define PC104_IRQ10  GPIO_GPIO15
+ #define PC104_IRQ11  GPIO_GPIO16
