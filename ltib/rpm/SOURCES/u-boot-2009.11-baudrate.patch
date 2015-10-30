@@ -1,0 +1,251 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2015-10-21 10:52:33.822643876 -0700
++++ u-boot-2009.11.modified/Makefile	2015-10-20 15:52:14.076311798 -0700
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbari7
++EXTRAVERSION = -mbari8
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/init.c u-boot-2009.11.modified/cpu/lpc313x/init.c
+--- u-boot-2009.11/cpu/lpc313x/init.c	2015-10-21 10:52:33.802644378 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/init.c	2015-10-21 10:06:24.828814035 -0700
+@@ -13,7 +13,7 @@
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+- * 
++ *
+  * You should have received a copy of the GNU General Public License
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+@@ -384,7 +384,6 @@
+ 
+ int lpc313x_init(void)
+ {
+-	long uartid = 0;
+ 	int rc = 0;
+ 	ulong bootmode = 0;
+ 	volatile unsigned char * tmploadPointer =
+@@ -406,10 +405,10 @@
+ 	/* Initialize Timer0 */
+ 	timer_init();
+ 
+-	/* Initialize UART0 */
++	/* Initialize UART0 to default baud rate til environment can be read */
+ 	gd->baudrate = CONFIG_BAUDRATE;
+ 	gd->flags = 0;
+-	uartid = serial_init();
++	serial_init();
+ 	gd->have_console = 1;
+ 
+ #if defined(CONFIG_USB_EHCI_LPC313X) || defined(CONFIG_USB_DEVICE)
+@@ -437,9 +436,9 @@
+ #ifdef CONFIG_CPU_USBDFU_BOOT
+ 	drv_usbtty_init();
+ #endif
+-	
++
+ 	/* Read Boot mode pins and copy u-boot image from
+-	 * selected BOOT device 
++	 * selected BOOT device
+ 	 */
+ 	IOCONF->block[IOCONF_GPIO].mode0_clear = LPC313X_BOOTMODE_MASK;
+ 	IOCONF->block[IOCONF_GPIO].mode1_clear = LPC313X_BOOTMODE_MASK;
+@@ -495,7 +494,7 @@
+ 		cnt++;
+ 	}
+ 	udelay(100);
+-	
++
+ 	start_armboot();
+ 	return 0;
+ }
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/cpu/lpc313x/serial.c u-boot-2009.11.modified/cpu/lpc313x/serial.c
+--- u-boot-2009.11/cpu/lpc313x/serial.c	2015-10-21 10:52:33.762645383 -0700
++++ u-boot-2009.11.modified/cpu/lpc313x/serial.c	2015-10-20 22:08:32.529757769 -0700
+@@ -57,7 +57,7 @@
+ 
+ 	/* div by 16 */
+ 	uClk = uClk >> 4;
+-	/* 
++	/*
+ 	 * In the Uart IP block, baud rate is calculated using FDR and DLL-DLM
+ 	 * registers. The formula is :
+ 	 * BaudRate= uClk * (mulFracDiv/(mulFracDiv+dividerAddFracDiv) / (16 * (DLL)
+@@ -195,36 +195,32 @@
+ 
+ void serial_setbrg (void)
+ {
+-}
+-
+-int serial_init (void)
+-{
+ 	UART_REGS_T *regptr = (UART_REGS_T *)UART_BASE;
+ 	volatile ulong tmp;
+ 
+-	if(uart_init == 0) {
+-		/* UART is free */
+-		uart_init = 1;
+-
+-		/* Enable UART system clock */
+-		cgu_clk_en_dis(CGU_SB_UART_APB_CLK_ID, 1);
+-		cgu_clk_en_dis(CGU_SB_UART_U_CLK_ID, 1);
+-
+-		uart_setup_trans_mode(gd->baudrate);
+-
+-		/* Clear FIFOs, set FIFO level, and pending interrupts */
+-		regptr->iir_fcr = (UART_FCR_RXFIFO_TL16 |
+-				UART_FCR_FIFO_EN | UART_FCR_TXFIFO_FLUSH |
+-				UART_FCR_RXFIFO_FLUSH);
+-		tmp = regptr->iir_fcr;
+-		tmp = regptr->lsr;
+-
+-		/* Receive and RX line status interrupts enabled */
+-		regptr->dlm_ie = (UART_IE_RXLINE_STS |
+-				UART_IE_RDA | UART_IE_THRE);
++	/* Enable UART system clock */
++	cgu_clk_en_dis(CGU_SB_UART_APB_CLK_ID, 1);
++	cgu_clk_en_dis(CGU_SB_UART_U_CLK_ID, 1);
++
++	uart_setup_trans_mode(gd->baudrate);
++
++	/* Clear FIFOs, set FIFO level, and pending interrupts */
++	regptr->iir_fcr = (UART_FCR_RXFIFO_TL16 |
++			UART_FCR_FIFO_EN | UART_FCR_TXFIFO_FLUSH |
++			UART_FCR_RXFIFO_FLUSH);
++	tmp = regptr->iir_fcr;
++	tmp = regptr->lsr;
++
++	/* Receive and RX line status interrupts enabled */
++	regptr->dlm_ie = (UART_IE_RXLINE_STS |
++			UART_IE_RDA | UART_IE_THRE);
++	uart_init = 1;
++}
+ 
+-	}
+-	return (0);
++int serial_init (void)
++{
++	serial_setbrg();
++	return 0;
+ }
+ 
+ /*
+@@ -244,14 +240,9 @@
+ 
+ int serial_tstc (void)
+ {
+-	UART_REGS_T *regptr = (UART_REGS_T *)UART_BASE;
+-
+ 	if(uart_init == 1) {
+-		if ((regptr->lsr & UART_LSR_RDR) == 0) {
+-			return 0;
+-		}
+-		else
+-			return 1;	
++		UART_REGS_T *regptr = (UART_REGS_T *)UART_BASE;
++		return (regptr->lsr & UART_LSR_RDR) != 0;
+ 	}
+ 	else
+ 		return -1;
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2015-10-21 10:52:33.826643775 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2015-10-21 10:46:06.652378331 -0700
+@@ -109,7 +109,8 @@
+  */
+ #define CONFIG_SERIAL1			1	/* we use Serial line 1 */
+ #define CONFIG_BAUDRATE			115200
+-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
++#define CONFIG_SYS_BAUDRATE_TABLE \
++  { 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200 }
+ 
+ /*
+  * U-boot Boot configuration
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/lib_arm/board.c u-boot-2009.11.modified/lib_arm/board.c
+--- u-boot-2009.11/lib_arm/board.c	2015-10-21 10:52:33.782644880 -0700
++++ u-boot-2009.11.modified/lib_arm/board.c	2015-10-21 10:27:38.276351570 -0700
+@@ -123,13 +123,14 @@
+ #endif
+ static int init_baudrate (void)
+ {
+-	char tmp[64];	/* long enough for environment variables */
+-	int i = getenv_r ("baudrate", tmp, sizeof (tmp));
+-	gd->bd->bi_baudrate = gd->baudrate = (i > 0)
+-			? (int) simple_strtoul (tmp, NULL, 10)
+-			: CONFIG_BAUDRATE;
+-
+-	return (0);
++	char *s = getenv("baudrate");
++	if (s) {
++		char *end;
++		ulong rate = simple_strtoul(s, &end, 10);
++		gd->bd->bi_baudrate = gd->baudrate = !*end && rate ?
++													  rate : CONFIG_BAUDRATE;
++    }
++	return 0;
+ }
+ 
+ static int display_banner (void)
+@@ -206,6 +207,17 @@
+ }
+ #endif /* CONFIG_CMD_PCI || CONFIG_PCI */
+ 
++
++static int mem_init(void)
++{
++	/* armboot_start is defined in the board-specific linker script */
++	mem_malloc_init(_armboot_start - CONFIG_SYS_MALLOC_LEN,
++					CONFIG_SYS_MALLOC_LEN);
++	env_relocate();		/* relocate env to heap */
++    return 0;
++}
++
++
+ /*
+  * Breathe some life into the board...
+  *
+@@ -237,16 +249,17 @@
+ #if defined(CONFIG_ARCH_CPU_INIT)
+ 	arch_cpu_init,		/* basic arch cpu dependent setup */
+ #endif
+-	board_init,		/* basic board dependent setup */
+ #if defined(CONFIG_USE_IRQ)
+ 	interrupt_init,		/* set up exceptions */
+ #endif
+-	timer_init,		/* initialize timer */
+-	env_init,		/* initialize environment */
++	timer_init,			/* initialize timer */
++	env_init,			/* initialize environment */
++	mem_init,	    	/* allocate heap and relocate environment */
+ 	init_baudrate,		/* initialze baudrate settings */
+ 	serial_init,		/* serial communications setup */
+ 	console_init_f,		/* stage 1 init of console */
+ 	display_banner,		/* say that we are here */
++	board_init,			/* basic board dependent setup */
+ #if defined(CONFIG_DISPLAY_CPUINFO)
+ 	print_cpuinfo,		/* display cpu info (and speed) */
+ #endif
+@@ -291,10 +304,6 @@
+ 		}
+ 	}
+ 
+-	/* armboot_start is defined in the board-specific linker script */
+-	mem_malloc_init (_armboot_start - CONFIG_SYS_MALLOC_LEN,
+-			CONFIG_SYS_MALLOC_LEN);
+-
+ #ifndef CONFIG_SYS_NO_FLASH
+ 	/* configure available FLASH banks */
+ 	display_flash_config (flash_init ());
+@@ -341,8 +350,6 @@
+ 	AT91F_DataflashInit();
+ 	dataflash_print_info();
+ #endif
+-	/* initialize environment */
+-	env_relocate ();
+ 
+ #ifdef CONFIG_VFD
+ 	/* must do this after the framebuffer is allocated */
