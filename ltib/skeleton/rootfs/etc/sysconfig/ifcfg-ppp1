@@ -1,0 +1,12 @@
+IFNAME=ppp1
+AUTOSTART=no
+ifPrep() {
+  modprobe ppp_async && modprobe ppp_deflate &&
+  pppd call instrument unit ${IFNAME#ppp} logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+EOS
+}

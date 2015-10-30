@@ -1,0 +1,16 @@
+IFNAME=ppp9
+AUTOSTART=no
+
+provider=ESPshore
+username=`hostname`
+
+ifPrep() {
+  pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
+$(netIfPtp $IFNAME shore mail)
+EOS
+}

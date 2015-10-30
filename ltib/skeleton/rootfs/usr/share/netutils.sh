@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 3/17/15 brent@mbari.org
+# -- revised: 10/27/15 brent@mbari.org
 #
 
 ipUp() {
@@ -176,13 +176,25 @@ searchDomains() {
 
 netIfIP() {
   #output the IP address of the specified network interface
-  #if there's a valid IP, any addition args are also output
+  #if there's a valid IP, any additional args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip
     read ignore
     read inet addr ip ignore
     shift
     [ "$addr" = "addr" ] && echo $ip $*
+  }
+}
+
+netIfPtp() {
+  #output the IP address of the PtP peer for specified PPP interface
+  #if there's a valid peer, any additional args are also output
+  ifconfig $1 2>/dev/null | tr : " " | {
+    local ignore inet addr ip ptp peer ignore
+    read ignore
+    read inet addr ip ptp peer ignore
+    shift
+    [ "$ptp" = "P-t-P" ] && echo $peer $*
   }
 }
 

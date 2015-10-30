@@ -1,0 +1,27 @@
+IFNAME=ppp10
+AUTOSTART=no
+link=drifter
+
+ifPrep() {
+#  rm -f /var/run/$IFNAME.pid
+#  ln -s /var/run/ppp-$link.pid /var/run/$IFNAME.pid
+  modem=/dev/serial/by-id/usb-Iridium_Iridium_9555_Handset-if00
+  [ -L /dev/iridium ] || ln -s $modem /dev/iridium
+  modprobe ppp_async && modprobe ppp_deflate &&
+  pppd call $link linkname $link unit 10 logfile /var/log/drifter.pppdlog
+}
+
+#shore stations route traffic via proxy arps for their clients
+ifPost() {
+  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp &&
+  echo "enabled ip packet forwarding"
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
+10.10.10.200 drifter.iridium
+10.10.10.201 ship.iridium ship
+EOS
+}

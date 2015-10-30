@@ -1,0 +1,29 @@
+#last resort method of contacting host if network is misbehaving
+#is to configure another host on the same physical LAN
+#with the address 10.10.10.11
+#Then, from that host,
+#  telnet to the IPADDR configured below.
+#NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
+
+IFNAME=eth1:10
+AUTOSTART=yes
+BOOTPROTO=static
+
+IPADDR=10.10.10.50
+NETMASK=255.255.255.0
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$IPADDR   ship.radio ship
+10.10.10.100  ESPdrifter.radio drifter
+10.10.10.110  bruce.radio  bruce
+10.10.10.120  moe.radio moe
+10.10.10.102  moxa
+EOS
+}
+
+ifPost() { 
+  echo 1 >/proc/sys/net/ipv4/conf/all/proxy_arp &&
+  echo 1 >/proc/sys/net/ipv4/ip_forward &&
+  echo "enabled ip packet forwarding"
+}

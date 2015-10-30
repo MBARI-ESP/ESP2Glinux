@@ -1,0 +1,21 @@
+#create a subnet for the avalan radio configuration
+
+IFNAME=eth0:17
+AUTOSTART=yes
+BOOTPROTO=static
+
+IPADDR=192.168.17.222
+
+hosts() {    #add lines before EOS
+  cat <<EOS 
+192.168.17.17  avalan.ship
+192.168.17.18  avalan.drifter avalan
+EOS
+}
+
+ifPost() {  #tcp tweaks for Avalan
+  echo 1024 >/proc/sys/net/ipv4/tcp_rmem &&
+  echo 2 >/proc/sys/net/ipv4/tcp_frto &&
+  echo 2 >/proc/sys/net/ipv4/tcp_frto_response &&
+  echo "Tweaked TCP congestion responses for radio links"
+}

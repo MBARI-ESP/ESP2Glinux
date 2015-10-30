@@ -1,0 +1,21 @@
+IFNAME=ppp2
+AUTOSTART=no
+ifPrep() {
+  modprobe ppp_async && modprobe ppp_deflate &&
+  pppd call platform unit ${IFNAME#ppp} logfile /dev/null
+}
+
+hosts() {    #add lines before EOS
+#use this hook as an opportunity to bring up our ESPserver
+  cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+$IPREMOTE makai-ppp makai platform
+EOS
+/etc/init.d/espserver start $IPREMOTE >/dev/null
+}
+
+resolv_conf() {
+echo search shore.mbari.org
+[ -n "$DNS1" ] && echo nameserver $DNS1
+[ -n "$DNS2" ] && echo nameserver $DNS2
+}
