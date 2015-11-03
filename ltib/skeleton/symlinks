@@ -5,6 +5,14 @@ Typically Input to the mksymlinks as follows:
 
 To build forest of symlinks and empty directories under rootfs
 
+Note:  remember to
+
+   cd  /sd
+   rm  -rf sd tmp var
+   ln  -s  .. sd
+
+on any root filesystem copied to an sd card !!
+
 ============================================================
 
 First the mountpoints and empty directories:
@@ -15,9 +23,12 @@ raven/etc ->
 raven/home ->
 
 sd/var/log ->
+sd/var/run ->
+sd/var/lock ->
+flash ->
+
 engineering ->
 ESP ->
-flash ->
 project ->
 tempbox ->
 u ->

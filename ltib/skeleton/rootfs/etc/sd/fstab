@@ -1,11 +1,5 @@
 #
-# /etc/fstab: static filesystem mounts
-#
-# remember to:
-#   cd  /sd
-#   rm  -rf sd tmp var
-#   ln  -s  .. sd
-# on any root filesystem copied to an sd card
+# /etc/fstab: static file system information.
 #
 # file sys  mount           type    options
 proc        /proc           proc    defaults
@@ -16,17 +10,17 @@ shm         /dev/shm        tmpfs   defaults
 #change rw to ro for a read/only root filesystem
 /dev/root   /               auto    rw
 
-/dev/mmcblk0p2	/sd	    auto    defaults
-/dev/mtdblock2	/flash	    auto    ro,noauto
-/dev/mmcblk0p1  /boot	    vfat    noauto
+#try to mount /sd at boot time
+/dev/mmcblk0p2 /sd          auto    defaults
+/dev/mtdblock2 /flash	    auto    ro,noauto
+tmpfs       /var/run        tmpfs   defaults
+tmpfs       /var/lock       tmpfs   defaults
 
-tmpfs       /sd/var/run     tmpfs   defaults
-tmpfs       /sd/var/lock    tmpfs   defaults
-
+/dev/mmcblk0p1 /boot	    vfat    noauto
 none	    /debug	    debugfs noauto
 
 #optional swapfile on sd card
-/sd/.SWAP   swap            swap
+/.SWAP      swap            swap
 
 #END nfsmount service ignores entries below this line END#
 
