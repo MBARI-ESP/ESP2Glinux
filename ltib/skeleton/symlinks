@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 11/2/15 BAR
+Configuration symlinks for ESP embedded linux - 11/3/15 BAR
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -7,11 +7,13 @@ To build forest of symlinks and empty directories under rootfs
 
 Note:  remember to
 
-   cd  /sd
-   rm  -rf sd tmp var
-   ln  -s  .. sd
+   cd  /card
+   rm  -rf card tmp var
+   ln  -s  . card
+   cd  /var
+   mkdir -p log run lock
 
-on any root filesystem copied to an sd card !!
+on any root filesystem copied to an (sd) card !!
 
 ============================================================
 
@@ -22,9 +24,9 @@ bufflehead/home ->
 raven/etc ->
 raven/home ->
 
-sd/var/log ->
-sd/var/run ->
-sd/var/lock ->
+card/var/log ->
+card/var/run ->
+card/var/lock ->
 flash ->
 
 engineering ->
@@ -82,8 +84,8 @@ etc/rc.d/rc7.d/K80syslog -> ../init.d/syslog
 etc/rc.d/rc7.d/K90sysmount -> ../init.d/sysmount
 etc/rc.d/rc7.d/S99poweroff -> ../init.d/poweroff
 
-tmp -> /sd/tmp
-var -> /sd/var
+tmp -> /card/tmp
+var -> /card/var
 
 etc/hosts -> /var/etc/hosts
 etc/issue.net -> issue

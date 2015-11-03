@@ -1,0 +1,10 @@
+#!/bin/sh
+swapMegs=${2-100}
+[ $1 ] || {
+  echo "Install ${swapMegs}MB .SWAP file in `pwd`"
+  exit 1
+}
+echo "Installing ${swapMegs}MB .SWAP file in `pwd`" &&
+rm -f .SWAP &&
+dd if=/dev/zero of=.SWAP bs=1M count=$swapMegs &&
+mkswap -L "$1" .SWAP
