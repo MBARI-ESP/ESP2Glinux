@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 8/28/15 BAR
+Configuration symlinks for ESP embedded linux - 11/2/15 BAR
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -22,6 +22,9 @@ project ->
 tempbox ->
 u ->
 ftp ->
+
+boot ->
+debug ->
 
 ============================================================
 
