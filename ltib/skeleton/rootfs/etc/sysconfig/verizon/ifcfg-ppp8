@@ -1,7 +1,7 @@
 IFNAME=ppp8
 AUTOSTART=no
 
-provider=att #works with either AT&T or T-Mobile network
+provider=verizon
 
 ifPrep() {
   pppd call $provider unit ${IFNAME#ppp} logfile /dev/null
