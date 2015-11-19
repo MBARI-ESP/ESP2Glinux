@@ -278,6 +278,7 @@ static struct usb_device_id sx_usb_id_table[] =
     {USB_DEVICE(EZUSB2_VENDOR_ID, EZUSB2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2_PRODUCT_ID)},
     {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2a_PRODUCT_ID)},
+    {USB_DEVICE(ECHO2_VENDOR_ID,  ECHO2b_PRODUCT_ID)},
     {USB_DEVICE(ECHO3_VENDOR_ID,  ECHO3_PRODUCT_ID)},
     {}
 };
@@ -1463,7 +1464,8 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
     }
     else if((usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
               (usbdev->descriptor.idProduct == ECHO2_PRODUCT_ID ||
-               usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID))
+               usbdev->descriptor.idProduct == ECHO2a_PRODUCT_ID ||
+               usbdev->descriptor.idProduct == ECHO2b_PRODUCT_ID))
          || (usbdev->descriptor.idVendor  == ECHO3_VENDOR_ID &&
               usbdev->descriptor.idProduct == ECHO3_PRODUCT_ID))
     {

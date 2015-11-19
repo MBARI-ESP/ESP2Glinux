@@ -47,7 +47,8 @@
 #define EZUSB2_PRODUCT_ID   0x8613
 #define ECHO2_VENDOR_ID     0x1278
 #define ECHO2_PRODUCT_ID    0x0100
-#define ECHO2a_PRODUCT_ID   0x0119  //added 9/1/05 -- brent@mbari.org 
+#define ECHO2a_PRODUCT_ID   0x0119  //added 9/1/05 -- brent@mbari.org
+#define ECHO2b_PRODUCT_ID   0x0189  //added 11/18/15 -- brent@mbari.org
 #define ECHO3_VENDOR_ID     0x1278
 #define ECHO3_PRODUCT_ID    0x0200
 
