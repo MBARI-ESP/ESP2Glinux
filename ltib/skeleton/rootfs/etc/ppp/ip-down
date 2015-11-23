@@ -1,6 +1,18 @@
 #!/bin/sh
 # executed after disconnecting the ppp interface.
 
+PPP_IPPARAM=$6
+
 . /usr/share/netutils.sh
 
+tracefn=/tmp/ip-down.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
+      
 ipDown $IFNAME
+
+link=`dirname $PPP_IPPARAM` && [ "$link" != . ] &&
+ vpn=`basename $PPP_IPPARAM` && exec ifdown $vpn                                                        

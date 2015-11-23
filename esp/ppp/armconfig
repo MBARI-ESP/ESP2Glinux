@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 7/30/12 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 11/22/15 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -8,7 +8,7 @@
 : ${PPPVERS:=ppp-2.4.5}
 : ${PPTPVERS:=pptp-1.7.2}
 export CC CFLAGS CXXFLAGS
-rm -rf $PPPVERS && tar xzf $PPPVERS.tar.gz && 
+rm -rf $PPPVERS && tar xzf $PPPVERS.tar.gz &&
 top=$PWD
 cd $PPPVERS &&
 patch -p1 <../$PPPVERS-makefile.patch &&
@@ -22,4 +22,5 @@ cd $top &&
 rm -rf $PPTPVERS && tar zxf $PPTPVERS.tar.gz &&
 cd $PPTPVERS &&
 patch <../$PPTPVERS.patch &&
+patch <../$PPTPVERS-quiet.patch &&
 echo "Next, run arminstall here"

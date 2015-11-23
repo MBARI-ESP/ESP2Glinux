@@ -54,3 +54,6 @@ fi
 
 gateUp $PPP_IFACE $gateway
 hostsUp $PPP_IFACE
+
+link=`dirname $PPP_IPPARAM` && [ "$link" != . ] &&
+ vpn=`basename $PPP_IPPARAM` && ifdown $vpn && exec ifup $vpn

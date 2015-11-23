@@ -1,11 +1,9 @@
-# Name: T-Mobile gprs
+# Name: US Mobile gprs
 # Purpose: GPRS PPPD Connection Script
-# See 
-#  http://www.att.com/esupport/article.jsp?sid=36059&cv=820#fbid=yKLsCZLWCPH
 #
 linkname usmobile
 remotename usmobile
-ipparam usmobile
+ipparam usmobile/ppp9  #subordinate VPN link
 
 # Specify which device to use
 freewave
@@ -13,14 +11,18 @@ modem
 crtscts
 115200
 
-# Most GPRS devices will not reply to LCP echo's
-#  (t-mobile will disconnect if link remains idle for 60 minutes)
+# US Mobile stops passing data after connection is up for 16 minutes
+# uncomment to preemptively disconnect and reconnect every 15 minutes
+#maxconnect 900
+
+# don't bother with lcp-echo
 lcp-echo-failure 0
 lcp-echo-interval 0
 
 # Used to create a debug log.
 # Comment this out once the PPP configuration is connecting successfully.
-# debug
+#debug
+#dump
 # show-password
 # nodetach
 
@@ -32,7 +34,7 @@ defaultroute
 
 # Defines whether an attempt should be made to re-establish a dropped GPRS connection.
 persist
-holdoff 30
+holdoff 1
 #
 # Advises PPPD to request any DHCP address, none in particular.
 noipdefault
