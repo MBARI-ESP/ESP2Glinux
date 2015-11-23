@@ -1,0 +1,247 @@
+diff -ur pptp-1.7.2/pptp.c pptp-1.7.2-quiet/pptp.c
+--- pptp-1.7.2/pptp.c	2015-11-22 17:36:37.564531136 -0800
++++ pptp-1.7.2-quiet/pptp.c	2015-11-19 01:44:18.821028703 -0800
+@@ -311,7 +311,7 @@
+     /* Find the ppp options, extract phone number */
+     pppdargc = argc - optind;
+     pppdargv = argv + optind;
+-    log("The synchronous pptp option is %sactivated\n", syncppp ? "" : "NOT ");
++    info("The synchronous pptp option is %sactivated\n", syncppp ? "" : "NOT ");
+ 
+     /* Now we have the peer address, bind the GRE socket early,
+        before starting pppd. This prevents the ICMP Unreachable bug
+diff -ur pptp-1.7.2/pptp_callmgr.c pptp-1.7.2-quiet/pptp_callmgr.c
+--- pptp-1.7.2/pptp_callmgr.c	2015-11-22 17:36:37.568531034 -0800
++++ pptp-1.7.2-quiet/pptp_callmgr.c	2015-11-19 02:14:01.344213044 -0800
+@@ -76,7 +76,7 @@
+         case CALL_CLOSE_DONE:
+             /* don't need to do anything here, except make sure tables
+              * are sync'ed */
+-            log("Closing connection (call state)");
++            info("Closing connection (call state)");
+             conninfo = pptp_conn_closure_get(conn);
+             lci = pptp_call_closure_get(conn, call); 
+             assert(lci != NULL && conninfo != NULL);
+@@ -235,7 +235,7 @@
+                 if (retval) {
+                     struct local_callinfo *lci =
+                         pptp_call_closure_get(conn, call);
+-                    log("Closing connection (unhandled)");
++                    info("Closing connection (unhandled)");
+                     if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
+                     if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
+                     free(lci);
+@@ -259,7 +259,7 @@
+         for (i = 0; i < vector_size(call_list); i++) {
+             PPTP_CALL *call = vector_get_Nth(call_list, i);
+             struct local_callinfo *lci = pptp_call_closure_get(conn, call);
+-            log("Closing connection (shutdown)");
++            info("Closing connection (shutdown)");
+             pptp_call_close(conn, call);
+             if(lci->pid[0] > 1) kill(lci->pid[0], SIGTERM);
+             if(lci->pid[1] > 1) kill(lci->pid[1], SIGTERM);
+diff -ur pptp-1.7.2/pptp_ctrl.c pptp-1.7.2-quiet/pptp_ctrl.c
+--- pptp-1.7.2/pptp_ctrl.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-quiet/pptp_ctrl.c	2015-11-19 00:41:06.820390500 -0800
+@@ -194,17 +194,17 @@
+         const char *result_text[], int max_result)
+ {
+     if( cause >= 0)
+-        log("Result code is %d '%s'. Error code is %d, Cause code is %d",
++        warn("Result code is %d '%s'. Error code is %d, Cause code is %d",
+                 result, result_text[result <= max_result ?  result : 0], error,
+                 cause );
+     else
+-        log("Reply result code is %d '%s'. Error code is %d",
++        warn("Reply result code is %d '%s'. Error code is %d",
+                 result, result_text[result <= max_result ?  result : 0], error);
+     if ((error > 0) && (error <= MAX_GENERAL_ERROR)){
+         if( result != PPTP_RESULT_GENERAL_ERROR )
+-            log("Result code is something else then \"general error\", "
++            warn("Result code is something else then \"general error\", "
+                     "so the following error is probably bogus.");
+-        log("Error is '%s', Error message: '%s'",
++        warn("Error is '%s', Error message: '%s'",
+                 pptp_general_errors[error].name,
+                 pptp_general_errors[error].desc);
+     }
+@@ -247,7 +247,7 @@
+     if( type ==  PPTP_ECHO_RQST ) return;
+     /* don't keep reporting sending of echo's */
+     if( (type == PPTP_ECHO_RQST || type == PPTP_ECHO_RPLY) && nlogecho <= 0 ) return;
+-    log("%s control packet type is %d '%s'\n",isbuff ? "Buffered" : "Sent", 
++    info("%s control packet type is %d '%s'\n",isbuff ? "Buffered" : "Sent", 
+             type, ctrl_msg_types[type <= MAX_CTRLMSG_TYPE ? type : 0]);
+ 
+ }
+@@ -513,7 +513,7 @@
+         if (errno == EAGAIN || errno == EINTR) { 
+             return 0;
+         } else { /* a real error */
+-            log("write error: %s", strerror(errno));
++            warn("write error: %s", strerror(errno));
+ 	    return -1;
+         }
+     }
+@@ -533,7 +533,7 @@
+         char *new_buffer = realloc(conn->read_buffer, 
+                 sizeof(*(conn->read_buffer)) * conn->read_alloc * 2);
+         if (new_buffer == NULL) {
+-            log("Out of memory"); return -1;
++            warn("Out of memory"); return -1;
+         }
+         conn->read_alloc *= 2;
+         conn->read_buffer = new_buffer;
+@@ -548,7 +548,7 @@
+         if (errno == EINTR || errno == EAGAIN)
+ 	    return 0;
+         else { /* a real error */
+-            log("read error: %s", strerror(errno));
++            warn("read error: %s", strerror(errno));
+             return -1;
+         }
+     }
+@@ -585,7 +585,7 @@
+         /* well, I guess we've got it. */
+         *size = ntoh16(header->length);
+         *buf = malloc(*size);
+-        if (*buf == NULL) { log("Out of memory."); return 0; /* ack! */ }
++        if (*buf == NULL) { warn("Out of memory."); return 0; /* ack! */ }
+         memcpy(*buf, conn->read_buffer + bad_bytes, *size);
+         /* Delete this packet from the read_buffer. */
+         conn->read_size -= (bad_bytes + *size);
+@@ -619,7 +619,7 @@
+                 /* ignore */;
+                 retval = 0;
+             } else { /* a real error */
+-                log("write error: %s", strerror(errno));
++                warn("write error: %s", strerror(errno));
+                 pptp_conn_destroy(conn); /* shut down fast. */
+                 return 0;
+             }
+@@ -633,7 +633,7 @@
+         char *new_buffer = realloc(conn->write_buffer, 
+                 sizeof(*(conn->write_buffer)) * conn->write_alloc * 2);
+         if (new_buffer == NULL) {
+-            log("Out of memory"); return 0;
++            warn("Out of memory"); return 0;
+         }
+         conn->write_alloc *= 2;
+         conn->write_buffer = new_buffer;
+@@ -674,9 +674,9 @@
+     /* hack to stop flooding the log files (the most interesting part is right
+      * after the connection built-up) */
+     if( nlogecho > 0) {
+-        log( "Echo Re%s received.", type == PPTP_ECHO_RQST ? "quest" :"ply");
++        info( "Echo Re%s received.", type == PPTP_ECHO_RQST ? "quest" :"ply");
+         if( --nlogecho == 0)
+-            log("no more Echo Reply/Request packets will be reported.");
++            info("no more Echo Reply/Request packets will be reported.");
+     }
+ }
+ 
+@@ -736,7 +736,7 @@
+         {
+             struct pptp_start_ctrl_conn *packet = 
+                 (struct pptp_start_ctrl_conn *) buffer;
+-            log("Received Start Control Connection Reply");
++            info("Received Start Control Connection Reply");
+             if (conn->conn_state == CONN_WAIT_CTL_REPLY) {
+                 /* XXX handle collision XXX [see rfc] */
+                 if (ntoh16(packet->version) != PPTP_VERSION) {
+@@ -753,7 +753,7 @@
+                      * (feature found in certain ADSL modems)
+                      */
+                         ntoh8(packet->result_code) != 0) { 
+-                    log("Negative reply received to our Start Control "
++                    warn("Negative reply received to our Start Control "
+                             "Connection Request");
+                     ctrlp_error(packet->result_code, packet->error_code,
+                             -1, pptp_start_ctrl_conn_rply,
+@@ -770,7 +770,7 @@
+                 memcpy(conn->hostname, packet->hostname, sizeof(conn->hostname));
+                 memcpy(conn->vendor, packet->vendor, sizeof(conn->vendor));
+                 pptp_reset_timer(); /* 60 seconds until keep-alive */
+-                log("Client connection established.");
++                info("Client connection established.");
+                 if (conn->callback != NULL)
+                     conn->callback(conn, CONN_OPEN_DONE);
+             } /* else goto pptp_conn_close; */
+@@ -855,7 +855,7 @@
+                 (struct pptp_out_call_rply *)buffer;
+             PPTP_CALL * call;
+             u_int16_t callid = ntoh16(packet->call_id_peer);
+-            log("Received Outgoing Call Reply.");
++            info("Received Outgoing Call Reply.");
+             if (!vector_search(conn->call, (int) callid, &call)) {
+                 log("PPTP_OUT_CALL_RPLY received for non-existant call: "
+                         "peer call ID (us)  %d call ID (them) %d.",
+@@ -873,7 +873,7 @@
+             /* check for errors */
+             if (packet->result_code != 1) {
+                 /* An error.  Log it verbosely. */
+-                log("Our outgoing call request [callid %d] has not been "
++                warn("Our outgoing call request [callid %d] has not been "
+                         "accepted.", (int) callid);
+                 ctrlp_error(packet->result_code, packet->error_code,
+                         packet->cause_code, pptp_out_call_reply_result,
+@@ -893,7 +893,7 @@
+                 pptp_set_link(conn, call->peer_call_id);
+                 if (call->callback != NULL)
+                     call->callback(conn, call, CALL_OPEN_DONE);
+-                log("Outgoing call established (call ID %u, peer's "
++                info("Outgoing call established (call ID %u, peer's "
+                         "call ID %u).\n", call->call_id, call->peer_call_id);
+             }
+             break;
+diff -ur pptp-1.7.2/routing.c pptp-1.7.2-quiet/routing.c
+--- pptp-1.7.2/routing.c	2015-11-22 17:36:37.568531034 -0800
++++ pptp-1.7.2-quiet/routing.c	2015-11-19 01:36:24.816947392 -0800
+@@ -96,7 +96,7 @@
+     snprintf(buf, sizeof(buf), 
+       "/sbin/route del %s%s%s", svrIP, suffix1, suffix2);
+     if (system(buf) && logErrs & 1) {
+-      syslog (LOG_ERR,
++      syslog (LOG_INFO,
+               "Could not delete route to %s: %s", svrIP, strerror(errno));
+       return 1;
+     }
+diff -ur pptp-1.7.2/util.c pptp-1.7.2-quiet/util.c
+--- pptp-1.7.2/util.c	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-quiet/util.c	2015-11-19 00:21:17.022349744 -0800
+@@ -56,6 +56,14 @@
+     syslog(LOG_WARNING, "%s", string);
+ }
+ 
++/*** print a info msg to syslog **********************************************/
++void _info(const char *func, const char *file, int line, const char *format, ...)
++{
++    MAKE_STRING("info");
++    fprintf(stderr, "%s\n", string);
++    syslog(LOG_INFO, "%s", string);
++}
++
+ /*** print a fatal warning to syslog and exit *********************************/
+ void _fatal(const char *func, const char *file, int line, const char *format, ...)
+ {
+diff -ur pptp-1.7.2/util.h pptp-1.7.2-quiet/util.h
+--- pptp-1.7.2/util.h	2008-05-13 23:33:55.000000000 -0700
++++ pptp-1.7.2-quiet/util.h	2015-11-19 00:23:47.246562719 -0800
+@@ -18,6 +18,8 @@
+ 
+ void _log(const char *func, const char *file, int line, const char *format, ...)
+      __attribute__ ((format (printf, 4, 5)));
++void _info(const char *func, const char *file, int line, const char *format, ...)
++     __attribute__ ((format (printf, 4, 5)));
+ void _warn(const char *func, const char *file, int line, const char *format, ...)
+      __attribute__ ((format (printf, 4, 5)));
+ void _fatal(const char *func, const char *file, int line, const char *format, ...)
+@@ -25,6 +27,8 @@
+ 
+ #define log(format, args...) \
+ 	_log(__FUNCTION__,__FILE__,__LINE__, format , ## args)
++#define info(format, args...) \
++	_info(__FUNCTION__,__FILE__,__LINE__, format , ## args)
+ #define warn(format, args...) \
+ 	_warn(__FUNCTION__,__FILE__,__LINE__, format , ## args)
+ #define fatal(format, args...) \
