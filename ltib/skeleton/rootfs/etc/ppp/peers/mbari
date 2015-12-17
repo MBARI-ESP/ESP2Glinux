@@ -1,12 +1,8 @@
 file /etc/ppp/options.pptp
 
-#for vpn2.mbari.org
-init "route del 134.89.19.10 2>/dev/null;:" #remove any preexisting host route to VPN server
-pty  "exec pptp 134.89.19.10 --nolaunchpppd --idle-wait 180 --logstring mbari --loglevel 0"
-
 #for vpn.mbari.org
-#init "route del 134.89.18.10;:" #remove any preexisting host route to VPN server
-#pty  "exec pptp 134.89.18.10 --nolaunchpppd --logstring mbari --loglevel 0"
+init "route del 134.89.18.12 2>/dev/null;:" #remove any preexisting host route to VPN server
+pty  "exec pptp 134.89.18.12 --nolaunchpppd --logstring mbari --loglevel 0"
 # --debug
 
 linkname mbari
@@ -18,6 +14,6 @@ noauth
 defaultroute
 usepeerdns
 
-holdoff 30
 persist
+holdoff 30
 maxfail 3

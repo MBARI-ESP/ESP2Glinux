@@ -9,7 +9,7 @@ ifPrep() {
 }
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
+  cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
 $(netIfPtp $IFNAME shore mail)
 EOS

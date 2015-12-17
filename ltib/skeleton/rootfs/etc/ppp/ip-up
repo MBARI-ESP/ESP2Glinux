@@ -25,10 +25,9 @@ unset domain gateway
 
 #if PEERNAME is prefixed with a dot, change our own hostname to it
 if [ -n "$PEERNAME" ]; then
-  IFSold=$IFS
   IFS=.
   set $PEERNAME
-  IFS=$IFSold
+  IFS=
   if [ -z "$1" -a -n "$2" ]; then  #there was a leading dot!
     host=$2
 #    [ -f $oldHostname ] || hostname >$oldHostname
@@ -55,5 +54,12 @@ fi
 gateUp $PPP_IFACE $gateway
 hostsUp $PPP_IFACE
 
-link=`dirname $PPP_IPPARAM` && [ "$link" != . ] &&
- vpn=`basename $PPP_IPPARAM` && ifdown $vpn && exec ifup $vpn
+#if ipparam specs "/vpn" iface, bring that iface up, unless there is already
+#a host route to the vpn server via a different interface.
+#Always bring down vpn if its carrier was (an old instance of) this ppp link.
+server=`dirname $PPP_IPPARAM` && [ "$server" != . ] &&
+  if vpn=`basename $PPP_IPPARAM`; then #check for being carried by another iface
+    carrier=`hostIface $server` && [ "$carrier" != "$PPP_IFACE" ] && exit 0
+    [ -e "/var/run/$vpn.pid" ] && ifdown $vpn
+    exec ifup $vpn
+  fi

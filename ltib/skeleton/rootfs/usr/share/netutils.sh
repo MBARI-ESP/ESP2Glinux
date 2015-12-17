@@ -56,11 +56,11 @@ gateUp() {
   local priorityFn=/etc/sysconfig/gateway.priority
   unset topIface
   { #read up to two lines of net interface types from $priorityFn
-    if read ifs; then
+    if read -r ifs; then
       for interface in $ifs; do  #first try only ifaces with gateways
         [ -r "$interface" ] && {
           RESOLV_IF=/var/run/resolv/$interface
-          read resolvDev gateways < $RESOLV_IF
+          read -r resolvDev gateways < $RESOLV_IF
           if [ "$resolvDev" = "#$interface" ]; then
             [ "$gateways" ] && {
               topIface=$interface; break
@@ -71,12 +71,12 @@ gateUp() {
         }
       done
       [ "$topIface" ] || {  #could not find any active net iface with a gateway
-        read ifs2  #optional 2nd line specifies priority for ifaces w/o gateways
+        read -r ifs2  #optional 2nd line gives priority for ifaces w/o gateways
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
           [ -r "$interface" ] && {
             RESOLV_IF=/var/run/resolv/$interface
-            read resolvDev gateways < $RESOLV_IF
+            read -r resolvDev gateways < $RESOLV_IF
             [ "$resolvDev" = "#$interface" ] && {
               topIface=$interface; break
             }
@@ -129,7 +129,7 @@ setGateway() {
     route -n | grep "^0\.0\.0\.0 " | {
       del=
       add=$gateway
-      while read dest gateIP mask flags metric ref use iface ignored; do
+      while read -r dest gateIP mask flags metric ref use iface ignored; do
         if [ "$iface" = "$topIface" -a "$gateIP" = "$gateway" ]; then
           unset add
         else
@@ -155,11 +155,23 @@ defaultRoutes() {
   #for all if $1 omitted
   local zero defRoute junk
   route -n | grep "^0\.0\.0\.0 .* $1" | {
-    while read zero defRoute junk; do
+    while read -r zero defRoute junk; do
       echo $defRoute
     done
   }
 }
+
+hostIface() {
+  #output name of interface associated with host route to specified IP address
+  #returns false if no such host route found
+  route -n | while read -r dest gate genmask flags metric ref use iface more; do
+    [ "$dest" = "$1" -a "$genmask" = 255.255.255.255 ] && {
+      echo $iface
+      break
+    }
+  done
+}
+
 
 searchDomains() {
   #output list of search domains prefixed by any specified
@@ -179,8 +191,8 @@ netIfIP() {
   #if there's a valid IP, any additional args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip
-    read ignore
-    read inet addr ip ignore
+    read -r ignore
+    read -r inet addr ip ignore
     shift
     [ "$addr" = "addr" ] && echo $ip $*
   }
@@ -191,8 +203,8 @@ netIfPtp() {
   #if there's a valid peer, any additional args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip ptp peer ignore
-    read ignore
-    read inet addr ip ptp peer ignore
+    read -r ignore
+    read -r inet addr ip ptp peer ignore
     shift
     [ "$ptp" = "P-t-P" ] && echo $peer $*
   }
@@ -201,6 +213,6 @@ netIfPtp() {
 topIf() {
   #output the name of the top priority network interface
   local iface
-  read iface gateways < /etc/resolv.conf
+  read -r iface gateways < /etc/resolv.conf
   echo ${iface###}
 }

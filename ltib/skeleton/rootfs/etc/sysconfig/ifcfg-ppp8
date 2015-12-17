@@ -1,1 +1,14 @@
-usmobile/ifcfg-ppp8
+IFNAME=ppp8
+AUTOSTART=no
+
+isp=usmobile  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
+
+ifPrep() {  #specify ip address of vpn server/vpn iface name
+  pppd call $isp unit ${IFNAME#ppp} ipparam 134.89.2.91/ppp9
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
+EOS
+}

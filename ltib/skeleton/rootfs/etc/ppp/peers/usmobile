@@ -3,7 +3,7 @@
 #
 linkname usmobile
 remotename usmobile
-ipparam usmobile/ppp9  #subordinate VPN link
+ipparam usmobile     #follow with /ppp9 to bring up subordinate vpn link
 
 # Specify which device to use
 freewave
@@ -13,7 +13,7 @@ crtscts
 
 # US Mobile stops passing data after connection is up for 16 minutes
 # uncomment to preemptively disconnect and reconnect every 15 minutes
-#maxconnect 900
+maxconnect 900
 
 # don't bother with lcp-echo
 lcp-echo-failure 0
@@ -25,6 +25,7 @@ lcp-echo-interval 0
 #dump
 # show-password
 # nodetach
+logfile /dev/null
 
 connect "APN=pwg exec /etc/ppp/connect gprs"
 disconnect "exec /usr/sbin/chat -vf /etc/ppp/gprs-detach.chat"
