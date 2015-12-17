@@ -3,14 +3,19 @@
 
 PATH=/usr/sbin:/sbin:/bin
 user=esp
-server=~${user}/esp2/bin/espserver
+
+env=
+[ "${ESPcmdPort+set}" ] && env="ESPcmdPort=$ESPcmdPort"
+[ "${ESPclient+set}" ] && env="$env ESPclient=$ESPclient"
+[ "${ESPaxisPort+set}" ] && env="$env ESPaxisPort=$ESPaxisPort"
+server="$env ~${user}/esp2/bin/espserver"
 
 case "$1" in
     start)
       su - $user -c "$server $*"
-      :      
+      :
        ;;
-                         
+
     stop)
       su - $user -c "$server $*"
        :
@@ -20,4 +25,3 @@ case "$1" in
        echo "usage: espserver {start|stop} {client}"
        ;;
 esac
-
