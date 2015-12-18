@@ -4,6 +4,7 @@
 PATH=/usr/sbin:/sbin:/bin
 user=esp
 
+#pass some esp environment vars through to the espserver
 env=
 [ "${ESPcmdPort+set}" ] && env="ESPcmdPort=$ESPcmdPort"
 [ "${ESPclient+set}" ] && env="$env ESPclient=$ESPclient"
