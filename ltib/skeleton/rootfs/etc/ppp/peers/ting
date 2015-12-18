@@ -1,4 +1,4 @@
-# Name: US Mobile gprs
+# Name: ting.com gprs
 # Purpose: GPRS PPPD Connection Script
 #
 linkname ting
@@ -10,10 +10,6 @@ freewave
 modem
 crtscts
 115200
-
-# Ting stops passing data after connection is up for 60 minutes
-# uncomment to preemptively disconnect and reconnect every 55 minutes
-maxconnect 3300
 
 # don't bother with lcp-echo
 lcp-echo-failure 0
