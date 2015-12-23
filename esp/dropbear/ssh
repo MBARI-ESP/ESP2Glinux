@@ -1,0 +1,5 @@
+#!/bin/sh
+me=~/.ssh/id_rsa
+unset myId
+[ -r $me ] && myId="-i $me "
+exec /usr/bin/dbclient ${myId}"$@"
