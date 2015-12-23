@@ -1,0 +1,38 @@
+IFNAME=ppp7
+AUTOSTART=no
+
+isp=usmobile  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
+
+ifPrep() {  #specify that we want ssh tunnels
+  modprobe ppp_async && modprobe ppp_deflate &&
+  pppd call $isp unit ${IFNAME#ppp} ipparam tunnels
+}
+
+hosts() {    #add lines before EOS
+tracefn=/tmp/$IFNAME.trace
+[ -w $tracefn ] && {
+  date >>$tracefn
+  exec 2>>$tracefn
+  set -x
+} #remember to modify 2009 and 8009 port below for hostname!!
+( sleep 5  #wait for link
+  fuser -k 25/tcp
+  export HOME=/root
+  shore="-p 2323 `hostname`@shore"
+  ssh -y $shore fuser.root -k 2008/tcp
+  ssh -y -g -N -K 180 -L 25:shore:25 \
+      -R 2008:localhost:22 -R 8008:localhost:80 $shore &
+  sshpid=$!
+  pidfn=/var/run/$PPP_IFACE-bkg.pid
+  echo $sshpid >$pidfn
+  wait $sshpid
+  rm $pidfn && {
+    ifdown $IFNAME; ifup $IFNAME
+  }
+) >/dev/null &
+cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
+134.89.2.91 shore
+127.0.0.1 mail
+EOS
+}

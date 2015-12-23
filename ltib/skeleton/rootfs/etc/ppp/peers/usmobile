@@ -13,9 +13,9 @@ crtscts
 
 # US Mobile stops passing data after connection is up for 16 minutes
 # uncomment to preemptively disconnect and reconnect every 15 minutes
-maxconnect 900
+#maxconnect 900
 
-# don't bother with lcp-echo
+# no check for echo 
 lcp-echo-failure 0
 lcp-echo-interval 0
 
