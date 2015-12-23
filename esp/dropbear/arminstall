@@ -7,6 +7,7 @@
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
+top=`pwd`
 cd ${DBVERS-dropbear-0.51} || exit 2
 make PROGRAMS="dropbear dbclient dropbearkey scp" MULTI=1 || exit 1
 set -x
@@ -19,4 +20,5 @@ ln -s ../bin/dropbearmulti ../sbin/dropbear &&
 ln -s dropbearmulti dbclient &&
 ln -s dropbearmulti dropbearkey &&
 ln -s dropbearmulti scp &&
+cp $top/ssh .
 echo "Done."

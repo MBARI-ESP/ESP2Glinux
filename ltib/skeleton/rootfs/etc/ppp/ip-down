@@ -3,4 +3,10 @@
 
 . /usr/share/netutils.sh
 
+bkgpid="/var/run/bkg-$IFNAME.pid"
+[ -s $bkgpid ] && {
+  kill `cat $bkgpid`
+  rm -f $bkgpid
+}
+
 ipDown $IFNAME

@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 3/26/13 BAR
+Configuration symlinks for ESP embedded linux - 12/21/15 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -74,7 +74,6 @@ etc/resolv.conf -> /var/etc/resolv.conf
 etc/ppp/connect-errors -> /var/etc/ppp/connect-errors
 
 root/.profile -> /etc/profile
-usr/bin/ssh2 -> ssh
 
 home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
