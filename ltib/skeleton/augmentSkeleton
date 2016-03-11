@@ -14,6 +14,10 @@ Usage:
 ltib root.tmp defaults to $HOSTTOP
 EOS
 
+echo "  ===>  Adding ssh->dropbear invocation script  <==="
+cd ~/linux/esp/dropbear
+install -m 755 ssh $HOSTTOP/usr/bin
+
 echo "  ===>  Building dyndns  <==="
 cd ~/linux/dyndns && armconfig && arminstall
 

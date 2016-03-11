@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install dropbear-0.51 for arm-linux -- 1/10/14 brent@mbari.org
+# build & install dropbear-0.51 for arm-linux -- 3/11/16 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -15,10 +15,10 @@ install -d -m 755 $HOSTTOP/bin $HOSTTOP/sbin &&
 install -m 755 dropbearmulti dbclient dropbearkey scp $HOSTTOP/bin &&
 cd $HOSTTOP/bin &&
 $ARMSTRIP dropbearmulti &&
+install -m 755 $top/ssh . &&
 rm -f ../sbin/dropbear dbclient dropbearkey scp &&
 ln -s ../bin/dropbearmulti ../sbin/dropbear &&
 ln -s dropbearmulti dbclient &&
 ln -s dropbearmulti dropbearkey &&
 ln -s dropbearmulti scp &&
-cp $top/ssh .
 echo "Done."
