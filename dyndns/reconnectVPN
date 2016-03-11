@@ -1,3 +1,4 @@
+#!/bin/sh
 cell=ppp8   
 #vpn=ppp9   
 [ "$vpn" ] && ifdown $vpn
@@ -6,4 +7,5 @@ cell=ppp8
   ifup $cell
   sleep 30
 }
-[ "$vpn" ] && ifup $vpn
+[ "$vpn" ] || exit 0
+ifup $vpn
