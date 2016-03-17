@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 12/21/15 BAR
+Configuration symlinks for ESP embedded linux - 3/18/16 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -83,6 +83,12 @@ etc/rc.d/rc7.d/K70rtc -> ../init.d/rtc
 etc/rc.d/rc7.d/K80syslog -> ../init.d/syslog
 etc/rc.d/rc7.d/K90sysmount -> ../init.d/sysmount
 etc/rc.d/rc7.d/S99poweroff -> ../init.d/poweroff
+
+etc/rc.d/rcPowerDown.d/K20inetd -> ../init.d/inetd
+etc/rc.d/rcPowerDown.d/K40nfsmount -> ../init.d/nfsmount
+etc/rc.d/rcPowerDown.d/K50network -> ../init.d/network
+etc/rc.d/rcPowerDown.d/K70rtc -> ../init.d/rtc
+etc/rc.d/rcPowerDown.d/K80syslog -> ../init.d/syslog
 
 tmp -> /card/tmp
 var -> /card/var
