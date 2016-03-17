@@ -1,5 +1,5 @@
 IFNAME=ppp9
-AUTOSTART=inittab
+AUTOSTART=no
 
 provider=ESPshore
 username=`hostname`
