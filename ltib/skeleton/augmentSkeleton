@@ -5,6 +5,10 @@ here=`dirname $0`
 : ${ARMGCC:=/ltibarm}
 : ${ARMHOST:=arm-unknown-linux}
 : ${ARMPREFIX:=$LTIB/rootfs/usr}
+: ${STRIP=$ARMGCC/bin/strip}
+: ${LOCALBIN=$HOSTTOP/usr/local/bin}
+mkdir -p $LOCALBIN
+
 export ARMGCC HOSTTOP ARMHOST ARMPREFIX
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
@@ -14,12 +18,44 @@ Usage:
 ltib root.tmp defaults to $HOSTTOP
 EOS
 
+echo "  ===>  Building picocom  <==="
+cd ~/linux/picocom
+make CC=$ARMGCC/bin/gcc clean picocom
+$STRIP -o $LOCALBIN/picocom picocom
+
+echo "  ===>  Building sleepyCmd  <==="
+cd ~/misc/sleepyCmd
+make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd
+$STRIP -o $LOCALBIN/sleepyCmd ltib/sleepyCmd
+
+echo "  ===>  Building snap  <==="
+cd ~/misc/camera/starlight
+make CC=$ARMGCC/bin/gcc clean ltib/snap
+$STRIP -o $LOCALBIN/snap ltib/snap
+
+echo "  ===>  Building timelimit  <==="
+cd ~/misc/timelimit && armconfig && arminstall
+
+echo "  ===>  Building dtroff  <==="
+cd ~/misc/dtroff
+make CC=$ARMGCC/bin/gcc clean ltib/dtroff
+$STRIP -o $LOCALBIN/dtroff ltib/dtroff
+
+echo "  ===>  Building suscript  <==="
+cd ~/misc/suscript
+make CC=$ARMGCC/bin/gcc clean ltib/suscript
+$STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript
+chmod u+s $HOSTTOP/usr/sbin/suscript
+
 echo "  ===>  Adding ssh->dropbear invocation script  <==="
 cd ~/linux/esp/dropbear
 install -m 755 ssh $HOSTTOP/usr/bin
 
 echo "  ===>  Building dyndns  <==="
 cd ~/linux/dyndns && armconfig && arminstall
+
+echo "  ===>  Building slattach  <==="
+cd ~/linux/esp/net-tools && armconfig && arminstall
 
 cd ~/linux/esp && back=$PWD
 for package in netdev ser2net ppp thttpd; do
