@@ -1,5 +1,6 @@
 #!/bin/sh
-cell=ppp8   
+#don't attempt to bring up link if serial comms to modem just failed
+[ -f /var/run/I2Cgate.reset ] || cell=ppp8   
 #vpn=ppp9   
 [ "$vpn" ] && ifdown $vpn
 [ "$cell" ] && {

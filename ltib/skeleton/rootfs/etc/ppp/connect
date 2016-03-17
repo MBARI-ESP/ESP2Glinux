@@ -40,7 +40,7 @@ until /usr/sbin/chat -vf $cellular-detach.chat; do
   resetDelay=$resetHoldOff
   [ $resetDelay -lt 0 ] && resetDelay=$((-($resetDelay)))
   now=`date +%s`
-  lastReset=`cat $lastResetFn 2>/dev/null` &&
+  lastReset=`head -n1 $lastResetFn 2>/dev/null` &&
   secsSinceReset=$(($now-$lastReset))
   if [ $? != 0 -o "$secsSinceReset" -ge $resetDelay ]; then
     echo $now >$lastResetFn
@@ -82,4 +82,5 @@ EOS
   logger -t$tag "Waiting $resetDelay seconds before retrying..."
   sleep $resetDelay
 done
+rm -f $lastResetFn
 exec /usr/sbin/chat -vEf $cellular-attach.chat
