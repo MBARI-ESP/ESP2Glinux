@@ -43,7 +43,7 @@ case "$op" in
         pppSpec='/var/run/ppp[0-9]*.pid'
         pidfns=`echo $pppSpec`
 set -f
-        if [ $pidfns != $pppSpec ]; then
+        if [ "$pidfns" != "$pppSpec" ]; then
           for pidFn in $pidfns; do  #stop ppp links that are "down"
             ppp=`basename $pidFn`
             devs="$devs ${ppp%.pid}"
