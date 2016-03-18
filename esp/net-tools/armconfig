@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack and configure ppp for arm-linux -- 8/5/08 brent@mbari.org
+# unpack and configure ppp for arm-linux -- 3/18/16 brent@mbari.org
 : ${CFLAGS:="-Os -fomit-frame-pointer"}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -8,4 +8,6 @@
 : ${TOOLVERS:=net-tools-1.60}
 export CC CFLAGS CXXFLAGS
 rm -rf $TOOLVERS && tar xzf $TOOLVERS.tgz && cp slattach.c $TOOLVERS &&
-cd $TOOLVERS && echo "Next, run arminstall here"
+cd $TOOLVERS && 
+patch -p1 <../net-tools.patch &&
+echo "Next, run arminstall here"

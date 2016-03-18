@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install setserial for arm-linux -- 8/5/08 brent@mbari.org
+# build & install setserial for arm-linux -- 3/18/16 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -9,7 +9,7 @@
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 cd ${TOOLVERS-net-tools-1.60} || exit 2
-make CC=/arm/bin/gcc DESTDIR=$ARMGCC COPTS="-Os -fomit-frame-pointer "  &&
+make CC=$ARMGCC/bin/gcc COPTS="-Os -fomit-frame-pointer "  &&
 $ARMSTRIP $TOOLBINS || exit 2
 mkdir -pm 755 $HOSTTOP/sbin &&
 install -m 755 $TOOLBINS $HOSTTOP/sbin || exit 3

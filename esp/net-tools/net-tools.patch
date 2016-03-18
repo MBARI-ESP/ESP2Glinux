@@ -1,0 +1,10 @@
+--- net-tools-1.60/lib/fddi.c	2016-03-17 11:28:15.899731039 -0700
++++ net-tools-1.60/lib/fddi.c.new	2016-03-17 11:28:12.099825417 -0700
+@@ -19,6 +19,7 @@
+ #include <features.h>
+ 
+ #if HAVE_HWFDDI
++#include <linux/types.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <net/if_arp.h>
