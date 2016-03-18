@@ -1,0 +1,195 @@
+#  Very rough documentation on PC/104 Low Power ESP host board
+#  1/8/15 brent@mbari.org
+
+# Real-time Clock
+RTC battery is type CR1220  (mounted on back of board)
+
+
+# Insertion and removal of micro SD card
+# Only remove card if it is not mounted.
+# Generally, it is always mounted in Linux, so best to power off first.
+# Card can be removed by pressing under the side of the board 
+# at the (C)2015 copyright notice silkscreen.
+# Insert card from top of board "upside down" with its contacts up.
+
+
+# Configuration Jumpers
+There are only four jumpers on the board
+There are only two jumpers that users end users with ever modify.
+They are both RED with flags on top.
+
+A group of 3 jumpers located near the USB host connector.
+The middle of these determines whether the board gets its U-boot
+loader from its internal flash or from the microSD card.
+
+The boot jumpers should be positioned as follows:
+J10:  Low  (towards the USB host connector)
+J11:  SPI Flash boot (towards the USB host connector)
+J11:  SD Card boot (towards the DIMM socket)
+J12:  High (towards the DIMM socket)
+
+
+# Power:
+#  The mini USB connector can power the board for testing.
+#  The J16 PWR connector can accept voltage from 4.5V to 28VDC.
+#   (it is reverse polarity protected)
+#  Normally, power is applied from the PC/104 bus.
+#  However, if J3 is moved to the position nearest the PC/104 pins,
+#   the board will *output* up to 4A @5VDC to the PC/104 bus if power
+#   is applied through other means.
+
+The PWR SEL jumper near the PC/104 connector determines whether power
+is to be driven onto or taken from the PC/104 bus.
+
+
+# Serial Console:
+#   A serial console port at 115200 baud 1 stop, 8 data bits, no parity
+# is available via mini USB or (at RS232 levels) on J4
+
+
+# Reset Switch
+Located between the RS232 and USB serial console ports.
+
+
+# JTAG debug:
+J6 and J9 are used only for low-level bootloader debugging
+
+
+# FPGA programming:
+J7 is for (one time) programming of the large Lattice FPGA located
+under the CPU DIMM module.
+We use the HW-UBN-2B USB dongle with Lattice's free development tools
+
+
+# Ethernet
+The board supports 100Mbit ethernet, but Linux is 
+programmed by default to limit ethernet to 10Mbit for
+reduced power consumption.  (saves about 300mW)
+Note also that the board's MAC address is stored on its 
+CPU DIMM module.  If you swap SIMMs you also swap MACs.
+
+
+# USB host
+The boards standard, full sized USB host connect can supply
+up to 1A @5V (double the USB spec).
+It supports speeds up to 480Mb/s, but, in practice, this 
+CPU cannot sustain such high data rates.
+
+
+# Audio Support
+J19 : mono microphone input
+J13 : stereo line out (center common)
+J14 : stereo headphones out
+J15 : stereo line in
+
+
+# Flash recovery procedures:
+#  Note that the SD card shipped with each host board contains
+# a copy of the software on its internal flash memory.
+
+#  First, install a bootable SD card and set the J11 boot 
+# jumper to boot from the SD Card.  (move it toward the DIMM)
+
+#Note that all the "run" commands below are to be entered at the 
+# U-Boot bootloader prompt.  Others are entered after Linux boots.
+#To get to the U-Boot prompt, reboot or power up the system while
+#monitoring its console port. 
+# Press Control-C *immediately* when prompted.
+
+# To rewrite internal flash if it is erased or corrupted
+# if boot files are corrupted
+run flashSDuboot   #copies U-boot from SD to SPI flash
+run flashSDkernel  #copies kernel from SD to SPI flash
+
+run sdBoot   #boot Linux from the SD card
+
+#log in as root user...
+flash_eraseall  /dev/mtd2   #erase internal linux root filesystem
+mount --bind / /mnt
+mount -orw /flash
+cp -a /mnt/* /flash         #repopulate it from the SD card's
+# copy boot files to flash to move them to the new micro SD later
+mount /boot
+cp -r /boot /flash/root/boot
+# tweak the SD card image to optimize it for booting from flash 
+cd /flash
+rm -rf var tmp card
+ln -s /card/tmp
+ln -s /card/var
+mkdir card
+sync
+#wait 60 seconds
+reboot  #if reboot hangs after 'save exit: isCheckpointed 1'...
+        #...press the reset button
+
+
+# How to Create a bootable micro SD card
+#  [This assumes you have booted the host from its internal flash]
+# log in as the root user...
+
+cfdisk  -z  /dev/mmcblk0
+
+# find tutorial about the linux cfdisk command for disk partitioning
+#You want to create three primary partitions of the indicated types 
+# and sizes below:
+
+   Name      Flags    Part TypeFS Type        [Label]     Size (MB)
+ -----------------------------------------------------------------
+   mmcblk0p1           Primary W95 FAT32 (LBA)                14.00
+   mmcblk0p3           Primary BootIt                          0.37
+   mmcblk0p2           Primary Linux                  (rest of disk)
+ 
+# The sizes are not critical.  The first partition stores the linux
+#kernel.  It can be as small as 4MB.
+# The p3 partition of type 'BootIt' holds the U-Boot boot loader.
+# It must be physically before the big Linux parition. 
+# You will create the p1 parition first, then the Linux p2 partition.
+# Specify a size for the Linux partition that is about 0.5 MB less than
+# the maximum remaining available space for it.  When prompted whether
+# to allocate this big partition and the begin or end of the space,
+# indicate you want it at the end.
+# This will leave you a ~0.5MB space remaining just after the FAT32
+# partition.  The BootIt partition's minimum size is 0.3MB.
+
+#  The hexidecimal type of the FAT32(LBA) parition is 0C  (12 decimal)
+#  The hexidecimal type of the Linux parition is 83
+#  The hexidecimal type of the BootIt parition is DF
+
+
+#  Once you have the table looking correct in cfdisk, write it to disk
+#  with the W command, then quit cfdisk.
+
+
+# Initialize these newly created partitions:
+# I like to incorporate something unique into volume labels
+# Typically, I'll use the last four digits of the host's 
+# hexidecimal ethernet mac address.  To see that use:
+#   ifconfig eth0 | grep HW
+ 
+mkdosfs -n ESPBOOT-id  /dev/mmcblk0p1   #where id is a short, unique id
+mkfs.ext4  -L  ESPROOT-id  /dev/mmcblk0p2  #use the same short, unique id
+tune2fs -c0 -i0  /dev/mmcblk0p2
+
+#Install the u-boot.bin and uImage files to make this SD card bootable
+mount /boot
+cd
+cp boot/* /boot
+cp boot/u-boot.bin  /dev/mmcblk0p3   #copies the U-boot loader from flash
+rm -rf boot   #optional (saves 3MB space on the 250MB internal flash)
+
+# mount source and destination for populating the linux partition
+mount --bind / /flash
+mount /card
+
+cp -a  /flash/.  /card        #this takes a couple minutes
+mkcardroot /card  ESPSWAP-id  #this takes about 15 seconds
+
+# create a directory for the esp user to write logs and images
+mkdir /card/var/log/esp
+chown esp:users  /card/var/log/esp
+
+sync
+reboot
+#complaints about being unable to write files are normal during this reboot
+
+#  remember to switch the boot jumper back to select internal SPI flash
