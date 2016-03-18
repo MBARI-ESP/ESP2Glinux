@@ -1,0 +1,35 @@
+#!/bin/sh
+#Put ESP into a low power state from which it can restart
+# later from radio page or alarm
+#exit status returns 0 if shutdown preparations succeeded
+# otherwise status is non zero
+
+export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+
+POWERDOWN=PowerDown
+RUN=3
+modem=/dev/freewave
+export baud=115200
+export chat=/usr/sbin/chat
+
+sleepModem()
+{
+  stty $baud
+  $chat -Vt 5 "" AT+W32K=1 OK
+}
+
+sync
+exec 2>/dev/console
+exec >&2
+/etc/rc.d/rc $POWERDOWN || {  #if power down fails
+  /etc/rc.d/rc $RUN           #...try to recover
+  exit 1
+}
+
+#coax FastTrack modem into low power state
+sleepModem <$modem >$modem || echo -e "\nFailed to put modem to sleep"
+#leave modem port open with its DTR line deasserted
+(dtroff; sleep 1d) <$modem >$modem &
+echo
+service sysmount stop
+exit 0
