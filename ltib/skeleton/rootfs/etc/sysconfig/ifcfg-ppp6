@@ -1,4 +1,4 @@
-IFNAME=ppp9
+IFNAME=ppp6
 AUTOSTART=no
 
 provider=ESPshore

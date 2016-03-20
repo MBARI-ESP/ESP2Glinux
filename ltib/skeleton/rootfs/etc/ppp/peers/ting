@@ -3,7 +3,7 @@
 #
 linkname ting
 remotename ting
-ipparam ting     #follow with /ppp9 to bring up subordinate vpn link
+ipparam ting
 
 # Specify which device to use
 freewave

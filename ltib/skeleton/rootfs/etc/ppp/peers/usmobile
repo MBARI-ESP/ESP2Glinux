@@ -3,7 +3,7 @@
 #
 linkname usmobile
 remotename usmobile
-ipparam usmobile     #follow with /ppp9 to bring up subordinate vpn link
+ipparam usmobile
 
 # Specify which device to use
 freewave

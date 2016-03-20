@@ -1,4 +1,4 @@
-ppp9 eth* wlan* sl* ppp* lo
+ppp6 eth* wlan* sl* ppp* lo
 
 
 Whenever a network interface comes up or goes down, the first network interface
