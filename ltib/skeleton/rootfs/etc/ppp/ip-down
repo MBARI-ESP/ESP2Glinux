@@ -1,12 +1,21 @@
 #!/bin/sh
 # executed after disconnecting the ppp interface.
+#$IFNAME is not assigned on retries, but $1 is.
+PPP_IFACE="$1"
 
 . /usr/share/netutils.sh
 
-bkgfn="/var/run/$IFNAME-bkg.pid"
-bkgpid=`cat $bkgfn` && {
+tracefn=/tmp/ip-down.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
+
+bkgfn="/var/run/$PPP_IFACE-bkg.pid"
+bkgpid=`cat $bkgfn 2>/dev/null` && {
   rm $bkgfn
   [ "$bkgpid" ] && kill $bkgpid
 }
 
-ipDown $IFNAME
+ipDown $PPP_IFACE
