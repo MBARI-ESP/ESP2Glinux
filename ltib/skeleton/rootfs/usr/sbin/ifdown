@@ -12,30 +12,34 @@ usage ()
 
 . /usr/share/ifupfn.sh
 
-
 ifAliasDown() {
-  echo "Shutting down interface $1 ..."
   fn=/var/run/*$1.pid
   pidfns=`echo $fn`
-  [ "$pidfns" = "$fn" ] || for pidfn in $pidfns; do
-    daemon=`head -n1 $pidfn`
-    case $1 in
-      ppp*)  signal=TERM ;;
-      *)     signal=HUP  ;;
-    esac
-    for try in 1 2 last; do
-      kill -$signal $daemon 2>/dev/null  #relinquish any lease
-      for t in 1 2 3 4 5; do  #wait for daemon to die
-        sleep 1
-        kill -0 $daemon 2>/dev/null || break 2
+  [ "$pidfns" = "$fn" ] && {
+    ifconfig "$1" >/dev/null 2>/dev/null || return 0
+  }
+  echo "Shutting down interface $1 ..."
+  for pidfn in $pidfns; do
+    daemon=`head -n1 $pidfn 2>/dev/null`
+    [ "$daemon" ] && {
+      case $1 in
+        ppp*)  signal=TERM ;;
+        *)     signal=HUP  ;;
+      esac
+      for try in 1 2 last; do
+        kill -$signal $daemon 2>/dev/null  #relinquish any lease
+        for t in 1 2 3 4 5; do  #wait for daemon to die
+          sleep 1
+          kill -0 $daemon 2>/dev/null || break 2
+        done
+        [ "$try" = "last" ] && {
+          echo "Forcing $1 (PID $daemon) to terminate" >&2
+          rm -f $pidfn
+          kill -9 $daemon
+          sleep 2
+        }
       done
-      [ "$try" = "last" ] && {
-        echo "Forcing $1 (PID $daemon) to terminate" >&2
-        rm -f $pidfn
-        kill -9 $daemon
-        sleep 2
-      }
-    done
+    }
     rm -f $pidfn
   done
   ifconfig $* 2>/dev/null
@@ -63,13 +67,13 @@ usage:  ifdown [network interface or alias name]
 "
     return 1
   ;;
-  
+
   *:*) #an interface alias
     ifAliasDown $1 down
     gateUp
     hostsUp
   ;;
-  
+
   *) #anything else must be the name of an interface
     [ "$2" = "force" ] && eachAlias ifAliasDown $1 down
     op=0
