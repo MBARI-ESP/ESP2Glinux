@@ -1,8 +1,8 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  4/10/13 by brent@mbari.org
+# revised:  3/20/16 by brent@mbari.org
 
-[ -z "$1" -o -z "$interface" ] && 
+[ -z "$1" -o -z "$interface" ] &&
   echo "Error: should be called from udhcpc" && exit 1
 
 . /usr/share/netutils.sh
@@ -43,5 +43,9 @@ case "$1" in  #ignore leasefail and renew
       [ "$dns" ] && dnsMsg=" with DNS $dns"
       echo "DHCP $1 $interface to $ip$dnsMsg"
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
+    }
+    [ "$VPNIF" ] && {
+      ifdown $VPNIF
+      ifup   $VPNIF
     }
 esac
