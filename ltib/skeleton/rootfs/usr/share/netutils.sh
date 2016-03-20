@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/27/15 brent@mbari.org
+# -- revised: 3/20/15 brent@mbari.org
 #
 
 ipUp() {
@@ -11,6 +11,7 @@ ipUp() {
 #  NETWORK = IP subnet (to add explicit route)
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
+#  VPNIF = associated VPN interface
   local mask= cast=
   [ "$NETMASK" ] && {
     mask=" netmask $NETMASK"
@@ -25,8 +26,14 @@ ipUp() {
       return 2
     }
   }
-  [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME
+  [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME && return 3
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME
+  #also bring up associated VPN interface if this one provides gateway
+  [ "$VPNIF" -a "$GATEWAY" ] && {
+    ifdown $VPNIF
+    ifup   $VPNIF
+  }
+  return 0
 }
 
 ipDown() {

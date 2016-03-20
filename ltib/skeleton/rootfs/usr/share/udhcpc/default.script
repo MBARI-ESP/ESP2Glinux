@@ -7,7 +7,10 @@
 
 . /usr/share/netutils.sh
 configfn=/etc/sysconfig/ifcfg-$interface
-[ -r $configfn ] && . $configfn && validIFconfig=1
+[ -r $configfn ] && . $configfn && {
+  export VPNIF
+  validIFconfig=1
+}
 
 tracefn=/tmp/udhcpc.trace
 if [ -w $tracefn ]; then
@@ -43,9 +46,5 @@ case "$1" in  #ignore leasefail and renew
       [ "$dns" ] && dnsMsg=" with DNS $dns"
       echo "DHCP $1 $interface to $ip$dnsMsg"
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
-    }
-    [ "$VPNIF" ] && {
-      ifdown $VPNIF
-      ifup   $VPNIF
     }
 esac
