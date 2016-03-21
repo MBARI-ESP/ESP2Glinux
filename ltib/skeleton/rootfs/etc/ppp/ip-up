@@ -51,5 +51,7 @@ fi
   }
 }
 
-gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE &&
+gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE && {
   vpnUp $PPP_IPPARAM $PPP_IFACE
+  exit 0
+}

@@ -46,13 +46,29 @@ ipDown() {
 vpnUp() {
 #if $1 specs "IP/vpn" iface, bring that iface up, unless there is already
 #a host route to the vpn server via an interface other than $2.
-#Always bring down vpn if its carrier was (an old instance of) this ppp link.
+#Always bring down vpn if its current $carrier is of lower priority than $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
-    carrier=`hostIface $server` && [ "$carrier" != "$2" ] && return 0
+    carrier=`hostIface $server` && lowerGatePriority "$2" "$carrier" && return 0
     ifdown $vpn
     ifup $vpn
   fi
+}
+
+lowerGatePriority() {
+#return 0 iff interface $1 has a lower gateway priority than $2
+  [ "$1" = "$2" -o -z "$2" ] && return 1;
+  read -r ifs < /etc/sysconfig/gateway.priority || return $?
+  for interface in $ifs; do  #consider only interfaces with gateways
+    case "$2" in
+      "$interface") return 0
+    esac
+    case "$1" in
+      "$interface") return 1
+    esac
+  done
+  echo "lowerGatePriority():  unknown interface '$2'" >&2
+  return 9
 }
 
 gateUp() {
