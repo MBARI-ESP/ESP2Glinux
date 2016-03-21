@@ -1,10 +1,11 @@
 IFNAME=ppp8
 AUTOSTART=no
+VPN=134.89.2.91/ppp6   #server IP / VPN interface
 
 isp=usmobile  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
-  pppd call $isp unit ${IFNAME#ppp} ipparam 134.89.2.91/ppp6
+  pppd call $isp unit ${IFNAME#ppp} ipparam $VPN
 }
 
 hosts() {    #add lines before EOS

@@ -8,7 +8,7 @@
 . /usr/share/netutils.sh
 configfn=/etc/sysconfig/ifcfg-$interface
 [ -r $configfn ] && . $configfn && {
-  export VPNIF
+  export VPN
   validIFconfig=1
 }
 

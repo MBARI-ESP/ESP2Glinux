@@ -11,7 +11,7 @@ ipUp() {
 #  NETWORK = IP subnet (to add explicit route)
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
-#  VPNIF = associated VPN interface
+#  VPN = associated VPN server / interface
   local mask= cast=
   [ "$NETMASK" ] && {
     mask=" netmask $NETMASK"
@@ -27,12 +27,9 @@ ipUp() {
     }
   }
   [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME && return 3
-  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME
+  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return $?
   #also bring up associated VPN interface if this one provides gateway
-  [ "$VPNIF" -a "$GATEWAY" ] && {
-    ifdown $VPNIF
-    ifup   $VPNIF
-  }
+  [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
   return 0
 }
 
@@ -46,6 +43,17 @@ ipDown() {
   hostsUp
 }
 
+vpnUp() {
+#if $1 specs "IP/vpn" iface, bring that iface up, unless there is already
+#a host route to the vpn server via an interface other than $2.
+#Always bring down vpn if its carrier was (an old instance of) this ppp link.
+server=`dirname $1` && [ "$server" != . ] &&
+  if vpn=`basename $1`; then #check for being carried by another iface
+    carrier=`hostIface $server` && [ "$carrier" != "$2" ] && return 0
+    ifdown $vpn
+    ifup $vpn
+  fi
+}
 
 gateUp() {
   # add any specified device with its gateway IP
