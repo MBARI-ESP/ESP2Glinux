@@ -8,7 +8,7 @@ export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 
 POWERDOWN=PowerDown
 RUN=3
-modem=/dev/freewave
+modem=/dev/modem
 export baud=115200
 export chat=/usr/sbin/chat
 

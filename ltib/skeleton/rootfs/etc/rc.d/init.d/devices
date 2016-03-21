@@ -14,10 +14,10 @@ case "$1" in
   start)
     cd /dev
     mknod ppp c 108 0
-    modem=ttyS8 	#serial port connected to the freewave radio modem
+    modem=ttyS8 	#serial port connected to the radio modem
     [ -c "$modem" ] && {
-      ln -s $modem freewave
-      stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
+      ln -s $modem modem
+#      stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
     }
 
     espPort I2Cgate  ttyS4   #core ESP gateway

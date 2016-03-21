@@ -8,7 +8,7 @@ remotename att
 ipparam att
 
 # Specify which device to use
-freewave
+/dev/modem
 modem
 crtscts
 115200

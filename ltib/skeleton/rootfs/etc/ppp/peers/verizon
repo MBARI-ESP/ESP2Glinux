@@ -5,7 +5,7 @@ remotename verizon
 ipparam verizon
 
 # Specify which device to use
-freewave
+/dev/modem
 modem
 crtscts
 115200

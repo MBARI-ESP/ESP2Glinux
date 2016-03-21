@@ -6,7 +6,7 @@ remotename vodafoneNZ
 ipparam vodafoneNZ
 
 # Specify which device to use
-freewave
+/dev/modem
 modem
 crtscts
 115200

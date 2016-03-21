@@ -16,7 +16,7 @@ maxfail 0    #never give up!
 #dump
 
 #RS-232 port configuration
-ttyUSB0	#symlink /dev/freewave to the modem's serial port
+/dev/modem   #symlink /dev/modem to the modem's serial port
 #460800
 115200       #baud rate
 local        #no carrier detect

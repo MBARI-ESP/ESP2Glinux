@@ -6,7 +6,7 @@ remotename ting
 ipparam ting
 
 # Specify which device to use
-freewave
+/dev/modem
 modem
 crtscts
 115200

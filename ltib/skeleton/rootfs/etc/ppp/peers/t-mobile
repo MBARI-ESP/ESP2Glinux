@@ -8,7 +8,7 @@ remotename t-mobile
 ipparam t-mobile
 
 # Specify which device to use
-freewave
+/dev/modem
 modem
 crtscts
 115200
