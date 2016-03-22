@@ -71,6 +71,11 @@ lowerGatePriority() {
   return 9
 }
 
+notUnplugged() {
+#return 0 if either interface named $1 defines no carrier or it is up
+  [ "`cat /sys/class/net/$1/carrier 2>/dev/null`" != 0 ]
+}
+
 gateUp() {
   # add any specified device with its gateway IP
   # then activate the appropriate gateway with its associated resolv.conf
@@ -89,7 +94,7 @@ gateUp() {
   { #read up to two lines of net interface types from $priorityFn
     if read -r ifs; then
       for interface in $ifs; do  #first try only ifaces with gateways
-        [ -r "$interface" ] && {
+        [ -r "$interface" ] && notUnplugged "$interface" && {
           RESOLV_IF=/var/run/resolv/$interface
           read -r resolvDev gateways < $RESOLV_IF
           if [ "$resolvDev" = "#$interface" ]; then
@@ -105,7 +110,7 @@ gateUp() {
         read -r ifs2  #optional 2nd line gives priority for ifaces w/o gateways
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
-          [ -r "$interface" ] && {
+          [ -r "$interface" ] && notUnplugged "$interface" && {
             RESOLV_IF=/var/run/resolv/$interface
             read -r resolvDev gateways < $RESOLV_IF
             [ "$resolvDev" = "#$interface" ] && {
