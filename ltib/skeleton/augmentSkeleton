@@ -1,15 +1,7 @@
 #!/bin/bash -e
 here=`dirname $0`
-: ${LTIB:=$HOME/ltib}
-: ${HOSTTOP=${1-$LTIB/rootfs.tmp}}
-: ${ARMGCC:=/ltibarm}
-: ${ARMHOST:=arm-unknown-linux}
-: ${ARMPREFIX:=$LTIB/rootfs/usr}
-: ${STRIP=$ARMGCC/bin/strip}
+. $here/ltibEnv
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
-mkdir -p $LOCALBIN
-
-export ARMGCC HOSTTOP ARMHOST ARMPREFIX
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
   -- 9/8/15 brent@mbari.org
@@ -17,6 +9,8 @@ Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
 EOS
+
+mkdir -p $LOCALBIN
 
 echo "  ===>  Building picocom  <==="
 cd ~/linux/picocom

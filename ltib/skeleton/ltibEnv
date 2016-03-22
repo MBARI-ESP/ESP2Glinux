@@ -1,0 +1,9 @@
+# set up environment for ltib linux build
+
+: ${LTIB:=$HOME/ltib}
+: ${HOSTTOP=${1-$LTIB/rootfs.tmp}}
+: ${ARMGCC:=/ltibarm}
+: ${ARMHOST:=arm-unknown-linux}
+: ${ARMPREFIX:=$LTIB/rootfs/usr}
+: ${STRIP=$ARMGCC/bin/strip}
+export ARMGCC HOSTTOP ARMHOST ARMPREFIX
