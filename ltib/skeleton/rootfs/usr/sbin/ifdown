@@ -32,15 +32,15 @@ ifAliasDown() {
           sleep 1
           kill -0 $daemon 2>/dev/null || break 2
         done
-        [ "$try" = "last" ] && {
+        [ "$try" = last ] && {
           echo "Forcing $1 (PID $daemon) to terminate" >&2
-          rm -f $pidfn
+          rm $pidfn
           kill -9 $daemon
-          sleep 2
         }
       done
+      #ppp will delete its own .pid files
+      [ "$signal" != TERM ] && rm -f $pidfn
     }
-    rm -f $pidfn
   done
   ifconfig $* 2>/dev/null
   hostDown $1
