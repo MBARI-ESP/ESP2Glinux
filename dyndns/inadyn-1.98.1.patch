@@ -1,6 +1,6 @@
-diff -ru inadyn-1.98.1/include/dyndns.h inadyn-mbari7/include/dyndns.h
+diff -ru inadyn-1.98.1/include/dyndns.h inadyn-1.98.1-mbari8/include/dyndns.h
 --- inadyn-1.98.1/include/dyndns.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/include/dyndns.h	2013-03-02 17:24:55.514180549 -0800
++++ inadyn-1.98.1-mbari8/include/dyndns.h	2016-03-21 15:28:34.215604545 -0700
 @@ -53,9 +53,7 @@
  /*test values*/
  #define DYNDNS_DEFAULT_DEBUG_LEVEL	1
@@ -81,9 +81,9 @@ diff -ru inadyn-1.98.1/include/dyndns.h inadyn-mbari7/include/dyndns.h
  	BOOL force_addr_update;
  	BOOL use_proxy;
  	BOOL abort;
-diff -ru inadyn-1.98.1/include/errorcode.h inadyn-mbari7/include/errorcode.h
+diff -ru inadyn-1.98.1/include/errorcode.h inadyn-1.98.1-mbari8/include/errorcode.h
 --- inadyn-1.98.1/include/errorcode.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/include/errorcode.h	2013-03-02 17:24:55.514180549 -0800
++++ inadyn-1.98.1-mbari8/include/errorcode.h	2016-03-21 15:28:34.215604545 -0700
 @@ -37,6 +37,7 @@
  	RC_IP_OBJECT_NOT_INITIALIZED = 0x16,
  	RC_IP_OS_SOCKET_INIT_FAILED = 0x17,
@@ -100,9 +100,9 @@ diff -ru inadyn-1.98.1/include/errorcode.h inadyn-mbari7/include/errorcode.h
  	RC_RESTART = 0xff,
  } RC_TYPE;
  
-diff -ru inadyn-1.98.1/include/os.h inadyn-mbari7/include/os.h
+diff -ru inadyn-1.98.1/include/os.h inadyn-1.98.1-mbari8/include/os.h
 --- inadyn-1.98.1/include/os.h	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/include/os.h	2013-03-02 17:24:55.522180629 -0800
++++ inadyn-1.98.1-mbari8/include/os.h	2016-03-21 15:28:34.215604545 -0700
 @@ -150,6 +150,10 @@
  
  RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info);
@@ -134,15 +134,15 @@ diff -ru inadyn-1.98.1/include/os.h inadyn-mbari7/include/os.h
  #ifdef __cplusplus
  }
  #endif
-diff -ru inadyn-1.98.1/Makefile inadyn-mbari7/Makefile
+diff -ru inadyn-1.98.1/Makefile inadyn-1.98.1-mbari8/Makefile
 --- inadyn-1.98.1/Makefile	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/Makefile	2013-03-02 19:35:45.584263307 -0800
++++ inadyn-1.98.1-mbari8/Makefile	2016-03-21 15:28:34.215604545 -0700
 @@ -1,7 +1,7 @@
  # Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
  
  #VERSION      ?= $(shell git tag -l | tail -1)
 -VERSION      ?= 1.98.1
-+VERSION      ?= 1.98.1-mbari7
++VERSION      ?= 1.98.1-mbari8
  NAME          = inadyn
  EXEC          = src/$(NAME)
  PKG           = $(NAME)-$(VERSION)
@@ -216,9 +216,10 @@ diff -ru inadyn-1.98.1/Makefile inadyn-mbari7/Makefile
 -	@(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
 +	(cd ..; md5sum $(ARCHIVE) | tee $(ARCHIVE).md5)
  
-diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
+Only in inadyn-1.98.1-mbari8/src: base64utils.o
+diff -ru inadyn-1.98.1/src/dyndns.c inadyn-1.98.1-mbari8/src/dyndns.c
 --- inadyn-1.98.1/src/dyndns.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/src/dyndns.c	2013-03-02 19:26:49.002866469 -0800
++++ inadyn-1.98.1-mbari8/src/dyndns.c	2016-03-21 17:15:59.401124372 -0700
 @@ -2,6 +2,8 @@
   *
   * Copyright (C) 2003-2004  Narcis Ilisei <inarcis2002@hotpop.com>
@@ -228,6 +229,15 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
   *
   * This program is free software; you can redistribute it and/or
   * modify it under the terms of the GNU General Public License
+@@ -120,7 +122,7 @@
+ 	  (DNS_SYSTEM_REQUEST_FUNC) get_req_for_easydns_http_dns_server,
+ 	  DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+ 	  "members.easydns.com", "/dyn/dyndns.php?hostname=", ""}},
+-	
++
+ 	{TZO_DEFAULT,
+ 	 {"default@tzo.com", NULL,
+ 	  (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_tzo_server_rsp_ok,
 @@ -438,10 +440,7 @@
  	p_tr->req_len = get_req_for_ip_server(p_self, servernum,
  					      p_self->info[servernum].p_dns_system->p_specific_data);
@@ -252,7 +262,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +    DYNDNS_INFO_TYPE *info0 = p_self->info;
 +    DYNDNS_INFO_TYPE *info = info0;
 +	for (numChanged = 0, i = 0; i < p_self->info_count; i++, info++)
-+	    if ((info0->my_ip_has_changed = info->my_ip_has_changed = 
++	    if ((info0->my_ip_has_changed = info->my_ip_has_changed =
 +                strncmp(info->my_ip_address.name, newIPstr, DYNDNS_SERVER_NAME_LENGTH) != 0)) {
 +            strncpy(info->my_ip_address.name, newIPstr, DYNDNS_SERVER_NAME_LENGTH);
 +            numChanged++;
@@ -354,12 +364,20 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  				      info->alias_info[j].names.name, info->my_ip_address.name);
  			}
  		}
--	}
+ 	}
 -
-+	}    	
  	return RC_OK;
  }
  
+@@ -639,7 +628,7 @@
+ }
+ 
+ /* TZO specific response validator.
+-   If we have an HTTP 302 the update wasn't good and we're being redirected 
++   If we have an HTTP 302 the update wasn't good and we're being redirected
+ */
+ static BOOL is_tzo_server_rsp_ok(DYN_DNS_CLIENT *p_self, char*p_rsp, int infnr, char* p_ok_string)
+ {
 @@ -683,10 +672,9 @@
  
  		for (j = 0; j < info->alias_count; j++)
@@ -453,7 +471,31 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  	}
  	while (0);
  
-@@ -879,7 +856,7 @@
+@@ -828,12 +805,10 @@
+ 	const char* format = "%s:%s";
+ 	char *p_tmp_buff = NULL;
+ 	int size, actual_len;
+-	int i = 0;
+-
+-	do
++	int i;
++    DYNDNS_INFO_TYPE *info;
++	for (i = 0, info = p_self->info; i < p_self->info_count; i++, info++)
+ 	{
+-		DYNDNS_INFO_TYPE *info = &p_self->info[i];
+-
+ 		size = strlen(info->credentials.my_password) +
+ 			strlen(info->credentials.my_username) +
+ 			strlen(format) + 1;
+@@ -866,7 +841,6 @@
+ 			p_tmp_buff = NULL;
+ 		}
+ 	}
+-	while (++i < p_self->info_count);
+ 
+ 	if (p_tmp_buff != NULL)
+ 	{
+@@ -879,7 +853,7 @@
  
  void dyn_dns_print_hello(void)
  {
@@ -462,7 +504,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  }
  
  /**
-@@ -951,10 +928,11 @@
+@@ -951,10 +925,11 @@
  		}
  		http_to_dyndns_constructed = TRUE;
  
@@ -478,7 +520,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  
  		i = 0;
  		while (i < DYNDNS_MAX_SERVER_NUMBER)
-@@ -1005,11 +983,6 @@
+@@ -1005,11 +980,6 @@
  		return RC_OK;
  	}
  
@@ -490,15 +532,41 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  	rc = http_client_destruct(p_self->http_to_ip_server, DYNDNS_MAX_SERVER_NUMBER);
  	if (rc != RC_OK)
  	{
-@@ -1077,7 +1050,6 @@
+@@ -1065,8 +1035,6 @@
+ */
+ RC_TYPE dyn_dns_init(DYN_DNS_CLIENT *p_self)
+ {
+-	int i = 0;
+-
+ 	if (p_self == NULL)
+ 	{
+ 		return RC_INVALID_POINTER;
+@@ -1077,13 +1045,12 @@
  		return RC_OK;
  	}
  
 -	p_self->abort_on_network_errors = FALSE;
  	p_self->force_addr_update = FALSE;
  
- 	do
-@@ -1121,24 +1093,124 @@
+-	do
++	int i;
++    DYNDNS_INFO_TYPE *info;
++	for (i = 0, info = p_self->info; i < p_self->info_count; i++, info++)
+ 	{
+-		DYNDNS_INFO_TYPE *info = &p_self->info[i];
+-
+ 		if (strlen(info->proxy_server_name.name) > 0)
+ 		{
+ 			http_client_set_port(&p_self->http_to_ip_server[i], info->proxy_server_name.port);
+@@ -1104,7 +1071,6 @@
+ 		http_client_set_bind_iface(&p_self->http_to_dyndns[i], p_self->interface);
+ 		http_client_set_bind_iface(&p_self->http_to_ip_server[i], p_self->interface);
+ 	}
+-	while (++i < p_self->info_count);
+ 
+ 	p_self->cmd = NO_CMD;
+ 	if (p_self->cmd_check_period == 0)
+@@ -1121,24 +1087,124 @@
  	return RC_OK;
  }
  
@@ -558,7 +626,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +            logit(LOG_WARNING, MODULE_TAG "%s` output invalid IP address '%s'",
 +                  ifname, ipStr);
 +          continue;
-+        }          
++        }
 +      }else{  /* ifname = local network interface */
 +	    if (os_ifaceIP(ifname, &ip)) {
 +		  if (p_self->dbg.level > 3)
@@ -601,7 +669,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +
 +	/* Try a DNS lookup of our last known IP#. */
 +    DYNDNS_INFO_TYPE *info0=p_self->info;
-+   	DYNDNS_INFO_TYPE *info=info0;       
++   	DYNDNS_INFO_TYPE *info=info0;
 +	for (i = 0; i < p_self->info_count; i++, info++)
 +		if (info->alias_count) {
 +			/* DNS Lookup */
@@ -634,7 +702,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  /** the real action:
      - increment the forced update times counter
      - detect current IP
-@@ -1152,60 +1224,60 @@
+@@ -1152,60 +1218,59 @@
  RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
  {
  	int servernum = 0; /* server to use for requesting IP */
@@ -651,8 +719,8 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 -	do
 -	{
 -		/* Ask IP server something so he will respond and give me my IP */
-+	if (p_self->check_ip_period_sec &&
-+         (p_self->secs_since_last_check+=p_self->sleep_sec) >= 
++	if (p_self->info_count && p_self->check_ip_period_sec &&
++         (p_self->secs_since_last_check+=p_self->sleep_sec) >=
 +          p_self->check_ip_period_sec) {
 +        if ((rc = getIPfromIfaces(p_self)) == RC_OK) {
 +        	char publicIP[DYNDNS_SERVER_NAME_LENGTH];
@@ -661,13 +729,13 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +            	case RC_DYNDNS_UNRESOLVED_ALIAS:
 +					setMyIP(p_self, publicIP);
 +                 case RC_OK:
-+        			p_self->secs_since_last_check = 0;       
++	                if (p_self->dbg.level)
++		                logit(LOG_INFO, MODULE_TAG "Current public IP# %s", ipname);
 +                	goto skipDDNSquery;
 +                default:
 +                	return rc;
 +            }
 +        }
-+queryDDNS:
 +	    /* probe IP server and parse response to get my IP */
  		rc = do_ip_server_transaction(p_self, servernum);
  		if (rc != RC_OK)
@@ -680,7 +748,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 -			logit(LOG_DEBUG, MODULE_TAG "%s", p_self->p_work_buffer);
 -		}
 +			return rc;
-+        p_self->secs_since_last_check = 0;       
++        p_self->secs_since_last_check = 0;
 +		if (p_self->dbg.level > 3)
 +			logit(LOG_DEBUG, MODULE_TAG
 +                	"DDNS server response: %s", p_self->p_work_buffer);
@@ -708,8 +776,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +	if (rc != RC_OK)
 +        return rc;
 +skipDDNSquery:
-+	if (p_self->dbg.level)
-+		logit(LOG_INFO, MODULE_TAG "Current public IP# %s", ipname);
++    p_self->secs_since_last_check = 0;
  
 -		/* Update IPs marked as not identical with my IP */
 -		rc = do_update_alias_table(p_self);
@@ -734,7 +801,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  /** MAIN - Dyn DNS update entry point
      Actions:
      - read the configuration options
-@@ -1218,16 +1290,12 @@
+@@ -1218,16 +1283,12 @@
  	FILE *fp;
  	RC_TYPE rc = RC_OK;
  	int i;
@@ -751,7 +818,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  	/* read cmd line options and set object properties */
  	rc = get_config_data(p_dyndns, argc, argv);
  	if (rc != RC_OK || p_dyndns->abort)
-@@ -1289,15 +1357,14 @@
+@@ -1289,15 +1350,14 @@
  	umask(S_IWGRP | S_IWOTH);
  
  	/* write pid file */
@@ -765,7 +832,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 +        	fprintf(fp, "%u", getpid());
 +			fclose(fp);
 +        }else
-+		    logit(LOG_ERR, MODULE_TAG "Could not write pidfile %s: %s", 
++		    logit(LOG_ERR, MODULE_TAG "Could not write pidfile %s: %s",
 +            		p_dyndns->pidfile, strerror(errno));
  	}
 -	fprintf(fp, "%u", getpid());
@@ -774,7 +841,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  	dyn_dns_print_hello();
  
  	/* At boot, or when restarting inadyn at runtime, the memory struct holding
-@@ -1305,43 +1372,9 @@
+@@ -1305,43 +1365,9 @@
  	 * DDNS server record, since we might get locked out for abuse, so we "seed"
  	 * each of the DDNS records of our struct with the cached IP# from our cache
  	 * file, or from a regular DNS query. */
@@ -786,7 +853,7 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 -
 -		/* Clear DNS cache before querying for the IP below. */
 -		res_init();
--
+ 
 -		/* Try a DNS lookup of our last known IP#. */
 -		for (i = 0; i < p_dyndns->info_count; i++)
 -		{
@@ -815,34 +882,35 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
 -	}
 -	else
 -	{
-+	
 +	if (p_dyndns->cachefile && (fp = fopen(p_dyndns->cachefile, "r"))) {
 +		char name[DYNDNS_SERVER_NAME_LENGTH];
  		/* Read cached IP# from inadyn cache file. */
  		if (fgets(name, sizeof(name), fp))
  		{
-@@ -1353,8 +1386,9 @@
- 				strncpy(p_dyndns->info[i].my_ip_address.name, name, sizeof(p_dyndns->info[i].my_ip_address.name));
+@@ -1354,7 +1380,8 @@
  			}
  		}
--		fclose(fp);
+ 		fclose(fp);
 -	}
-+		fclose(fp);        
-+	}else    
++	}else
 +    	dnslookup(p_dyndns);  /* seed from DNS in absence of local cache, ignore errors */
  
  	do
  	{
-@@ -1406,40 +1440,31 @@
- 				/* dyn_dns_update_ip() failed above, and we've not reached MAX iterations. 
+@@ -1403,43 +1430,34 @@
+ 
+ 			if (rc != RC_OK)
+ 			{
+-				/* dyn_dns_update_ip() failed above, and we've not reached MAX iterations. 
++				/* dyn_dns_update_ip() failed above, and we've not reached MAX iterations.
  				 * Time to inform the user the (network) error is not fatal and that we
  				 * will try again in a short while. */
 -				logit(LOG_WARNING, MODULE_TAG "Will retry again in %d sec...", p_dyndns->sleep_sec);
-+				if (p_dyndns->onNetErr) {
-+                	logit(LOG_WARNING, MODULE_TAG "Running %s -- retrying in %d sec...", 
++				if (p_dyndns->onNetErr && p_dyndns->times_since_last_update & 1) {
++                	logit(LOG_WARNING, MODULE_TAG "Running %s -- retrying in %d sec...",
 +							p_dyndns->onNetErr, p_dyndns->sleep_sec);
 +					if (os_shell_execute(p_dyndns->onNetErr))
-+						logit(LOG_ERR, MODULE_TAG "%s failed!", p_dyndns->onNetErr);                   
++						logit(LOG_ERR, MODULE_TAG "%s failed!", p_dyndns->onNetErr);
 +				}else
 +                	logit(LOG_WARNING, MODULE_TAG "Will retry in %d sec...", p_dyndns->sleep_sec);
  			}
@@ -882,9 +950,10 @@ diff -ru inadyn-1.98.1/src/dyndns.c inadyn-mbari7/src/dyndns.c
  	return rc;
  }
  
-diff -ru inadyn-1.98.1/src/errorcode.c inadyn-mbari7/src/errorcode.c
+Only in inadyn-1.98.1-mbari8/src: dyndns.o
+diff -ru inadyn-1.98.1/src/errorcode.c inadyn-1.98.1-mbari8/src/errorcode.c
 --- inadyn-1.98.1/src/errorcode.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/src/errorcode.c	2013-03-02 17:24:55.522180629 -0800
++++ inadyn-1.98.1-mbari8/src/errorcode.c	2016-03-21 15:28:34.215604545 -0700
 @@ -41,7 +41,8 @@
  	{RC_IP_RECV_ERROR,			"RC_IP_RECV_ERROR"},
  	{RC_IP_OBJECT_NOT_INITIALIZED,		"RC_IP_OBJECT_NOT_INITIALIZED"},
@@ -895,9 +964,13 @@ diff -ru inadyn-1.98.1/src/errorcode.c inadyn-mbari7/src/errorcode.c
  	{RC_TCP_OBJECT_NOT_INITIALIZED,		"RC_TCP_OBJECT_NOT_INITIALIZED"},
  
  	{RC_HTTP_OBJECT_NOT_INITIALIZED,	"RC_HTTP_OBJECT_NOT_INITIALIZED"},
-diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
+Only in inadyn-1.98.1-mbari8/src: errorcode.o
+Only in inadyn-1.98.1-mbari8/src: get_cmd.o
+Only in inadyn-1.98.1-mbari8/src: http_client.o
+Only in inadyn-1.98.1-mbari8/src: inadyn
+diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-1.98.1-mbari8/src/inadyn_cmd.c
 --- inadyn-1.98.1/src/inadyn_cmd.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/src/inadyn_cmd.c	2013-03-02 17:24:55.526180669 -0800
++++ inadyn-1.98.1-mbari8/src/inadyn_cmd.c	2016-03-21 15:28:34.219604444 -0700
 @@ -42,6 +42,7 @@
  static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
  static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
@@ -948,7 +1021,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
  	{"--exec",		1,	{get_exec_handler, NULL}, "Full path to external command to run after an IP update."},
  
 +	{"-n",			1,	{get_err_handler, NULL}, ""},
-+	{"--on_net_err",1,	{get_err_handler, NULL}, 
++	{"--on_net_err",1,	{get_err_handler, NULL},
 +      "External shell command to run after a network error"},
 +
  	{"-f",			   1,   {get_forced_update_period_handler, NULL}, ""},
@@ -965,7 +1038,7 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
  	{"--iterations",	1,	{set_iterations_handler, NULL},	"<NUM>\n"
  	 "\t\t\tSet the number of DNS updates. Default: 0 (forever)"},
  
-+	{"-I",        1,    {add_iface_handler, NULL},  "" },    
++	{"-I",        1,    {add_iface_handler, NULL},  "" },
 +	{"--public",  1,    {add_iface_handler, NULL},  "<IFNAME> or `shell cmd`\n\t\t\t"
 +    	"Name of network interface at our public IP address.\n\t\t\t"
 +        "If argument enclosed in `backquotes`, it is interpreted\n\t\t\t"
@@ -1073,12 +1146,12 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
 +    arg[strlen(arg)-1] = 0;  /* delete trailing backtic */
 +  iface->name = strdup(arg);
 +  if (!iface->name)
-+    return RC_OUT_OF_MEMORY;  
++    return RC_OUT_OF_MEMORY;
 +  if (p_self->lastIface) {
-+    iface->next = p_self->lastIface->next;    
++    iface->next = p_self->lastIface->next;
 +    p_self->lastIface->next = iface;
 +  }else
-+    iface->next = iface;  
++    iface->next = iface;
 +  p_self->lastIface = iface;
 +  return RC_OK;
 +}
@@ -1168,10 +1241,10 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
 +static RC_TYPE get_err_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 +{
 +	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *)p_context;
-+
+ 
 +	(void)p_cmd;
 +	(void)current_nr;
- 
++
 +	if (p_self == NULL)
 +	{
 +		return RC_INVALID_POINTER;
@@ -1253,9 +1326,40 @@ diff -ru inadyn-1.98.1/src/inadyn_cmd.c inadyn-mbari7/src/inadyn_cmd.c
  				break;
  
  			default:
-diff -ru inadyn-1.98.1/src/main.c inadyn-mbari7/src/main.c
+@@ -1204,8 +1372,8 @@
+ 		}
+ 
+ 		/* settings that may change due to cmd line options */
+-		i = 0;
+-		do
++		i = -1;
++		while(++i < p_self->info_count)
+ 		{
+ 			/*ip server*/
+ 			if (strlen(p_self->info[i].ip_server_name.name) == 0)
+@@ -1243,17 +1411,6 @@
+ 				strcpy(p_self->info[i].dyndns_server_url, p_self->info[i].p_dns_system->p_dyndns_server_url);
+ 			}
+ 		}
+-		while(++i < p_self->info_count);
+-
+-		/* Check if the neccessary params have been provided */
+-		if ((p_self->info_count == 0) ||
+-		    (p_self->info[0].alias_count == 0) ||
+-		    (strlen(p_self->info[0].dyndns_server_name.name) == 0)  ||
+-		    (strlen(p_self->info[0].ip_server_name.name) == 0))
+-		{
+-			rc = RC_DYNDNS_INVALID_OR_MISSING_PARAMETERS;
+-			break;
+-		}
+ 
+ 		/* Forced update */
+ 		p_self->forced_update_times = p_self->forced_update_period_sec / p_self->sleep_sec;
+Only in inadyn-1.98.1-mbari8/src: inadyn_cmd.o
+Only in inadyn-1.98.1-mbari8/src: ip.o
+diff -ru inadyn-1.98.1/src/main.c inadyn-1.98.1-mbari8/src/main.c
 --- inadyn-1.98.1/src/main.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/src/main.c	2013-03-02 17:24:55.526180669 -0800
++++ inadyn-1.98.1-mbari8/src/main.c	2016-03-21 15:28:34.219604444 -0700
 @@ -27,56 +27,37 @@
  /* MAIN - Dyn DNS update entry point.*/
  int inadyn_main(int argc, char* argv[])
@@ -1267,7 +1371,7 @@ diff -ru inadyn-1.98.1/src/main.c inadyn-mbari7/src/main.c
  
 -	do
 -	{
-+	do {    
++	do {
  		/* create DYN_DNS_CLIENT object	*/
  		rc = dyn_dns_construct(&p_dyndns);
  		if (rc != RC_OK)
@@ -1293,7 +1397,9 @@ diff -ru inadyn-1.98.1/src/main.c inadyn-mbari7/src/main.c
 -		if (rc == RC_RESTART)
 -		{
 -			restart = 1;
--
++		if (rc != RC_RESTART && (!p_dyndns->restart || rc == RC_STOP))
++			break;
+ 
 -			/* do some cleanup if restart requested */
 -			rc = dyn_dns_destruct(p_dyndns);
 -			if (rc != RC_OK)
@@ -1308,9 +1414,6 @@ diff -ru inadyn-1.98.1/src/main.c inadyn-mbari7/src/main.c
 -		}
 -	}
 -	while (restart);
-+		if (rc != RC_RESTART && (!p_dyndns->restart || rc == RC_STOP))
-+			break;
-+        
 +		/* do some cleanup if restart requested */
 +		rc = dyn_dns_destruct(p_dyndns);
 +		if (rc != RC_OK)
@@ -1326,9 +1429,13 @@ diff -ru inadyn-1.98.1/src/main.c inadyn-mbari7/src/main.c
  
  	/* Cleanup */
  	dyn_dns_destruct(p_dyndns);
-diff -ru inadyn-1.98.1/src/os_unix.c inadyn-mbari7/src/os_unix.c
+Only in inadyn-1.98.1-mbari8/src: main.o
+Only in inadyn-1.98.1-mbari8/src: md5.o
+Only in inadyn-1.98.1-mbari8/src: os.o
+Only in inadyn-1.98.1-mbari8/src: os_psos.o
+diff -ru inadyn-1.98.1/src/os_unix.c inadyn-1.98.1-mbari8/src/os_unix.c
 --- inadyn-1.98.1/src/os_unix.c	2011-07-18 06:05:26.000000000 -0700
-+++ inadyn-mbari7/src/os_unix.c	2013-03-02 17:24:55.526180669 -0800
++++ inadyn-1.98.1-mbari8/src/os_unix.c	2016-03-21 15:28:34.219604444 -0700
 @@ -15,17 +15,19 @@
   * You should have received a copy of the GNU General Public License
   * along with this program; if not, write to the Free Software
@@ -1664,3 +1771,6 @@ diff -ru inadyn-1.98.1/src/os_unix.c inadyn-mbari7/src/os_unix.c
  #endif
  
  /**
+Only in inadyn-1.98.1-mbari8/src: os_unix.o
+Only in inadyn-1.98.1-mbari8/src: os_windows.o
+Only in inadyn-1.98.1-mbari8/src: tcp.o
