@@ -4,7 +4,7 @@ here=`dirname $0`
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 9/8/15 brent@mbari.org
+  -- 3/23/16 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP

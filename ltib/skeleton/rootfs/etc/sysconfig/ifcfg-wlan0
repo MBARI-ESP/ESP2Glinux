@@ -1,7 +1,7 @@
 IFNAME=wlan0
 AUTOSTART=no
 BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
-DHCPNAME=`hostname -s`-wifi
+DHCPNAME=`hostname`-wifi
 
 ifPrep() {
   key=off
