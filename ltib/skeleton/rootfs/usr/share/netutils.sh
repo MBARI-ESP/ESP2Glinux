@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 3/20/15 brent@mbari.org
+# -- revised: 3/24/15 brent@mbari.org
 #
 
 ipUp() {
@@ -93,7 +93,7 @@ gateUp() {
   unset topIface
   { #read up to two lines of net interface types from $priorityFn
     if read -r ifs; then
-      for interface in $ifs; do  #first try only ifaces with gateways
+      for interface in $ifs; do  #first try only active ifaces with gateways
         [ -r "$interface" ] && notUnplugged "$interface" && {
           RESOLV_IF=/var/run/resolv/$interface
           read -r resolvDev gateways < $RESOLV_IF
@@ -107,16 +107,19 @@ gateUp() {
         }
       done
       [ "$topIface" ] || {  #could not find any active net iface with a gateway
-        read -r ifs2  #optional 2nd line gives priority for ifaces w/o gateways
+        read -r ifs2  #optional 2nd line gives priority for inactive ifaces
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
-          [ -r "$interface" ] && notUnplugged "$interface" && {
+          [ -r "$interface" ] && {
             RESOLV_IF=/var/run/resolv/$interface
             read -r resolvDev gateways < $RESOLV_IF
-            [ "$resolvDev" = "#$interface" ] && {
-              topIface=$interface; break
-            }
-            echo "$RESOLV_IF should begin with #$interface" >&2
+            if [ "$resolvDev" = "#$interface" ]; then
+              [ "$gateways" ] && {
+                topIface=$interface; break
+              }
+            else
+              echo "$RESOLV_IF -- should begin with #$interface" >&2
+            fi
           }
         done
       }

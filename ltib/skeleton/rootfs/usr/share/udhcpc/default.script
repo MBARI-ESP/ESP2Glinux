@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  3/20/16 by brent@mbari.org
+# revised:  3/24/16 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] &&
   echo "Error: should be called from udhcpc" && exit 1
@@ -35,13 +35,18 @@ case "$1" in  #ignore leasefail and renew
 
   bound)
     newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
-    newDNSspec="$domain DNS:$dns"
-    resolv_conf() {
-      echo "search `searchDomains $domain`"
-      for dnsip in $dns ; do
-        echo "nameserver $dnsip"
-      done
-    }
+    if [ "$ignoreDNS" ]; then
+      echo "Ignoring offered DNS config"
+      unset dns
+    else
+      newDNSspec="$domain DNS:$dns"
+      resolv_conf() {
+        echo "search `searchDomains $domain`"
+        for dnsip in $dns ; do
+          echo "nameserver $dnsip"
+        done
+      }
+    fi
     IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
       [ "$dns" ] && dnsMsg=" with DNS $dns"
       echo "DHCP $1 $interface to $ip$dnsMsg"
