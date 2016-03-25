@@ -65,13 +65,11 @@ case "$1" in
 usage:  ifdown [network interface or alias name]
         disable the specified network interface or alias
 "
-    return 1
+    exit 1
   ;;
 
   *:*) #an interface alias
     ifAliasDown $1 down
-    gateUp
-    hostsUp
   ;;
 
   *) #anything else must be the name of an interface
@@ -79,6 +77,6 @@ usage:  ifdown [network interface or alias name]
     op=0
     ifconfig | grep -q ^$1: || op=down  #force only if no aliases remain
     ifAliasDown $1 $op
-    gateUp
-    hostsUp
 esac
+gateUp
+hostsUp
