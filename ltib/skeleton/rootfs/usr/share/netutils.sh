@@ -58,7 +58,7 @@ server=`dirname $1` && [ "$server" != . ] &&
 lowerGatePriority() {
 #return 0 iff interface $1 has a lower gateway priority than $2
   [ "$1" = "$2" -o -z "$2" ] && return 1;
-  read -r ifs < /etc/sysconfig/gateway.priority || return $?
+  read -r ifs </etc/sysconfig/gateway.priority || return $?
   for interface in $ifs; do  #consider only interfaces with gateways
     case "$2" in
       "$interface") return 0
@@ -83,22 +83,22 @@ gateUp() {
     echo "Cannot access /var/run/resolv directory" >&2
     return 1
   }
-  local interface RESOLV_IF resolvDev gateways ifs ifs2 topIface newIface=$1
+  local interface RESOLV_IF resolvDev gateway ifs ifs2 topIface newIface=$1
   rm -f $newIface
   [ "$2" ] && {
     echo "#$*"  #store device and gateway in leading comment of its resolv.conf
     type resolv_conf >/dev/null 2>&1 && resolv_conf
-  } > $newIface
+  } >$newIface
   local priorityFn=/etc/sysconfig/gateway.priority
   unset topIface
   { #read up to two lines of net interface types from $priorityFn
     if read -r ifs; then
       for interface in $ifs; do  #first try only active ifaces with gateways
         [ -r "$interface" ] && notUnplugged "$interface" && {
-          RESOLV_IF=/var/run/resolv/$interface
-          read -r resolvDev gateways < $RESOLV_IF
+          RESOLV_IF="/var/run/resolv/$interface"
+          read -r resolvDev gateway <$RESOLV_IF
           if [ "$resolvDev" = "#$interface" ]; then
-            [ "$gateways" ] && {
+            [ "$gateway" ] && {
               topIface=$interface; break
             }
           else
@@ -111,10 +111,10 @@ gateUp() {
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
           [ -r "$interface" ] && {
-            RESOLV_IF=/var/run/resolv/$interface
-            read -r resolvDev gateways < $RESOLV_IF
+            RESOLV_IF="/var/run/resolv/$interface"
+            read -r resolvDev gateway <$RESOLV_IF
             if [ "$resolvDev" = "#$interface" ]; then
-              [ "$gateways" ] && {
+              [ "$gateway" ] && {
                 topIface=$interface; break
               }
             else
@@ -125,7 +125,7 @@ gateUp() {
       }
       : ${topIface:=$newIface}  #use newIf if no prioritized net iface found
       if [ "$topIface" ]; then
-        setGateway $topIface $gateways
+        setGateway $topIface $gateway
       else
 :       echo "No prioritized net interfaces up -- gateway unchanged" >&2
       fi
@@ -145,7 +145,7 @@ hostsUp() {
   #update iface specific hosts file and merge with those of other ifaces
   #first adds interface specific hosts file if current iface specified
   [ "$1" ] && type hosts >/dev/null 2>&1 && {
-    hosts > /var/run/$1.hosts || return $?
+    hosts >/var/run/$1.hosts || return $?
   }
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
@@ -252,6 +252,19 @@ netIfPtp() {
 topIf() {
   #output the name of the top priority network interface
   local iface
-  read -r iface gateways < /etc/resolv.conf
+  read -r iface gateway 2>/dev/null </etc/resolv.conf &&
   echo ${iface###}
+}
+
+gateIP() {
+#output the IP address of the gateway for the given interface
+  RESOLV_IF="/var/run/resolv/$1"
+  read -r resolvDev gateway 2>/dev/null <$RESOLV_IF &&
+  [ "$resolvDev" = "#$1" ] && {
+    [ "$gateway" ] || return 1
+    echo $gateway
+    return 0
+  }
+  echo "$RESOLV_IF -- should begin with #$interface" >&2
+  return 2
 }
