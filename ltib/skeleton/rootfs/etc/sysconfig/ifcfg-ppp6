@@ -8,8 +8,10 @@ ifPrep() {
   pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
 }
 
-hosts() {    #add lines before EOS
-  cat <<EOS
+hosts() {  #all MBARI subnets bypass this VPN
+route add -net 134.89.0.0/16 gw 134.89.10.1 2>/dev/null ||
+route add -net 134.89.0.0/16 gw 134.89.12.1 2>/dev/null
+  cat <<EOS    #add lines before EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
 $(netIfPtp $IFNAME shore mail)
 EOS
