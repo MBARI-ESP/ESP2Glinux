@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 3/18/16 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 3/30/16 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -108,3 +108,8 @@ home/brent/.irbrc -> /etc/esp/irbrc
 home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
 home/esp/.irbrc -> /etc/esp/irbrc
+
+suscript/reboot -> /sbin/reboot
+
+suscript/esp/reboot -> /usr/sbin/suscript
+suscript/esp/powerdown -> /usr/sbin/suscript

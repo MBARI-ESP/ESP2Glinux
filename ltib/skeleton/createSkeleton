@@ -6,7 +6,7 @@ IMAGE=${2-$LTIB/rootfs.tmp}
 export LTIB IMAGE
 [ -z $1 ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 9/9/15 brent@mbari.org
+Create new ltib root filesystem  -- 3/30/16 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
@@ -52,6 +52,7 @@ find -type f -exec file {} \; |
 
 
 echo Changing ownership of $1 to root and finalizing image
+espSu=$1/suscript/esp
 sudo sh <<END
   chown -Rh root:root $1 &&
   #recover needed dev entries
@@ -60,6 +61,8 @@ sudo sh <<END
   find $1 -type d -exec chmod g-s {} \; &&
   #changing owner to root cleared the suids -- set them again here
   cd $1/bin && chmod u+s busybox mount umount &&
+#deal with suscript utilities for the ESP app (if they are in the image)
   [ -f $1/usr/sbin/suscript ] && chmod u+s $1/usr/sbin/suscript &&
+  [ -d $espSu ] && chgrp mbari $espSu && chmod o= $espSu
   ldconfig -r $1
 END
