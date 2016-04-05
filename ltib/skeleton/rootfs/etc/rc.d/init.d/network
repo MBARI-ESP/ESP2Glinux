@@ -15,7 +15,7 @@ case "$op" in
       if [ "$1" ]; then
 	for dev; do
           unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART resolv_conf hosts
+          unset NETWORK GATEWAY MTU AUTOSTART VPN resolv_conf hosts
 	  . /etc/sysconfig/ifcfg-$dev
           ifup_function
         done
@@ -27,7 +27,7 @@ case "$op" in
         [ "$fns" = "$fnspec" ] && exit  #no network configs found
 	for defFn in $fns; do
           unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART resolv_conf hosts
+          unset NETWORK GATEWAY MTU AUTOSTART VPN resolv_conf hosts
           . $defFn
           ifup_function 'yes|Y|Yes|YES'
         done
@@ -55,7 +55,7 @@ set +f
       }
       for dev in $devs; do
         unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-        unset NETWORK GATEWAY MTU AUTOSTART resolv_conf hosts
+        unset NETWORK GATEWAY MTU AUTOSTART VPN resolv_conf hosts
         defFn=/etc/sysconfig/ifcfg-$dev
         if [ -r "$defFn" ]; then
           . $defFn  #don't try to stop interfaces respawned by init process

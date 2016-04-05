@@ -49,10 +49,10 @@ ifAliasDown() {
 
 eachAlias() {
   cfg=/etc/sysconfig/ifcfg-
-  aliases=`echo $cfg$2:*`
+  aliases="`echo $cfg$2:*`"
   arg1=$1
-  [ "$aliases" = $cfg$2:\* ] || {
-    shift
+  [ "$aliases" = "$cfg$2:*" ] || {
+    shift 2
     for alias in $aliases; do
        $arg1 ${alias#$cfg} $*
     done
