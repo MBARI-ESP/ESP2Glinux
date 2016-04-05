@@ -17,9 +17,9 @@ tracefn=/tmp/$IFNAME.trace
 ( sleep 5  #wait for link
   fuser -k 25/tcp
   export HOME=/root
-  shore="-p 2323 `hostname`@shore"
+  shore="-p 2323 `hostname`@ESPshore"
   ssh -y $shore fuser.root -k 2008/tcp
-  ssh -y -g -N -K 180 -L 25:shore:25 \
+  ssh -y -g -N -K 180 -L 25:ESPshore:25 \
       -R 2008:localhost:22 -R 8008:localhost:80 $shore &
   sshpid=$!
   pidfn=/var/run/$PPP_IFACE-bkg.pid
@@ -31,7 +31,6 @@ tracefn=/tmp/$IFNAME.trace
 ) >/dev/null &
 cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
-134.89.2.91 shore
 127.0.0.1 mail
 EOS
 }
