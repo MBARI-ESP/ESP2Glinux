@@ -2,7 +2,7 @@
 here=`dirname $0`
 . $here/ltibEnv
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
-: ${SYSBIN=$HOSTTOP/usr/local/bin}
+: ${SYSBIN=$HOSTTOP/usr/sbin}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
   -- 4/6/16 brent@mbari.org
