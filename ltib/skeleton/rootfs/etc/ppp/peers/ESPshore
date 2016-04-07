@@ -1,7 +1,9 @@
 file /etc/ppp/options.pptp
 
-#for ESPshore.mbari.org
-init "route del ESPshore 2>/dev/null;:"  #remove any preexisting host route to VPN server
+#remove any preexisting routes to VPN server
+init "route del ESPshore 2>/dev/null;
+      . /etc/sysconfig/mbari.net && pppPrep || :"
+
 pty  "exec pptp ESPshore --nolaunchpppd --idle-wait 180 --logstring ESPshore --loglevel 0"
 #--debug
 
