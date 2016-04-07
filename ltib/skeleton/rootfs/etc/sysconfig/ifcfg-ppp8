@@ -2,7 +2,7 @@ IFNAME=ppp8
 AUTOSTART=no
 VPN=ESPshore/ppp6   #server IP / VPN interface
 
-isp=usmobile  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
+isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
   pppd call $isp unit ${IFNAME#ppp} ipparam $VPN

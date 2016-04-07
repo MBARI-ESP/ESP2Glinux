@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 9/2/09 brent@mbari.org
+# -- revised: 4/5/16 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -42,13 +42,12 @@ set +f
   [ "$pidfns" = "$fn" ] || {  #check for active locks...
     unset owners
     for pidfn in $pidfns; do  #while removing stale ones
-      owner=`head -n1 $pidfn` 2>/dev/null && {
-        if kill -0 $owner 2>/dev/null; then
-          owners="$owners $owner"
-        else
-          rm $pidfn  #remove stale pidfile
-        fi
-      }
+      owner=`head -n1 $pidfn` 2>/dev/null
+      if [ "$owner" ] && kill -0 "$owner" 2>/dev/null; then
+        owners="$owners $owner"
+      else
+        rm $pidfn  #remove stale pidfile
+      fi
     done
     [ "$owners" ] && {
       echo "$IFNAME is already in use by process: $owners" >&2

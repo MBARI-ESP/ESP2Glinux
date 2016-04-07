@@ -211,6 +211,17 @@ hostIface() {
   done
 }
 
+gateIface() {
+  #output name of interface associated w/specified gateway IP route
+  #returns false if no such host route found
+  route -n | while read -r dest gate genmask flags metric ref use iface more; do
+    [ "$gate" = "$1" ] && {
+      echo $iface
+      break
+    }
+  done
+}
+
 
 searchDomains() {
   #output list of search domains prefixed by any specified

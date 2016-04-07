@@ -1,28 +1,7 @@
 #!/bin/sh
 #Start/Stop ESP server
-
 PATH=/usr/sbin:/sbin:/bin
 user=esp
+server="~${user}/esp2/bin/espserver"
 
-#pass some esp environment vars through to the espserver
-env=
-[ "${ESPcmdPort+set}" ] && env="ESPcmdPort=$ESPcmdPort"
-[ "${ESPclient+set}" ] && env="$env ESPclient=$ESPclient"
-[ "${ESPaxisPort+set}" ] && env="$env ESPaxisPort=$ESPaxisPort"
-server="$env ~${user}/esp2/bin/espserver"
-
-case "$1" in
-    start)
-      su - $user -c "$server $*"
-      :
-       ;;
-
-    stop)
-      su - $user -c "$server $*"
-       :
-       ;;
-
-     *)
-       echo "usage: espserver {start|stop} {client}"
-       ;;
-esac
+exec su - $user -c "$server $@"

@@ -20,6 +20,8 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
+type pppUp >/dev/null 2>&1 && pppUp
+
 unset domain gateway
 [ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
 

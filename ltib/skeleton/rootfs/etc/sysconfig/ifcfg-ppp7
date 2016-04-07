@@ -7,13 +7,8 @@ ifPrep() {  #specify that we want ssh tunnels
   pppd call $isp unit ${IFNAME#ppp} ipparam tunnels
 }
 
-hosts() {    #add lines before EOS
-tracefn=/tmp/$IFNAME.trace
-[ -w $tracefn ] && {
-  date >>$tracefn
-  exec 2>>$tracefn
-  set -x
-} #remember to modify 2009 and 8009 port below for hostname!!
+pppUp() {
+ #remember to modify 2009 and 8009 port below for hostname!!
 ( sleep 5  #wait for link
   fuser -k 25/tcp
   export HOME=/root
@@ -29,6 +24,17 @@ tracefn=/tmp/$IFNAME.trace
     ifdown $IFNAME; ifup $IFNAME
   }
 ) >/dev/null &
+}
+
+pppDown() {
+  bkgfn="/var/run/$PPP_IFACE-bkg.pid"
+  bkgpid=`cat $bkgfn 2>/dev/null` && {
+    rm $bkgfn
+    [ "$bkgpid" ] && kill $bkgpid
+  }
+}
+
+hosts() {    #add lines before EOS
 cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
 127.0.0.1 mail

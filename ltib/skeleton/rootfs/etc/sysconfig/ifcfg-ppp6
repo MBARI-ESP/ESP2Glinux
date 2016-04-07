@@ -4,13 +4,20 @@ AUTOSTART=no
 provider=ESPshore
 username=`hostname`
 
+mbari="-net 134.89.0.0/16"
+gate1="gw 134.89.10.1"
+gate2="gw 134.89.12.1"
+
 ifPrep() {
+  (route del $mbari $gate1 || route del $mbari $gate2) 2>/dev/null
   pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
 }
 
-hosts() {  #all MBARI subnets bypass this VPN
-route add -net 134.89.0.0/16 gw 134.89.10.1 2>/dev/null ||
-route add -net 134.89.0.0/16 gw 134.89.12.1 2>/dev/null
+pppUp() { #direct MBARI traffic bypasses VPN
+  (route add $mbari $gate1 || route add $mbari $gate2) 2>/dev/null
+}
+
+hosts() {
   cat <<EOS    #add lines before EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
 $(netIfPtp $IFNAME shore mail)

@@ -1,9 +1,11 @@
 #!/bin/sh
 # executed after disconnecting the ppp interface.
 #$IFNAME is not assigned on retries, but $1 is.
-PPP_IFACE="$1"
+export PPP_IFACE="$1"
 
 . /usr/share/netutils.sh
+configfn=/etc/sysconfig/ifcfg-$PPP_IFACE
+[ -r $configfn ] && . $configfn
 
 tracefn=/tmp/ip-down.trace
 if [ -w $tracefn ]; then
@@ -12,10 +14,6 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
-bkgfn="/var/run/$PPP_IFACE-bkg.pid"
-bkgpid=`cat $bkgfn 2>/dev/null` && {
-  rm $bkgfn
-  [ "$bkgpid" ] && kill $bkgpid
-}
+type pppDown >/dev/null 2>&1 && pppDown
 
 ipDown $PPP_IFACE
