@@ -1,0 +1,24 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/serial/ftdi_sio.c linux-2.6.33.modified/drivers/usb/serial/ftdi_sio.c
+--- linux-2.6.33/drivers/usb/serial/ftdi_sio.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/usb/serial/ftdi_sio.c	2016-04-05 22:05:36.770071781 -0700
+@@ -173,6 +173,8 @@
+ 	{ USB_DEVICE(FTDI_VID, FTDI_232RL_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_8U2232C_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_4232H_PID) },
++	{ USB_DEVICE(FTDI_VID, FTDI_232H_PID) },
++	{ USB_DEVICE(FTDI_VID, FTDI_FTX_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_MICRO_CHAMELEON_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_RELAIS_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_OPENDCC_PID) },
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/serial/ftdi_sio_ids.h linux-2.6.33.modified/drivers/usb/serial/ftdi_sio_ids.h
+--- linux-2.6.33/drivers/usb/serial/ftdi_sio_ids.h	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/usb/serial/ftdi_sio_ids.h	2016-04-05 21:54:32.974960490 -0700
+@@ -22,6 +22,8 @@
+ #define FTDI_8U232AM_ALT_PID 0x6006 /* FTDI's alternate PID for above */
+ #define FTDI_8U2232C_PID 0x6010 /* Dual channel device */
+ #define FTDI_4232H_PID 0x6011 /* Quad channel hi-speed device */
++#define FTDI_232H_PID  0x6014 /* Single channel hi-speed device */
++#define FTDI_FTX_PID   0x6015 /* FT-X series (FT201X, FT230X, FT231X, etc) */
+ #define FTDI_SIO_PID	0x8372	/* Product Id SIO application of 8U100AX  */
+ #define FTDI_232RL_PID  0xFBFA  /* Product ID for FT232RL */
+ 

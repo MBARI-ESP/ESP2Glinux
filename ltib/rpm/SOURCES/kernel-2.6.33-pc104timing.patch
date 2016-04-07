@@ -1,0 +1,63 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/cgu.c linux-2.6.33.modified/arch/arm/mach-lpc313x/cgu.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/cgu.c	2016-04-07 10:37:53.181933273 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/cgu.c	2015-09-21 16:19:57.653550053 -0700
+@@ -740,8 +740,7 @@
+ {
+ 	int i, j;
+ 	u32 flags;
+-	/* disable all non-essential clocks, enabel main clocks and wakeup
+-	 * enables.
++	/* disable all non-essential clocks, enable main clocks and wakeup enables.
+ 	 */
+ 	for(i = 0; i < CGU_SB_NR_CLK; i++) {
+ 
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2016-04-07 10:37:53.193932966 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2016-04-04 13:33:05.452144360 -0700
+@@ -2,7 +2,7 @@
+  *
+  *  Author:	Durgesh Pattamatta
+  *  Copyright (C) 2009 NXP semiconductors
+- *  Revised:  8/26/15  brent@mbari.org
++ *  Revised:  9/19/15  brent@mbari.org
+  *
+  *  ea313x board init routines.
+  *
+@@ -382,7 +382,7 @@
+   /* enable oe toggle between consec reads */
+   SYS_MPMC_WTD_DEL1 = _BIT(5) | (MPMC_STWTRD1 = (timing>>=6)&037);  //5 for 3G
+   MPMC_STWTOEN1 = (timing >>= 6) & 017;
+-  MPMC_STWTTURN1 = timing >>= 6;   //2 for 3G
++  MPMC_STWTTURN1 = timing >>= 6;
+ 
+ 	/* Configure Interrupt pin as input */
+         requestGPI(GPIO_GPIO3, "KS8851IRQ");
+@@ -469,7 +469,7 @@
+   /* enable oe toggle between consec reads */
+   SYS_MPMC_WTD_DEL0 = _BIT(5) | (MPMC_STWTRD0 = (timing>>=6)&037);  //6 for 3G
+   MPMC_STWTOEN0 = (timing >>= 6) & 017;
+-  MPMC_STWTTURN0 = timing >>= 6;   //2 for 3G
++  MPMC_STWTTURN0 = timing >>= 6;
+ 
+ 	platform_device_register(&xr16788_device);
+ }
+@@ -781,9 +781,6 @@
+   initialization common to ESP3G and PC104 carrier
+ */
+ static void __init boardInit(const char *signon, u32 timing)
+-/*
+-  stretch parameter adds specified number of (90Mhz) clocks to enet strobe
+-*/
+ {
+   struct spi_board_info rtc = {
+           .modalias = "ds3234",
+@@ -858,8 +855,7 @@
+       PC104FPGA = PC104IRQID | PC104ENETRESET | PC104RESET;
+       resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+       boardInit("PC/104 Carrier\n", 0000070006);  //slower when routed via FPGA
+-//ea_add_device_octalUart(01706370636);    //slower via FPGA on PC/104 bus
+-      ea_add_device_octalUart(0000070006);    //slower via FPGA on PC/104 bus
++      ea_add_device_octalUart(0202130212);  //much slower for FPGA on PC/104 bus
+       if (nr_uarts > 9)  //if there are sufficient I/O ports allocated...
+         platform_device_register(&isa_device);  //add legacy ISA ports
+       /* Configure UART Interrupt pin as input, no pull-up */
