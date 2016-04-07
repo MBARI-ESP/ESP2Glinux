@@ -2,9 +2,10 @@
 here=`dirname $0`
 . $here/ltibEnv
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
+: ${SYSBIN=$HOSTTOP/usr/local/bin}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 3/23/16 brent@mbari.org
+  -- 4/6/16 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -17,11 +18,6 @@ cd ~/linux/picocom
 make CC=$ARMGCC/bin/gcc clean picocom
 $STRIP -o $LOCALBIN/picocom picocom
 
-echo "  ===>  Building sleepyCmd  <==="
-cd ~/misc/sleepyCmd
-make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd
-$STRIP -o $LOCALBIN/sleepyCmd ltib/sleepyCmd
-
 echo "  ===>  Building snap  <==="
 cd ~/misc/camera/starlight
 make CC=$ARMGCC/bin/gcc clean ltib/snap
@@ -29,6 +25,11 @@ $STRIP -o $LOCALBIN/snap ltib/snap
 
 echo "  ===>  Building timelimit  <==="
 cd ~/misc/timelimit && armconfig && arminstall
+
+echo "  ===>  Building sleepyCmd  <==="
+cd ~/misc/sleepyCmd
+make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd
+$STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd
 
 echo "  ===>  Building dtroff  <==="
 cd ~/misc/dtroff
