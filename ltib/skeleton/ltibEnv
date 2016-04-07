@@ -5,5 +5,6 @@
 : ${ARMGCC:=/ltibarm}
 : ${ARMHOST:=arm-unknown-linux}
 : ${ARMPREFIX:=$LTIB/rootfs/usr}
-: ${STRIP=$ARMGCC/bin/strip}
-export ARMGCC HOSTTOP ARMHOST ARMPREFIX
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${STRIP:=$ARMSTRIP}
+export ARMGCC HOSTTOP ARMHOST ARMPREFIX ARMSTRIP STRIP
