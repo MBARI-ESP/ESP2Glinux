@@ -14,7 +14,7 @@ resetHoldOff=${2--900}   #retry detach every 15 minutes
 offSecs=${3-9}           #default to 9 seconds w/pwr off
 gateway=${4-/dev/I2Cgate}
 esp=esp  #esp user for case where no espclient available
-mRstCmd="sleepyCmd resetModem --device=$gateway $offSecs"
+mRstCmd="/usr/local/bin/sleepyCmd resetModem --device=$gateway $offSecs"
 lastResetFn=/var/run/`basename $gateway`.reset
 
 [ "$cellular" ] || {
@@ -40,8 +40,8 @@ until /usr/sbin/chat -vf $cellular-detach.chat; do
   resetDelay=$resetHoldOff
   [ $resetDelay -lt 0 ] && resetDelay=$((-($resetDelay)))
   now=`date +%s`
-  lastReset=`head -n1 $lastResetFn 2>/dev/null` &&
-  secsSinceReset=$(($now-$lastReset))
+  lastReset=`head -n1 $lastResetFn 2>/dev/null`
+  [ "$lastReset" ] && secsSinceReset=$(($now-$lastReset))
   if [ $? != 0 -o "$secsSinceReset" -ge $resetDelay ]; then
     echo $now >$lastResetFn
     fuser -u $gateway 2>&1 | tr \(\) " " | (
