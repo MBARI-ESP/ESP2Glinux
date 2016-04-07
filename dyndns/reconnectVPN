@@ -1,12 +1,17 @@
 #!/bin/sh
-#don't attempt to bring up link if serial comms to modem just failed
-[ -f /var/run/I2Cgate.reset ] || cell=ppp8   
-#vpn=ppp9   
+cell=ppp8   #celluar radio modem
+#vpn=ppp9
+
 [ "$vpn" ] && ifdown $vpn
 [ "$cell" ] && {
-  ifdown $cell
-  ifup $cell
-  sleep 30
+  #don't attempt to restore cell interface if modem failed < 15 minutes ago
+  lastReset=`head -n1 /var/run/I2Cgate.reset 2>/dev/null`
+  [ "$lastReset" ] && secsSinceReset=$(($(date +%s)-$lastReset))
+  if [ $? != 0 -o "$secsSinceReset" -ge 900 ]; then
+    ifdown $cell
+    ifup $cell
+    sleep 30
+  fi
 }
 [ "$vpn" ] || exit 0
 ifup $vpn
