@@ -4,12 +4,9 @@ AUTOSTART=no
 provider=ESPshore
 username=`hostname`
 
-mbari="-net 134.89.0.0/16"
-gate1="gw 134.89.10.1"
-gate2="gw 134.89.12.1"
+. /etc/sysconfig/mbari.net
 
 ifPrep() {
-  (route del $mbari $gate1 || route del $mbari $gate2) 2>/dev/null
   pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
 }
 
