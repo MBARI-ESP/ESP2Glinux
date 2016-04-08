@@ -41,8 +41,8 @@ until /usr/sbin/chat -vf $cellular-detach.chat; do
   [ $resetDelay -lt 0 ] && resetDelay=$((-($resetDelay)))
   now=`date +%s`
   lastReset=`head -n1 $lastResetFn 2>/dev/null`
-  [ "$lastReset" ] && secsSinceReset=$(($now-$lastReset))
-  if [ $? != 0 -o "$secsSinceReset" -ge $resetDelay ]; then
+  [ "$lastReset" ] && sinceReset=$(($now-$lastReset))
+  if [ $? != 0 -o "$sinceReset" -ge $resetDelay -o "$sinceReset" -lt 0 ]; then
     echo $now >$lastResetFn
     fuser -u $gateway 2>&1 | tr \(\) " " | (
       while read dev espPid espUser ignored; do
@@ -70,7 +70,7 @@ EOS
       logger -t$tag "also failed as root -- $errmsg"
     )
   else
-    resetDelay=$(($resetDelay - $secsSinceReset))
+    resetDelay=$(($resetDelay - $sinceReset))
   fi
   [ $resetHoldOff -ge 0 ] && {
     [ $resetHoldOff -ne 0 ] && {

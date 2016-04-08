@@ -6,8 +6,8 @@ cell=ppp8   #celluar radio modem
 [ "$cell" ] && {
   #don't attempt to restore cell interface if modem failed < 15 minutes ago
   lastReset=`head -n1 /var/run/I2Cgate.reset 2>/dev/null`
-  [ "$lastReset" ] && secsSinceReset=$(($(date +%s)-$lastReset))
-  if [ $? != 0 -o "$secsSinceReset" -ge 900 ]; then
+  [ "$lastReset" ] && sinceReset=$(($(date +%s)-$lastReset))
+  if [ $? != 0 -o "$sinceReset" -ge 900 -o "$sinceReset" -lt 0 ]; then
     ifdown $cell
     ifup $cell
     sleep 30
