@@ -1,0 +1,17 @@
+#!/bin/sh
+cell=ppp8   #cellular radio modem
+#vpn=ppp6
+
+[ "$vpn" ] && ifdown $vpn
+[ "$cell" ] && {
+  #don't attempt to restore cell interface if modem failed < 15 minutes ago
+  lastReset=`head -n1 /var/run/I2Cgate.reset 2>/dev/null`
+  [ "$lastReset" ] && sinceReset=$(($(date +%s)-$lastReset))
+  if [ $? != 0 -o "$sinceReset" -ge 900 -o "$sinceReset" -lt 0 ]; then
+    ifdown $cell
+    ifup $cell
+    sleep 30
+  fi
+}
+[ "$vpn" ] || exit 0
+ifup $vpn

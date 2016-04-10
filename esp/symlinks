@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 12/21/15 BAR
+Configuration symlinks for ESP embedded linux - 4/9/16 BAR
 Typically Input to the mksymlinks as follows:
   
   mksymlinks rootfs < {this file}
@@ -32,6 +32,7 @@ etc/localtime -> /usr/share/zoneinfo/PST8PDT
 usr/bin/ruby -> /opt/mbari/bin/ruby
 usr/bin/irb -> /opt/mbari/bin/irb
 
+etc/rc.d/rc0.d/K10httpd -> ../../init.d/httpd
 etc/rc.d/rc0.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc0.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc0.d/K60network -> ../../init.d/network
@@ -48,8 +49,10 @@ etc/rc.d/rc3.d/S60network -> ../../init.d/network
 etc/rc.d/rc3.d/S70portmap -> ../../init.d/portmap
 etc/rc.d/rc3.d/S80inetd -> ../../init.d/inetd
 etc/rc.d/rc3.d/S90nfsmount -> ../../init.d/nfsmount
+etc/rc.d/rc3.d/S95httpd -> ../../init.d/httpd
 etc/rc.d/rc3.d/S99local -> ../../init.d/local
 
+etc/rc.d/rc6.d/K10httpd -> ../../init.d/httpd
 etc/rc.d/rc6.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc6.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc6.d/K60network -> ../../init.d/network
@@ -57,6 +60,7 @@ etc/rc.d/rc6.d/K80syslog -> ../../init.d/syslog
 etc/rc.d/rc6.d/K90sysmount -> ../../init.d/sysmount
 etc/rc.d/rc6.d/S99reboot -> ../../init.d/reboot
 
+etc/rc.d/rc7.d/K10httpd -> ../../init.d/httpd
 etc/rc.d/rc7.d/K20inetd -> ../../init.d/inetd
 etc/rc.d/rc7.d/K40nfsmount -> ../../init.d/nfsmount
 etc/rc.d/rc7.d/K60network -> ../../init.d/network

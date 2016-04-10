@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install thttpd daemon for arm-linux -- 9/1/15 brent@mbari.org
+# build & install thttpd daemon for arm-linux -- 4/9/16 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -14,6 +14,6 @@ install -Dm 755 httpd $HOSTTOP/etc/init.d &&
 cd ${HTTPDVERS-thttpd-2.25b} || exit 2
 make CCOPT="$CFLAGS" && $ARMSTRIP thttpd &&
 install -Dm 755 thttpd $HOSTTOP/usr/sbin/thttpd &&
-cd $HOSTTOP/etc/rc.d/rc3.d &&
-ln -sf ../../init.d/httpd S95httpd &&
+#cd $HOSTTOP/etc/rc.d/rc3.d &&
+#ln -sf ../../init.d/httpd S95httpd &&
 echo "Done."
