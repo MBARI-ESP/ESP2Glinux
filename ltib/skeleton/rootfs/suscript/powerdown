@@ -18,9 +18,11 @@ sleepModem()
   $chat -Vt 5 "" AT+W32K=1 OK
 }
 
-sync
 exec 2>/dev/console
 exec >&2
+#set -x
+
+sync
 /etc/rc.d/rc $POWERDOWN || {  #if power down fails
   /etc/rc.d/rc $RUN           #...try to recover
   exit 1

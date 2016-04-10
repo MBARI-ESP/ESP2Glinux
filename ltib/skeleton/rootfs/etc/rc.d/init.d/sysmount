@@ -18,7 +18,7 @@ redoIfRO() {
 #try command $2 writing to directory $1
 #retry cmd after remounting fs rw if command $2 reports read-only filesystem
   dir=$1; shift
-  err=`eval "$@" 2>&1` || {  #test for cmd trying to write to r/o fs 
+  err=`eval "$@" 2>&1` || {  #test for cmd trying to write to r/o fs
     echo $err | grep -q Read-only && target=`prunePath $dir` && {
       df $target | {
         read header && read dev blks used avail use mntpt extra &&
@@ -36,14 +36,14 @@ realPath() {
   firstPath=$1
   path=$1
   maxLinks=100
-  while newPath=`readlink $path 2>/dev/null`; do 
+  while newPath=`readlink $path 2>/dev/null`; do
     let maxLinks=$maxLinks-1
     [ $maxLinks -lt 0 ] && {
       echo "sysmount: Too many levels of symbolic links for $firstPath" >&2
       return 1
     }
     [ $newPath = ${newPath#/} ] && {
-      cd `dirname $path`      
+      cd `dirname $path`
       newPath=$PWD/$newPath
     }
     path=$newPath
@@ -55,6 +55,7 @@ realPath() {
 case "$1" in
     start)
       echo "Mounting filesystems and adding swapfiles listed in /etc/fstab"
+      mount -o remount,rw /dev
       mount -o remount /
       mount -a
       swapon -a 2>/dev/null
@@ -81,19 +82,24 @@ case "$1" in
       }
       birth=var/log/birth
       initial=/etc/initial
-      card=`realPath /card` && 
+      card=`realPath /card` &&
          [ ! -r $card/$birth -a -r $initial/$birth -a -d $card ] &&
          redoIfRO $card "cp -af $initial/. $card"
        ;;
-                         
+
     stop)
       echo -n "Unmounting file systems ... "
-      rm -f /var/run/utmp /var/log/wtmp
       swapoff -a 2>/dev/null
-      umount -ar 2>&1 | grep -vE "(tmpfs|devpts) busy"
+      while read mntdev mntpt fs opts extra; do
+        case "$fs" in
+          proc|rootfs|sysfs|tmpfs|devpts|usbfs)
+           ;;  #leave volitile filesystems mounted
+          *) umount -r "$mntpt"
+        esac 
+      done </proc/mounts
       echo "Done!"
        ;;
-       
+
     *)
        echo "usage: start|stop"
        echo "on start:  mount all filesystems in fstab not marked \"noauto\""

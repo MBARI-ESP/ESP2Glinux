@@ -2,6 +2,7 @@
 #local configuration catch all
 
 PATH=/usr/sbin:/sbin:/bin
+dropdir=/etc/dropbear
 
 case "$1" in
     start)
@@ -10,8 +11,20 @@ case "$1" in
       mkdir -p -m 1777 $coredir
       echo $coredir/%e-SIG%s.%p >/proc/sys/kernel/core_pattern
       rm -f /var/crash && ln -s tmp/crash /var/crash
+
+      # ensure we have a valid ssh server key
+      mkdir -p $dropdir
+      for key in rsa dss; do
+        keyfn=dropbear_${key}_host_key
+        if [ ! -r $dropdir/$keyfn ]; then
+          echo "Generating $key key for the dropbear ssh server... "
+          dropbearkey -t $key -f $dropdir/$keyfn >$dropdir/$keyfn.pub
+        fi
+      done
+
+      mkdir -m600 -p /usr/share/empty  #for vsftpd
        ;;
-                         
+
     stop)
        :
        ;;
