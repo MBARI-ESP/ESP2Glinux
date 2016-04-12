@@ -10,10 +10,7 @@ echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
 prog=inadyn
-#cp $prog.conf $HOSTTOP/etc &&
-#cp reconnectVPN $TOP &&
 cp dyndns $HOSTTOP/etc/init.d &&
-chmod 600 $HOSTTOP/etc/$prog.conf &&
 cd inadyn-1.98.1 || exit 2
 make CC=$CC || exit 1
 mkdir -p $TOP || exit 4

@@ -14,6 +14,4 @@ install -Dm 755 httpd $HOSTTOP/etc/init.d &&
 cd ${HTTPDVERS-thttpd-2.25b} || exit 2
 make CCOPT="$CFLAGS" && $ARMSTRIP thttpd &&
 install -Dm 755 thttpd $HOSTTOP/usr/sbin/thttpd &&
-#cd $HOSTTOP/etc/rc.d/rc3.d &&
-#ln -sf ../../init.d/httpd S95httpd &&
 echo "Done."

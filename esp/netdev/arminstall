@@ -20,7 +20,4 @@ install -Dm 755 cyclades-ser-cli $HOSTBIN/netdev &&
 install -Dm 755 libcsc/libcyclades-ser-cli.so $HOSTLIB/netdev.so &&
 install -Dm 644 $top/netdev.conf $HOSTTOP/etc/netdev.conf &&
 install -Dm 755 $top/netdev $HOSTTOP/etc/init.d/netdev || exit 1
-mkdir -p $HOSTTOP/etc/rc.d/rc3.d &&
-cd $HOSTTOP/etc/rc.d/rc3.d &&
-ln -fs ../../init.d/netdev S85netdev || exit 3
 echo "Done."
