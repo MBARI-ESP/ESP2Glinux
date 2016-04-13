@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install ser2net daemon for arm-linux -- 9/1/15 brent@mbari.org
+# build & install ser2net daemon for arm-linux -- 4/12/16 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${CC:=$ARMGCC/bin/gcc}
@@ -17,7 +17,5 @@ top=`pwd` &&
 cd ${NETDEVVERS} || exit 2
 make CC=$CC LD=$LD CCFLAGS="$CFLAGS" &&
 install -Dm 755 cyclades-ser-cli $HOSTBIN/netdev &&
-install -Dm 755 libcsc/libcyclades-ser-cli.so $HOSTLIB/netdev.so &&
-install -Dm 644 $top/netdev.conf $HOSTTOP/etc/netdev.conf &&
-install -Dm 755 $top/netdev $HOSTTOP/etc/init.d/netdev || exit 1
+install -Dm 755 libcsc/libcyclades-ser-cli.so $HOSTLIB/netdev.so || exit 1
 echo "Done."

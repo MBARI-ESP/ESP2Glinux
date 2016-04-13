@@ -1,0 +1,31 @@
+daemon=inadyn
+pidFile=/var/run/inadyn.pid
+OPTIONS="-b -r -P $pidFile -F /etc/$daemon.conf"
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       /usr/sbin/$daemon $OPTIONS
+       ;;
+                         
+    restart)
+       echo "Restarting $daemon"
+       if [ ! -s $pidFile ] || ! kill -HUP `cat $pidFile`; then
+         $0 stop 
+         $0 start
+       fi
+       ;;
+       
+    stop)
+       echo "Stopping $daemon"
+       if [ -s $pidFile ]; then
+         kill `cat $pidFile` || killall $daemon
+         rm -f $pidFile
+       else
+         killall $daemon
+       fi
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac

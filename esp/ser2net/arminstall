@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install ser2net daemon for arm-linux -- 9/1/15 brent@mbari.org
+# build & install ser2net daemon for arm-linux -- 4/12/16 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -15,7 +15,5 @@ top=`pwd` &&
 cd ${SER2NETVERS-ser2net-2.7} || exit 2
 make CFLAGS="$CFLAGS" clean all &&
 $ARMSTRIP ser2net &&
-install -Dm 755 ser2net $HOSTBIN/ser2net &&
-install -Dm 644 $top/ser2net.conf $HOSTTOP/etc/ser2net.conf &&
-install -Dm 755 $top/ser2net $HOSTTOP/etc/init.d/ser2net || exit 1
+install -Dm 755 ser2net $HOSTBIN/ser2net || exit 1
 echo "Done."

@@ -1,0 +1,29 @@
+daemon=ser2net
+pidFile=/var/run/ser2net.pid
+OPTIONS="-P $pidFile -p 400"  #listen on control port
+case "$1" in
+    start)
+       echo "Starting $daemon..."
+       /usr/sbin/$daemon $OPTIONS
+       ;;
+                         
+    restart)
+       echo "Restarting $daemon"
+       $0 stop 
+       $0 start
+       ;;
+       
+    stop)
+       echo "Stopping $daemon"
+       if [ -s $pidFile ]; then
+         kill `cat $pidFile` || killall $daemon
+         rm -f $pidFile
+       else
+         killall $daemon
+       fi
+       ;;
+       
+    *)
+       echo "usage: start|restart|stop"
+       ;;
+esac
