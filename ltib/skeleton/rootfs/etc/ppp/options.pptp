@@ -2,5 +2,5 @@
 #
 mtu 1460
 
-require-mppe
+require-mppe-128
 require-mschap-v2

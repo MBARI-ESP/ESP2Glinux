@@ -2,7 +2,7 @@ IFNAME=ppp2
 AUTOSTART=no
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
-  pppd call platform unit ${IFNAME#ppp} logfile /dev/null
+  pppd call platform unit ${IFNAME#ppp}
 }
 
 hosts() {    #add lines before EOS

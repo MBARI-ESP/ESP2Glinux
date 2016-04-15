@@ -7,7 +7,7 @@ username=`hostname`
 . /etc/sysconfig/mbari.net
 
 ifPrep() {
-  pppd call $provider unit ${IFNAME#ppp} name $username logfile /dev/null
+  pppd call $provider unit ${IFNAME#ppp} name $username
 }
 
 pppUp() { #direct MBARI traffic bypasses VPN

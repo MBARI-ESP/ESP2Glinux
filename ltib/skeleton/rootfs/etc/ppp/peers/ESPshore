@@ -10,7 +10,6 @@ pty  "exec pptp ESPshore --nolaunchpppd --idle-wait 180 --logstring ESPshore --l
 linkname ESPshore
 remotename ESPshore
 ipparam ESPshore
-require-mppe-128
 
 noauth
 defaultroute
