@@ -5,7 +5,7 @@ TIMEOUT 10
 ABORT "ERROR"
 
 #return to factory defaults, echo off, show signal strength
-"" AT&FE0+CSQ?
+"" AT&FE0+CSQ
 OK\r \c
 
 ABORT "NO CARRIER"
