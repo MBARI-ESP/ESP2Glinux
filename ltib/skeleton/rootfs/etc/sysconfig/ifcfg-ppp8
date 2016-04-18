@@ -1,6 +1,7 @@
 IFNAME=ppp8
 AUTOSTART=no
-VPN=ESPshore/ppp6   #server IP / VPN interface
+ESPshore=134.89.2.91
+VPN=$ESPshore/ppp6   #server IP / VPN interface
 
 isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
@@ -11,6 +12,6 @@ ifPrep() {  #specify ip address of vpn server/vpn iface name
 hosts() {    #add lines before EOS
   cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
-134.89.2.91 ESPshore
+$ESPshore ESPshore
 EOS
 }
