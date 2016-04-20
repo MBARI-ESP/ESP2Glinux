@@ -7,4 +7,7 @@ for user in *; do
   chown -Rh $user:mbari $user
 done
 
+#so statd does not warn about running as root
+cd /var/lib/nfs && chown -R nobody sm*
+
 rm $0  #this script will self-destruct...
