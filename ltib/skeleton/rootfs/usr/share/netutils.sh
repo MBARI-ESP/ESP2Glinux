@@ -1,11 +1,11 @@
 #Common networking utilities
-# -- revised: 4/19/16 brent@mbari.org
+# -- revised: 4/21/16 brent@mbari.org
 #
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
 #  IFNAME = network device (required)
-#  IPADDR = internet address (required)
+#  IPADDR = internet address
 #  BROADCAST = broadcast IP address
 #  NETMASK = subnetwork mask
 #  NETWORK = IP subnet (to add explicit route)
@@ -19,12 +19,10 @@ ipUp() {
   }
   [ "$BROADCAST" ] && cast=" broadcast $BROADCAST"
   [ "$MTU" ] && mtu=" mtu $MTU"
-  ipopts="$IPADDR$mask$cast$mtu"
-  [ "$ipopts" ] && {
-    ifconfig $IFNAME $ipopts || {
-      echo "FAILED:  ifconfig $IFNAME $IPADDR$mask$cast$mtu"
-      return 2
-    }
+  ipopts="${IPADDR-0}$mask$cast$mtu"
+  ifconfig $IFNAME $ipopts || {
+    echo "FAILED:  ifconfig $IFNAME $ipopts"
+    return 2
   }
   [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME && return 3
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return $?

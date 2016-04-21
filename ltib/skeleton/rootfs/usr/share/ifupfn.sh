@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 4/5/16 brent@mbari.org
+# -- revised: 4/21/16 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -56,11 +56,11 @@ set +f
   }
   echo "Bringing up interface $IFNAME ..."
   ! type ifPrep >/dev/null 2>&1 || ifPrep && {
-    case "$BOOTPROTO" in 
+    case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
       ;;
       dhcp*)
-        [ -z "$IPADDR" ] || ipUp && {
+        ipUp && {
           daemon=/sbin/udhcpc  #only use this dhcp client
           if test -x $daemon  ; then
             pidfn=/var/run/udhcpc-$IFNAME.pid
@@ -75,9 +75,9 @@ set +f
             [ "$mode" = "$BOOTPROTO" ] && mode=n
             [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
             $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
-              echo "DHCP failed:  $interface IP=$IPADDR"
+              echo "DHCP failed:  $interface IP=$IPADDR" >&2
           else
-              echo "No $daemon client daemon installed!"
+              echo "No $daemon client daemon installed!" >&2
               false
           fi
         }
