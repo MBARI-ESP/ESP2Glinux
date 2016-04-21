@@ -29,7 +29,8 @@ sync
 }
 
 #coax FastTrack modem into low power state
-sleepModem <$modem >$modem || echo -e "\nFailed to put modem to sleep"
+(sleepModem || sleepModem)<$modem >$modem || 
+  echo -e "\nFailed to put modem to sleep"
 #leave modem port open with its DTR line deasserted
 (dtroff; sleep 1d) <$modem >$modem &
 echo
