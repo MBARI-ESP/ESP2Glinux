@@ -4,13 +4,7 @@ BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/default.script"  #in background
 DHCPNAME=`hostname`-wifi
 
 ifPrep() {
-  key=off
-  essid="MBARI WiFi"  #quoted access point name here (or any)
-#  key="restricted FF42896D680E8DF7B2FE29BECB" #comment out for open wifi access
-  ifconfig wlan0 down &&
-  iwconfig wlan0 essid "$essid" key $key &&
-  ifconfig wlan0 up &&
-  sleep 7
+  wpa_supplicant -Bi $IFNAME -P /var/run/wpa$IFNAME.pid -c /etc/wpa_supplicant.conf
 }
 
 hosts() {    #add lines before EOS
