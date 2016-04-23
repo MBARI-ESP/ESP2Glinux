@@ -49,6 +49,9 @@ install -m 755 ssh $HOSTTOP/usr/bin
 echo "  ===>  Building dyndns  <==="
 cd ~/linux/dyndns && armconfig && arminstall
 
+echo "  ===>  Building wpa_supplicant  <==="
+cd ~/linux/wpa_supplicant && armconfig && arminstall
+
 echo "  ===>  Building slattach  <==="
 cd ~/linux/esp/net-tools && armconfig && arminstall
 

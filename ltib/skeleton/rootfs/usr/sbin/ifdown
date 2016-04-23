@@ -22,8 +22,9 @@ ifAliasDown() {
   for pidfn in $pidfns; do
     daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {
-      case $1 in
+      case `basename $pidfn` in
         ppp*)  signal=TERM ;;
+        wpa-*) signal=TERM ;;
         *)     signal=HUP  ;;
       esac
       for try in 1 2 last; do
