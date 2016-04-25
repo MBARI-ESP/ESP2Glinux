@@ -6,8 +6,12 @@ modlist=/etc/modules
 case "$1" in
     start)
        echo "Loading kernel modules"
+       #load built-in ethernet first to ensure is gets named eth0
+       for module in ks8851_mll dm9000; do
+         [ -e /sys/bus/platform/devices/$module.* ] && modprobe $module
+       done
        [ -r $modlist ] || {
-         echo "cannot read $modlist" >&2
+         echo "Cannot read $modlist" >&2
          exit 2
        }
        while IFS='#'; read args comment; do
@@ -17,12 +21,8 @@ case "$1" in
            modprobe "$@"
          }
        done < $modlist
-       #load platform dependent modules
-       for module in ks8851_mll dm9000; do
-         [ -e /sys/bus/platform/devices/$module.* ] && modprobe $module
-       done
        :
-       ;;                         
+       ;;
     stop)
        :
        ;;

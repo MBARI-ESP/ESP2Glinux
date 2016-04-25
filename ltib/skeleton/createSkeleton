@@ -1,12 +1,12 @@
 #!/bin/bash -e
 #set -x
-here=`dirname $0`
+here=$(realpath `dirname $0`)
 : ${LTIB=~/ltib}
 IMAGE=${2-$LTIB/rootfs.tmp}
 export LTIB IMAGE
-[ -z $1 ] && {
+[ -z "$1" -o "$1" = "/" ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 3/30/16 brent@mbari.org
+Create new ltib root filesystem  -- 4/24/16 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
@@ -54,9 +54,10 @@ find -type f -exec file {} \; |
 echo Changing ownership of $1 to root and finalizing image
 espSu=$1/suscript/esp
 sudo sh <<END
+  rm -rf $1/dev &&
   chown -Rh root:root $1 &&
-  #recover needed dev entries
-  cp -af --no-preserve=owner $LTIB/rootfs/dev/* $1/dev &&
+  #seed with (just) needed dev entries
+  tar xzpf $here/dev.tgz -C $1 &&
   #ltib sets group suid for a number of strange directories (clear them here)
   find $1 -type d -exec chmod g-s {} \; &&
   #changing owner to root cleared the suids -- set them again here

@@ -1,9 +1,9 @@
 #!/bin/bash -e
 #set -x
-[ -z $1 ] && {
+[ -z "$1" -o "$1" = "/" ] && {
   cat <<EOS >&2
 Replace ltib skeleton in the rootfs the directory given as an argument
-with the MBARI one for the ea31xx base board  -- 4/18/16 brent@mbari.org
+with the MBARI one for the ea31xx base board  -- 4/24/16 brent@mbari.org
 EOS
   exit 2
 }
@@ -69,6 +69,9 @@ rm $dst/etc/sysctl.conf
 rm $dst/etc/modprobe.conf.dist
 rm -f $dst/bin/bashbug $dst/usr/bin/pstree.x11
 chmod a-x $dst/etc/ltib-release
+
+# remove all hotplug scripts
+rm $dst/sbin/hotplug && rm -rf $dst/etc/hotplug*
 
 # preserve the initial state of the /var dir so new sd cards can be initialized
 initial=etc/initial

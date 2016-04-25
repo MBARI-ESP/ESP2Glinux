@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/21/16 brent@mbari.org
+# -- revised: 4/24/16 brent@mbari.org
 #
 
 ipUp() {
@@ -27,7 +27,7 @@ ipUp() {
   [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME && return 3
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return $?
   #also bring up associated VPN interface if this one provides gateway
-  [ "$VPN" -a "$GATEWAY" ] && (sleep 2; vpnUp $VPN $IFNAME)&
+  [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
   return 0
 }
 

@@ -93,9 +93,9 @@ case "$1" in
       while read mntdev mntpt fs opts extra; do
         case "$fs" in
           proc|rootfs|sysfs|tmpfs|devpts|usbfs)
-           ;;  #leave volitile filesystems mounted
+           ;;  #leave volatile filesystems mounted
           *) umount -r "$mntpt"
-        esac 
+        esac
       done </proc/mounts
       echo "Done!"
        ;;

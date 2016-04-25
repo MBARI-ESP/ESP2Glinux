@@ -2,7 +2,6 @@
 # /etc/rc.d/sysinit
 # This file is used by inittab and init. Place here all the stuff you want
 # to be done before any other system startup scripts are executed
-# that will affect the system as a whole or are needed by the system
 
 # Ingore CTRL+C
 trap ":" INT QUIT TSTP
@@ -15,9 +14,7 @@ echo "MBARI ESP Embedded Linux    http://www.mbari.org   mailto:brent@mbari.org"
 hostname -F /etc/HOSTNAME
 hostname
 
-echo "Mounting /proc and /sys"
 mount -n -t proc proc /proc
-mount -n -t sysfs sys /sys
 
 if  test -x /sbin/dmesg  ; then
    if  test -f /etc/consolelog.level  ; then
@@ -28,19 +25,11 @@ if  test -x /sbin/dmesg  ; then
    /sbin/dmesg -n $LOGLEVEL
 fi
 
-#initialize udevd and misc ram file systems
 echo "" > /proc/sys/kernel/hotplug
 
-mount -n -o mode=0755 -t tmpfs tmpfs /dev
+mount -n -t sysfs sys /sys || exit $?
 
-# Create static device nodes in /dev
-mknod /dev/console c 5 1
-mknod /dev/null c 1 3
-mkdir /dev/pts  /dev/shm
-
-echo "Starting the hotplug events dispatcher udevd"
-udevd --daemon
-
-echo "Synthesizing initial hotplug events"
-udevtrigger
-udevsettle --timeout=30
+#initialize dev file system
+mount -n -o mode=0755 -t tmpfs tmpfs /mnt
+cp -a /dev/. /mnt
+mount --move /mnt /dev

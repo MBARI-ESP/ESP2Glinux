@@ -1,0 +1,22 @@
+# start handling hotplug devices
+PATH=/usr/sbin:/sbin:/bin
+
+case "$1" in
+  start)
+    pidof udevd >/dev/null 2>&1 || {
+      echo "Starting hotplug events dispatcher udevd"
+      udevd --daemon
+    }
+    echo "Synthesizing initial hotplug events"
+    udevtrigger
+    udevsettle --timeout=30
+     ;;
+
+  stop)
+     :
+     ;;
+
+   *)
+       echo "usage: local {start}"
+       ;;
+esac
