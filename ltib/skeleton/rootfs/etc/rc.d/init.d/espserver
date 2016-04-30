@@ -4,4 +4,4 @@ PATH=/usr/sbin:/sbin:/bin
 user=esp
 server="~${user}/esp2/bin/espserver"
 
-exec su - $user -c "$server $@"
+[ "$recovering" ] || exec su - $user -c "$server $@"

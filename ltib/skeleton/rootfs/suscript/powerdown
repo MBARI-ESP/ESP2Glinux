@@ -1,8 +1,10 @@
 #!/bin/sh
 #Put ESP into a low power state from which it can restart
 # later from radio page or alarm
-#exit status returns 0 if shutdown preparations succeeded
-# otherwise status is non zero
+#exit status:
+#  0 if ready to powerdown
+#  1 if powerdown preparations failed
+#  2 if ready to powerdown, but modem did not sleep
 
 export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 
@@ -11,11 +13,18 @@ RUN=3
 modem=/dev/modem
 export baud=115200
 export chat=/usr/sbin/chat
+export recovering=yes  #don't clear /tmp or restart espserver
 
 sleepModem()
+#terminate any call in progress and ask nicely to sleep
+# if that fails, reset the modem and ask again
 {
-  stty $baud
-  $chat -Vt 5 "" AT+W32K=1 OK
+  stty $baud &&
+  $chat -t 5 '' '\r\p\c' '' '\d\d+++\d\dAT+CGATT=0' OK 'AT+W32K=1' OK ||
+  $chat -t 9 '' 'AT+CFUN=1' OK 'AT+W32K=1' OK || return $?
+
+  #leave modem port open with its DTR line deasserted
+  dtroff -b
 }
 
 exec 2>/dev/console
@@ -27,12 +36,11 @@ sync
   /etc/rc.d/rc $RUN           #...try to recover
   exit 1
 }
-
-#coax FastTrack modem into low power state
-(sleepModem || sleepModem)<$modem >$modem || 
-  echo -e "\nFailed to put modem to sleep"
-#leave modem port open with its DTR line deasserted
-(dtroff; sleep 1d) <$modem >$modem &
+#coax modem into low power state
+sleepModem <$modem >$modem || {
+  echo -e "\nFailed to put modem to sleep!  Restarting..." >&2
+  /etc/rc.d/rc $RUN  #...try to recover
+  exit 2
+}
 echo
-service sysmount stop
-exit 0
+exec /etc/init.d/sysmount stop

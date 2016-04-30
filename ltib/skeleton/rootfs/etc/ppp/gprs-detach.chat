@@ -5,7 +5,8 @@
 TIMEOUT 5
 
 #send carridge return, then delay for autobaud
-"" ""
+"" "\r\p\c"
 #return to command mode, detach any GPRS call
-"" \d\p+++\d\pAT+CGATT=0
-OK\r
+"" \d\d+++\d\dAT+CGATT=0
+#reset modem if detach fails
+OK\r-AT+CFUN=1-OK\r

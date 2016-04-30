@@ -59,6 +59,7 @@ case "$1" in
       mount -o remount /
       mount -a
       swapon -a 2>/dev/null
+      [ "$recovering" ] && exit 0
       #Set up temporary directories, preserves existing symlinks
       tmp=`realPath /tmp` &&
         redoIfRO "$tmp" "rm -rf $tmp && mkdir -p $tmp && chmod 1777 $tmp"
