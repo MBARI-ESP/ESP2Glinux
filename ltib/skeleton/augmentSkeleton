@@ -31,10 +31,10 @@ cd ~/misc/sleepyCmd
 make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd
 $STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd
 
-echo "  ===>  Building dtroff  <==="
-cd ~/misc/dtroff
-make CC=$ARMGCC/bin/gcc clean ltib/dtroff
-$STRIP -o $LOCALBIN/dtroff ltib/dtroff
+echo "  ===>  Building holdopen  <==="
+cd ~/misc/holdopen
+make CC=$ARMGCC/bin/gcc clean ltib/holdopen
+$STRIP -o $LOCALBIN/holdopen ltib/holdopen
 
 echo "  ===>  Building suscript  <==="
 cd ~/misc/suscript

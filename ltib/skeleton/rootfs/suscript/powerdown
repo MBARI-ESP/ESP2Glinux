@@ -24,7 +24,7 @@ sleepModem()
   $chat -t 9 '' 'AT+CFUN=1' OK 'AT+W32K=1' OK || return $?
 
   #leave modem port open with its DTR line deasserted
-  dtroff -b
+  holdopen dtroff
 }
 
 exec 2>/dev/console
