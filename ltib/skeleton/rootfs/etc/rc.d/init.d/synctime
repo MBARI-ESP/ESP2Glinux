@@ -11,11 +11,12 @@ OPTIONS=""
 case "$1" in
     start|"")
       if grep -qv '^[[:space:]]*#' /etc/resolv.conf; then
-        if [ -n $ntpserver ] && timelimit -t30 -T3 ntpclient -s -h $ntpserver >/dev/null; then
+        if [ -n $ntpserver ] &&
+           timelimit -t8 -T3 ntpclient -s -h $ntpserver >/dev/null; then
           echo "Clock sycn'd with $ntpserver at `date` via ntp"
           exit 0
         fi
-        if [ -n $rdateserver ] && rdate $rdateserver; then 
+        if [ -n $rdateserver ] && timelimit -t5 -T3 rdate $rdateserver; then 
           echo "Clock sycn'd with $rdateserver via rdate"
           exit 0
         fi
