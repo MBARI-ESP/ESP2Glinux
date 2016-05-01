@@ -20,8 +20,8 @@ sleepModem()
 # if that fails, reset the modem and ask again
 {
   stty $baud &&
-  $chat -t 5 '' '\r\p\c' '' '\d\d+++\d\dAT+CGATT=0' OK 'AT+W32K=1' OK ||
-  $chat -t 9 '' 'AT+CFUN=1' OK 'AT+W32K=1' OK || return $?
+  $chat -f /etc/ppp/gprs-detach.chat &&
+  $chat -t 5 '' 'AT+W32K=1' OK || return $?
 
   #leave modem port open with its DTR line deasserted
   holdopen dtroff

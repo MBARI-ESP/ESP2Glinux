@@ -8,8 +8,6 @@
 TIMEOUT 10
 ABORT "ERROR"
 
-#send carridge return, then delay for autobaud
-"" ""
 #return to factory defaults, echo off
 "" \pAT&FE0
 
