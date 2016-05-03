@@ -11,7 +11,7 @@ tracefn=/tmp/${tag}.trace
 
 cellular=$1
 resetHoldOff=${2--300}   #retry detach every 5 minutes
-offSecs=${3-6}           #default to 6 seconds w/pwr off
+offSecs=${3-5}           #default to 5 seconds w/pwr off
 gateway=${4-/dev/I2Cgate}
 esp=esp  #esp user for case where no espclient available
 mRstCmd="sleepyCmd --device=$gateway resetModem $offSecs"

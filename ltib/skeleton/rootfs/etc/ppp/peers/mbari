@@ -14,5 +14,5 @@ defaultroute
 usepeerdns
 
 persist
-holdoff 30
+holdoff 20
 maxfail 0
