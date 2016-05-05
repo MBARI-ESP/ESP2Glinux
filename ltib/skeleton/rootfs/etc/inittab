@@ -33,8 +33,8 @@ net:12345:respawn:/usr/sbin/inetd -f
 # Keep the freewave slip interface up
 #sl0:12345:respawn:/sbin/slattach -P /var/run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
 
-# Indirectly brings up VPN link to MBARI
-#vpn:12345:respawn:/usr/sbin/inadyn
+# Keep up VPN link to MBARI (after allowing time for ethernet to start)
+#vpn:12345:respawn:/bin/sh -c "sleep 20; exec /usr/sbin/inadyn"
 
 # keep an espclient up on ttyS3
 #esp:3:respawn:/sbin/getty -L 9600 -nl /etc/esp/client ttyS3

@@ -20,6 +20,8 @@ case "$1" in
 #      stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
     }
 
+#    espPort ctd      ttyS1   #Seabird CTD
+#    espPort isus     ttyS2   #MBARI ISUS
     espPort I2Cgate  ttyS4   #core ESP gateway
     espPort AUVgate  ttyS5   #AUV command/status port
      ;;
