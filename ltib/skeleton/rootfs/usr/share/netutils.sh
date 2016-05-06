@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/24/16 brent@mbari.org
+# -- revised: 5/5/16 brent@mbari.org
 #
 
 ipUp() {
@@ -42,12 +42,13 @@ ipDown() {
 }
 
 vpnUp() {
-#if $1 specs "IP/vpn" iface, bring that iface up, unless there is already
-#a host route to the vpn server via an interface other than $2.
+#if $1 specs "IP/vpn" iface, bring that iface up, unless it already up and
+#there is already a host route to the vpn server via an interface other than $2.
 #Always bring down vpn if its current $carrier is of lower priority than $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
-    carrier=`hostIface $server` && lowerGatePriority "$2" "$carrier" && return 0
+    netIfIP $vpn && carrier=`hostIface $server` &&
+      lowerGatePriority "$2" "$carrier" && return 0
     ifdown $vpn
     ifup $vpn
   fi
