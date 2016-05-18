@@ -1,0 +1,20 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/core/generic.c linux-2.6.33.modified/drivers/usb/core/generic.c
+--- linux-2.6.33/drivers/usb/core/generic.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/usb/core/generic.c	2016-05-17 13:58:21.749903723 -0700
+@@ -95,13 +95,13 @@
+ 		 * cause us to reject configurations that we should have
+ 		 * accepted.
+ 		 */
+-
++#if LimitUSBpwr
+ 		/* Rule out configs that draw too much bus current */
+ 		if (c->desc.bMaxPower * 2 > udev->bus_mA) {
+ 			insufficient_power++;
+ 			continue;
+ 		}
+-
++#endif
+ 		/* When the first config's first interface is one of Microsoft's
+ 		 * pet nonstandard Ethernet-over-USB protocols, ignore it unless
+ 		 * this kernel has enabled the necessary host side driver.

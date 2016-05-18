@@ -63,6 +63,7 @@ Patch47         : kernel-2.6.33-telit.patch
 Patch48         : kernel-2.6.33-irq6.patch
 Patch49         : kernel-2.6.33-pc104timing.patch
 Patch50         : kernel-2.6.33-ftdiftx.patch
+Patch51         : kernel-2.6.33-unlimitUSBpwr.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -116,3 +117,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch48 -p1
 %patch49 -p1
 %patch50 -p1
+%patch51 -p1
