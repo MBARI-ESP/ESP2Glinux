@@ -1,0 +1,21 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/gpio/gpiolib.c linux-2.6.33.modified/drivers/gpio/gpiolib.c
+--- linux-2.6.33/drivers/gpio/gpiolib.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/drivers/gpio/gpiolib.c	2016-06-09 22:53:26.217160157 -0700
+@@ -716,7 +716,7 @@
+ 	unsigned long		flags;
+ 	struct gpio_desc	*desc;
+ 	int			status = -EINVAL;
+-	char			*ioname = NULL;
++	const char		*ioname;
+ 
+ 	/* can't export until sysfs is available ... */
+ 	if (!gpio_class.p) {
+@@ -731,6 +731,7 @@
+ 
+ 	spin_lock_irqsave(&gpio_lock, flags);
+ 	desc = &gpio_desc[gpio];
++        ioname = desc->label;
+ 	if (test_bit(FLAG_REQUESTED, &desc->flags)
+ 			&& !test_bit(FLAG_EXPORT, &desc->flags)) {
+ 		status = 0;
