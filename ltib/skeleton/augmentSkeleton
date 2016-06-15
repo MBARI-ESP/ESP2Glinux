@@ -46,17 +46,9 @@ echo "  ===>  Adding ssh->dropbear invocation script  <==="
 cd ~/linux/esp/dropbear
 install -m 755 ssh $HOSTTOP/usr/bin
 
-echo "  ===>  Building dyndns  <==="
-cd ~/linux/dyndns && armconfig && arminstall
-
-echo "  ===>  Building wpa_supplicant  <==="
-cd ~/linux/wpa_supplicant && armconfig && arminstall
-
-echo "  ===>  Building slattach  <==="
-cd ~/linux/esp/net-tools && armconfig && arminstall
-
-cd ~/linux/esp && back=$PWD
-for package in netdev ser2net ppp thttpd; do
+cd ~/linux && back=$PWD
+for package in dyndns wpa_supplicant openssh \
+      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools openssh; do
   echo
   echo "  ===>  Building $package  <==="
   cd $package && armconfig && arminstall

@@ -1,3 +1,5 @@
 #!/bin/sh
 [ -z "$DEV_IMAGE" ] && . `dirname $(readlink -mn $0)`/ltibenv
+export CPPFLAGS=-I$DEV_IMAGE/usr/include
+export LDFLAGS=-L$DEV_IMAGE/usr/lib
 exec ./configure --host=$LTIB_HOST --prefix=$DEV_IMAGE "$@"
