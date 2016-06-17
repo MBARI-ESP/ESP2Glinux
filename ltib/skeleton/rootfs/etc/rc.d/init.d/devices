@@ -3,22 +3,22 @@ PATH=/usr/sbin:/sbin:/bin
 
 espPort()
 {
+  group=${3-esp}
   name=$1; port=$2
-  [ -c "$port" ] || return
-  ln -s $port $name
-  chgrp esp $port && chmod g+rw $port
+  [ -c "$port" ] &&
+    chgrp $group $port && chmod g+rw $port &&
+    ln -sf $port $name
 }
 
 
 case "$1" in
   start)
     cd /dev
-    mknod ppp c 108 0
-    modem=ttyS8 	#serial port connected to the radio modem
-    [ -c "$modem" ] && {
-      ln -s $modem modem
-#      stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
-    }
+    [ -e ppp ] || mknod ppp c 108 0
+
+    # radio modem port should be owned by root user
+    espPort modem ttyS8 root  #&&
+#     stty -F freewave 19200 clocal raw -echo -echonl  #for modem configuration
 
 #    espPort ctd      ttyS1   #Seabird CTD
 #    espPort isus     ttyS2   #MBARI ISUS
