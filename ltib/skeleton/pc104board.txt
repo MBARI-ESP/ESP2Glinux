@@ -1,5 +1,5 @@
 #  Very rough documentation on PC/104 Low Power ESP host board
-#  1/8/15 brent@mbari.org
+#  7/14/16 brent@mbari.org
 
 # Real-time Clock
 RTC battery is type CR1220  (mounted on back of board)
@@ -110,7 +110,7 @@ mount -orw /flash
 cp -a /mnt/* /flash         #repopulate it from the SD card's
 # copy boot files to flash to move them to the new micro SD later
 mount /boot
-cp -r /boot /flash/root/boot
+cp -r /boot /flash/root
 # tweak the SD card image to optimize it for booting from flash 
 cd /flash
 rm -rf var tmp card
