@@ -6,7 +6,12 @@ VPN=$ESPshore/ppp6   #server IP / VPN interface
 isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
-  pppd call $isp unit ${IFNAME#ppp} ipparam $VPN
+  pppd call $isp unit ${IFNAME#ppp} ipparam $VPN || {
+    #assume USB link has completely failed
+    . /etc/ppp/resetmodem
+    resetModem && sleep 15 &&
+    pppd call $isp unit ${IFNAME#ppp} ipparam $VPN
+  }
 }
 
 hosts() {    #add lines before EOS
