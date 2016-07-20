@@ -1,0 +1,36 @@
+# reset modem via whatever means we can
+#  if an esp server is running, reset modem via an espclient
+#  otherwise, try writing commands directly to the sleepy boards microcontroller
+
+resetModem() {
+  offSecs=${1-5}           #default to 5 seconds w/pwr off
+  gateway=${2-/dev/I2Cgate}
+  esp=${3-esp}    #esp user for case where no espclient available
+  mRstCmd="sleepyCmd --device=$gateway resetModem $offSecs"
+
+  fuser -u $gateway 2>&1 | tr \(\) " " | (
+    while read dev espPid espUser ignored; do
+      if [ -n "$espPid" -a -n "$espUser" ]; then
+        logger -t$tag "Cycling power via $espUser's espclient"
+        result=$(exec 5>&1; su - $espUser >&2 <<EOS
+          espclient --server=$espPid $tag >&5 <<EOC
+            Sleepy.cycleModemPower! $offSecs
+EOC
+EOS
+        ) && {
+          set -- $result
+          [ "$1" = "=>" ] && shift  #arrow prefix is now optional
+          [ -z "$2" -a "$1" -eq "$offSecs" ] && return
+        }
+      fi
+    done
+    # reset modem directly first as user esp
+    #   failing that, output warning in log and try resetting as root
+    logger -t$tag "No espclient -- resetting via $gateway"
+    errmsg=`su $esp -c "$mRstCmd" 2>&1 >&-` && return
+    logger -t$tag "Retrying as root after $esp failed with $errmsg"
+    errmsg=`$mRstCmd 2>&1 >&-` && return
+    logger -t$tag "also failed as root -- $errmsg"
+    return 5
+  )
+}
