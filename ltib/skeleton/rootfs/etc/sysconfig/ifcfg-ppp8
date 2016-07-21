@@ -8,9 +8,9 @@ isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
   [ "$serialPort" ] && {
-    stty -F $serialPort >/dev/null || { #serial link has completely failed
+    stty -F $serialPort 2>/dev/null >&2 || { #serial link has completely failed
       /etc/ppp/reset-modem && sleep 20
-      stty -F $serialPort >/dev/null || return $?  #quit if failed after reset
+      stty -F $serialPort 2>/dev/null >&2 || return $?  #if failed after reset
     }
   }
   pppd call $isp unit ${IFNAME#ppp} $serialPort ipparam $VPN
