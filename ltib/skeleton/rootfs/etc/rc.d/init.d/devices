@@ -5,9 +5,8 @@ espPort()
 {
   group=${3-esp}
   name=$1; port=$2
-  [ -c "$port" ] &&
-    chgrp $group $port && chmod g+rw $port &&
-    ln -sf $port $name
+  ln -sf $port $name
+  [ -c "$port" ] && chgrp $group $port && chmod g+rw $port
 }
 
 
