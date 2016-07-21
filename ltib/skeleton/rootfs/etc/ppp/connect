@@ -1,7 +1,7 @@
 #!/bin/sh
 #  connect to specified cellular network
 
-export tag=`basename $0`
+tag=`basename $0`
 tracefn=/tmp/${tag}.trace
 [ -w $tracefn ] && {
   (date; echo "$@"; env) >>$tracefn
