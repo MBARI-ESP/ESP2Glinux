@@ -1,17 +1,19 @@
 IFNAME=ppp8
 AUTOSTART=no
-ESPshore=134.89.2.91
+serialPort=/dev/modem
+#ESPshore=134.89.2.91
 VPN=$ESPshore/ppp6   #server IP / VPN interface
 
 isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
-  pppd call $isp unit ${IFNAME#ppp} ipparam $VPN || {
-    #assume USB link has completely failed
-    . /etc/ppp/resetmodem
-    resetModem && sleep 15 &&
-    pppd call $isp unit ${IFNAME#ppp} ipparam $VPN
+  [ "$serialPort" ] && {
+    stty -F $serialPort >/dev/null || { #serial link has completely failed
+      /etc/ppp/reset-modem && sleep 20
+      stty -F $serialPort >/dev/null || return $?  #quit if failed after reset
+    }
   }
+  pppd call $isp unit ${IFNAME#ppp} $serialPort ipparam $VPN
 }
 
 hosts() {    #add lines before EOS

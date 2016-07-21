@@ -1,3 +1,4 @@
+#!/bin/sh
 # reset modem via whatever means we can
 #  if an esp server is running, reset modem via an espclient
 #  otherwise, try writing commands directly to the sleepy boards microcontroller

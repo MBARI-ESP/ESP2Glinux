@@ -1,8 +1,6 @@
 #!/bin/sh
 #  connect to specified cellular network
 
-. `dirname $0`/resetmodem
-
 export tag=`basename $0`
 tracefn=/tmp/${tag}.trace
 [ -w $tracefn ] && {
@@ -12,11 +10,10 @@ tracefn=/tmp/${tag}.trace
 }
 
 cellular=$1
-lastResetFn=/var/run/`basename $gateway`.reset
 resetHoldOff=${2--300}   #retry detach every 5 minutes
-
-export offSecs=${3-5}           #default to 5 seconds w/pwr off
-export gateway=${4-/dev/I2Cgate}
+offSecs=${3-5}           #default to 5 seconds w/pwr off
+gateway=${4-/dev/I2Cgate}
+lastResetFn=/var/run/`basename $gateway`.reset
 
 [ "$cellular" ] || {
 cat << EOS
@@ -46,7 +43,7 @@ until /usr/sbin/chat -vf $cellular-detach.chat; do
   [ "$lastReset" ] && sinceReset=$(($now-$lastReset))
   if [ $? != 0 -o "$sinceReset" -ge $resetDelay -o "$sinceReset" -lt 0 ]; then
     echo $now >$lastResetFn
-    resetModem $offSecs $gateway
+    `dirname $0`/reset-modem $offSecs $gateway
   else
     resetDelay=$(($resetDelay - $sinceReset))
   fi
