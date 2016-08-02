@@ -1,0 +1,17 @@
+# ESP specific udev rules -- 8/2/16 brent@mbari.org
+
+ACTION!="add", GOTO="esp_end"
+SUBSYSTEM!="tty", GOTO="esp_end"
+
+#ESP application serial ports (uncomment those in use)
+KERNEL=="ttyS1", SYMLINK+="ctd"
+#KERNEL=="ttyS2", SYMLINK+="isus"
+KERNEL=="ttyS4", SYMLINK+="I2Cgate"
+#KERNEL=="ttyS5", SYMLINK+="AUVgate"
+
+#Radio modem serial port (in order of preference)
+ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem", GROUP="root"
+ENV{ID_MODEL}=="Chipi-X", SYMLINK+="modem", GROUP="root"
+#ENV{ID_MODEL}=="FT232R_USB_UART", SYMLINK+="modem", GROUP="root"
+
+LABEL="esp_end"
