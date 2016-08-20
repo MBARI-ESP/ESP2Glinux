@@ -1,0 +1,8 @@
+# Purpose: Sierra Wireless Fastrack GPRS PPP Sleep Script
+# Commands modem to enter low-power sleep mode
+#
+TIMEOUT 5
+
+#enter proprietary sleep mode when DTR is deasserted
+AT+W32K=1
+OK\r
