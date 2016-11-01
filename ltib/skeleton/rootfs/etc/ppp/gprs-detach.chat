@@ -7,4 +7,4 @@ TIMEOUT 5
 #return to command mode, detach any GPRS call
 "" \d\p\p+++\d\p\pAT+CGATT=0
 #reset modem if detach fails
-OK-AT+CFUN=1-OK
+OK-\rAT+CFUN=1-OK

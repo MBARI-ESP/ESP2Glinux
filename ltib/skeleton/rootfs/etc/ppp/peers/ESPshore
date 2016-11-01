@@ -17,4 +17,4 @@ usepeerdns
 
 persist
 holdoff 15
-maxfail 0
+maxfail 5

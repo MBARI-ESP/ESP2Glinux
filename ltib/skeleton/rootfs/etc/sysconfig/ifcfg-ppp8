@@ -22,3 +22,8 @@ $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
 $ESPshore ESPshore
 EOS
 }
+
+pppDown() {
+  ckpid=`cat /var/run/inadyn.pid 2>/dev/null` &&
+    kill -CONT $ckpid
+}
