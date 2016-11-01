@@ -1,0 +1,29 @@
+#!/bin/sh
+#Roughly emulate the operation of a GPRS modem
+#to get through ESP's PPP connection logic
+#10/31/16 brent@mbari.org
+stty icrnl inlcr 2>/dev/null
+echo "Awaiting Modem AT commands..." >&2
+while read line; do
+  case "$line" in
+    AT*\*\**?\#)
+      echo "\r\nCONNECT\r"
+echo Received \'$line\' -- sent CONNECT >&2
+      exit 0
+    ;;
+    AT*ATT=0)
+      echo "\r\nBOGUS\r"
+echo Received \'$line\' -- sent BOGUS >&2
+    ;;
+    AT*|*+++*|*+CFUN=1)
+      echo "\r\nOK\r"
+echo Received \'$line\' -- sent OK >&2
+    ;;
+    "")
+    ;;
+    *)
+      echo "\r\nERROR\r"
+echo Received \'$line\' -- sent ERROR >&2
+  esac
+done
+exit 1
