@@ -6,7 +6,7 @@ ifPrep() {
 }
 
 hosts() {    #add lines before EOS
-#use this hook as an opportunity to bring up our ESPserver
+#use this hook to bring up our ESPserver
   cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
 $IPREMOTE makai-ppp makai platform
