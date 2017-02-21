@@ -1,5 +1,5 @@
 
-VERSION=1.5-mbari
+VERSION=1.6-mbari
 
 # CC = gcc
 # Set CC to your target's 'C' compiler to build for it
@@ -21,7 +21,7 @@ term.o : term.c term.h
 
 doc : picocom.8 picocom.8.html picocom.8.ps
 
-changes : 
+changes :
 	svn log -v . > CHANGES
 
 picocom.8 : picocom.8.xml

@@ -7,7 +7,7 @@
  * Nick Patavalis (npat@inaccessnetworks.com)
  *
  * originaly by Pantelis Antoniou (panto@intranet.gr), Nick Patavalis
- *    
+ *
  * Documentation can be found in the header file "term.h".
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
- * USA 
+ * USA
  *
  * $Id$
  */
@@ -243,7 +243,7 @@ term_lib_init (void)
 				} while (0);
 				if ( r < 0 ) {
 					char *tname;
- 
+
 					tname = ttyname(term.fd[i]);
 					if ( ! tname ) tname = "UNKNOWN";
 					fprintf(stderr, "%s: reset failed for dev %s: %s\n",
@@ -257,7 +257,7 @@ term_lib_init (void)
 				term.fd[i] = -1;
 			if ( atexit(term_exitfunc) != 0 ) {
 				term_errno = TERM_EATEXIT;
-				rval = -1; 
+				rval = -1;
 				break;
 			}
 			/* ok. term struct is now initialized. */
@@ -327,10 +327,10 @@ term_remove(int fd)
 			rval = -1;
 			break;
 		}
-		
+
 		do { /* dummy */
 			r = tcflush(term.fd[i], TCIOFLUSH);
-			if ( r < 0 ) { 
+			if ( r < 0 ) {
 				term_errno = TERM_EFLUSH;
 				rval = -1;
 				break;
@@ -342,7 +342,7 @@ term_remove(int fd)
 				break;
 			}
 		} while (0);
-		
+
 		term.fd[i] = -1;
 	} while (0);
 
@@ -364,7 +364,7 @@ term_erase(int fd)
 			rval = -1;
 			break;
 		}
-		
+
 		term.fd[i] = -1;
 	} while (0);
 
@@ -382,7 +382,7 @@ term_replace (int oldfd, int newfd)
 
 	do { /* dummy */
 
-		i = term_find(oldfd); 
+		i = term_find(oldfd);
 		if ( i < 0 ) {
 			rval = -1;
 			break;
@@ -508,14 +508,14 @@ term_apply (int fd)
 			rval = -1;
 			break;
 		}
-		
+
 		r = tcsetattr(term.fd[i], TCSAFLUSH, &term.nexttermios[i]);
 		if ( r < 0 ) {
 			term_errno = TERM_ESETATTR;
 			rval = -1;
 			break;
 		}
-		
+
 		term.currtermios[i] = term.nexttermios[i];
 
 	} while (0);
@@ -533,7 +533,7 @@ term_set_raw (int fd)
 	rval = 0;
 
 	do { /* dummy */
-		
+
 		i = term_find(fd);
 		if ( i < 0 ) {
 			rval = -1;
@@ -547,7 +547,7 @@ term_set_raw (int fd)
 		term.nexttermios[i].c_cc[VTIME] = 0;
 
 	} while (0);
-	
+
 	return rval;
 }
 
@@ -630,6 +630,12 @@ term_set_baudrate (int fd, int baudrate)
 		case 230400:
 			spd = B230400;
 			break;
+		case 460800:
+			spd = B460800;
+			break;
+		case 921600:
+			spd = B921600;
+			break;
 		default:
 			term_errno = TERM_EBAUD;
 			rval = -1;
@@ -643,7 +649,7 @@ term_set_baudrate (int fd, int baudrate)
 			rval = -1;
 			break;
 		}
-			
+
 		r = cfsetispeed(&tio, spd);
 		if ( r < 0 ) {
 			term_errno = TERM_ESETISPEED;
@@ -719,7 +725,7 @@ term_set_databits (int fd, int databits)
 		}
 
 		tiop = &term.nexttermios[i];
-				
+
 		switch (databits) {
 		case 5:
 			tiop->c_cflag = (tiop->c_cflag & ~CSIZE) | CS5;
@@ -762,7 +768,7 @@ term_set_flowcntrl (int fd, enum flowcntrl_e flowcntl)
 			rval = -1;
 			break;
 		}
-		
+
 		tiop = &term.nexttermios[i];
 
 		switch (flowcntl) {
@@ -884,28 +890,28 @@ term_set(int fd,
 				r = term_set_raw(fd);
 				if ( r < 0 ) { rval = -1; break; }
 			}
-			
+
 			r = term_set_baudrate(fd, baud);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 			r = term_set_parity(fd, parity);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 			r = term_set_databits(fd, bits);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 			r = term_set_flowcntrl(fd, fc);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 			r = term_set_local(fd, local);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 			r = term_set_hupcl(fd, hup_close);
 			if ( r < 0 ) { rval = -1; break; }
-			
+
 		} while (0);
 
-		if ( rval < 0 ) { 
+		if ( rval < 0 ) {
 			if ( i < 0 )
 				/* new addition. must be removed */
 				term.fd[ni] = -1;
@@ -966,9 +972,9 @@ term_pulse_dtr (int fd)
 				rval = -1;
 				break;
 			}
-			
+
 			tioold = tio;
-			
+
 			cfsetospeed(&tio, B0);
 			cfsetispeed(&tio, B0);
 			r = tcsetattr(fd, TCSANOW, &tio);
@@ -977,9 +983,9 @@ term_pulse_dtr (int fd)
 				rval = -1;
 				break;
 			}
-			
+
 			sleep(1);
-			
+
 			r = tcsetattr(fd, TCSANOW, &tioold);
 			if ( r < 0 ) {
 				term.currtermios[i] = tio;
@@ -989,7 +995,7 @@ term_pulse_dtr (int fd)
 			}
 		}
 #endif /* of __linux__ */
-			
+
 	} while (0);
 
 	return rval;
@@ -1050,7 +1056,7 @@ term_lower_dtr(int fd)
 	do { /* dummy */
 
 		i = term_find(fd);
-		if ( i < 0 ) { 
+		if ( i < 0 ) {
 			rval = -1;
 			break;
 		}
@@ -1077,10 +1083,10 @@ term_lower_dtr(int fd)
 				break;
 			}
 			term.currtermios[i] = tio;
-			
+
 			cfsetospeed(&tio, B0);
 			cfsetispeed(&tio, B0);
-			
+
 			r = tcsetattr(fd, TCSANOW, &tio);
 			if ( r < 0 ) {
 				term_errno = TERM_ESETATTR;
@@ -1090,7 +1096,7 @@ term_lower_dtr(int fd)
 		}
 #endif /* of __linux__ */
 	} while (0);
-	
+
 	return rval;
 }
 
@@ -1169,7 +1175,7 @@ term_break(int fd)
 			rval = -1;
 			break;
 		}
-	
+
 		r = tcsendbreak(fd, 0);
 		if ( r < 0 ) {
 			term_errno = TERM_EBREAK;
