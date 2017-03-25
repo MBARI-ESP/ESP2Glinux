@@ -22,10 +22,9 @@ ifAliasDown() {
   for pidfn in $pidfns; do
     daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {
-      case `basename $pidfn` in
-        ppp*)  signal=TERM ;;
-        wpa-*) signal=TERM ;;
-        *)     signal=HUP  ;;
+      case $pidfn in
+        *dhcp*-*) signal=HUP ;;
+        *) signal=TERM ;;
       esac
       for try in 1 2 last; do
         kill -$signal $daemon 2>/dev/null  #relinquish any lease
