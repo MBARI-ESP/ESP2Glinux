@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 5/5/16 brent@mbari.org
+# -- revised: 3/24/17 brent@mbari.org
 #
 
 ipUp() {
@@ -24,7 +24,9 @@ ipUp() {
     echo "FAILED:  ifconfig $IFNAME $ipopts"
     return 2
   }
-  [ "$NETWORK" ] && route add -net $NETWORK$mask dev $IFNAME && return 3
+  [ "$NETWORK" ] && {
+    route add -net $NETWORK$mask dev $IFNAME || return 3
+  }
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return $?
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
