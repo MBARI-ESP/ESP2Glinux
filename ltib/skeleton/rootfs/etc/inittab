@@ -18,11 +18,8 @@ strt::sysinit:/etc/rc.d/sysinit
 r3:3:wait:/etc/rc.d/rc 3
 r6:6:wait:/etc/rc.d/rc 6
 
-#
-# Start console logins on both COM Ports
-#
+# Start console logins
 co:12345:respawn:/sbin/getty -L 115200 ttyS0
-#lgn1:12345:respawn:/sbin/getty -L 115200 ttyAM1
 
 # Keep basic network services running
 net:12345:respawn:/usr/sbin/inetd -f
