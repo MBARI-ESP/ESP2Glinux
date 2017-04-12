@@ -49,7 +49,7 @@ vpnUp() {
 #Always bring down vpn if its current $carrier is of lower priority than $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
-    netIfIP $vpn && carrier=`hostIface $server` &&
+    netIfIP $vpn >/dev/null && carrier=`hostIface $server` &&
       lowerGatePriority "$2" "$carrier" && return 0
     ifdown $vpn
     ifup $vpn
