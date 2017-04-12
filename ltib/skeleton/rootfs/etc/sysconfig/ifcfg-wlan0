@@ -2,6 +2,8 @@ IFNAME=wlan0
 AUTOSTART=no
 BOOTPROTO="dhcp-b -t15 -m600 -s /usr/share/udhcpc/default.script"  #in background
 DHCPNAME=`hostname`-wifi
+ESPshore=134.89.2.91
+#VPN=$ESPshore/ppp6   #server IP / VPN interface
 
 ifPrep() {
   wpa_supplicant -Bi $IFNAME -P /var/run/wpa-$IFNAME.pid -c /etc/wpa_supplicant.conf
@@ -10,5 +12,6 @@ ifPrep() {
 hosts() {    #add lines before EOS
   cat <<EOS
 $(netIfIP $IFNAME $DHCPNAME)
+$ESPshore ESPshore
 EOS
 }
