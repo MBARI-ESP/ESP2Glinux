@@ -11,7 +11,9 @@ ifPrep() {
 }
 
 pppUp() { #direct MBARI traffic bypasses VPN
-  (route add $mbari $gate1 || route add $mbari $gate2) 2>/dev/null
+  case `topIf` in
+    eth*)  route add $mbari $gate1 || route add $mbari $gate2
+  esac 2>/dev/null
 }
 
 hosts() {
