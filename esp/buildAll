@@ -42,13 +42,13 @@ cd ~/ESP/gen2/software/resetModem
 /arm/bin/gcc -Os -oresetModem resetModem.c
 /arm/bin/strip -o ~/armHost/sbin/crash/resetModem resetModem
 
-for package in lrzsz dyndns psmisc esp/wget esp/ser2net esp/netdev; do
+for package in lrzsz dyndns psmisc esp/wget esp/ser2net esp/netdev openssh; do
   echo "===>  Building $package  <==="
-  cd ~/linux/$package
+  cd ~/linux/$package &&
   armconfig && arminstall
 done
 
 # Create the JFFS2 filesystem image
 
-cd ../../esp
+cd ~/linux/esp
 buildjffs2 > armHost.jffs2

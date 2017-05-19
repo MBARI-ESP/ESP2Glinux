@@ -11,7 +11,7 @@ echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
 cd openssh-7.2p2 &&
-ltibMake -j9 sftp-server || exit 1
+make -j9 sftp-server || exit 1
 mkdir -p $TOP || exit 4
 for prog in sftp-server; do
   $ARMSTRIP $prog -o $TOP/$prog &&

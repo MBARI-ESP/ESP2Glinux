@@ -46,14 +46,16 @@ echo "  ===>  Adding ssh->dropbear invocation script  <==="
 cd ~/linux/esp/dropbear
 install -m 755 ssh $HOSTTOP/usr/bin
 
-cd ~/linux && back=$PWD
-for package in dyndns wpa_supplicant openssh \
-      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools openssh; do
+for package in dyndns wpa_supplicant \
+      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools; do
   echo
   echo "  ===>  Building $package  <==="
-  cd $package && armconfig && arminstall
-  cd $back
+  cd ~/linux/$package && armconfig && arminstall
 done
+
+echo
+echo "  ===>  Building sftp-server  <==="
+cd ~/linux/openssh && ltibconfig && ltibinstall
 
 echo
 echo "  ===>  Building Ruby 1.8.7-mbari  <==="

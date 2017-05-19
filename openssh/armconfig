@@ -1,9 +1,9 @@
 #!/bin/sh
-# unpack & patch openssh for arm-linux -- 6/14/16 brent@mbari.org
+# unpack & patch openssh for arm-linux -- 5/19/17 brent@mbari.org
 
 : ${openssh:=openssh-7.2p2}
 rm -rf $openssh && 
 tar xzf $openssh.tar.gz &&
 cd $openssh &&
-ltibConfigure --without-openssl
+configure --host=arm-softfloat-linux --without-openssl --prefix=/usr
 echo Done.
