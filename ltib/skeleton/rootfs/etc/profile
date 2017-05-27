@@ -1,16 +1,16 @@
-# /etc/profile:
+# /etc/profile: 5/26/17 Brent@mbari.org
+#echo /etc/profile: $0 "$@" >&2
+
 umask 022
-PS1="\\u@\\h\:\\w\\$ "
 #export HOSTNAME=`/bin/hostname`
-if [ "$USER" = 'root' ]
-then
+if [ `/usr/bin/id -u` -eq 0 ]; then
   PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin"
 else
   PATH="/bin:/usr/bin:/usr/local/bin"
 fi
-export PS1 PATH
 
-case $- in *i*)
+[ -t 0 ] && {  #if input is a terminal
+  export PS1='\u@\h:\w\$ '
   set -I  #don't allow EOF to exit interactive shells
   alias dir=ls
   alias l="dir -L -l"
@@ -23,13 +23,13 @@ case $- in *i*)
   alias p=pwd
   alias du='du -h'
   alias df='df -h'
-esac
 
-keyFn=~/.ssh/id_rsa
-[ -e $keyFn ] || {
-  logger -st dropbear -p warn "Generating rsa key for $USER"
-  rm -f ${keyFn}.pub
-  mkdir -p ~/.ssh
-  dropbearkey -t rsa -f $keyFn >${keyFn}.pub
+  keyFn=~/.ssh/id_rsa
+  [ -e $keyFn ] || {
+    logger -st dropbear -p warn "Generating rsa key for $USER"
+    rm -f ${keyFn}.pub
+    mkdir -p ~/.ssh
+    dropbearkey -t rsa -f $keyFn >${keyFn}.pub
+  }
+  unset keyFn
 }
-unset keyFn
