@@ -15,48 +15,44 @@ mkdir -p $LOCALBIN
 
 echo "  ===>  Building picocom  <==="
 cd ~/linux/picocom
-make CC=$ARMGCC/bin/gcc clean picocom
+make CC=$ARMGCC/bin/gcc clean picocom || exit $?
 $STRIP -o $LOCALBIN/picocom picocom
 
 echo "  ===>  Building snap  <==="
 cd ~/misc/camera/starlight
-make CC=$ARMGCC/bin/gcc clean ltib/snap
+make CC=$ARMGCC/bin/gcc clean ltib/snap || exit $?
 $STRIP -o $LOCALBIN/snap ltib/snap
 
 echo "  ===>  Building timelimit  <==="
-cd ~/misc/timelimit && armconfig && arminstall
+cd ~/misc/timelimit && armconfig && arminstall || exit $?
 
 echo "  ===>  Building sleepyCmd  <==="
 cd ~/misc/sleepyCmd
-make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd
+make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd || exit $?
 $STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd
 
 echo "  ===>  Building holdopen  <==="
 cd ~/misc/holdopen
-make CC=$ARMGCC/bin/gcc clean ltib/holdopen
+make CC=$ARMGCC/bin/gcc clean ltib/holdopen || exit $?
 $STRIP -o $LOCALBIN/holdopen ltib/holdopen
 
 echo "  ===>  Building suscript  <==="
 cd ~/misc/suscript
-make CC=$ARMGCC/bin/gcc clean ltib/suscript
+make CC=$ARMGCC/bin/gcc clean ltib/suscript || exit $?
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript
 chmod u+s $HOSTTOP/usr/sbin/suscript
 
-echo "  ===>  Adding ssh->dropbear invocation script  <==="
-cd ~/linux/esp/dropbear
-install -m 755 ssh $HOSTTOP/usr/bin
-
-for package in dyndns wpa_supplicant \
+for package in dyndns wpa_supplicant esp/dropbear \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools; do
   echo
   echo "  ===>  Building $package  <==="
-  cd ~/linux/$package && armconfig && arminstall
+  cd ~/linux/$package && armconfig && arminstall || exit $?
 done
 
 echo
 echo "  ===>  Building sftp-server  <==="
-cd ~/linux/openssh && ltibconfig && ltibinstall
+cd ~/linux/openssh && ltibconfig && ltibinstall || exit $?
 
 echo
 echo "  ===>  Building Ruby 1.8.7-mbari  <==="
-cd ~/ruby/ruby-1.8.7-mbari && armconfig && arminstall
+cd ~/ruby/ruby-1.8.7-mbari && armconfig && arminstall || exit $?

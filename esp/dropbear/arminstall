@@ -1,23 +1,25 @@
 #!/bin/sh
-# build & install dropbear-0.51 for arm-linux -- 8/20/16 brent@mbari.org
+# build & install dropbear-git for arm-linux -- 6/7/17 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${TARGETTOP:=${2-/usr}}
-: ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 top=`pwd`
-cd ${DBVERS-dropbear-0.51} || exit 2
-make PROGRAMS="dropbear dbclient dropbearkey scp" MULTI=1 || exit 1
+cd ${DBVERS-dropbear-git} || exit 2
+applets="dbclient dropbearkey scp dropbearconvert"
+make PROGRAMS="dropbear $applets" MULTI=1 || exit 1
 set -x
-install -d -m 755 $HOSTTOP/bin $HOSTTOP/sbin &&
-install -m 755 dropbearmulti dbclient dropbearkey scp $top/ssh $HOSTTOP/bin &&
-cd $HOSTTOP/bin &&
-$ARMSTRIP dropbearmulti &&
-rm -f ../sbin/dropbear dbclient dropbearkey scp &&
-ln -s ../bin/dropbearmulti ../sbin/dropbear &&
-ln -s dropbearmulti dbclient &&
-ln -s dropbearmulti dropbearkey &&
-ln -s dropbearmulti scp &&
+BASE=$HOSTTOP/$TARGETTOP
+install -d -m 755 $BASE/bin $BASE/sbin &&
+install -m 755 dropbearmulti $top/ssh $BASE/bin &&
+cd $BASE &&
+$ARMSTRIP bin/dropbearmulti &&
+rm -f sbin/dropbear* bin/dbclient bin/scp &&
+ln -sf ../bin/dropbearmulti sbin/dropbear &&
+for applet in $applets; do
+  ln -sf dropbearmulti bin/$applet || exit $?
+done
 echo "Done."

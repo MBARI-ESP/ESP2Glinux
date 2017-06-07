@@ -1,17 +1,24 @@
 #!/bin/bash
-# unpack, patch and configure dropbear-0.51 build for arm-linux 
-#  -- 10/27/08 brent@mbari.org
+# unpack, patch and configure dropbear-git build for arm-linux 
+#  -- 6/7/17 brent@mbari.org
 : ${CFLAGS:=-Os}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
 : ${CC:=$ARMGCC/bin/gcc}
 : ${LIBTOP:=${1-$ARMGCC/usr}}
-: ${DBVERS:=dropbear-0.51}
+: ${DBVERS:=dropbear-git}
 export CC CFLAGS CXXFLAGS
-rm -rf $DBVERS && tar xzf $DBVERS.tar.gz && cd $DBVERS && 
-patch < ../allowcore.patch &&
-cp -f ../options.embedded options.h && ac_cv_func_logout=no \
-configure --host=arm-unknown-linux --prefix=$LIBTOP \
+unset zlib
+[ "$ARMPREFIX" ] && zlib="--with-zlib=$ARMPREFIX"
+#rm -rf $DBVERS && tar xzf $DBVERS.tar.gz &&
+cd $DBVERS && 
+#patch < ../allowcore.patch &&
+#cp -f ../options.embedded options.h && ac_cv_func_logout=no \
+git reset --hard &&
+git clean -dxf &&
+git checkout DROPBEAR_2017.75 &&
+autoconf && autoheader &&
+configure --host=arm-unknown-linux $zlib \
  --disable-lastlog --disable-utmp --disable-utmpx \
  --disable-wtmp --disable-wtmpx --disable-pututline --disable-pututxline &&
 echo "Next, run arminstall here"
