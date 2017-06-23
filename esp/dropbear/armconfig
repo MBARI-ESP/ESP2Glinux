@@ -1,6 +1,6 @@
 #!/bin/bash
 # unpack, patch and configure dropbear-git build for arm-linux 
-#  -- 6/7/17 brent@mbari.org
+#  -- 6/22/17 brent@mbari.org
 : ${CFLAGS:=-Os}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -10,13 +10,11 @@
 export CC CFLAGS CXXFLAGS
 unset zlib
 [ "$ARMPREFIX" ] && zlib="--with-zlib=$ARMPREFIX"
-#rm -rf $DBVERS && tar xzf $DBVERS.tar.gz &&
 cd $DBVERS && 
-#patch < ../allowcore.patch &&
-#cp -f ../options.embedded options.h && ac_cv_func_logout=no \
 git reset --hard &&
 git clean -dxf &&
 git checkout DROPBEAR_2017.75 &&
+patch < ../dropbear-mbari1.patch &&
 autoconf && autoheader &&
 configure --host=arm-unknown-linux $zlib \
  --disable-lastlog --disable-utmp --disable-utmpx \

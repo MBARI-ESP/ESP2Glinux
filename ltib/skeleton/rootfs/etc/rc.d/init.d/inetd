@@ -7,16 +7,7 @@ case "$1" in
        echo "Starting $daemon..."
        $action -S -- $OPTIONS
 
-       dropdir=/etc/dropbear
-       mkdir -p $dropdir
-       for key in rsa dss; do
-         keyfn=dropbear_${key}_host_key
-         if [ ! -r $dropdir/$keyfn ]; then
-           echo "Generating $key key for the dropbear ssh server... "
-           dropbearkey -t $key -f $dropdir/$keyfn >$dropdir/$keyfn.pub
-         fi
-       done
-
+       mkdir -p /etc/dropbear
        mkdir -m600 -p /usr/share/empty  #for vsftpd
        ;;
                          

@@ -1,0 +1,110 @@
+From 69dcdec8a74b97af5cfde2b785940ac959e9d729 Mon Sep 17 00:00:00 2001
+From: Brent Roman <brent@mbari.org>
+Date: Thu, 22 Jun 2017 18:10:46 -0700
+Subject: [PATCH] allow coredumps, 1024 bit default rsa key size, embedded
+ options
+
+---
+ dbutil.c     |  2 ++
+ dbutil.h     |  6 ++++++
+ gensignkey.c |  2 +-
+ options.h    | 11 +++++++----
+ 4 files changed, 16 insertions(+), 5 deletions(-)
+
+diff --git a/dbutil.c b/dbutil.c
+index 69e43bb..ba02f86 100644
+--- a/dbutil.c
++++ b/dbutil.c
+@@ -575,11 +575,13 @@ void setnonblocking(int fd) {
+ 	TRACE(("leave setnonblocking"))
+ }
+ 
++#ifndef ALLOW_COREDUMPS
+ void disallow_core() {
+ 	struct rlimit lim;
+ 	lim.rlim_cur = lim.rlim_max = 0;
+ 	setrlimit(RLIMIT_CORE, &lim);
+ }
++#endif
+ 
+ /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE, with the result in *val */
+ int m_str_to_uint(const char* str, unsigned int *val) {
+diff --git a/dbutil.h b/dbutil.h
+index d7509c9..d427b6d 100644
+--- a/dbutil.h
++++ b/dbutil.h
+@@ -71,7 +71,13 @@ void * m_strdup(const char * str);
+ void * m_realloc(void* ptr, size_t size);
+ #define m_free(X) do {free(X); (X) = NULL;} while (0)
+ void setnonblocking(int fd);
++
++#ifdef ALLOW_COREDUMPS
++#define disallow_core()
++#else
+ void disallow_core(void);
++#endif
++
+ int m_str_to_uint(const char* str, unsigned int *val);
+ 
+ /* Used to force mp_ints to be initialised */
+diff --git a/gensignkey.c b/gensignkey.c
+index 7bfc786..4e2a8d4 100644
+--- a/gensignkey.c
++++ b/gensignkey.c
+@@ -7,7 +7,7 @@
+ #include "signkey.h"
+ #include "dbrandom.h"
+ 
+-#define RSA_DEFAULT_SIZE 2048
++#define RSA_DEFAULT_SIZE 1024  //2048 takes too long on embedded hosts
+ #define DSS_DEFAULT_SIZE 1024
+ 
+ /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
+diff --git a/options.h b/options.h
+index 0c51bb1..7b0741a 100644
+--- a/options.h
++++ b/options.h
+@@ -10,6 +10,9 @@
+ 
+ /* IMPORTANT: Many options will require "make clean" after changes */
+ 
++#define DROPBEAR_VERSION "2017.75-mbari1"
++#define ALLOW_COREDUMPS
++
+ #ifndef DROPBEAR_DEFPORT
+ #define DROPBEAR_DEFPORT "22"
+ #endif
+@@ -52,10 +55,10 @@
+ several kB in binary size however will make the symmetrical ciphers and hashes
+ slower, perhaps by 50%. Recommended for small systems that aren't doing
+ much traffic. */
+-#define DROPBEAR_SMALL_CODE
++//#define DROPBEAR_SMALL_CODE
+ 
+ /* Enable X11 Forwarding - server only */
+-#define ENABLE_X11FWD
++//#define ENABLE_X11FWD
+ 
+ /* Enable TCP Fowarding */
+ /* 'Local' is "-L" style (client listening port forwarded via server)
+@@ -94,7 +97,7 @@ much traffic. */
+ #define DROPBEAR_3DES
+ #define DROPBEAR_AES256
+ /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
+-/*#define DROPBEAR_BLOWFISH*/
++#define DROPBEAR_BLOWFISH
+ #define DROPBEAR_TWOFISH256
+ #define DROPBEAR_TWOFISH128
+ 
+@@ -194,7 +197,7 @@ If you test it please contact the Dropbear author */
+ 
+ /* Whether to print the message of the day (MOTD). This doesn't add much code
+  * size */
+-#define DO_MOTD
++//#define DO_MOTD
+ 
+ /* The MOTD file path */
+ #ifndef MOTD_FILENAME
+-- 
+2.1.4
+
