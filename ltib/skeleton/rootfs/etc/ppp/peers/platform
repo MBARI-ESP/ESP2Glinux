@@ -1,4 +1,4 @@
-# pppd configuration for esp<->auv 3-wire serial link -- 5/9/15 brent@mbari.org
+# pppd configuration for esp<->auv 3-wire serial link -- 9/21/17 brent@mbari.org
 
 #connection
 linkname auv
@@ -16,11 +16,11 @@ maxfail 0    #never give up!
 #dump
 
 #RS-232 port configuration
-ttyS6      #symlink /dev/freewave to the modem's serial port
+platform     #serial port
 115200       #baud rate
 local        #no carrier detect
-#crtscts asyncmap 0     #use RTS/CTS handshake for flow control
-xonxoff asyncmap A0000  #use XON/XOFF characters to control flow
+#crtscts asyncmap 0     #either, use RTS/CTS handshake for flow control
+xonxoff asyncmap A0000  #or, use XON/XOFF characters to control flow
 lock         #request exclusive access to the port
 
 #detect dropped link
