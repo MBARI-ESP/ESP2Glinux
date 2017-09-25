@@ -1,7 +1,7 @@
 #!/bin/bash
 # unpack, patch and configure dropbear-git build for arm-linux 
-#  -- 6/22/17 brent@mbari.org
-: ${CFLAGS:=-Os}
+#  -- 9/25/17 brent@mbari.org
+: ${CFLAGS:=-O2}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
 : ${CC:=$ARMGCC/bin/gcc}
@@ -10,7 +10,10 @@
 export CC CFLAGS CXXFLAGS
 unset zlib
 [ "$ARMPREFIX" ] && zlib="--with-zlib=$ARMPREFIX"
-cd $DBVERS && 
+cd $DBVERS || {
+  git clone https://github.com/mkj/dropbear.git $DBVERS &&
+  cd $DBVERS || exit $?
+}
 git reset --hard &&
 git clean -dxf &&
 git checkout DROPBEAR_2017.75 &&
