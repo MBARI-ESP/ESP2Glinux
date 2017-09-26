@@ -36,7 +36,7 @@ mailnull:x:47:
 xfs:x:43:
 ntp:x:38:
 rpc:x:32:
-gdm:x:42:
+shadow:x:42:
 rpcuser:x:29:
 nfsnobody:x:65534:
 nscd:x:28:
