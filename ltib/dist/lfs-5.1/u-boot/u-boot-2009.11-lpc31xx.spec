@@ -21,6 +21,7 @@ Patch8          : u-boot-2009.11-mbari6.patch
 Patch9          : u-boot-2009.11-pc104.patch
 Patch10         : u-boot-2009.11-flashFromSD.patch
 Patch11         : u-boot-2009.11-baudrate.patch
+Patch12         : u-boot-2009.11-mbariA.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -44,6 +45,7 @@ needed for boards using u-boot and the LPC31XX.
 %patch9 -p1
 %patch10 -p1
 %patch11 -p1
+%patch12 -p1
 
 %Build
 : ${PKG_U_BOOT_CONFIG_TYPE:?must be set, e.g. MPC8548CDS_config}
