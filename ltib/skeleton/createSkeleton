@@ -57,14 +57,14 @@ sudo sh <<END
   rm -rf $1/dev &&
   chown -Rh root:root $1 &&
   #seed with (just) needed dev entries
-  tar xzpf $here/dev.tgz -C $1 &&
-  for secret in $1/shadow $1/wpa_supplicant.conf; do
-    [ -r "$secret" ] && chmod o-r $secret
-  done
+  tar xzpf $here/dev.tgz -C $1 && (cd $1/etc &&
+  for secret in shadow wpa_supplicant.conf ppp/*secret*; do
+    [ -r \$secret ] && chmod o-r \$secret
+  done)
   #ltib sets group suid for a number of strange directories (clear them here)
   find $1 -type d -exec chmod g-s {} \; &&
   #changing owner to root cleared the suids -- set them again here
-  cd $1/bin && chmod u+s busybox mount umount &&
+  (cd $1/bin && chmod u+s busybox mount umount) &&
 #deal with suscript utilities for the ESP app (if they are in the image)
   [ -f $1/usr/sbin/suscript ] && chmod u+s $1/usr/sbin/suscript &&
   [ -d $espSu ] && chgrp mbari $espSu && chmod o= $espSu
