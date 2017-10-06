@@ -1,0 +1,276 @@
+#!/bin/sh
+: ${TARFLAGS:=-z}
+showHelp() {
+  p=$progName
+  cat 2>&1 <<END
+Clone ESP linux to create a bootable images -- 10/5/17 brent@mbari.org
+Usage:  [with optional elements in {}]
+  $p {--factory} {--to=destination} {source}
+Flags:
+  --factory:
+      Clone the factory recovery image
+      (this is equivalent specifying source archive $pristine)
+  --to=destination  #specifies clone output destination where:
+      SD|card outputs to the SD card
+      flash   outputs to internal flash memory
+      /*      outputs tar archive to file at specified absolute path
+      -       outputs tar archive to stdout
+  --help  #display this
+Source argument:
+  Read the root filesystem image from the specified directory or
+  (compressed) tar archive
+  If source is -, read archive from stdin
+  If omitted, source defaults to the current rootfs  (i.e. / )
+Environment Variables:
+  TARFLAGS[=$TARFLAGS]
+      overrides the default arguments to tar in reading or writing archives
+Notes:
+  If --to is not specified, the destination is assumed to be the storage medium
+  that is currently NOT in use.  In practice, this means...
+  If rootfs is the SD card, destination is internal flash and visaversa.
+  The --factory flag and source argument are mutually exclusive
+Examples:
+  $p
+    #Without args: clones current root filesystem to unused storage medium
+    #If booted from flash, creates a bootable SD card.
+    #If booted from SD, writes a bootable image to the internal flash.
+  $p --factory
+    #As above, but writes the "pristine" factory image instead
+  $p /template
+    #Clone the root filesystem at /template, making it bootable
+  $p --to=$pristine
+    #Overwrite the factory image with a copy of current rootfs
+  $p --to=$pristine  /template
+    #Overwrite the factory image with a copy of filesystem rooted at /template
+END
+}
+
+cmdErr() {
+  echo "$progName: $1" >&2
+  exit 2
+}
+
+#set -x
+export progName=`basename $0`
+export pristine=/boot/rootfs.tgz
+parsed=`getopt -n "$progName" -al factory,to:,help -o '' -- "$@"` || exit $?
+eval set -- $parsed
+unset dest factory
+while [ "$1" ]; do
+  opt=$1
+  shift
+  case "$opt" in
+    --)
+      break
+  ;;
+    --to)
+      [ $dest ] && cmdErr "conflicting multiple '--to=' options"
+      dest=$1
+      shift
+  ;;
+    --factory)
+      factory=1
+  ;;
+    --help)
+      showHelp
+      exit 3
+  ;;
+    *)
+      cmdErr "internal parsing error at \"$@\""
+  esac
+done
+[ "$2" ] && cmdErr "extra argument(s) -- $@"
+src=$1
+[ "$factory" ] && {
+  [ "$src" ] && cmdErr "'--factory' conflicts with specified source '$1'"
+  src=$pristine
+}
+[ "$src" ] || src=/   #default to current rootfs
+
+fsDev() {  #output block device containing file
+  mountpoint -d "$1"
+}
+
+macAddr() {
+  cfg=`/sbin/ifconfig ${1-eth0}` || return $?
+  echo $cfg | {
+    read dev link encap HWaddr mac extra
+    echo $mac
+  }
+}
+
+macSuffix() {
+  echo $1 | {
+      IFS=: read one two three four five six extra
+      echo $five$six
+  }
+}
+
+writeStream() {
+  #write tar archive (of rootfs based at) $1 to stdout
+  #remaining optional args are flags passed to tar
+  src=$1
+  top=/var/run/clonetop  #this mountpt should be in a tmpfs
+  mkdir -p $top
+  trap "cd; umount $top && rmdir $top; exit 5" TERM INT HUP QUIT
+  mount --bind $src $top && #avoid copying other filesystems (e.g. /proc /dev)
+  cd $top &&
+  shift &&   #note that * excludes .SWAP
+  tar $* -c --exclude=var --exclude=tmp --exclude=card --exclude=lost+found * &&
+  cd && umount $top && rmdir $top
+}
+
+writeRootFS() {
+  #copy rootfs or tar archive at $src to $1
+  dst=$1
+  [ `fsDev $dst` = `fsDev $src` ] &&
+    cmdErr "$src and $dst must be on different filesystems"
+  if [ -d "$src" ]; then  #assume src is top of rootfs
+    echo Copying system at $src to $dst ...
+    writeStream $src | tar xC $dst
+  else  #assume src is tar archive of rootfs
+    echo Extracting system in $src to $dst ...
+    cd $dst && tar $TARFLAGS -x $src
+  fi || exit $?
+}
+
+mkSDcard() {
+  #make a bootable SDcard from rootfs image at $src
+  dst=$1
+  mmc=/dev/mmcblk0p
+  fuser -sm ${mmc}* && {
+    echo "SD card is in use" 2>&1
+    exit 3
+  }
+  umount $dst 2>/dev/null
+  grep "^$mmc" /proc/mounts /proc/swaps && {
+    echo "SD card is mounted or serving as swap space (per above)" 2>&1
+    exit 3
+  }
+  kernPart=${mmc}1   #MS-DOS FAT partition for Linux kernel
+  rootPart=${mmc}2   #Root filesystem
+  bootPart=${mmc}3   #BootIt partition for U-boot loader
+
+  MAC=`macAddr` || exit 3
+  ID=`macSuffix $MAC` || exit 3
+  [ "$ID" ] || {
+    echo "Connect determine Ethernet MAC address" 2>&1
+    exit 3
+  }
+  echo This board\'s ethernet MAC address = $MAC
+  read -p 'WRITE bootable system image over *entire* SDcard? [Y/n] ' yn
+  case $yn in
+    [Yy]* ) ;;
+    * ) exit 2
+  esac
+
+  umount /boot 2>/dev/null
+
+  set -e
+  mkdosfs -n ESPBOOT-$ID  $kernPart
+  mkfs.ext4  -L ESPROOT-$ID  $rootPart
+  tune2fs -c0 -i0  $rootPart
+
+  echo "Copying $src to SD card"
+  mount $rootPart $dst
+  set +e
+  writeRootFS $dst
+  mkcardroot $dst  ESPSWAP-$ID  #tweak symlinks to avoid reference loops
+
+  echo "Installing system files to make SD card bootable"
+  cp $dst/boot/u-boot.bin  $bootPart
+  mount -rw /boot
+  cp $dst/boot/* /boot      #copy boot files to FAT partition
+
+  set +e  #errors expected here
+  [ -r /boot/uImage ] ||
+    echo "Warning:  SD card is missing Linux kernel!" 2>&1
+
+  echo "Creating esp user's log directory on SD card"
+  set -e
+  mkdir $dst/var/log/esp
+  chown esp:users  $dst/var/log/esp
+
+  echo "Cleaning up"
+  cd
+  sync
+  umount /boot
+  umount $dst
+  echo "SDcard is now bootable.  It may be safely removed"
+}
+
+mkFlash() {
+  #write a bootable internal flash from rootfs image at $src to $1
+  dst=$1
+  mtd=/dev/mtd
+  mtdblock=${mtd}block
+  rootDev=${mtd}2
+  rootPart=${mtdblock}2   #Root filesystem
+  bootPart=${mtdblock}3   #Boot partition (preloaded w/U-boot and Linux kernel)
+  fuser -sm $rootPart && {
+    echo "Internal Flash is in use" 2>&1
+    exit 3
+  }
+  umount $dst 2>/dev/null
+  grep "^$rootPart" /proc/mounts /proc/swaps && {
+    echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
+    exit 3
+  }
+  read -p "OVERWRITE Internal Flash with new ESP Linux image? [Y/n] " yn
+  case $yn in
+    [Yy]* ) ;;
+    * ) exit 2
+  esac
+
+  set -e
+  flash_eraseall  $rootDev    #erase internal linux root filesystem
+  mount $rootPart $dst
+  set +e
+  writeRootFS $dst            #populate rootfs
+
+  var=$dst/card/var
+  mkdir $dst/card $var $var/log $var/run $var/lock && {
+    echo "Installing /card symlinks"
+    ln -s /card/tmp $dst/tmp
+    ln -s /card/var $dst/var
+  }
+  echo "Cleaning up"
+  cd
+  sync
+  umount $dst
+  cat <<END
+To finish board's configuration, reboot, <Control-C> into U-Boot, and enter:
+  edit bootcmd
+  edit: run flashBoot   #To make internal SPI flash boot the default
+
+  edit ethaddr
+  edit: 00:1a:f1:xx:yy:zz  #set to the Ethernet MAC address printed on CPU board
+
+  run  flashSDuboot     #save U-Boot binary in internal flash
+  run  flashSDkernel    #save Linux kernel binary in internal flash
+
+  [Ensure the middle (usually RED) boot jumper selects 'SPI']
+  reset
+END
+}
+
+[ "$dest" ] || {  #determine destination storage should be
+  case `fsDev /` in
+    31:*) dest=SDcard;;
+    *)    dest=FLASH
+  esac
+}
+
+
+export src
+case "$dest" in
+  SD|sd|CARD|card|SDcard|sdcard|sdCard)
+                      mkSDcard /card;;
+  flash|FLASH|Flash)  mkFlash /flash;;
+  /*)                 writeRootFS $dest;;
+  -|stdout)
+    [ -t 1 ] && cmdErr "cannot write $src to terminal"
+    writeStream $src $TARFLAGS;;
+  *)
+   cmdErr "'--to=' must be followed by 'SD', 'flash', absolute path or 'stdout'"
+esac

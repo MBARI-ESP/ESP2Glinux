@@ -30,6 +30,3 @@ mkdir log run lock &&
   exit $?
 }
 echo "$1 may now be mounted as root filesystem"
-
-
-  

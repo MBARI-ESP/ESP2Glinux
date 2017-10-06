@@ -1,0 +1,13 @@
+#!/bin/sh
+self=`basename $0`
+[ "$1" ] || {
+  cat 2>&1 <<END
+Set network hostname
+Usage:  $self <hostname>
+Note:  All ESP instrument hostnames should be prefixed with ESP
+       reboot is recommended after changing the hostname
+END
+exit 2
+}
+echo "$1" >/etc/HOSTNAME
+hostname $1

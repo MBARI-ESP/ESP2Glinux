@@ -1,0 +1,148 @@
+revised 10/2/17 -- brent@mbari.org
+
+The ESP low-power CPU usually boots from either its
+256MB internal flash memory or a micro SD card. By convention,
+The rootfs is mounted on the same device from which it is
+booted.  However, strictly speaking, it is possible to
+boot the Linux kernel from internal flash while the rootfs
+is mounted on the SD card.
+
+It is also possible to mount the ESP's root filesystem via NFS,
+but this document will not describe NFS mounts.
+
+Usually ESPs are deployed booting from internal flash with the SD card utilized
+as storage for all deployment data.  This allows that SD card to be removed
+to read out that data elsewhere without rendering the ESP inoperable.
+However, ESPs in an environment where they will be frequenty rebooted,
+are often deployed booting from their SD cards to minimize startup time.
+
+Advantages to choosing to boot from the SD card are:
+
+1)  Faster boot time (kernel loads in 1 second verses 15 seconds)
+2)  Much larger rootfs size  (up to 128GB vs 250MB)
+3)  Higher read and (especially) write speeds to the SD card vs internal flash
+
+Advantages of booting from the internal flash are:
+
+1)  Higher reliability
+2)  Ability to function without an SD card installed
+
+
+The clone script copies the rootfs and boot system files from
+internal flash to the SD card or vice versa.  It can be used to:
+
+1)  Initialize the internal flash of a new CPU board,
+2)  Clone the internal flash OS to an SD card, making it bootable,
+    [this effectively creates a backup of the flash]
+3)  Clone an SD card over a corrupted internal flash, restoring it.
+
+Cloning completely overwrites the destination device.
+Therefore, the clone destination device must be unused.
+It is not possible clone to the SD card if there are files currently opened on
+it.  This is restriction problematic when booting form internal flash, because,
+the system will use try to use any installed SD card for storing
+data and system RAM swap.  So, practically speaking, when cloning from flash,
+one must boot the ESP without an SD card present to prevent
+these automatic SD mounts from occuring early in the boot process.
+The destination SD card may be insered anytime after the initial logon
+prompt is issued.
+
+SD cards must be specially formatted for use in the ESP.
+This one time formatting may be done on another computer if desired,
+but it may be most convenient to format the SD card on an ESP
+(booted from flash memory!) as follows:
+
+   Install the SD card you will ship with the system
+ (the cfdisk utility works better if run from a network login
+  rather than using the serial console)
+
+cfdisk  -z  /dev/mmcblk0   #the -z says to ignore whatever was on the SD card
+
+You want to create three primary partitions of the indicated types
+ and sizes below:
+
+   Name      Flags    Part TypeFS Type        [Label]     Size (MB)
+ -----------------------------------------------------------------
+   mmcblk0p1           Primary W95 FAT32 (LBA)               100.00
+   mmcblk0p3           Primary BootIt                          0.37
+   mmcblk0p2           Primary Linux                  (rest of disk)
+
+The sizes are not critical.  The first partition stores the linux
+kernel and (optionally) the compressed factory image of the root filesystem.
+It should be >30MB.  I usually allocate 100MB for this.
+If the factory image is omitted, it may be made as small as 4MB.
+The p3 partition of type 'BootIt' holds the U-Boot boot loader.
+It must be physically before the big Linux parition.
+You will create the p1 parition first, then the Linux p2 partition.
+Specify a size for the Linux partition that is about 0.5 MB less than
+the maximum remaining available space for it.  When prompted whether
+to allocate this big partition and the begin or end of the space,
+indicate you want it at the end.
+This will leave you a ~0.5MB free hole remaining just after the FAT32
+partition.  The BootIt partition's minimum size is 0.3MB.
+
+ The hexidecimal type of the FAT32(LBA) parition is 0C  (12 decimal)
+ The hexidecimal type of the Linux parition is 83
+ The hexidecimal type of the BootIt parition is DF
+
+Once you have the table looking correct in cfdisk, write it to disk
+with the W command, then quit cfdisk.
+The formated SD card is now ready for the clone command to use as a destination.
+
+
+===============================================================================
+
+Clone command usage:
+
+  clone {--factory} {--to=destination} {source}
+
+Optional Flags:
+  --factory:
+      Clone the factory recovery image
+      (this is equivalent specifying source archive /boot/rootfs.tgz)
+
+  --to=destination  #specifies clone output destination where:
+      SD|card outputs to the SD card
+      flash   outputs to internal flash memory
+      /*      outputs tar archive to file at specified absolute path
+      -       outputs tar archive to stdout
+
+  --help  #display this
+
+Optional source argument:
+      Read the root filesystem image from the specified directory or
+      (compressed) tar archive
+      If source is -, read archive from stdin
+      If omitted, source defaults to the current rootfs  (i.e. / )
+
+Environment Variables:
+  TARFLAGS[=-zv]
+      overrides the default arguments to tar in reading or writing archives
+
+Notes:
+  If --to is not specified, the destination is assumed to be the storage medium
+  that is currently NOT in use.  In practice, this means...
+  If rootfs is the SD card, destination is internal flash and visaversa.
+
+  The --factory flag and source argument are mutually exclusive
+
+Examples:
+  clone
+    #Without args: clones current root filesystem to unused storage medium
+    #If booted from flash, creates a bootable SD card.
+    #If booted from SD, writes a bootable image to the internal flash.
+
+  clone --factory
+    #As above, but writes the "pristine" factory image instead
+
+  clone /template
+    #Clone the root filesystem at /template, making it bootable
+
+  clone --to=/boot/rootfs.tgz
+    #Overwrite the factory image with a copy of current rootfs
+
+  clone --to=/boot/rootfs.tgz  /template
+    #Overwrite the factory image with a copy of filesystem rooted at /template
+
+
+
