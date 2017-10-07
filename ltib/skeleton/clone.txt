@@ -1,64 +1,70 @@
-revised 10/2/17 -- brent@mbari.org
+revised 10/6/17 -- brent@mbari.org
 
 The ESP low-power CPU usually boots from either its
 256MB internal flash memory or a micro SD card. By convention,
-The rootfs is mounted on the same device from which it is
-booted.  However, strictly speaking, it is possible to
-boot the Linux kernel from internal flash while the rootfs
-is mounted on the SD card.
+The rootfs is mounted on the same storage device from which
+the Linux kernel is loaded.
 
 It is also possible to mount the ESP's root filesystem via NFS,
 but this document will not describe NFS mounts.
 
 Usually ESPs are deployed booting from internal flash with the SD card utilized
-as storage for all deployment data.  This allows that SD card to be removed
-to read out that data elsewhere without rendering the ESP inoperable.
-However, ESPs in an environment where they will be frequenty rebooted,
-are often deployed booting from their SD cards to minimize startup time.
+as storage for all deployment data.  However, ESPs in an environment where
+they will be frequenty rebooted, ESPs are deployed booting from their
+SD cards to minimize startup time.
 
 Advantages to choosing to boot from the SD card are:
 
-1)  Faster boot time (kernel loads in 1 second verses 15 seconds)
-2)  Much larger rootfs size  (up to 128GB vs 250MB)
-3)  Higher read and (especially) write speeds to the SD card vs internal flash
+1)  Works for CPU cards with corrupt or unitialized internal flash memory!
+2)  Faster boot time (kernel loads in 1 second verses 15 seconds)
+3)  Much larger rootfs size  (up to 128GB vs 250MB)
+4)  Higher read and (especially) write speeds
+
+Due to item #1 above, always configure new boards with boot jumpers
+set to load U-Boot from the SD card.
 
 Advantages of booting from the internal flash are:
 
 1)  Higher reliability
-2)  Ability to function without an SD card installed
+2)  SD card may be physically removed to recover data from a damaged CPU board
+3)  Ability to boot without an any SD card installed
+
+Most SD cards are waterproof.  The CPU board is not!
 
 
 The clone script copies the rootfs and boot system files from
 internal flash to the SD card or vice versa.  It can be used to:
 
 1)  Initialize the internal flash of a new CPU board,
-2)  Clone the internal flash OS to an SD card, making it bootable,
-    [this effectively creates a backup of the flash]
+2)  Clone the internal flash to an SD card, making it bootable,
+      [This effectively creates a backup of the internal flash]
 3)  Clone an SD card over a corrupted internal flash, restoring it.
+      [Only the software is restored.  Any deployment data is lost.]
 
 Cloning completely overwrites the destination device.
-Therefore, the clone destination device must be unused.
+Therefore, the clone destination device must not be in use.
 It is not possible clone to the SD card if there are files currently opened on
-it.  This is restriction problematic when booting form internal flash, because,
-the system will use try to use any installed SD card for storing
-data and system RAM swap.  So, practically speaking, when cloning from flash,
-one must boot the ESP without an SD card present to prevent
-these automatic SD mounts from occuring early in the boot process.
-The destination SD card may be insered anytime after the initial logon
-prompt is issued.
+it.  When booting form internal flash, the system will use any installed
+SD card for storing data and system swap space.  So, one must boot the ESP
+without an SD card installed to allow cloning to one.
+Clone destination SD cards may be (re-)insered anytime after the
+initial logon prompt is issued.
 
 SD cards must be specially formatted for use in the ESP.
 This one time formatting may be done on another computer if desired,
-but it may be most convenient to format the SD card on an ESP
-(booted from flash memory!) as follows:
+but it usually most convenient to format the SD card on an ESP.
+[provided it was booted it internal SPI flash]
 
-   Install the SD card you will ship with the system
+The procedure for formating an ESP compatible SD card is:
+
+   Install the SD card
+
  (the cfdisk utility works better if run from a network login
   rather than using the serial console)
 
-cfdisk  -z  /dev/mmcblk0   #the -z says to ignore whatever was on the SD card
+# cfdisk  -z  /dev/mmcblk0   #the -z says to ignore whatever was on the SD card
 
-You want to create three primary partitions of the indicated types
+You need to create three primary partitions of the indicated types
  and sizes below:
 
    Name      Flags    Part TypeFS Type        [Label]     Size (MB)
@@ -67,16 +73,16 @@ You want to create three primary partitions of the indicated types
    mmcblk0p3           Primary BootIt                          0.37
    mmcblk0p2           Primary Linux                  (rest of disk)
 
-The sizes are not critical.  The first partition stores the linux
+The sizes are not critical.  The first partition stores the Linux
 kernel and (optionally) the compressed factory image of the root filesystem.
 It should be >30MB.  I usually allocate 100MB for this.
 If the factory image is omitted, it may be made as small as 4MB.
-The p3 partition of type 'BootIt' holds the U-Boot boot loader.
+The p3 partition (of type 'BootIt') holds the U-Boot boot loader.
 It must be physically before the big Linux parition.
-You will create the p1 parition first, then the Linux p2 partition.
+You create the p1 parition first, then the Linux p2 partition.
 Specify a size for the Linux partition that is about 0.5 MB less than
 the maximum remaining available space for it.  When prompted whether
-to allocate this big partition and the begin or end of the space,
+to allocate this big partition at the begin or end of the free space,
 indicate you want it at the end.
 This will leave you a ~0.5MB free hole remaining just after the FAT32
 partition.  The BootIt partition's minimum size is 0.3MB.
@@ -85,7 +91,7 @@ partition.  The BootIt partition's minimum size is 0.3MB.
  The hexidecimal type of the Linux parition is 83
  The hexidecimal type of the BootIt parition is DF
 
-Once you have the table looking correct in cfdisk, write it to disk
+Once you have the table looking correct in cfdisk, write it to out to disk
 with the W command, then quit cfdisk.
 The formated SD card is now ready for the clone command to use as a destination.
 
@@ -94,14 +100,14 @@ The formated SD card is now ready for the clone command to use as a destination.
 
 Clone command usage:
 
-  clone {--factory} {--to=destination} {source}
+  clone {--factory} {--to destination} {source}
 
 Optional Flags:
   --factory:
       Clone the factory recovery image
       (this is equivalent specifying source archive /boot/rootfs.tgz)
 
-  --to=destination  #specifies clone output destination where:
+  --to destination  #specifies clone output destination where:
       SD|card outputs to the SD card
       flash   outputs to internal flash memory
       /*      outputs tar archive to file at specified absolute path
@@ -138,10 +144,10 @@ Examples:
   clone /template
     #Clone the root filesystem at /template, making it bootable
 
-  clone --to=/boot/rootfs.tgz
+  clone --to /boot/rootfs.tgz
     #Overwrite the factory image with a copy of current rootfs
 
-  clone --to=/boot/rootfs.tgz  /template
+  clone --to /boot/rootfs.tgz  /template
     #Overwrite the factory image with a copy of filesystem rooted at /template
 
 

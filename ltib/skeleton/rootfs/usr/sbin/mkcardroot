@@ -2,7 +2,7 @@
 [ -z "$1" ] && {
   cat 2>&1 <<END
 Modify /card and related links to allow specified rootfs to be a root filesystem
-11/3/15 brent@mbari.org
+11/6/17 brent@mbari.org
 END
 exit 2
 }
@@ -25,7 +25,7 @@ mkdir var && cd var &&
 mkdir log run lock &&
 
 [ "$2" ] && {
-  cd "$1" &&
+  cd "$top" &&
   mkSWAPfile $2 $3 ||
   exit $?
 }

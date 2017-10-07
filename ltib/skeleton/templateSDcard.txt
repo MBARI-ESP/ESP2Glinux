@@ -1,0 +1,218 @@
+# This document describes how to load OS software on the MBARI
+# Embedded Artists LPC3141 based boards
+# With a supplied "template micro SD card"
+
+# First,
+# Ensure that the 3 boot jumpers are configured to boot from SDCARD. Normally,
+#  the only change required is move the boot jumper J11 to "SD" towards the DIMM
+# J10 should always be away from the DIMM and J12 should be towards it.
+
+# When the template SDcard is installed on a new CPU DIMM module,
+# it should boot directly into Linux.
+# If it does not, try aborting into U-boot with a quick Control-C at
+
+  Hit <ctrl-C> to stop autoboot:
+
+# and type the U-Boot command:
+
+run sdBoot   #to force it to boot Linux from the SD card
+
+#Once Linux has booted from the template SDcard, log in as root user
+#run the script:
+
+mkFlashRootFS  hostname  timezone
+# host is the new ESP's hostname (which should begin with ESP)
+# timezone is the ESP's default timezone  (optional)
+# some valid timezones are:
+#  PST8PDT  #for Pacific Time
+#  EST5EDT  #for Eastern Time
+#  MST7MDT  #for Montain time
+# to see a list of all timezones:
+
+ls -R /usr/share/zoneinfo
+#  omit the /usr/share/zoneinfo prefix in the mkFlashRootFS script argument
+
+#---- For reference, here are the steps the mkFlashRootFS script performs  ----
+mount /boot
+flash_eraseall  /dev/mtd2          #erase internal linux root filesystem
+mount -orw /flash
+cd /flash
+tar xzpf /boot/rootfs.tgz          #populate rootfs to from compressed template
+
+#Assign new machine's hostname
+cd etc
+echo  ESPsomeNewName  >HOSTNAME    #be sure to each host a unique hostname
+
+#Change timezone if necessary
+#The timezone is set via a symlink at localtime
+ls -l localtime   #should display the current timezone for the new machine
+ls -R /usr/share/zoneinfo  #will display all available timezones
+
+#Examples:
+ln -sf /usr/share/zoneinfo/PST8PDT  localtime  #for pacific time
+ln -sf /usr/share/zoneinfo/EST5EDT  localtime  #for east coast
+ln -sf /usr/share/zoneinfo/MST7MDT  localtime  #for mountain time
+#------- END of mkFlashRootFS ------------
+
+#after mkFlashRootFS completes...
+
+cd
+reboot   #reset after 60 seconds if reboot hangs here
+
+#  resetting the environment is necessary only if the CPU DIMM is being reused
+#  (but it can't hurt in any case)
+# abort boot with Control-C to get into the U-Boot monitor
+#  In U-Boot:
+
+run resetEnvironment  #this clears the monitor configuration and reboots
+
+# abort boot with Control-C again to stay in the U-Boot monitor
+#  In U-Boot:
+run flashSDuboot        #copies U-boot from SD to SPI flash
+edit bootcmd            #should have previously been "run sdBoot"
+edit:  run flashBoot    #change default boot from SD to internal flash
+
+# Note that the Ethernet MAC address is stored in U-boot's parameter memory
+# If you don't set the MAC, U-Boot will generate a random one, but
+# it may not be globally unique!!!
+# Therefore, it's best if you change the MAC to the address printed on the
+# CPU DIMM module, as this is globally registered.
+edit ethaddr
+ethaddr=00:08:0e:d3:27:69   #this is a typical "random" MAC
+ethaddr=00:1a:f1:xx:xx:xx   #global MACs for these boards are prefixed 00:1a:f1
+
+
+run flashSDkernel  #copies kernel from SD to SPI flash and saves boot parameters
+
+# move the J11 Boot jumper back into the "SPI" position
+
+reset   #test initial boot from flash
+
+#if system does not boot:   reset, abort the boot, and force it to boot from SD
+#with the U-Boot command:
+
+run sdBoot  #see Notes below to restart the configuration process
+
+
+#Once the system does boot from flash, log in as root to immediately reboot it
+# Let linux shutdown.
+# Stop the reboot at the U-Boot prompt with Control-C  (or cut power)
+# Remove the template SD card (store it somewhere safe :-)
+
+#You should not remove an SD card once it has booted into Linux.
+#(no hardware damage results, but the card's filesytems may be corrupted)
+#Before proceeding, BE ABSOLUTELY CERTAIN that the template SD card is REMOVED!!
+
+# In U-boot:
+
+reset
+
+# After the system has booted and you've logged in as root
+#   Install the (blank) SD card you will ship with the system
+# (the utilities used below work better if run from a network login
+#  rather than using the serial console)
+
+cfdisk  -z  /dev/mmcblk0   #the -z says to ignore whatever was on the SD card
+
+# find tutorial about the linux cfdisk command for disk partitioning
+#You want to create three primary partitions of the indicated types
+# and sizes below:
+
+   Name      Flags    Part TypeFS Type        [Label]     Size (MB)
+ -----------------------------------------------------------------
+   mmcblk0p1           Primary W95 FAT32 (LBA)                 8.00
+   mmcblk0p3           Primary BootIt                          0.37
+   mmcblk0p2           Primary Linux                  (rest of disk)
+
+# The sizes are not critical.  The first partition stores the linux
+# kernel.  It can be as small as 4MB.  I usually allocate 8MB.
+# The p3 partition of type 'BootIt' holds the U-Boot boot loader.
+# It must be physically before the big Linux parition.
+# You will create the p1 parition first, then the Linux p2 partition.
+# Specify a size for the Linux partition that is about 0.5 MB less than
+# the maximum remaining available space for it.  When prompted whether
+# to allocate this big partition and the begin or end of the space,
+# indicate you want it at the end.
+# This will leave you a ~0.5MB free hole remaining just after the FAT32
+# partition.  The BootIt partition's minimum size is 0.3MB.
+
+#  The hexidecimal type of the FAT32(LBA) parition is 0C  (12 decimal)
+#  The hexidecimal type of the Linux parition is 83
+#  The hexidecimal type of the BootIt parition is DF
+
+#  Once you have the table looking correct in cfdisk, write it to disk
+#  with the W command, then quit cfdisk.
+
+
+# To initialize these newly created partitions:
+
+mkSDcard   #this takes a few minutes and should not be interrupted
+
+#---- For reference, here are the steps the mkSDcard script performs  ----
+# I like to incorporate something unique into volume labels
+# Typically, I'll use the last four digits of the host's
+# hexidecimal ethernet mac address.  To see that use:
+#   ifconfig eth0 | grep HW
+
+mkdosfs -n ESPBOOT-id  /dev/mmcblk0p1   #where id is a short, unique id
+mkfs.ext4  -L  ESPROOT-id  /dev/mmcblk0p2  #use the same short, unique id
+tune2fs -c0 -i0  /dev/mmcblk0p2
+
+#Install the u-boot.bin and uImage files to make this SD card bootable
+mount -orw /boot
+cd
+cp boot/* /boot
+cp boot/u-boot.bin  /dev/mmcblk0p3   #copies the U-boot loader from flash
+#rm -rf boot   #optional (saves 2MB space on the 250MB internal flash)
+
+# mount source and destination for populating the linux partition
+mount --bind / /flash
+mount /card
+
+cp -a  /flash/.  /card        #this takes a couple minutes
+mkcardroot /card  ESPSWAP-id  #this takes about 15 seconds
+
+# create a directory for the esp user to write logs and images
+mkdir /card/var/log/esp
+chown esp:users  /card/var/log/esp
+sync
+#------- END of mkSDcard ------------
+
+reboot
+#complaints about being unable to write files are normal during this reboot
+
+# the system should now be able to boot from either the internal flash
+#  or the installed SD-card (which will also store deployment data)
+
+# To verify this, at the U-Boot prompt:
+run flashBoot # to boot from flash
+# or
+run sdBoot    # to boot from SD card
+
+===============================================================
+# Notes:
+# The J11 boot jumper ONLY affects from where U-Boot itself is loaded
+# The bootcmd variable in U-Boot determines how the Linux kernel is loaded
+# In U-Boot:
+
+edit bootcmd   #to change it to either "run flashBoot" or "run sdBoot"
+
+# If you ever need view the current parameters in U-boot
+
+print
+
+# use the edit command, as in the example above, to edit parameters.
+# Then use:
+
+save
+
+# to save them to onboard flash memory
+
+run resetEnvironment   #to clear all your changes
+#after this, remember to reenter the global ethernet MAC address!
+
+# the mbariA (and later) versions of U-Boot default to booting Linux
+# from the SD card when there are no valid U-Boot parameters in stored in flash.
+# Older versions default to trying to load from the flash in this case,
+#  which is likely to fail when the flash is uninitialized
+

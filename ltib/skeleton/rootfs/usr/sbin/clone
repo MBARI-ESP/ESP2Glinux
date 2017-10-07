@@ -3,18 +3,18 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 10/5/17 brent@mbari.org
+Clone ESP linux to create a bootable images -- 10/6/17 brent@mbari.org
 Usage:  [with optional elements in {}]
-  $p {--factory} {--to=destination} {source}
+  $p {--factory} {--to destination} {source}
 Flags:
-  --factory:
-      Clone the factory recovery image
+  --factory   #read from the factory recovery image (archive)
       (this is equivalent specifying source archive $pristine)
-  --to=destination  #specifies clone output destination where:
+  --to destination  #specifies clone output destination where:
       SD|card outputs to the SD card
       flash   outputs to internal flash memory
       /*      outputs tar archive to file at specified absolute path
       -       outputs tar archive to stdout
+  --noimage   #do NOT include a copy of the recovery image in destination
   --help  #display this
 Source argument:
   Read the root filesystem image from the specified directory or
@@ -38,9 +38,9 @@ Examples:
     #As above, but writes the "pristine" factory image instead
   $p /template
     #Clone the root filesystem at /template, making it bootable
-  $p --to=$pristine
+  $p --to $pristine
     #Overwrite the factory image with a copy of current rootfs
-  $p --to=$pristine  /template
+  $p --to $pristine  /template
     #Overwrite the factory image with a copy of filesystem rooted at /template
 END
 }
@@ -53,9 +53,10 @@ cmdErr() {
 #set -x
 export progName=`basename $0`
 export pristine=/boot/rootfs.tgz
-parsed=`getopt -n "$progName" -al factory,to:,help -o '' -- "$@"` || exit $?
+parsed=`getopt -n "$progName" -al factory,to:,help,noimage -o '' -- "$@"` ||\
+         exit $?
 eval set -- $parsed
-unset dest factory
+unset dest factory noimage
 while [ "$1" ]; do
   opt=$1
   shift
@@ -64,12 +65,15 @@ while [ "$1" ]; do
       break
   ;;
     --to)
-      [ $dest ] && cmdErr "conflicting multiple '--to=' options"
+      [ $dest ] && cmdErr "conflicting multiple '--to' options"
       dest=$1
       shift
   ;;
     --factory)
       factory=1
+  ;;
+    --noimage)
+      noimage=1
   ;;
     --help)
       showHelp
@@ -106,43 +110,70 @@ macSuffix() {
   }
 }
 
+addImage() {
+#unless noimage, if $src is (archive) file, copy it to given boot directory
+  boot=$1
+  [ -z "$noimage" -a -d "$boot" -a -f "$src" ] && {
+    echo Copying recovery archive $src to ${boot#/var/run/}
+    cp $src $boot
+  }
+}
+
 writeStream() {
   #write tar archive (of rootfs based at) $1 to stdout
   #remaining optional args are flags passed to tar
   src=$1
   top=/var/run/clonetop  #this mountpt should be in a tmpfs
   mkdir -p $top
-  trap "cd; umount $top && rmdir $top; exit 5" TERM INT HUP QUIT
+  trap "kill \$tarpid; echo ' -- ABORTING...' >&2; wait; sync; sleep 2;\
+        cd; umount $top && rmdir $top; exit 5" TERM INT HUP QUIT
   mount --bind $src $top && #avoid copying other filesystems (e.g. /proc /dev)
   cd $top &&
-  shift &&   #note that * excludes .SWAP
-  tar $* -c --exclude=var --exclude=tmp --exclude=card --exclude=lost+found * &&
-  cd && umount $top && rmdir $top
+  shift || exit $?   #note that * excludes .SWAP
+  tar $* -c --exclude=var --exclude=tmp --exclude=card --exclude=lost+found * &
+  tarpid=$!; wait $tarpid; tarstat=$?
+  cd && umount $top && rmdir $top &&
+  trap TERM INT HUP QUIT && return $tarstat
 }
 
 writeRootFS() {
   #copy rootfs or tar archive at $src to $1
   dst=$1
-  [ `fsDev $dst` = `fsDev $src` ] &&
-    cmdErr "$src and $dst must be on different filesystems"
   if [ -d "$src" ]; then  #assume src is top of rootfs
-    echo Copying system at $src to $dst ...
-    writeStream $src | tar xC $dst
+    if [ -d "$dst" ]; then
+      echo Copying system at $src to ${dst#/var/run/} ...
+      [ `fsDev $dst` = `fsDev $src` ] &&
+        cmdErr "$src and $dst must be on different filesystems"
+      writeStream $src | tar xC $dst
+    else
+      echo Archiving system at $src to $dst ...
+      writeStream $src $TARFLAGS --exclude=${dst#/} >$dst
+    fi
   else  #assume src is tar archive of rootfs
-    echo Extracting system in $src to $dst ...
-    cd $dst && tar $TARFLAGS -x $src
+    echo Extracting archive in $src to ${dst#/var/run/} ...
+    tar $TARFLAGS -C $dst -xf $src
   fi || exit $?
 }
 
 mkSDcard() {
   #make a bootable SDcard from rootfs image at $src
+  #1st arg is the mountpt for the new SD card's rootfs under /var/run
+  #2nd arg is the standard mountpt for an existing SD card
+  #3rd arg is the standard mountpt for the FAT kernel partition
   dst=$1
+  card=$2
+  kern=$3
   mmc=/dev/mmcblk0p
   fuser -sm ${mmc}* && {
-    echo "SD card is in use" 2>&1
+    cat 2>&1 <<END
+SD card is in use
+ ==> reboot, then remove card while kernel reloads from SPI flash
+END
     exit 3
   }
-  umount $dst 2>/dev/null
+  umount $dst $card $kern 2>/dev/null
+  rm -rf $dst
+  mkdir -p $dst
   grep "^$mmc" /proc/mounts /proc/swaps && {
     echo "SD card is mounted or serving as swap space (per above)" 2>&1
     exit 3
@@ -158,45 +189,73 @@ mkSDcard() {
     exit 3
   }
   echo This board\'s ethernet MAC address = $MAC
-  read -p 'WRITE bootable system image over *entire* SDcard? [Y/n] ' yn
+  case "$MAC" in
+    00:1[aA]:[fF]1:*) ;;
+    *) cat >&2 <<END
+!!!  MAC addresses for these boards should begin with 00:1a:f1
+!!!  First, reboot into U-Boot to assign the board's MAC address
+!!!  printed its barcode label with the U-Boot commands:
+>>>    edit ethaddr
+>>>    edit: 00:1a:f1:xx:yy:zz  #using the hex digits from the printed label
+>>>    save
+>>>    reset
+END
+  esac
+  read -p 'WRITE bootable system image over *entire* SDcard? [y/N] ' yn
   case $yn in
     [Yy]* ) ;;
     * ) exit 2
   esac
 
-  umount /boot 2>/dev/null
-
   set -e
   mkdosfs -n ESPBOOT-$ID  $kernPart
   mkfs.ext4  -L ESPROOT-$ID  $rootPart
   tune2fs -c0 -i0  $rootPart
-
-  echo "Copying $src to SD card"
   mount $rootPart $dst
-  set +e
+  echo
   writeRootFS $dst
-  mkcardroot $dst  ESPSWAP-$ID  #tweak symlinks to avoid reference loops
+  cd `dirname $dst`
+  mkcardroot `basename $dst` ESPSWAP-$ID  #tweak symlinks to avoid loops
+  set +e
 
   echo "Installing system files to make SD card bootable"
-  cp $dst/boot/u-boot.bin  $bootPart
-  mount -rw /boot
-  cp $dst/boot/* /boot      #copy boot files to FAT partition
-
-  set +e  #errors expected here
-  [ -r /boot/uImage ] ||
+  bootable=1
+  cp $dst/boot/u-boot.bin  $bootPart || {
+    echo "Warning:  Could not install U-Boot on SD card!" 2>&1
+    unset bootable
+  }
+  addImage $dst/boot
+  mount $kernPart $kern &&
+  cp $dst/boot/* $kern &&   #copy boot files to FAT partition
+  [ -r $kern/uImage ] || {
     echo "Warning:  SD card is missing Linux kernel!" 2>&1
-
-  echo "Creating esp user's log directory on SD card"
+    unset bootable
+  }
+  echo "Creating users' log directories on SD card"
+  cd $dst/var/log
+  for user in esp; do
+    mkdir $user
+    chown $user:users  $user
+  done
   set -e
-  mkdir $dst/var/log/esp
-  chown esp:users  $dst/var/log/esp
+  cd
 
   echo "Cleaning up"
-  cd
   sync
-  umount /boot
-  umount $dst
-  echo "SDcard is now bootable.  It may be safely removed"
+  umount $kern $dst
+  rmdir $dst
+  [ "$bootable" ] && cat <<END
+SD card should now be bootable.  It may be safely removed.
+To boot from SD card:
+  Move the middle (usually RED) boot jumper to 'SD'
+  reboot and hit <Control-C> to enter U-Boot, then type:
+
+  edit bootcmd
+  edit: run sdBoot   #To make the SD card the default boot device
+
+  save
+  reset
+END
 }
 
 mkFlash() {
@@ -216,7 +275,7 @@ mkFlash() {
     echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
     exit 3
   }
-  read -p "OVERWRITE Internal Flash with new ESP Linux image? [Y/n] " yn
+  read -p "OVERWRITE *entire* SPI Flash with new ESP Linux image? [y/N] " yn
   case $yn in
     [Yy]* ) ;;
     * ) exit 2
@@ -226,6 +285,7 @@ mkFlash() {
   flash_eraseall  $rootDev    #erase internal linux root filesystem
   mount $rootPart $dst
   set +e
+  echo
   writeRootFS $dst            #populate rootfs
 
   var=$dst/card/var
@@ -234,22 +294,24 @@ mkFlash() {
     ln -s /card/tmp $dst/tmp
     ln -s /card/var $dst/var
   }
+  addImage $dst/boot
   echo "Cleaning up"
-  cd
   sync
   umount $dst
   cat <<END
-To finish board's configuration, reboot, <Control-C> into U-Boot, and enter:
-  edit bootcmd
-  edit: run flashBoot   #To make internal SPI flash boot the default
+To finish board's configuration:  reboot, <Control-C> into U-Boot, and type:
+
+  run  flashSDuboot     #save U-Boot binary in internal flash
 
   edit ethaddr
   edit: 00:1a:f1:xx:yy:zz  #set to the Ethernet MAC address printed on CPU board
 
-  run  flashSDuboot     #save U-Boot binary in internal flash
+  edit bootcmd
+  edit: run flashBoot   #To make internal SPI flash boot the default
+
   run  flashSDkernel    #save Linux kernel binary in internal flash
 
-  [Ensure the middle (usually RED) boot jumper selects 'SPI']
+  [Move the middle (usually RED) boot jumper to 'SPI']
   reset
 END
 }
@@ -262,15 +324,15 @@ END
 }
 
 
-export src
+export src noimage
 case "$dest" in
   SD|sd|CARD|card|SDcard|sdcard|sdCard)
-                      mkSDcard /card;;
+                      mkSDcard /var/run/newSDcard /card /boot;;
   flash|FLASH|Flash)  mkFlash /flash;;
   /*)                 writeRootFS $dest;;
   -|stdout)
     [ -t 1 ] && cmdErr "cannot write $src to terminal"
     writeStream $src $TARFLAGS;;
   *)
-   cmdErr "'--to=' must be followed by 'SD', 'flash', absolute path or 'stdout'"
+   cmdErr "'--to' must be followed by 'SD', 'flash', absolute path or 'stdout'"
 esac
