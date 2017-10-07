@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 10/6/17 brent@mbari.org
+Clone ESP linux to create a bootable images -- 10/7/17 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -105,8 +105,8 @@ macAddr() {
 
 macSuffix() {
   echo $1 | {
-      IFS=: read one two three four five six extra
-      echo $five$six
+    IFS=: read one two three four five six extra
+    echo $five$six
   }
 }
 
@@ -122,12 +122,11 @@ addImage() {
 writeStream() {
   #write tar archive (of rootfs based at) $1 to stdout
   #remaining optional args are flags passed to tar
-  src=$1
   top=/var/run/clonetop  #this mountpt should be in a tmpfs
   mkdir -p $top
   trap "kill \$tarpid; echo ' -- ABORTING...' >&2; wait; sync; sleep 2;\
         cd; umount $top && rmdir $top; exit 5" TERM INT HUP QUIT
-  mount --bind $src $top && #avoid copying other filesystems (e.g. /proc /dev)
+  mount --bind $1 $top && #avoid copying other filesystems (e.g. /proc /dev)
   cd $top &&
   shift || exit $?   #note that * excludes .SWAP
   tar $* -c --exclude=var --exclude=tmp --exclude=card --exclude=lost+found * &
@@ -150,7 +149,7 @@ writeRootFS() {
       writeStream $src $TARFLAGS --exclude=${dst#/} >$dst
     fi
   else  #assume src is tar archive of rootfs
-    echo Extracting archive in $src to ${dst#/var/run/} ...
+    echo Extracting archive from $src to ${dst#/var/run/} ...
     tar $TARFLAGS -C $dst -xf $src
   fi || exit $?
 }
@@ -331,7 +330,7 @@ case "$dest" in
   flash|FLASH|Flash)  mkFlash /flash;;
   /*)                 writeRootFS $dest;;
   -|stdout)
-    [ -t 1 ] && cmdErr "cannot write $src to terminal"
+    [ -t 1 ] && cmdErr "cannot archive $src to terminal"
     writeStream $src $TARFLAGS;;
   *)
    cmdErr "'--to' must be followed by 'SD', 'flash', absolute path or 'stdout'"
