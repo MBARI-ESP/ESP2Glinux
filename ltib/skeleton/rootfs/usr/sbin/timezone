@@ -1,0 +1,54 @@
+#!/bin/sh
+self=`basename $0`
+[ "$2" ] && {
+  echo "$self:  extra arguments.  Try --help"
+  exit 2
+}
+zoneinfo=/usr/share/zoneinfo
+localtime=/etc/localtime
+tz=$1
+case $tz in
+  -h|--h*)  cat 2>&1 <<END
+Set default timezone
+Usage:  $self {timezone}
+where {timezone} is the timezone name or absolute path to a tzdata file
+If {timezone} does not begin with /, it is prefixed with $zoneinfo/
+
+Examples:
+  $self             #shows current timezone
+  $self --list      #shows table of all available timezones
+  $self US/Pacific  #Pacific Daylight Savings time
+  $self US/Central  #Central "
+  $self US/Eastern  #Eastern "
+  $self CET         #Central European Time
+  $self GMT         #Greenwich Mean Time
+  $self --help      #display this
+Note:
+  The TZ environment variable overrides the default timezone
+END
+exit 2
+;;
+  '')
+    zf=`readlink $localtime` || {
+      echo "Cannot determine current timezone setting" >&2
+      exit 3
+    }
+    echo ${zf#$zoneinfo/}
+    exit $?
+;;
+  /*)
+;;
+  -l*|--l*)
+    cd $zoneinfo && ls -R *
+    exit $?
+;;
+  *)
+    tz=$zoneinfo/$tz
+esac
+
+[ -r "$tz" ] || {
+  echo "Missing tzdata file:  $tz" 2>&1
+  exit 1
+}
+ln -sf $tz $localtime
+

@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 8/2/16 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 10/7/17 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -43,7 +43,7 @@ debug ->
 
 Next the symlinks:
 
-etc/localtime -> /usr/share/zoneinfo/PST8PDT
+etc/localtime -> /usr/share/zoneinfo/US/Pacific
 etc/mtab -> /proc/mounts
 etc/init.d -> rc.d/init.d
 
