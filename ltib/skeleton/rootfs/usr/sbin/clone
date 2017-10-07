@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 10/7/17 brent@mbari.org
+Clone ESP linux to create a bootable images -- 10/8/17 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -37,11 +37,13 @@ Examples:
   $p --factory
     #As above, but writes the "pristine" factory image instead
   $p /template
-    #Clone the root filesystem at /template, making it bootable
+    #Copy from the root filesystem at /template, making it bootable
   $p --to $pristine
-    #Overwrite the factory image with a copy of current rootfs
+    #Make the current rootfs the new factory image
   $p --to $pristine  /template
-    #Overwrite the factory image with a copy of filesystem rooted at /template
+    #Make the rootfs at /template the new factory image
+  $p --to flash -
+    #Overwrite internal flash with rootfs image archive read from stdin
 END
 }
 
@@ -192,17 +194,17 @@ END
     00:1[aA]:[fF]1:*) ;;
     *) cat >&2 <<END
 !!!  MAC addresses for these boards should begin with 00:1a:f1
-!!!  First, reboot into U-Boot to assign the board's MAC address
-!!!  printed its barcode label with the U-Boot commands:
+!!!  First, reboot into U-Boot to assign the board the MAC address
+!!!  printed its barcode label using these U-Boot commands:
 >>>    edit ethaddr
->>>    edit: 00:1a:f1:xx:yy:zz  #using the hex digits from the printed label
+>>>    edit: 00:1a:f1:xx:yy:zz  #input hex digits from the printed label
 >>>    save
 >>>    reset
 END
   esac
-  read -p 'WRITE bootable system image over *entire* SDcard? [y/N] ' yn
+  read -p 'WRITE bootable system image over *entire* SDcard? [yes/No] ' yn
   case $yn in
-    [Yy]* ) ;;
+    yes) ;;
     * ) exit 2
   esac
 
@@ -230,11 +232,12 @@ END
     echo "Warning:  SD card is missing Linux kernel!" 2>&1
     unset bootable
   }
-  echo "Creating users' log directories on SD card"
-  cd $dst/var/log
-  for user in esp; do
-    mkdir $user
-    chown $user:users  $user
+  echo "Creating ESP app data directories on SD card:"
+  cd $dst/home
+  for user in *; do
+    mkdir $dst/var/log/$user &&
+    echo "   /var/log/$user" &&
+    chown `find $user -maxdepth 0 -printf "%u:%g"` $dst/var/log/$user
   done
   set -e
   cd
@@ -274,9 +277,9 @@ mkFlash() {
     echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
     exit 3
   }
-  read -p "OVERWRITE *entire* SPI Flash with new ESP Linux image? [y/N] " yn
+  read -p "OVERWRITE *entire* SPI Flash with new ESP Linux image? [yes/No] " yn
   case $yn in
-    [Yy]* ) ;;
+    yes) ;;
     * ) exit 2
   esac
 
@@ -331,6 +334,7 @@ case "$dest" in
   /*)                 writeRootFS $dest;;
   -|stdout)
     [ -t 1 ] && cmdErr "cannot archive $src to terminal"
+    [ -d "$src" ] || cmdErr "source must be a directory when writing stdout"
     writeStream $src $TARFLAGS;;
   *)
    cmdErr "'--to' must be followed by 'SD', 'flash', absolute path or 'stdout'"
