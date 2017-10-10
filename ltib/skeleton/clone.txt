@@ -1,4 +1,4 @@
-revised 10/6/17 -- brent@mbari.org
+revised 10/10/17 -- brent@mbari.org
 
 The ESP low-power CPU usually boots from either its
 256MB internal flash memory or a micro SD card. By convention,
@@ -41,7 +41,8 @@ internal flash to the SD card or vice versa.  It can be used to:
 3)  Clone an SD card over a corrupted internal flash, restoring it.
       [Only the software is restored.  Any deployment data is lost.]
 
-Cloning completely overwrites the destination device.
+Cloning to internal flash or the SD card completely overwrites the
+respective destination device.
 Therefore, the clone destination device must not be in use.
 It is not possible clone to the SD card if there are files currently opened on
 it.  When booting form internal flash, the system will use any installed
@@ -55,11 +56,11 @@ This one time formatting may be done on another computer if desired,
 but it usually most convenient to format the SD card on an ESP.
 [provided it was booted it internal SPI flash]
 
-The procedure for formating an ESP compatible SD card is:
+The procedure for formatting an ESP compatible SD card is:
 
    Install the SD card
 
- (the cfdisk utility works better if run from a network login
+ (the cfdisk utility looks better if run from a network login
   rather than using the serial console)
 
 # cfdisk  -z  /dev/mmcblk0   #the -z says to ignore whatever was on the SD card
@@ -87,9 +88,9 @@ indicate you want it at the end.
 This will leave you a ~0.5MB free hole remaining just after the FAT32
 partition.  The BootIt partition's minimum size is 0.3MB.
 
- The hexidecimal type of the FAT32(LBA) parition is 0C  (12 decimal)
- The hexidecimal type of the Linux parition is 83
- The hexidecimal type of the BootIt parition is DF
+ The hexadecimal type of the FAT32(LBA) parition is 0C  (12 decimal)
+ The hexadecimal type of the Linux parition is 83
+ The hexadecimal type of the BootIt parition is DF
 
 Once you have the table looking correct in cfdisk, write it to out to disk
 with the W command, then quit cfdisk.
