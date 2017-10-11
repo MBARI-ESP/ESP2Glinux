@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 10/8/17 brent@mbari.org
+Clone ESP linux to create a bootable images -- 10/10/17 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -210,7 +210,7 @@ END
   esac
 
   set -e
-  mkdosfs -n ESPBOOT-$ID  $kernPart
+  mkdosfs -n ESPBOOT$ID  $kernPart
   mkfs.ext4  -L ESPROOT-$ID  $rootPart
   tune2fs -c0 -i0  $rootPart
   mount $rootPart $dst

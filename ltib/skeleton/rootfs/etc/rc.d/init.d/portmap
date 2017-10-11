@@ -1,11 +1,14 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/bin
 statd=/var/run/rpc.statd.pid
+statdir=/var/lib/nfs
 OPTIONS=""
 
 case "$1" in
     start)
        echo "Starting portmap..."
+       #create $statdir and ensure statd does not warn about running as root
+       mkdir -p $statdir && chown -R nobody $statdir/sm* 2>/dev/null
        /sbin/portmap $OPTIONS
        ;;
 
