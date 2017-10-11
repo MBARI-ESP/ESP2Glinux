@@ -1,0 +1,6 @@
+#Roughly emulate the operation of a GPRS modem
+#to get through ESP's PPP connection logic
+#10/11/16 brent@mbari.org
+AT \c
+TIMEOUT 3
+**1#\r-\r\nOK\r\n-"" \r\nCONNECT\r\n

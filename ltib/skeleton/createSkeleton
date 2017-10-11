@@ -15,9 +15,9 @@ EOS
 }
 
 [ -e $1 ] && {
-  read -p "Remove existing destination directory: $1 (y/N)? " yn
+  read -p "Remove existing destination directory: $1 (yes/N)? " yn
   case $yn in
-    Y|y|yes|YES|Yes)  ;;
+    yes)  ;;
     *) exit 2;;
   esac
 }
@@ -52,7 +52,8 @@ find -type f -exec file {} \; |
 
 
 echo Changing ownership of $1 to root and finalizing image
-espSu=$1/suscript/esp
+: ${espSu:=$1/suscript/esp}
+: ${tftpdir:=/tftp}
 sudo sh <<END
   rm -rf $1/dev &&
   chown -Rh root:root $1 &&
@@ -69,4 +70,5 @@ sudo sh <<END
   [ -f $1/usr/sbin/suscript ] && chmod u+s $1/usr/sbin/suscript &&
   [ -d $espSu ] && chgrp mbari $espSu && chmod o= $espSu
   ldconfig -r $1
+  [ -d boot -a -d "$tftpdir" ] && cp $tftpdir/u-boot.bin $tftpdir/uImage boot
 END
