@@ -1,0 +1,73 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2017-12-07 18:56:12.265721407 -0800
++++ u-boot-2009.11.modified/Makefile	2017-11-16 17:59:17.771635390 -0800
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbariA
++EXTRAVERSION = -mbariB
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2017-12-07 18:56:12.261721506 -0800
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2017-12-06 14:02:41.342666254 -0800
+@@ -1,5 +1,5 @@
+ /*
+-* revised:  3/10/15 brent@mbari.org for ESP3G host boards
++* revised:  12/6/17 brent@mbari.org for ESP3G host boards
+ *
+ * (C) Copyright 2007-2008
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
+@@ -116,10 +116,18 @@
+    If any other value, we assume we're on the EA eval board
+ */
+ 
+-static uint8_t boardID;
++static unsigned boardID;
+ 
+-static inline uint8_t getBoardId(void)
++static inline unsigned getBoardId(void)
+ {
++  char *s = getenv("board");
++  if (s) {
++    char *end;
++    long unsigned id = simple_strtoul(s, &end, 0);
++    if (end > s)
++      return boardID = id;
++    printf("Ignored invalid board: %s\n", s);
++  }
+   return boardID = GPIO_STATE(IOCONF_GPIO)>>5;
+ }
+ 
+@@ -215,7 +223,7 @@
+ int board_eth_init(bd_t *bis)
+ {
+ #ifdef CONFIG_KS8851_MLL
+-  switch (boardID) {
++  switch (boardID & 0xff) {
+     case 0: {
+       int ms = 1000;
+       setTiming(0200050004);  //octal
+@@ -286,7 +294,7 @@
+   udelay(10);    //wait for board ID to stabilize on GPIOs
+ 
+        /* add other devices depending on carrier board type */
+-  switch (getBoardId()) {
++  switch (getBoardId() & 0xff) {
+     case 0:  /* ESP 3G baseboard */
+       assertPeripheralReset();
+       udelay(10*1000);
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2017-12-07 18:56:12.265721407 -0800
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2017-12-06 13:42:51.596393883 -0800
+@@ -135,7 +135,7 @@
+ "kernSize=200000\0" \
+ "usbtty=cdc_acm\0" \
+ "console=console=ttyS0,115200n8 loglevel=5\0" \
+-"args=set root $(console) $(ethact).mac=$(ethaddr) root=\0" \
++"args=set root $(console) board=$(board) $(ethact).mac=$(ethaddr) root=\0" \
+ "ramArgs=run args; set bootargs $(root)/dev/ram0 rw ip=dhcp\0" \
+ "nfsArgs=run args; set bootargs $(root)/dev/nfs rw nfsroot=$(serverip):$(rootPath) ip=dhcp\0" \
+ "nfsBoot=dhcp $(nfsKernel); run nfsArgs; bootm $(loadaddr)\0" \
