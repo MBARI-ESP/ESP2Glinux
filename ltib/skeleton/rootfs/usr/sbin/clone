@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 10/12/17 brent@mbari.org
+Clone ESP linux to create a bootable images -- 1/25/18 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -131,7 +131,8 @@ writeStream() {
   mount --bind $1 $top && #avoid copying other filesystems (e.g. /proc /dev)
   cd $top &&
   shift || exit $?   #note that * excludes .SWAP
-  tar -c $* --exclude=var --exclude=tmp --exclude=card --exclude=lost+found * &
+  tar -c $* --anchored \
+    --exclude=var --exclude=tmp --exclude=card --exclude=lost+found -- * &
   tarpid=$!; wait $tarpid; tarstat=$?
   cd && umount $top && rmdir $top &&
   trap TERM INT HUP QUIT && return $tarstat
@@ -149,7 +150,11 @@ writeRootFS() {
     else
       echo Archiving system at $src to $dst ...
       asrc=`realpath $src` &&
-      adst=`realpath $dst` &&
+      if [ -e "$dst" ]; then
+        adst=`realpath $dst`
+      else
+        adst=$dst
+      fi &&
       writeStream $src $TARFLAGS --exclude=${adst#$asrc/} >$dst
     fi
   else  #assume src is tar archive of rootfs

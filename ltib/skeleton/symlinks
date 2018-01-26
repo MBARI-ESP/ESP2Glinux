@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 10/7/17 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 1/25/18 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -30,7 +30,7 @@ card/var/lock ->
 flash ->
 
 engineering ->
-ESP ->
+# ESP -> replaced with .4tar.bug to deal with bug in old tar versions
 project ->
 tempbox ->
 u ->
