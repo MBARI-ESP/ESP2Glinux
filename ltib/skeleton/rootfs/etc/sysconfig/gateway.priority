@@ -1,6 +1,6 @@
-ppp6 eth* wlan* sl* ppp* lo
+ppp6 eth* wlan* wwan* ppp* *
 
-
+Default gateway priority = VPN, ethernet, WiFi, WAN(cellular), PPP, others...
 Whenever a network interface comes up or goes down, the first network interface
 listed on the first line that has an associated default gateway
 is selected for the network gateway and DNS (in /etc/resolv.conf)

@@ -1,6 +1,7 @@
 #Common networking utilities
-# -- revised: 3/24/17 brent@mbari.org
+# -- revised: 3/29/18 brent@mbari.org
 #
+ESPshore=134.89.2.91  #ESP shore server
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
