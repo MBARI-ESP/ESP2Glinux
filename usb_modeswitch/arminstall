@@ -1,0 +1,28 @@
+#!/bin/sh
+# build & install usb_modeswitch for arm-linux -- 3/28/18 brent@mbari.org
+
+: ${HOST:=arm-none-linux-gnueabi}
+: ${ARMSTRIP:=$HOST-strip}
+: ${TARGETTOP:=${2-sbin}}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${CC:=$HOST-gcc}
+DATA=usb-modeswitch-data-20170806
+PROG=usb_modeswitch
+echo "Installing $PROG in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+mkdir -p $TOP &&
+cd usb-modeswitch-2.5.2 &&
+export CC=$CC CFLAGS=-Os LDFLAGS="-L ~/ltib/rootfs/usr/lib"
+export JIM_CONFIGURE_OPTS=--host=$HOST
+make static && mkdir -p $TOP || exit $?
+for prog in $PROG ${PROG}_dispatcher; do
+  $ARMSTRIP $prog -o $TOP/$prog || exit $?
+done
+install -D --mode=755 $PROG.sh $HOSTTOP/lib/udev/$PROG.sh &&
+install -D --mode=644 $PROG.conf $HOSTTOP/etc/$PROG.conf &&
+install -d $HOSTTOP/var/lib/$PROG &&
+
+cd ../$DATA &&
+make install-packed DESTDIR=$HOSTTOP &&
+echo "Done."

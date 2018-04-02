@@ -1,0 +1,26 @@
+diff -ru usb-modeswitch-2.5.2/Makefile usb-modeswitch-2.5.2-patched/Makefile
+--- usb-modeswitch-2.5.2/Makefile	2017-12-31 01:34:02.000000000 -0800
++++ usb-modeswitch-2.5.2-patched/Makefile	2018-03-28 21:48:03.927252052 -0700
+@@ -19,7 +19,7 @@
+ else
+ TCL        ?= /usr/bin/tclsh
+ endif
+-JIM_CONFIGURE_OPTS = --disable-lineedit \
++JIM_CONFIGURE_OPTS += --disable-lineedit \
+ 	--with-out-jim-ext="stdlib posix load signal syslog" --prefix=/usr
+ 
+ .PHONY: clean install install-common uninstall \
+diff -ru usb-modeswitch-2.5.2/usb_modeswitch.c usb-modeswitch-2.5.2-patched/usb_modeswitch.c
+--- usb-modeswitch-2.5.2/usb_modeswitch.c	2017-12-31 02:33:30.000000000 -0800
++++ usb-modeswitch-2.5.2-patched/usb_modeswitch.c	2018-03-28 21:16:44.221556547 -0700
+@@ -510,8 +510,8 @@
+ 
+ 	/* libusb initialization */
+ 	if ((libusbError = libusb_init(&ctx)) != LIBUSB_SUCCESS) {
+-		fprintf(stderr, "Error: Failed to initialize libusb. %s (%d)\n\n",
+-				libusb_error_name(libusbError), libusbError);
++		fprintf(stderr, "Error: Failed to initialize libusb. (%d)\n\n",
++				libusbError);
+ 		exit(1);
+ 	}
+ 

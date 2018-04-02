@@ -1,0 +1,10 @@
+#!/bin/sh
+# unpack & patch usb_modeswitch for arm-linux -- 3/28/18 brent@mbari.org
+
+: ${USBmodeswitch:=usb-modeswitch-2.5.2}
+: ${USBdata:=usb-modeswitch-data-20170806}
+rm -rf $USBmodeswitch $USBdata &&
+tar xjf $USBmodeswitch.tar.bz2 &&
+cat usb-modeswitch.patch | (cd $USBmodeswitch && patch -p1) &&
+tar xjf $USBdata.tar.bz2 &&
+echo Done.
