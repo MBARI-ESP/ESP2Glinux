@@ -13,28 +13,22 @@ case "$op" in
    start)
       . /usr/share/ifupfn.sh
       if [ "$1" ]; then
-	for dev; do
-          unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART VPN
-          unset resolv_conf hosts pppPrep pppUp pppDown
+	for dev; do (
 	  . /etc/sysconfig/ifcfg-$dev
           ifup_function
-        done
+        ) done
       else
         > /etc/resolv.conf
         > /etc/hosts
         fnspec='/etc/sysconfig/ifcfg-*'
         fns=`echo $fnspec`
         [ "$fns" = "$fnspec" ] && exit  #no network configs found
-	for defFn in $fns; do
-          unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-          unset NETWORK GATEWAY MTU AUTOSTART VPN
-          unset resolv_conf hosts pppPrep pppUp pppDown
+	for defFn in $fns; do (
           . $defFn
           ifup_function 'yes|Y|Yes|YES'
-        done
+        ) done
       fi
-      # netowrking stack tweaks
+      # networking stack tweaks
       echo 1 > /proc/sys/net/ipv4/ip_forward &&
       echo Packet forwarding enabled
 
@@ -55,10 +49,7 @@ set +f
         devs="$devs `grep -v '^ *ppp[0-9][0-9]*:' /proc/net/dev |
               sed -ne'/:/p' | cut -d: -f1`"
       }
-      for dev in $devs; do
-        unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-        unset NETWORK GATEWAY MTU AUTOSTART VPN
-        unset resolv_conf hosts pppPrep pppUp pppDown
+      for dev in $devs; do (
         defFn=/etc/sysconfig/ifcfg-$dev
         if [ -r "$defFn" ]; then
           . $defFn  #don't try to stop interfaces respawned by init process
@@ -66,7 +57,7 @@ set +f
           [ -z "$AUTOSTART" -o "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
         fi
         ifdown $dev force
-      done
+      ) done
    ;;
 
    restart)
