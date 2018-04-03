@@ -67,6 +67,7 @@ Patch51         : kernel-2.6.33-unlimitUSBpwr.patch
 Patch52         : kernel-2.6.33-usbGadget.patch
 Patch53         : kernel-2.6.33-labelGPIOs.patch
 Patch54         : kernel-2.6.33-ea3152.patch
+Patch55         : kernel-2.6.33-sierra.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -124,3 +125,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch52 -p1
 %patch53 -p1
 %patch54 -p1
+%patch55 -p1
