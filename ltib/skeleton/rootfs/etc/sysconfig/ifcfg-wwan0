@@ -1,5 +1,5 @@
 IFNAME=wwan0
-AUTOSTART=yes
+AUTOSTART=no
 BOOTPROTO="dhcp-b"  #dhcp in background
 DHCPNAME=`hostname`
 VPN=$ESPshore/ppp6   #server IP / VPN interface
