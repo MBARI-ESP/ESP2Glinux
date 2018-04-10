@@ -28,4 +28,4 @@ cd $compat &&
 : ${compatModules:=~/ltib/rootfs.tmp} &&
 : ${kmodPath:="KMODPATH_ARG=\"INSTALL_MOD_PATH=$compatModules\""} &&
 ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel &&
-ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel $kmodPath install-modules
+ltibMake KLIB=$ltibModules KLIB_BUILD=$ltibKernel $kmodPath INSTALL_MOD_STRIP=1 install-modules
