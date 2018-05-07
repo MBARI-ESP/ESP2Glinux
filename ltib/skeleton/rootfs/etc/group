@@ -1,9 +1,9 @@
 root::0:root
-mbari:x:20:esp,brent
-esp:x:7700:esp,brent
-uucp:x:4:esp,brent
+mbari:x:20:esp,brent,maro,preston,methane,pargett,sjensen
+esp:x:7700:esp,brent,maro,preston,methane,pargett,sjensen
+uucp:x:4:esp,brent,maro,preston,methane,pargett,sjensen
 tty::5:
-log:x:96:esp,brent
+log:x:96:esp,brent,maro,preston,methane,pargett,sjensen
 labjack:x:492:esp,brent
 guest:x:666:
 bin::1:root,bin,daemon
