@@ -1,0 +1,3 @@
+SUBSYSTEM=="net", ACTION=="add", RUN+="ifup %E{INTERFACE}" 
+SUBSYSTEM=="net", ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
+
