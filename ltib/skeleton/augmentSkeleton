@@ -42,7 +42,7 @@ make CC=$ARMGCC/bin/gcc clean ltib/suscript || exit $?
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript
 chmod u+s $HOSTTOP/usr/sbin/suscript
 
-for package in dyndns wpa_supplicant esp/dropbear \
+for package in dyndns wpa_supplicant esp/dropbear usbmode \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools; do
   echo
   echo "  ===>  Building $package  <==="

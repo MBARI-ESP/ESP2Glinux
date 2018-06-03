@@ -1,0 +1,16 @@
+#!/bin/bash
+# unpack & configure usbmode build for arm-linux -- 6/2/18 brent@mbari.org
+: ${gitTop:=~/git}
+: ${jsonTop:=$gitTop/json-c}
+
+top=$PWD
+[ -e "$jsonTop" ] || {
+  cd $gitTop &&
+  git clone https://github.com/json-c/json-c.git
+}
+cd $jsonTop &&
+git checkout 4414d068b308bff4fd98c83e1ae08346913f93c4 &&
+autogen.sh &&
+configure --host=arm-none-linux-gnueabi CFLAGS="-Os -g" ac_cv_func_uselocale=no &&
+make &&
+echo "Now, run arminstall"

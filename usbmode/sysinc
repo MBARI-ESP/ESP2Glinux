@@ -1,0 +1,4 @@
+#!/bin/sh
+#output the system include directory ending with /usr/include
+echo $CC >&2
+echo | ${CC-gcc} -E -Wp,-v - 2>&1 | grep /usr/include$ | xargs

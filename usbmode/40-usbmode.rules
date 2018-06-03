@@ -1,0 +1,3 @@
+# Derived from usb-modeswitch-data, version 20170805
+#
+SUBSYSTEMS=="usb", ACTION=="add", RUN+="usbmode -s"

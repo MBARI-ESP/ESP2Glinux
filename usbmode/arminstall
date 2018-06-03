@@ -1,0 +1,12 @@
+#!/bin/sh
+# build & install usbmode from openwrt to arm-linux
+# -- 6/2/18 brent@mbari.org
+
+: ${HOSTTOP:=${1-$HOME/armHost}}
+
+echo "Installing usbmode in $HOSTTOP"
+make &&
+cp usbmode ifup ifdown $HOSTTOP/lib/udev &&
+cp *.rules $HOSTTOP/etc/udev/rules.d &&
+cp usb-mode.json $HOSTTOP/etc &&
+echo "Done."
