@@ -6,7 +6,7 @@ modlist=/etc/modules
 case "$1" in
     start)
        echo "Loading kernel modules"
-       #load built-in ethernet first to ensure is gets named eth0
+       #load built-in ethernet first to ensure it gets named eth0
        for module in ks8851_mll dm9000; do
          [ -e /sys/bus/platform/devices/$module.* ] && modprobe $module
        done

@@ -7,9 +7,9 @@ case "$1" in
       echo "Starting hotplug events dispatcher udevd"
       udevd --daemon
     }
-    echo "Synthesizing initial hotplug events"
+    echo "Handling initial hotplug events"
     udevtrigger
-    udevsettle --timeout=30
+#    udevsettle --timeout=30  #needn't wait
      ;;
 
   stop)
