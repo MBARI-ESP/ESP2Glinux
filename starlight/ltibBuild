@@ -1,5 +1,6 @@
 #!/bin/bash
 #  Make startlight xpress kernel driver for ltib (arm) linux
+# revised: 6/13/18 brent@mbari.org
 : ${KERNEL_DIR:=~/ltib/rpm/BUILD/linux}
 [ -d "$KERNEL_DIR" ] || {
   echo "$KERNEL_DIR is not an existing directory" >&2
@@ -9,15 +10,17 @@
 [ -z "$KERNEL_VER" ] &&
   KERNEL_VER=`grep "Linux kernel version" $KERNEL_DIR/.config | 
               cut -sf2 -d: | tr -d "[:space:]"` &&
-: ${INSTALL_DIR:=`echo ~/ltib/rootfs.tmp/lib/modules/${KERNEL_VER}*`} &&
+: ${HOSTTOP:=`echo ~/ltib/rootfs.tmp`} &&
+: ${INSTALL_DIR:="${HOSTTOP}/lib/modules/${KERNEL_VER}*"} &&
+
+echo "Installing udev helpers in $HOSTTOP" &&
+cp starlightXpress $HOSTTOP/lib/udev &&
+cp *.rules $HOSTTOP/etc/udev/rules.d &&
 
 cd kernel &&
 make clean &&
 ltibMake all KERNEL_DIR=$KERNEL_DIR KERNEL_VER=$KERNEL_VER obj-m="$objs" &&
-[ -e "$INSTALL_DIR" ] || exit 2
 
-echo "Installing kernel modules in $INSTALL_DIR"
-
-mkdir $INSTALL_DIR/starlightXpress &&
+echo "Installing kernel modules in $INSTALL_DIR" &&
+mkdir -p $INSTALL_DIR/starlightXpress &&
 cp -r *.ko $INSTALL_DIR/starlightXpress
-
