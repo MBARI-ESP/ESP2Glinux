@@ -1,0 +1,10 @@
+#defaults if network interface ifg-$IFNAME is not defined
+AUTOSTART=no
+BOOTPROTO="dhcp-b"  #dhcp in background
+DHCPNAME=`hostname`
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
+EOS
+}

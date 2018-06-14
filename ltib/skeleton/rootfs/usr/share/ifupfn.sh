@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 4/21/16 brent@mbari.org
+# -- revised: 6/13/18 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -22,21 +22,12 @@ ifup_function ()
     usage
     return 200
   }
-set -f
-  startMode=${1-n|N|no|No|NO|yes|y|Y|Yes|YES}  #yes, no, or missing
-  while :; do
-    eval "
-      case "$AUTOSTART" in
-        $startMode)
-          break
-      esac
-    "
+  startMode=${1-"^(n|no||y|yes|true|false)$"}  #yes, no, or missing
+  echo "$AUTOSTART" | egrep -iq $startMode || {
 #      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2
-set +f
     return 0
-  done
-set +f
+  }
   fn=/var/run/*$IFNAME.pid
   pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || {  #check for active locks...

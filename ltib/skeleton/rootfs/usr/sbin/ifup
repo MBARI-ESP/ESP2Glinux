@@ -13,20 +13,19 @@ case "$devfn" in
     ifup_function $mode
   ;;
   
-  */*) #assume anything with a / is the path to an interface definition file
-    unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY MTU AUTOSTART
-    . $devfn
-    ifup_function $mode
-  ;;
-  
   -*)  #any flag is a request for help
     usage    
   ;;
   
   *) #anything else must be the name of an interface
-    unset IFNAME BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+    unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY MTU AUTOSTART
-    . /etc/sysconfig/ifcfg-$devfn && ifup_function $mode
-  ;;
+    IFNAME="$devfn"
+    cd /etc/sysconfig && {
+      cfg=ifcfg-$IFNAME
+      [ "$IFNAME" = lo ] && cfg=ifcfg-Lo  #make lo come up 1st!
+      [ -r $cfg ] || cfg=if-default
+      . ./$cfg
+      ifup_function $mode
+    }
 esac

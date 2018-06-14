@@ -1,13 +1,15 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  3/24/16 by brent@mbari.org
+# revised:  6/13/16 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] &&
   echo "Error: should be called from udhcpc" && exit 1
 
 . /usr/share/netutils.sh
-configfn=/etc/sysconfig/ifcfg-$interface
-[ -r $configfn ] && . $configfn && {
+IFNAME=$interface
+cfg=/etc/sysconfig/ifcfg-$interface
+[ -r $cfg ] || cfg=/etc/sysconfig/if-default
+. $cfg && {
   export VPN
   validIFconfig=1
 }

@@ -3,31 +3,45 @@
 # network	stop, restart, start, the networking
 # subsequent args specify a list of interfaces
 
+reverse() {
+  out=
+  for word; do
+    out="$word $out"
+  done
+  echo $out
+}
+
 op="$1"
 shift
 [ -z "$1" ] && grep -q ^"/dev/root / nfs " /proc/mounts && {
   echo "Skipping network configuration so as not to disturb nfs root filesystem"
   exit 4
 }
+cd /etc/sysconfig || echo $?
 case "$op" in
    start)
       . /usr/share/ifupfn.sh
       if [ "$1" ]; then
 	for dev; do (
-	  . /etc/sysconfig/ifcfg-$dev
-          ifup_function
+	  IFNAME=$dev
+	  cfg=ifcfg-$dev
+	  [ -r $cfg ] || cfg=if-default
+	  . ./$cfg && ifup_function
         ) done
       else
         > /etc/resolv.conf
         > /etc/hosts
-        fnspec='/etc/sysconfig/ifcfg-*'
+        fnspec='ifcfg-*'
         fns=`echo $fnspec`
         [ "$fns" = "$fnspec" ] && exit  #no network configs found
 	for defFn in $fns; do (
-          . $defFn
-          ifup_function 'yes|Y|Yes|YES'
+	  IFNAME=${defFn/ifcfg-}
+	  cfg=ifcfg-$IFNAME
+	  [ -r $cfg ] || cfg=if-default
+          . ./$cfg && ifup_function '^(y|yes|true)$'
         ) done
       fi
+
       # networking stack tweaks
       echo 1 > /proc/sys/net/ipv4/ip_forward &&
       echo Packet forwarding enabled
@@ -49,12 +63,12 @@ set +f
         devs="$devs `grep -v '^ *ppp[0-9][0-9]*:' /proc/net/dev |
               sed -ne'/:/p' | cut -d: -f1`"
       }
-      for dev in $devs; do (
-        defFn=/etc/sysconfig/ifcfg-$dev
+      for dev in `reverse $devs`; do (
+        defFn=ifcfg-$dev
         if [ -r "$defFn" ]; then
-          . $defFn  #don't try to stop interfaces respawned by init process
-           #if autostart mode missing or it starts with init, skip dev up check
-          [ -z "$AUTOSTART" -o "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
+          . ./$defFn  #don't try to stop interfaces respawned by init process
+           #if AUTOSTART starts with init, skip dev up check
+          [ "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
         fi
         ifdown $dev force
       ) done
