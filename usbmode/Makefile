@@ -1,6 +1,6 @@
 #Make a standalone OpenWRT usbmode utility 
 #usbmode is OpenWRT's much trimmer alternative to usb_modeswitch
-#  revised:  6/2/18 brent@mbari.org
+#  revised:  6/13/18 brent@mbari.org
 
 #assumes that following OpenWRT project's have been cloned under ~/git
 #  usbmode
@@ -23,8 +23,8 @@ jsonTop = $(gitTop)/json-c
 modeSwitchData = ../usb_modeswitch/usb-modeswitch-data-20170806/usb_modeswitch.d
 
 HOST ?= arm-none-linux-gnueabi
-CC ?= $(HOST)-gcc
-STRIP ?= $(HOST)-strip
+CC = $(HOST)-gcc
+STRIP = $(HOST)-strip
 CFLAGS ?= -Os -g
 rootfs ?= $(HOME)/ltib/rootfs
 inc ?= $(rootfs)/usr/include
@@ -35,14 +35,18 @@ usbmode: usbmode.unstripped
 	$(STRIP) -o $@ $<
 
 usbmode.unstripped:  Makefile avl.o avl-cmp.o blob.o blobmsg.o blobmsg_json.o \
-	  $(jsonTop)/.libs/libjson-c.a $(usbmodeTop)/*.h $(usbmodeTop)/*.c 
+  usbmodeMain.c $(jsonTop)/.libs/libjson-c.a $(usbmodeTop)/*.h $(usbmodeTop)/*.c 
 	$(CC) $(CFLAGS) -o $@ \
           -I$(usbmodeTop) -I$(libuboxTop) \
           -I$(gitTop) -isystem $(inc)/libusb-1.0 \
           avl.o avl-cmp.o blob.o blobmsg.o blobmsg_json.o \
           $(jsonTop)/.libs/libjson-c.a $(LDFLAGS) -lusb-1.0 \
-          $(usbmodeTop)/switch.c $(usbmodeTop)/main.c
+          $(usbmodeTop)/switch.c usbmodeMain.c
 
+usbmodeMain.c:  $(usbmodeTop)/main.c oldusblib.patch
+	cd $(usbmodeTop) && \
+          patch -o $(shell pwd)/$@ <$(shell pwd)/oldusblib.patch
+        
 avl.o: $(libuboxTop)/avl.h $(libuboxTop)/list.h $(libuboxTop)/avl.c
 	$(CC) $(CFLAGS) -I$(libuboxTop) -o $@ -c $(libuboxTop)/avl.c
 
@@ -70,5 +74,5 @@ usb-mode.json:  $(modeSwitchData)
 	convert-modeswitch.pl $</* >usb-mode.json
 
 $(libuboxTop)/%.h $(libuboxTop)/%.c:
-	cd $(gitTop); git clone https://git.openwrt.org/project/libubox.git
-	cd $(libuboxTop); git checkout 6eff829d788b36939325557066f58aafd6a05321
+	cd $(gitTop) && git clone https://git.openwrt.org/project/libubox.git
+	cd $(libuboxTop)&&git checkout 6eff829d788b36939325557066f58aafd6a05321

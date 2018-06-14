@@ -1,0 +1,11 @@
+--- main.c	2018-06-13 13:56:34.328852462 -0700
++++ main_old.c	2018-06-13 14:18:08.925054324 -0700
+@@ -330,7 +330,7 @@
+ 
+ 	ret = libusb_init(&usb);
+ 	if (ret) {
+-		fprintf(stderr, "Failed to initialize libusb: %s\n", libusb_error_name(ret));
++		fprintf(stderr, "Failed to initialize libusb\n");
+ 		return 1;
+ 	}
+ 
