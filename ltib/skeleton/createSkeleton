@@ -41,13 +41,13 @@ find -type f -exec file {} \; |
     do
       libPath=${tostrip#./}
       if [ "${libPath#lib/modules/}" != "$libPath" ]; then
-        echo Stripping unneeded symbols from $libPath
-        unneeded=--strip-unneeded
+        echo Stripping unneeded and debug symbols from $libPath
+        /ltibarm/bin/strip --strip-unneeded "$libPath" &&
+        /ltibarm/bin/strip --strip-debug "$libPath"        
       else
         echo Stripping symbols from $libPath
-        unneeded=
-      fi
-      /ltibarm/bin/strip $unneeded "$libPath" #|| exit 9
+        /ltibarm/bin/strip "$libPath"        
+      fi #|| exit 9
     done
 
 
