@@ -1,0 +1,12 @@
+IFNAME=eth2
+AUTOSTART=no
+BOOTPROTO="dhcp-b"  #dhcp in background
+DHCPNAME=`hostname`
+#VPN=$ESPshore/ppp6   #server IP / VPN interface
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
+EOS
+}
+

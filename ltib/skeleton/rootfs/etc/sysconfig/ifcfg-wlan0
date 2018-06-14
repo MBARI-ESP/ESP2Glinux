@@ -1,6 +1,6 @@
 IFNAME=wlan0
 AUTOSTART=no
-BOOTPROTO="dhcp-b -t15 -m600 -s /usr/share/udhcpc/default.script"  #in background
+BOOTPROTO="dhcp-b -t15 -m600"  #in background
 DHCPNAME=`hostname`-wifi
 #VPN=$ESPshore/ppp6   #server IP / VPN interface
 
