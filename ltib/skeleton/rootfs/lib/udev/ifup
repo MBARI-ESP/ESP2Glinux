@@ -1,0 +1,6 @@
+#!/bin/sh
+#only bring up new interface if is down!
+exec 5<&- 7<&-
+exec 2>/dev/console >&2
+flags=`cat /sys/class/net/$1/flags` && [ $(( $flags & 1 )) = 0 ] && 
+  exec /usr/sbin/ifup $1 &
