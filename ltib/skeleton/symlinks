@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 6/12/18 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 6/13/18 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -52,7 +52,7 @@ etc/rc.d/rc3.d/S10sysmount -> ../init.d/sysmount
 etc/rc.d/rc3.d/S20rtc -> ../init.d/rtc
 etc/rc.d/rc3.d/S30syslog -> ../init.d/syslog
 etc/rc.d/rc3.d/S40network -> ../init.d/network
-etc/rc.d/rc3.d/S45hotplug -> ../init.d/hotplug
+etc/rc.d/rc3.d/S42hotplug -> ../init.d/hotplug
 etc/rc.d/rc3.d/S50portmap -> ../init.d/portmap
 etc/rc.d/rc3.d/S60nfsmount -> ../init.d/nfsmount
 etc/rc.d/rc3.d/S70synctime -> ../init.d/synctime
