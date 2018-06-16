@@ -1,5 +1,4 @@
 IFNAME=wlan0
-AUTOSTART=no
 BOOTPROTO="dhcp-b -m600"  #in background
 DHCPNAME=`cat /etc/HOSTNAME`-wifi
 
@@ -14,7 +13,7 @@ ifPrep() {
 }
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
+  cat <<EOS
 $(netIfIP $IFNAME $DHCPNAME)
 EOS
 }

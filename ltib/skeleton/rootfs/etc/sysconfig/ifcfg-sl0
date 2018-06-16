@@ -1,6 +1,4 @@
 IFNAME=sl0
-AUTOSTART=no
-
 IPADDR=192.168.1.17     #assign each slave a unique ip address!!
 GATEWAY=192.168.1.20    #master and gateway
 NETMASK=255.255.255.240
@@ -17,7 +15,7 @@ ifPrep() {
 
 #try to ftp over the gateway's resolv.conf and hosts
 hosts() {
-  cat <<EOS 
+  cat <<EOS
 $IPADDR $(hostname)-$IFNAME $(hostname)-slip
 EOS
   ftpget $GATEWAY - /etc/hosts &

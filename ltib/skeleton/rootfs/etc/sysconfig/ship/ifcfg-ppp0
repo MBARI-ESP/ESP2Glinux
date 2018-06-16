@@ -1,5 +1,4 @@
 IFNAME=ppp0
-AUTOSTART=no
 link=ship
 
 ifPrep() {
@@ -17,7 +16,7 @@ ifPost() {
 }
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
-$(netIfIP $IFNAME $(hostname)-$IFNAME) 
+  cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
 EOS
 }

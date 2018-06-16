@@ -1,12 +1,11 @@
 IFNAME=eth0
-AUTOSTART=yes
 BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/aliases.script"   #in background
 DHCPNAME=`cat /etc/HOSTNAME`
 
 IPADDR=192.168.0.100   #use this configuration if dhcp fails
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
+  cat <<EOS
 $(netIfIP $IFNAME $DHCPNAME-$IFNAME)
 EOS
 }

@@ -6,7 +6,6 @@
 #NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
 
 IFNAME=eth1:10
-AUTOSTART=yes
 BOOTPROTO=static
 
 IPADDR=10.10.10.50
@@ -22,7 +21,7 @@ $IPADDR   ship.radio ship
 EOS
 }
 
-ifPost() { 
+ifPost() {
   echo 1 >/proc/sys/net/ipv4/conf/all/proxy_arp &&
   echo 1 >/proc/sys/net/ipv4/ip_forward &&
   echo "enabled ip packet forwarding"

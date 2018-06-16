@@ -1,13 +1,12 @@
 #create a subnet for the avalan radio configuration
 
 IFNAME=eth1:17
-AUTOSTART=yes
 BOOTPROTO=static
 
 IPADDR=192.168.17.222
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
+  cat <<EOS
 192.168.17.17  avalan.ship
 192.168.17.18  avalan.drifter avalan
 EOS

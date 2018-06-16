@@ -1,6 +1,4 @@
 IFNAME=ppp6
-AUTOSTART=no
-
 provider=ESPshore
 username=`hostname`
 

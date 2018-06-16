@@ -1,5 +1,4 @@
 IFNAME=sl0
-AUTOSTART=yes
 
 IPADDR=192.168.8.20      #master freewave
 NETMASK=255.255.255.240

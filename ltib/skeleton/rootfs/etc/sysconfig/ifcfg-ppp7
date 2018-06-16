@@ -1,5 +1,4 @@
 IFNAME=ppp7
-AUTOSTART=no
 
 isp=usmobile  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 

@@ -6,7 +6,6 @@
 #NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
 
 IFNAME=eth0:10
-AUTOSTART=yes
 BOOTPROTO=static
 
 IPADDR=10.10.10.10

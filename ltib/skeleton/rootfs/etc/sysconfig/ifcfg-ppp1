@@ -1,5 +1,4 @@
 IFNAME=ppp1
-AUTOSTART=no
 ifPrep() {
   modprobe ppp_async && modprobe ppp_deflate &&
   pppd call instrument unit ${IFNAME#ppp}

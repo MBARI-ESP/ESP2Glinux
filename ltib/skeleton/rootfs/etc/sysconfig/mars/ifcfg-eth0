@@ -1,7 +1,6 @@
 # configuration for DWSM deployment on MARS starting 9/09
 #
 IFNAME=eth0
-AUTOSTART=yes
 BOOTPROTO="dhcp-b -m180"  #dhcp in background, renew every 3 min
 
 DHCPNAME=`cat /etc/HOSTNAME`
@@ -17,8 +16,8 @@ EOS
 }
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
-$(netIfIP $IFNAME $DHCPNAME-$IFNAME $DHCPNAME-ether)
+  cat <<EOS
+$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
 10.1.15.3  webrelay
 EOS
 }

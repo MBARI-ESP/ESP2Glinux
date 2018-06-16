@@ -1,5 +1,4 @@
 IFNAME=ppp10
-AUTOSTART=no
 link=drifter
 
 ifPrep() {
@@ -17,7 +16,7 @@ ifPost() {
 }
 
 hosts() {    #add lines before EOS
-  cat <<EOS 
+  cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME)
 10.10.10.200 drifter.iridium
 10.10.10.201 ship.iridium ship
