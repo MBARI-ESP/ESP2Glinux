@@ -1,6 +1,24 @@
 #!/bin/sh
-#only bring up new interface if is down!
-exec 5<&- 7<&-
-exec 2>/dev/console >&2
-flags=`cat /sys/class/net/$1/flags` && [ $(( $flags & 1 )) = 0 ] && 
-  exec /usr/sbin/ifup $1 &
+#first argument the name of a newly detected network interface
+#when /var/lock/if.pending exists, actions are deferred
+#otherwise, this brings interface UP if it was down
+exec 7<&- 5<&-
+exec >>/dev/console 2>&1
+#exec >>/tmp/ifup.trace 2>&1
+#echo "udev: ifup $1" >&2
+#set -x
+
+case "$1" in
+ ppp*) exit
+esac
+
+lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
+[ -r $lockFn ] && {
+  exec 7<$lockFn
+  flock -x 7 && [ -e $lockFn ] && exec echo -n "$1 " >>$lockFn
+  exec 7<&-
+}
+flags=`cat /sys/class/net/$1/flags` && [ $(( $flags & 1 )) = 0 ] &&
+exec /usr/sbin/ifup $1 &
+
+#catchup command starts interfaces listed in ifup.pending

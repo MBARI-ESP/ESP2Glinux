@@ -1,4 +1,4 @@
-ppp6 eth* wlan* wwan* ppp* *
+ppp6 eth* wlan* wwan* cdc* ppp* *
 
 Default gateway priority = VPN, ethernet, WiFi, WAN(cellular), PPP, others...
 Whenever a network interface comes up or goes down, the first network interface

@@ -1,0 +1,21 @@
+#!/bin/sh
+#catch up all pending udev ifup operations
+#exec 2>>/tmp/catchup.trace
+#set -x
+lockFn=/var/lock/ifup.pending
+exec 7<$lockFn || exit $?
+flock -x 7 -w 60 2>/dev/null || [ $? = 69 ] || {
+  echo "Cannot lock $lockFn" >&2
+  exit 1
+}
+read -r ifNames <&7 || [ $? = 1 ] || {
+  echo "Cannot read $lockFn" >&2
+  exit 2
+}
+rm $lockFn  #before giving up lock!
+exec 7<&-
+for IFNAME in $ifNames; do
+  flags=`cat /sys/class/net/$IFNAME/flags` 2>/dev/null &&
+          [ $(( $flags & 1 )) = 0 ] && 
+          /usr/sbin/ifup $IFNAME &
+done

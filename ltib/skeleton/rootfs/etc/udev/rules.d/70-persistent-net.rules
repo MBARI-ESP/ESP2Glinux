@@ -1,0 +1,4 @@
+#rename Communication Device Class devices masquerading as eth* to cdc*
+
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_ether",  KERNEL=="eth*", NAME="cdc%n"
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_subset", KERNEL=="eth*", NAME="cdc%n"

@@ -1,0 +1,16 @@
+IFNAME=lo
+BOOTPROTO=static
+NETWORK=127.0.0.0/8
+IPADDR=127.0.0.1
+
+hosts() {    #must be in every hosts file
+  cat <<EOS
+127.0.0.1 localhost
+$ESPshore ESPshore
+EOS
+}
+
+ifPost() {
+  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  echo "Packet forwarding enabled"
+}

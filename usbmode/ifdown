@@ -1,3 +1,0 @@
-#!/bin/sh
-exec 1<&- 2<&- 5<&- 7<&-
-exec /usr/sbin/ifdown $1 &

@@ -3,13 +3,14 @@ PATH=/usr/sbin:/sbin:/bin
 
 case "$1" in
   start)
+    touch /var/lock/ifup.pending  #record net interfaces detected
     pidof udevd >/dev/null 2>&1 || {
       echo "Starting hotplug events dispatcher udevd"
       udevd --daemon
     }
-    echo "Handling initial hotplug events"
+    echo "Handling hotplug events"
     udevtrigger
-#    udevsettle --timeout=30  #uncomment to wait until all devices handled
+    udevsettle --timeout=30
      ;;
 
   stop)

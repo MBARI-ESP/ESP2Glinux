@@ -23,7 +23,6 @@ case "$devfn" in
     IFNAME="$devfn"
     cd /etc/sysconfig && {
       cfg=ifcfg-$IFNAME
-      [ "$IFNAME" = lo ] && cfg=ifcfg-Lo  #make lo come up 1st!
       [ -r $cfg ] || cfg=if-default
       . ./$cfg
       ifup_function $mode

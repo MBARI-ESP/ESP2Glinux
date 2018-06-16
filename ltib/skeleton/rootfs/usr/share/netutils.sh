@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 3/29/18 brent@mbari.org
+# -- revised: 6/14/18 brent@mbari.org
 #
 ESPshore=134.89.2.91  #ESP shore server
 
@@ -76,6 +76,11 @@ lowerGatePriority() {
 notUnplugged() {
 #return 0 if either interface named $1 defines no carrier or it is up
   [ "`cat /sys/class/net/$1/carrier 2>/dev/null`" != 0 ]
+}
+
+isUp() {
+#return 0 if interface or alias is configured (UP)
+  ifconfig | grep -q ^$1
 }
 
 gateUp() {
