@@ -1,5 +1,5 @@
 IFNAME=ppp0
-AUTOSTART=inittab
+AUTOSTART=ignore
 ifPrep() {
   pppd call shore unit ${IFNAME#ppp}
 }

@@ -9,46 +9,103 @@ shift
   echo "Skipping network configuration so as not to disturb nfs root filesystem"
   exit 4
 }
-order=/etc/sysconfig/if-order
+syscfg=/etc/sysconfig
+order=$syscfg/if-order
+
 [ -r $order ] || exit 3
 . $order
-case "$op" in
-   start)
-      . /usr/share/ifupfn.sh
-      if [ "$1" ]; then
-	for dev; do
-	  ifup $dev
-	done
-      else
-        > /etc/resolv.conf
-        > /etc/hosts
-        for dev in $START; do
-          ifup $dev
-        done
-        /lib/udev/catchup  #other interfaces start in parallel as discovered
-      fi
-;;
-   stop)
-     devs=$@
-     [ "$devs" ] || {
-       cd /sys/class/net
-       devs=`for dev in $STOP; do echo $dev; done | awk '!seen[$0]++'`
-     }
-     for dev in $devs; do (
-       defFn=/etc/sysconfig/ifcfg-$dev
-       if [ -r "$defFn" ]; then
-         . $defFn  #don't try to stop interfaces respawned by init process
-         [ "${AUTOSTART#init}" != "$AUTOSTART" ] && continue
-       fi
-       ifdown $dev force
-     ) done
-   ;;
 
-   restart)
-	$0 stop	"$@"
-	$0 start "$@"
-	;;
-   *)
-   	echo "usage: start|stop|restart {interfaces}"
-   ;;
+case "$op" in
+  start)
+    . /usr/share/ifupfn.sh
+    if [ "$1" ]; then
+      for dev; do
+	ifup $dev
+      done
+    else
+      > /etc/resolv.conf
+      > /etc/hosts
+      unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+      unset NETWORK GATEWAY MTU AUTOSTART
+      for dev in $START; do (
+        IFNAME="$dev"
+        cfg=$syscfg/ifcfg-$dev
+        [ -r $cfg ] || cfg=$syscfg/if-default
+        . $cfg
+        ifup_function
+      ) done
+      exec /lib/udev/catchup  #other interfaces start in parallel as discovered
+    fi
+;;
+  stop)
+    . /usr/share/ifdownfn.sh
+    globIfs() {
+    #output list of valid interfaces from given template
+      oldWD=`pwd`
+      cd /sys/class/net
+      for dev; do  #filter out unmatched globs
+        [ "$dev" = "${dev/\*}" ] && echo $dev
+      done | awk '!seen[$0]++'
+      cd "$oldWD"
+    }
+
+    ifs() {
+    #output list of all UP interface names matching given grep regex
+      selection=${1-'^[[:alpha:]]'}
+      ifconfig | grep $selection | while read -r ifName details; do
+        echo $ifName
+      done
+    }
+
+    pppIfs() {
+    #output list of interfaces with running ppp daemons
+      pppSpec='/var/run/ppp[0-9]*.pid'
+      pidfns=`echo $pppSpec`
+    set -f
+      [ "$pidfns" != "$pppSpec" ] && {
+        for pidFn in $pidfns; do
+          ppp=`basename $pidFn`
+          echo ${ppp%.pid}
+        done
+      }
+    set +f
+    }
+
+    takeDown() {
+    #take down the specified interfaces
+    #do all in parallel if inParallel set
+      unset bg
+      [ $inParallel ] && bg='&'
+      for dev; do(
+        [ $dev = lo -a "$bg" ] && continue
+        cfg=$syscfg/ifcfg-$dev
+        [ -r $cfg ] || cfg=$syscfg/if-default
+        . $cfg  #don't try to stop ignored interfaces
+        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] &&
+          ifDown $dev force $bg
+      )done
+      wait
+    }
+
+    #update routing only ONCE, after deconfiguring interfaces
+    trap "gateUp; hostsUp; exit" EXIT INT TERM QUIT HUP
+
+    if [ "$@" ]; then  #stop only the specified interfaces
+      takeDown "$@"
+    else  #stop all interfaces
+      inParallel=  takeDown `globIfs $STOP`
+      export inParallel=yes
+      takeDown `pppIfs`  #all ppp interfaces
+      takeDown `ifs '^[[:alpha:]][[:alpha:][:digit:]]*:'` #all aliases
+      takeDown `ifs`  #all remaining interfaces
+      ifDown lo  #always last
+    fi
+;;
+
+  restart)
+       $0 stop	"$@"
+       $0 start "$@"
+;;
+  *)
+       echo "usage: start|stop|restart {interfaces}"
 esac

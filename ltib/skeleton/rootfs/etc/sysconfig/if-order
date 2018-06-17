@@ -1,6 +1,7 @@
 # Define networking policies
 # Most importantly interface start and stop order on boot & shutdown
 #  Interfaces in START list are started before NFS and login allowed
+#  Interfaces in STOP list are stopped in sequence before others
 
 START='lo eth0'
-STOP='ppp6 ppp8 ppp7 ppp2 ppp1 ppp0 ww* c* wl* eth[^0]* eth0:10 eth0 *'
+STOP='ppp6'

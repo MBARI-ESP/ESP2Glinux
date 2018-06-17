@@ -3,80 +3,18 @@
 #  ifdown [interface name]
 #
 
-usage ()
-{
-    echo "usage:  ifdown [netInterface]"
-    echo "  deconfigure and disable the specified network interface"
-    exit 1
-}
-
-. /usr/share/ifupfn.sh
-
-ifAliasDown() {
-  fn=/var/run/*$1.pid
-  pidfns=`echo $fn`
-  [ "$pidfns" = "$fn" ] && {
-    isUp $1 || return 0
-  }
-  echo "Shutting down interface $1 ..."
-  for pidfn in $pidfns; do
-    daemon=`head -n1 $pidfn 2>/dev/null`
-    [ "$daemon" ] && {
-      case $pidfn in
-        *dhcp*-*) signal=HUP ;;
-        *) signal=TERM ;;
-      esac
-      for try in 1 2 last; do
-        kill -$signal $daemon 2>/dev/null  #relinquish any lease
-        for t in 1 2 3 4 5; do  #wait for daemon to die
-          sleep 1
-          kill -0 $daemon 2>/dev/null || break 2
-        done
-        [ "$try" = last ] && {
-          echo "Forcing $1 (PID $daemon) to terminate" >&2
-          rm $pidfn
-          kill -9 $daemon
-        }
-      done
-      #ppp will delete its own .pid files
-      [ "$signal" != TERM ] && rm -f $pidfn
-    }
-  done
-  ifconfig $* 2>/dev/null
-  hostDown $1
-  gateDown $1
-}
-
-eachAlias() {
-  cfg=/etc/sysconfig/ifcfg-
-  aliases="`echo $cfg$2:*`"
-  arg1=$1
-  [ "$aliases" = "$cfg$2:*" ] || {
-    shift 2
-    for alias in $aliases; do
-       $arg1 ${alias#$cfg} $*
-    done
-  }
-}
+. /usr/share/ifdownfn.sh
 
 case "$1" in
   -*|*/*|'') #any flag is a request for help
-    echo "
+    cat <<END >&2
 usage:  ifdown [network interface or alias name]
-        disable the specified network interface or alias
-"
+        deconfigure and disable the specified network interface or alias
+END
     exit 1
   ;;
-
-  *:*) #an interface alias
-    ifAliasDown $1 down
-  ;;
-
-  *) #anything else must be the name of an interface
-    [ "$2" = "force" ] && eachAlias ifAliasDown $1 down
-    op=0
-    isUp ^$1: || op=down  #force only if no aliases remain
-    ifAliasDown $1 $op
 esac
+
+ifDown "$@"
 gateUp
 hostsUp

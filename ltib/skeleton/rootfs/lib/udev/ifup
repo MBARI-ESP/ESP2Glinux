@@ -4,7 +4,7 @@
 #otherwise, this brings interface UP if it was down
 exec 7<&- 5<&-
 exec >>/dev/console 2>&1
-#exec >>/tmp/ifup.trace 2>&1
+#exec >>/tmp/ifup-$1.trace 2>&1
 #echo "udev: ifup $1" >&2
 #set -x
 
@@ -19,6 +19,6 @@ lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
   exec 7<&-
 }
 flags=`cat /sys/class/net/$1/flags` && [ $(( $flags & 1 )) = 0 ] &&
-exec /usr/sbin/ifup $1 &
+exec /usr/sbin/ifup $1 '||y|yes|true' &  #only if AUTOSTART missing,yes, or true
 
 #catchup command starts interfaces listed in ifup.pending

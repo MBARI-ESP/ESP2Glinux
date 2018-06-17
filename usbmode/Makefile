@@ -67,7 +67,7 @@ json/json.h:
 	ln -s $(jsonTop) json
 
 clean:
-	rm -f *.o usbmode json
+	rm -f *.o usbmode json usbmodeMain.c
 
 #derive the database from that maintained by the usb_modeswitch project
 usb-mode.json:  $(modeSwitchData)

@@ -22,7 +22,7 @@ ifup_function ()
     usage
     return 200
   }
-  startMode=${1-"^(n|no||y|yes|true|false)$"}  #yes, no, or missing
+  startMode="^(${1-n|no||y|yes|true|false)}$"  #yes, no, or missing
   echo "$AUTOSTART" | egrep -iq $startMode || {
 #      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2

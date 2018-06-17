@@ -6,25 +6,26 @@
 
 devfn=$1
 mode=$2
+syscfg=/etc/sysconfig
 
 case "$devfn" in
   "")  #take the interface definitions from the environment
     [ "${IFNAME}" ] || usage
     ifup_function $mode
   ;;
-  
+
   -*)  #any flag is a request for help
-    usage    
+    usage
   ;;
-  
+
   *) #anything else must be the name of an interface
     unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
     unset NETWORK GATEWAY MTU AUTOSTART
     IFNAME="$devfn"
     cd /etc/sysconfig && {
-      cfg=ifcfg-$IFNAME
-      [ -r $cfg ] || cfg=if-default
-      . ./$cfg
+      cfg=$syscfg/ifcfg-$IFNAME
+      [ -r $cfg ] || cfg=$syscfg/if-default
+      . $cfg
       ifup_function $mode
     }
 esac
