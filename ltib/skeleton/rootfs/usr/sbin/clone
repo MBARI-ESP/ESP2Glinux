@@ -3,18 +3,19 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 1/25/18 brent@mbari.org
+Clone ESP linux to create a bootable images -- 6/16/18 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
-  --factory   #read from the factory recovery image (archive)
+  --factory  #read from the factory recovery image (archive)
       (this is equivalent specifying source archive $pristine)
   --to destination  #specifies clone output destination where:
       SD|card outputs to the SD card
       flash   outputs to internal flash memory
       /*      outputs tar archive to file at specified absolute path
       -       outputs tar archive to stdout
-  --noimage   #do NOT include a copy of the recovery image in destination
+  --overlay  #copy system image over existing files without formatting first
+  --noimage  #do NOT include a copy of the recovery image in destination
   --help  #display this
 Source argument:
   Read the root filesystem image from the specified directory or
@@ -55,10 +56,11 @@ cmdErr() {
 #set -x
 export progName=`basename $0`
 export pristine=/boot/rootfs.tgz
-parsed=`getopt -n "$progName" -al factory,to:,help,noimage -o '' -- "$@"` ||\
-         exit $?
+parsed=`getopt -n \
+  "$progName" -al factory,to:,help,noimage,overlay -o '' -- "$@"` || exit $?
 eval set -- $parsed
-unset dest factory noimage
+unset dest factory noimage overay
+COPY=FORMAT
 while [ "$1" ]; do
   opt=$1
   shift
@@ -76,6 +78,9 @@ while [ "$1" ]; do
   ;;
     --noimage)
       noimage=1
+  ;;
+    --overlay)
+      overlay=OVERWRITE
   ;;
     --help)
       showHelp
@@ -175,7 +180,7 @@ mkSDcard() {
   fuser -sm ${mmc}* && {
     cat 2>&1 <<END
 SD card is in use
- ==> reboot, then remove card while kernel reloads from SPI flash
+ ==> reboot, then remove card while kernel reloads from Internal SPI Flash
 END
     exit 3
   }
@@ -209,22 +214,27 @@ END
 >>>    reset
 END
   esac
-  read -p 'WRITE bootable system image over *entire* SDcard? [yes/No] ' yn
+  read -p "$overlay system image onto SDcard? [yes/No] " yn
   case $yn in
     yes) ;;
-    [y/Y]*) cmdErr "Answer 'yes' to overwrite SDcard";;
+    [y/Y]*) cmdErr "Answer 'yes' to $overlay SDcard";;
     * ) exit 2
   esac
 
+  swapLabel=
+  [ "$overlay" = "FORMAT" ] && {
+    set -e
+    mkdosfs -n ESPBOOT$ID  $kernPart
+    mkfs.ext4  -L ESPROOT-$ID  $rootPart
+    tune2fs -c0 -i0  $rootPart
+    echo
+    swapLabel=ESPSWAP-$ID
+  }
   set -e
-  mkdosfs -n ESPBOOT$ID  $kernPart
-  mkfs.ext4  -L ESPROOT-$ID  $rootPart
-  tune2fs -c0 -i0  $rootPart
   mount $rootPart $dst
-  echo
   writeRootFS $dst
   cd `dirname $dst`
-  mkcardroot `basename $dst` ESPSWAP-$ID  #tweak symlinks to avoid loops
+  mkcardroot `basename $dst` $swapLabel  #tweak symlinks and create swap file
   set +e
 
   echo "Installing system files to make SD card bootable"
@@ -242,10 +252,11 @@ END
   }
   echo "Creating ESP app data directories on SD card:"
   cd $dst/home
-  for user in *; do
-    mkdir $dst/var/log/$user &&
-    echo "   /var/log/$user" &&
-    chown `find $user -maxdepth 0 -printf "%u:%g"` $dst/var/log/$user
+  for user in *; do  #owner and group must match home dir's
+    dstLog=$dst/var/log/$user
+    echo "   /var/log/$user"
+    [ -d $dstLog ] || mkdir $dstLog &&
+      chown `find $user -maxdepth 0 -printf "%u:%g"` $dstLog
   done
   set -e
   cd
@@ -285,18 +296,20 @@ mkFlash() {
     echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
     exit 3
   }
-  read -p "OVERWRITE *entire* SPI Flash with new ESP Linux image? [yes/No] " yn
+  read -p "$copy Internal Flash memory with new system image? [yes/No] " yn
   case $yn in
     yes) ;;
-    [y/Y]*) cmdErr "Answer 'yes' to overwrite SPI Flash";;
+    [y/Y]*) cmdErr "Answer 'yes' to $copy internal flash";;
     * ) exit 2
   esac
 
-  set -e
-  flash_eraseall  $rootDev    #erase internal linux root filesystem
-  mount $rootPart $dst
-  set +e
-  echo
+  [ "$overlay" = "FORMAT" ] && {
+    set -e
+    flash_eraseall  $rootDev    #erase internal linux root filesystem
+    mount $rootPart $dst
+    set +e
+    echo
+  }
   writeRootFS $dst            #populate rootfs
 
   var=$dst/card/var
@@ -335,10 +348,10 @@ END
 }
 
 
-export src noimage
+export src noimage overlay
 case "$dest" in
   SD|sd|CARD|card|SDcard|sdcard|sdCard)
-                      mkSDcard /var/run/newSDcard /card /boot;;
+                      mkSDcard /var/run/SDcard /card /boot;;
   flash|FLASH|Flash)  mkFlash /flash;;
   /*)                 writeRootFS $dest;;
   -|stdout)
