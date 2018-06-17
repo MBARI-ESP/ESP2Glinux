@@ -5,7 +5,7 @@
 lockFn=/var/lock/ifup.pending
 [ -r $lockFn ] || exit $?
 exec 7<$lockFn
-flock -x 7 -w 60 2>/dev/null || [ $? = 69 ] || {
+flock -xw 60 7 || {
   echo "Cannot lock $lockFn" >&2
   exit 1
 }
@@ -17,6 +17,6 @@ rm $lockFn  #before giving up lock!
 exec 7<&-
 for IFNAME in $ifNames; do
   flags=`cat /sys/class/net/$IFNAME/flags` 2>/dev/null &&
-          [ $(( $flags & 1 )) = 0 ] && 
+          [ $(( $flags & 1 )) = 0 ] &&
           /usr/sbin/ifup $IFNAME &
 done
