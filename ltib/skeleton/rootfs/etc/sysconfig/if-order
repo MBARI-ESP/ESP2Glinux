@@ -1,7 +1,7 @@
-# Define networking policies
-# Most importantly interface start and stop order on boot & shutdown
+# Define interface start and stop order on boot & shutdown
 #  Interfaces in START list are started before NFS and login allowed
 #  Interfaces in STOP list are stopped in sequence before others
+#  Interfaces in START are stopped last in reverse order
 
 START='lo eth0'
 STOP='ppp6'

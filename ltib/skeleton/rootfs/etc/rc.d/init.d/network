@@ -49,23 +49,40 @@ case "$op" in
       cd "$oldWD"
     }
 
+    inStart() {
+    #return success if $1 appears in other args
+    #search $START if no other args provided
+      [ "$1" ] && {
+        key=$1
+        shift
+        [ "$1" ] || set -- $START
+        for item; do
+          [ "$item" = "$key" ] && return 0
+        done
+      }
+      return 1
+    }
+
     ifs() {
     #output list of all UP interface names matching given grep regex
+    #excluding those in $START list
       selection=${1-'^[[:alpha:]]'}
       ifconfig | grep $selection | while read -r ifName details; do
-        echo $ifName
+        inStart $ifName || echo $ifName
       done
     }
 
     pppIfs() {
     #output list of interfaces with running ppp daemons
+    #excluding those in $START list
       pppSpec='/var/run/ppp[0-9]*.pid'
       pidfns=`echo $pppSpec`
     set -f
       [ "$pidfns" != "$pppSpec" ] && {
         for pidFn in $pidfns; do
           ppp=`basename $pidFn`
-          echo ${ppp%.pid}
+          ppp=${ppp%.pid}
+          inStart $ppp || echo $ppp
         done
       }
     set +f
@@ -77,28 +94,33 @@ case "$op" in
       unset bg
       [ $inParallel ] && bg='&'
       for dev; do(
-        [ $dev = lo -a "$bg" ] && continue
         cfg=$syscfg/ifcfg-$dev
         [ -r $cfg ] || cfg=$syscfg/if-default
-        . $cfg  #don't try to stop ignored interfaces
+        . $cfg  #never stop 'ignored' or 'inittab' interfaces
         [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] &&
           ifDown $dev force $bg
       )done
       wait
     }
 
+    reverse() {
+      out=
+      for arg; do out="$arg $out"; done
+      echo $out
+    }
+
     #update routing only ONCE, after deconfiguring interfaces
     trap "gateUp; hostsUp; exit" EXIT INT TERM QUIT HUP
 
-    if [ "$@" ]; then  #stop only the specified interfaces
+    if [ "$1" ]; then  #stop only the specified interfaces
       takeDown "$@"
     else  #stop all interfaces
       inParallel=  takeDown `globIfs $STOP`
       export inParallel=yes
       takeDown `pppIfs`  #all ppp interfaces
       takeDown `ifs '^[[:alpha:]][[:alpha:][:digit:]]*:'` #all aliases
-      takeDown `ifs`  #all remaining interfaces
-      ifDown lo  #always last
+      takeDown `ifs`
+      inParallel=  takeDown `reverse $START`
     fi
 ;;
 
