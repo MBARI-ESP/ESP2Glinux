@@ -3,7 +3,7 @@
 #exec 2>>/tmp/catchup.trace
 #set -x
 lockFn=/var/lock/ifup.pending
-[ -r $lockFn ] || exit $?
+[ -r $lockFn ] || exit
 exec 7<$lockFn
 flock -xw 60 7 || {
   echo "Cannot lock $lockFn" >&2
