@@ -1,0 +1,12 @@
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2018-07-06 16:30:15.373921380 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2018-07-05 09:41:40.239960521 -0700
+@@ -898,7 +898,7 @@
+     case 0104:  /* octal 0104 denotes PC/104 carrier */
+       PC104FPGA = PC104IRQID | PC104ENETRESET | PC104RESET;
+       resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+-      boardInit("PC/104 Carrier\n", 0000070006);  //slower when routed via FPGA
++      boardInit(" PC/104 Carrier\n", 0200060004);  //slower when routed via FPGA
+       ea_add_device_octalUart(0202130212);  //much slower for FPGA on PC/104 bus
+       if (nr_uarts > 9)  //if there are sufficient I/O ports allocated...
+         platform_device_register(&isa_device);  //add legacy ISA ports
