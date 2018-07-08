@@ -1,6 +1,6 @@
 # Options common to all all PPTP servers
 #
-mtu 1460
+mtu 1368  #Verizon requires this.  Why?
 
 require-mppe-128
 require-mschap-v2
