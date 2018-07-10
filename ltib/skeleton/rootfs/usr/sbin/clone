@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create a bootable images -- 6/16/18 brent@mbari.org
+Clone ESP linux to create a bootable images -- 7/9/18 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -60,7 +60,7 @@ parsed=`getopt -n \
   "$progName" -al factory,to:,help,noimage,overlay -o '' -- "$@"` || exit $?
 eval set -- $parsed
 unset dest factory noimage overay
-COPY=FORMAT
+overlay=FORMAT
 while [ "$1" ]; do
   opt=$1
   shift
@@ -80,7 +80,7 @@ while [ "$1" ]; do
       noimage=1
   ;;
     --overlay)
-      overlay=OVERWRITE
+      overlay=OVERLAY
   ;;
     --help)
       showHelp
@@ -253,10 +253,15 @@ END
   echo "Creating ESP app data directories on SD card:"
   cd $dst/home
   for user in *; do  #owner and group must match home dir's
-    dstLog=$dst/var/log/$user
-    echo "   /var/log/$user"
-    [ -d $dstLog ] || mkdir $dstLog &&
-      chown `find $user -maxdepth 0 -printf "%u:%g"` $dstLog
+    uLog="/var/log/$user"
+    dstLog="$dst/$uLog"
+    if [ -d "$dstLog" ]; then
+      echo " Preserving $uLog"
+    else
+      echo "   Creating $uLog"
+      mkdir $dstLog &&
+        chown `find $user -maxdepth 0 -printf "%u:%g"` $dstLog
+    fi
   done
   set -e
   cd

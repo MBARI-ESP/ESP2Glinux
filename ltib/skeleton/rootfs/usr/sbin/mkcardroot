@@ -2,7 +2,7 @@
 [ -z "$1" ] && {
   cat 2>&1 <<END
 Modify /card and related links to allow specified rootfs to be a root filesystem
-11/6/17 brent@mbari.org
+7/9/18 brent@mbari.org
 END
 exit 2
 }
@@ -19,10 +19,10 @@ mount | grep " type rootfs " | while read rootfs on rootdir ignore; do
 done
 
 cd "$1" &&
-rm  -rf card tmp var &&
+rm  -rf card tmp &&
 ln  -s  . card &&
-mkdir var && cd var &&
-mkdir log run lock &&
+mkdir -p var && cd var &&
+mkdir -p log run lock &&
 
 [ "$2" ] && {
   cd "$top" &&
