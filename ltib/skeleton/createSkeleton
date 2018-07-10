@@ -43,10 +43,10 @@ find -type f -exec file {} \; |
       if [ "${libPath#lib/modules/}" != "$libPath" ]; then
         echo Stripping unneeded and debug symbols from $libPath
         /ltibarm/bin/strip --strip-unneeded "$libPath" &&
-        /ltibarm/bin/strip --strip-debug "$libPath"        
+        /ltibarm/bin/strip --strip-debug "$libPath"
       else
         echo Stripping symbols from $libPath
-        /ltibarm/bin/strip "$libPath"        
+        /ltibarm/bin/strip "$libPath"
       fi #|| exit 9
     done
 
@@ -59,8 +59,9 @@ sudo sh <<END
   chown -Rh root:root $1 &&
   #seed with (just) needed dev entries
   tar xzpf $here/dev.tgz -C $1 && (cd $1/etc &&
-  for secret in shadow wpa_supplicant.conf ppp/*secret*; do
-    [ -r \$secret ] && chmod o-r \$secret
+  chmod o-r shadow &&
+  for secret in wpa_supplicant.conf ppp/*secret*; do
+    [ -r \$secret ] && chmod go-r \$secret
   done)
   #ltib sets group suid for a number of strange directories (clear them here)
   find $1 -type d -exec chmod g-s {} \; &&
