@@ -10,7 +10,7 @@ tracefn=/tmp/${tag}.trace
 }
 
 cellular=$1
-resetHoldOff=${2--300}   #retry detach every 5 minutes
+resetHoldOff=${2-300}    #fail 5 minutes after resetting modem
 offSecs=${3-5}           #default to 5 seconds w/pwr off
 gateway=${4-/dev/I2Cgate}
 lastResetFn=/var/run/`basename $gateway`.reset

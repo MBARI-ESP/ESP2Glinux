@@ -9,13 +9,15 @@ esp=${3-esp}    #esp user for case where no espclient available
 mRstCmd="sleepyCmd --device=$gateway resetModem $offSecs"
 tag=`basename $0`
 
+resetUSBunlessBusy >/dev/null &  #in case modem is on a USB serial port
+
 fuser -u $gateway 2>&1 | tr \(\) " " | (
   while read dev espPid espUser ignored; do
     if [ -n "$espPid" -a -n "$espUser" ]; then
       logger -t$tag "Cycling power via $espUser's espclient"
       result=$(exec 5>&1; su - $espUser >&2 <<EOS
         espclient --server=$espPid $tag >&5 <<EOC
-          Sleepy.cycleModemPower! $offSecs
+          Gate.cycleModemPower! $offSecs
 EOC
 EOS
       ) && {
@@ -34,3 +36,6 @@ EOS
   logger -t$tag "also failed as root -- $errmsg"
   return 5
 )
+result=$?
+wait
+exit $result
