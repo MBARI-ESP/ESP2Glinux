@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create bootable image -- 7/24/18 brent@mbari.org
+Clone ESP linux to create bootable image -- 8/7/18 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -301,10 +301,10 @@ mkFlash() {
     echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
     exit 3
   }
-  read -p "$copy Internal Flash memory with new system image? [yes/No] " yn
+  read -p "$overlay Internal Flash memory with new system image? [yes/No] " yn
   case $yn in
     yes) ;;
-    [y/Y]*) cmdErr "Answer 'yes' to $copy internal flash";;
+    [y/Y]*) cmdErr "Answer 'yes' to $overlay internal flash";;
     * ) exit 2
   esac
 
