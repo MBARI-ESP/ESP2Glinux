@@ -1,0 +1,37 @@
+#!/bin/sh
+offSecs=5
+showHelp() {
+  p=$progName
+  cat 2>&1 <<END
+Power cycle USB bus -- 7/12/18 brent@mbari.org
+Usage:  [with optional elements in {}]
+  $p {offSecs}
+Notes:
+  turns bus off for $offSecs seconds if offSecs omitted
+END
+}
+
+cmdErr() {
+  echo "$progName: $1" >&2
+  exit 2
+}
+
+#set -x
+export progName=`basename $0`
+case "$*" in
+  '')
+  ;;
+  [0-9]*)
+    offSecs="$1"
+  ;;
+  *)
+    showHelp
+    exit 2
+esac
+
+USB5V=/sys/class/gpio/USB+5V
+echo 0 >$USB5V/value
+echo USB bus off for $offSecs seconds
+sleep "$offSecs" || sleep 5
+echo 1 >$USB5V/value
+echo USB bus ON
