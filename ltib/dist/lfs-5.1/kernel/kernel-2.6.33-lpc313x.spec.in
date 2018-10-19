@@ -70,6 +70,7 @@ Patch54         : kernel-2.6.33-ea3152.patch
 Patch55         : kernel-2.6.33-sierra.patch
 Patch56         : kernel-2.6.33-option.patch
 Patch57         : kernel-2.6.33-etherTiming.patch
+Patch58         : kernel-2.6.33-sharedSerialIRQ.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -130,3 +131,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch55 -p1
 %patch56 -p1
 %patch57 -p1
+%patch58 -p1

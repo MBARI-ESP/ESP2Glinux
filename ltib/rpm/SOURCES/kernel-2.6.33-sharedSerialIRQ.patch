@@ -1,0 +1,283 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
+--- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2018-10-19 09:33:49.755866091 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2018-10-18 14:02:14.347057736 -0700
+@@ -112,6 +112,37 @@
+   return low == 0 || low == 0104;
+ }
+ 
++static int16_t pc104sharedIRQ(void)
++/*
++  return negative value if shared serial IRQ is asserted
++  lower 15 bits indicate interrupt number
++*/
++{
++  return GPIO_STATE(IOCONF_EBI_I2STX_0) & 
++          		1<<(PC104_IRQ6 - BASE_GPIO_EBI_I2STX_0) ?
++           IRQ_XR16788_INT | 0x8000 : IRQ_XR16788_INT;
++}
++
++static int16_t XRsharedIRQ(void)
++/*
++  return negative value if shared serial IRQ is asserted
++  lower 15 bits indicate interrupt number
++*/
++{
++  return GPIO_STATE(IOCONF_EBI_I2STX_0) & 
++          		1<<(XR_IRQ - BASE_GPIO_EBI_I2STX_0) ?
++           IRQ_XR16788_INT : IRQ_XR16788_INT | 0x8000;
++}
++
++static int16_t noSharedIRQ(void)
++{
++	return -1;
++}
++
++int16_t (*shared8250IRQ)(void) = noSharedIRQ;
++
++
++
+ 
+ static struct lpc313x_mci_irq_data irq_data = {
+ 	.irq = IRQ_SDMMC_CD,
+@@ -788,7 +819,7 @@
+     replace_irq(IRQ_DM9000_ETH_INT, EVT_GPIO3, EVT_ACTIVE_LOW);
+     replace_irq(IRQ_EA_VBUS_OVRC, EVT_NAND_NCS_2, EVT_ACTIVE_LOW);
+     if (boardID & 0xff) //PC/104 carrier with octal USART on the ESP2G baseboard
+-      replace_irq(IRQ_XR16788_INT, XR_EVT, EVT_ACTIVE_HIGH);
++      replace_irq(IRQ_XR16788_INT, XR_EVT, EVT_RISING_EDGE);
+     else         //ESP 3G with on board octal USART
+       replace_irq(IRQ_XR16788_INT, EVT_mNAND_RYBN3, EVT_ACTIVE_LOW);
+   }
+@@ -878,6 +909,7 @@
+       gpio_export(PeripheralReset, 1);   /* echo low > gpio58/direction */
+       resetDone = jiffies + HZ/100 + 1;  /* deassert at least 10ms from now */
+       boardInit("MBARI ESP 3G\n", 0000050004); //fast directly connected strobes
++	  shared8250IRQ = XRsharedIRQ;
+       ea_add_device_octalUart(0000060005);
+       /* Configure UART Interrupt pin as input, no pull-up */
+       requestGPI(GPIO_MNAND_RYBN3, "XR16788IRQ");
+@@ -903,6 +935,7 @@
+       if (nr_uarts > 9)  //if there are sufficient I/O ports allocated...
+         platform_device_register(&isa_device);  //add legacy ISA ports
+       /* Configure UART Interrupt pin as input, no pull-up */
++	  shared8250IRQ = pc104sharedIRQ;
+       requestGPI(XR_IRQ, "XR16788IRQ");
+       while (jiffies < resetDone) ;      /* wait 10ms */
+       PC104FPGA = PC104IRQID;            /* deassert enet and PC/104 resets */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2018-10-19 09:33:49.743866389 -0700
++++ linux-2.6.33.modified/drivers/serial/8250.c	2018-10-19 09:25:40.795979864 -0700
+@@ -170,9 +170,9 @@
+ };
+ 
+ struct irq_info {
+-	struct			hlist_node node;
++	struct		hlist_node node;
+ 	int			irq;
+-	spinlock_t		lock;	/* Protects list not the hash */
++	spinlock_t	lock;	/* Protects list not the hash */
+ 	struct list_head	*head;
+ };
+ 
+@@ -1560,6 +1560,27 @@
+ 	spin_unlock_irqrestore(&up->port.lock, flags);
+ }
+ 
++
++static void stuckIRQ(struct uart_8250_port *up, int irq)
++{
++  if (up) {
++    /* If we hit this, we've got a stuck IRQ. */
++    unsigned iir = serial_in(up, UART_IIR);
++    if (up->capabilities & UART_EXAR7 && iir & 0x1C) {
++	    printk_ratelimited(KERN_ERR
++            "ttyS%d: irq %d stuck with IIR=0x%02x (purging rcv fifo)\n",
++            up->port.line, irq, iir);
++        serial_outp(up, UART_FCR,
++                    UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR);
++    }else
++	    printk_ratelimited(KERN_ERR
++            "ttyS%d: irq %d stuck with IIR=0x%02x\n",
++            up->port.line, irq, iir);
++  }else
++  	printk_ratelimited(KERN_ERR "8250: irq %d stuck\n", irq);
++}
++
++
+ /*
+  * This is the serial driver's interrupt routine.
+  *
+@@ -1587,36 +1608,20 @@
+ 
+ 	l = end = i->head;
+ 	do {
+-		struct uart_8250_port *up;
+-		unsigned int iir;
+-
+-		up = list_entry(l, struct uart_8250_port, list);
+-
+-		iir = serial_in(up, UART_IIR);
+-		if (!(iir & UART_IIR_NO_INT)) {
+-			serial8250_handle_port(lastHandled=up);
+-			end = NULL;
+-		} else if (end == NULL)
+-			end = l;
+-
+-		l = l->next;
+-
+-		if (l == i->head && pass_counter++ > PASS_LIMIT) {
+-			/* If we hit this, we've got a stuck IRQ. */
+-            iir = serial_in(lastHandled, UART_IIR);
+-//TODO:  try resetting and reinitializing the UART?!
+-			if (up->capabilities & UART_EXAR7 && iir & 0x1C) {
+-				printk_ratelimited(KERN_ERR
+-            		"ttyS%d: irq %d stuck with IIR=0x%02x (purging rcv fifo)\n",
+-                	lastHandled->port.line, irq, iir);
+-           		serial_outp(lastHandled, UART_FCR,
+-                			UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR);
+-            }else
+-				printk_ratelimited(KERN_ERR
+-            		"ttyS%d: irq %d stuck with IIR=0x%02x\n",
+-                	lastHandled->port.line, irq, iir);            
+-			break;
+-		}
++	  struct uart_8250_port *up = list_entry(l, struct uart_8250_port, list);
++	  unsigned iir = serial_in(up, UART_IIR);
++	  if (!(iir & UART_IIR_NO_INT)) {
++		  serial8250_handle_port(lastHandled=up);
++		  end = NULL;
++	  } else if (end == NULL)
++		  end = l;
++
++	  l = l->next;
++
++	  if (l == i->head && pass_counter++ > PASS_LIMIT) {
++          stuckIRQ(lastHandled, irq);
++		  break;
++	  }
+ 	} while (l != end);
+ 
+ 	spin_unlock(&i->lock);
+@@ -1627,6 +1632,56 @@
+ }
+ 
+ /*
++  handler optimized for handling many devices sharing a designated serial interrupt vector
++*/
++extern int16_t (*shared8250IRQ)(void);
++
++static irqreturn_t shared8250_interrupt(int irq, void *dev_id)
++{
++	struct irq_info *i = dev_id;
++	struct list_head *l, *end;
++	int pass_counter = 0;
++    struct uart_8250_port *lastHandled = NULL;
++
++	DEBUG_INTR("shared8250_interrupt(%d)...", irq);
++
++	spin_lock(&i->lock);
++
++	l = end = i->head;
++	while (shared8250IRQ() < 0) {  //interrupt still being asserted
++	  struct uart_8250_port *up = list_entry(l, struct uart_8250_port, list);
++	  unsigned iir = serial_in(up, UART_IIR);
++	  if (!(iir & UART_IIR_NO_INT)) {
++		  serial8250_handle_port(lastHandled=up);
++		  end = NULL;
++	  } else if (end == NULL)
++		  end = l;
++
++	  l = l->next;
++
++	  if (l == i->head && pass_counter++ > PASS_LIMIT) {
++          stuckIRQ(lastHandled, irq);
++		  break;
++	  }
++      if (l == end)
++        break;
++	}
++    if (!lastHandled) {
++	  spin_unlock(&i->lock);
++	  return IRQ_NONE;
++    }
++    //ensure lastHandled (active) port is probed first when the next interrupt occurs
++    if (i->head != &lastHandled->list) {
++	  __list_del(lastHandled->list.prev, lastHandled->list.next);
++	  list_add_tail(&lastHandled->list, i->head);
++      i->head = &lastHandled->list;
++    }
++	spin_unlock(&i->lock);
++    return IRQ_HANDLED;
++}
++
++
++/*
+  * To support ISA shared interrupts, we need to have one interrupt
+  * handler that ensures that the IRQ line has been deasserted
+  * before returning.  Failing to do this will result in the IRQ
+@@ -1687,19 +1742,18 @@
+ 	if (i->head) {
+ 		list_add(&up->list, i->head);
+ 		spin_unlock_irq(&i->lock);
+-
+ 		ret = 0;
+ 	} else {
+ 		INIT_LIST_HEAD(&up->list);
+ 		i->head = &up->list;
+ 		spin_unlock_irq(&i->lock);
+ 		irq_flags |= up->port.irqflags;
+-		ret = request_irq(up->port.irq, serial8250_interrupt,
+-				  irq_flags, "serial", i);
++        ret = up->port.irq == (shared8250IRQ() & 0x7fff) ?
++        	request_irq(up->port.irq, shared8250_interrupt, irq_flags, "serial:shared", i) :
++        	request_irq(up->port.irq, serial8250_interrupt, irq_flags, "serial", i);
+ 		if (ret < 0)
+ 			serial_do_unlink(i, up);
+ 	}
+-
+ 	return ret;
+ }
+ 
+@@ -1969,9 +2023,9 @@
+ 
+ 	if (up->port.type == PORT_XR16788) {
+ 		//RXTRG and TXRTG registers to determine fifo trigger points
+-		serial_outp(up, 11,  20);  //RX interrupt when fifo has >=20 bytes
+-		serial_outp(up, 10,  10);  //refill TX fifo when <10 bytes remain
+-		serial_outp(up,  8,0xC2);  //+/- 6 byte auto-CTS hysterisis
++		serial_outp(up, 11,  40);  //RX interrupt when fifo has >=40 bytes
++		serial_outp(up, 10,  14);  //refill TX fifo when <14 bytes remain
++		serial_outp(up,  8,0xCC);  //+/- 12 byte auto-RTS hysterisis
+ 	}
+ 	/*
+ 	 * For a XR16C850, we need to set the trigger levels
+@@ -2406,7 +2460,7 @@
+ 	if (is_omap_port(pt))
+ 		return 0x16 << pt->port.regshift;
+ #endif
+-	return 8 << pt->port.regshift;
++	return (pt->port.type == PORT_XR16788 ? 16 : 8) << pt->port.regshift;
+ }
+ 
+ /*
+@@ -2600,8 +2654,8 @@
+ 	.startup	= serial8250_startup,
+ 	.shutdown	= serial8250_shutdown,
+ 	.set_termios	= serial8250_set_termios,
+-	.pm		= serial8250_pm,
+-	.type		= serial8250_type,
++	.pm				= serial8250_pm,
++	.type			= serial8250_type,
+ 	.release_port	= serial8250_release_port,
+ 	.request_port	= serial8250_request_port,
+ 	.config_port	= serial8250_config_port,
+@@ -2823,7 +2877,7 @@
+ 
+ static struct uart_driver serial8250_reg = {
+ 	.owner			= THIS_MODULE,
+-	.driver_name		= "serial",
++	.driver_name	= "serial",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ 	.minor			= 64,
