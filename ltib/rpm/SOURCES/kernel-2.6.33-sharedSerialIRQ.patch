@@ -1,4 +1,3 @@
-Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
 diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c
 --- linux-2.6.33/arch/arm/mach-lpc313x/ea313x.c	2018-10-19 09:33:49.755866091 -0700
 +++ linux-2.6.33.modified/arch/arm/mach-lpc313x/ea313x.c	2018-10-18 14:02:14.347057736 -0700
