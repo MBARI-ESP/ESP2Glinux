@@ -5,7 +5,7 @@ here=`dirname $0`
 : ${SYSBIN=$HOSTTOP/usr/sbin}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 6/13/18 brent@mbari.org
+  -- 10/19/18 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -15,8 +15,8 @@ mkdir -p $LOCALBIN
 
 echo "  ===>  Building picocom  <==="
 cd ~/linux/picocom &&
-make CC=$ARMGCC/bin/gcc clean picocom || exit $?
-$STRIP -o $LOCALBIN/picocom picocom
+make CC=$ARMGCC/bin/gcc clean picocom &&
+$STRIP -o $LOCALBIN/picocom picocom || exit $?
 
 echo "  ===>  Building starlightXpress  <==="
 cd ~/linux/starlight &&
@@ -32,19 +32,19 @@ cd ~/misc/timelimit && armconfig && arminstall || exit $?
 
 echo "  ===>  Building sleepyCmd  <==="
 cd ~/misc/sleepyCmd &&
-make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd || exit $?
-$STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd
+make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd &&
+$STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd || exit $?
 
 echo "  ===>  Building holdopen  <==="
 cd ~/misc/holdopen &&
-make CC=$ARMGCC/bin/gcc clean ltib/holdopen || exit $?
-$STRIP -o $LOCALBIN/holdopen ltib/holdopen
+make CC=$ARMGCC/bin/gcc clean ltib/holdopen &&
+$STRIP -o $LOCALBIN/holdopen ltib/holdopen || exit $?
 
 echo "  ===>  Building suscript  <==="
 cd ~/misc/suscript &&
-make CC=$ARMGCC/bin/gcc clean ltib/suscript || exit $?
-$STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript
-chmod u+s $HOSTTOP/usr/sbin/suscript
+make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
+$STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
+chmod u+s $HOSTTOP/usr/sbin/suscript || exit $?
 
 for package in dyndns wpa_supplicant esp/dropbear usbmode \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools; do
