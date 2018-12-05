@@ -1,0 +1,35 @@
+#!/bin/sh
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
+
+stop() {
+  daemon=$1
+  shift
+  pid=`pidof $daemon` && [ "$pid" ] && {
+    echo Stopping $daemon
+    kill $* $pid && {
+      usleep 200000
+      for i in 1 2 3 4 5 6 7 8 9; do
+        kill -0 $pid 2>/dev/null || return
+        sleep 1
+      done
+      echo "$daemon refuses to die!" >&2
+      return 1
+    }
+  }
+}
+
+
+case "$1" in
+  start|restart)
+    stop rpc.mountd
+    stop nfsd -KILL
+    echo "Starting nfs server"
+    modprobe nfsd && rpc.nfsd && rpc.mountd && exportfs -a
+;;
+  stop)
+    stop rpc.mountd
+    stop nfsd -KILL
+;;
+  *)
+    echo "usage: `basename $0` {start|stop|restart}"
+esac

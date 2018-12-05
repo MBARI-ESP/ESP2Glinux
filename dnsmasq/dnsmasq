@@ -1,8 +1,7 @@
 #!/bin/sh
 PATH=/usr/sbin:/sbin:/bin
-daemon=portmap
-pidfn=/var/run/rpc.statd.pid
-statdir=/var/lib/nfs
+daemon=dnsmasq
+pidfn=/var/run/$daemon.pid
 OPTIONS=""
 
 stop() {
@@ -25,13 +24,12 @@ case "$1" in
   start|restart)
     stop
     echo "Starting $daemon..."
-    #create $statdir and ensure statd does not warn about running as root
-    mkdir -p $statdir && chown -R nobody $statdir/sm* 2>/dev/null
+    mkdir -p /card/tftp
     $daemon $OPTIONS
 ;;
   stop)
     stop
 ;;
   *)
-       echo "usage: $daemon {start|stop|restart}"
+    echo "usage: $daemon {start|stop|restart}"
 esac
