@@ -1,3 +1,4 @@
+#!/bin/sh
 #  Build updated wireless-compat kernel modules for updating ltibarm kernel
 #   to restore support for rt2800usb and old atmel usb adapters
 #  Binaries for from mod-init-tools 
