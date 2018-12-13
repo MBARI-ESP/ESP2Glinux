@@ -8,10 +8,10 @@
 }
 : ${objs:="ccd.o sx_usb.o"}
 [ -z "$KERNEL_VER" ] &&
-  KERNEL_VER=`grep "Linux kernel version" $KERNEL_DIR/.config | 
+  KERNEL_VER=`grep "Linux kernel version" $KERNEL_DIR/.config |
               cut -sf2 -d: | tr -d "[:space:]"` &&
 : ${HOSTTOP:=`echo ~/ltib/rootfs.tmp`} &&
-: ${INSTALL_DIR:="${HOSTTOP}/lib/modules/${KERNEL_VER}*"} &&
+: ${INSTALL_DIR:=`echo ${HOSTTOP}/lib/modules/${KERNEL_VER}*`} &&
 
 echo "Installing udev helpers in $HOSTTOP" &&
 cp starlightXpress $HOSTTOP/lib/udev &&
@@ -22,5 +22,7 @@ make clean &&
 ltibMake all KERNEL_DIR=$KERNEL_DIR KERNEL_VER=$KERNEL_VER obj-m="$objs" &&
 
 echo "Installing kernel modules in $INSTALL_DIR" &&
-mkdir -p $INSTALL_DIR/starlightXpress &&
+[ -d $INSTALL_DIR/starlightXpress ] || {
+  mkdir $INSTALL_DIR/starlightXpress || exit $?
+}
 cp -r *.ko $INSTALL_DIR/starlightXpress
