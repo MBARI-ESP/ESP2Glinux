@@ -1,6 +1,12 @@
 #!/bin/bash -e
 #set -x
 here=`dirname $0`
+[ "$1" ] || { cat <<EOS >&2
+First argument must be HOSTTOP rootfs destination directory
+EOS
+exit 42
+}
+export HOSTTOP=$1
 . $here/ltibEnv
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
 : ${SYSBIN=$HOSTTOP/usr/sbin}
