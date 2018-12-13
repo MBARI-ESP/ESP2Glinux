@@ -1,10 +1,12 @@
 # set up environment for ltib linux and u-boot builds
+# 1st arg should be HOSTTOP dest directory or ltib template dir will be used
 
 : ${LTIB:=$HOME/ltib}
+: ${HOSTTOP:=${1-$LTIB/rootfs.tmp}}
 : ${ARMGCC:=/ltibarm}
 : ${ARMHOST:=arm-none-linux-gnueabi}
 : ${ARMPREFIX:=$LTIB/rootfs/usr}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${STRIP:=$ARMSTRIP}
 : ${CROSS_COMPILE:=${ARMHOST}-}
-export ARMGCC ARMHOST ARMPREFIX ARMSTRIP STRIP CROSS_COMPILE
+export ARMGCC HOSTTOP ARMHOST ARMPREFIX ARMSTRIP STRIP CROSS_COMPILE

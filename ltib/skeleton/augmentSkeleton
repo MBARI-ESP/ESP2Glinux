@@ -6,14 +6,13 @@ First argument must be HOSTTOP rootfs destination directory
 EOS
 exit 42
 }
-export HOSTTOP=$1
-. $here/ltibEnv
+. $here/ltibEnv $1
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
 : ${SYSBIN=$HOSTTOP/usr/sbin}
 : ${RUBYsiteLIB=$HOSTTOP/opt/mbari/lib/ruby/site_ruby/1.8}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 10/19/18 brent@mbari.org
+  -- 12/13/18 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -66,12 +65,12 @@ echo "  ===>  Building sftp-server  <==="
 cd ~/linux/openssh && ltibconfig && ltibinstall || exit $?
 
 echo
-echo "  ===>  Building Ruby binutils  <==="
+echo "  ===>  Building Ruby  <==="
 cd ~/ruby/mbariRuby && armconfig && arminstall || exit $?
 
 for package in bindata rbelftools; do
   echo
-  echo "  ===>  Installing Ruby $package package  <==="
+  echo "  ===>  Installing Ruby $package package in $RUBYsiteLIB  <==="
   cd ~/ruby/$package/lib && cp -a * $RUBYsiteLIB || exit $?
 done
 
