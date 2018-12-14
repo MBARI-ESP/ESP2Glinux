@@ -39,24 +39,44 @@ diff -ru compat-wireless-3.3-2-n.orig/net/mac80211/key.h compat-wireless-3.3-2-n
  #include <linux/rcupdate.h>
 diff -ru compat-wireless-3.3-2-n.orig/scripts/driver-select compat-wireless-3.3-2-n/scripts/driver-select
 --- compat-wireless-3.3-2-n.orig/scripts/driver-select	2012-03-28 00:33:49.000000000 -0700
-+++ compat-wireless-3.3-2-n/scripts/driver-select	2012-10-24 21:20:18.218662675 -0700
-@@ -356,6 +356,13 @@
++++ compat-wireless-3.3-2-n/scripts/driver-select	2018-12-13 21:45:36.010434557 -0800
+@@ -135,6 +135,7 @@
+ 
+ function disable_eeprom
+ {
++echo "DISABLING EEPROM" >&2
+ 	disable_makefile ${EEPROM_MAKEFILE}
+ 	perl -i -ne 'print if ! /drivers\/misc\/eeprom\//' Makefile
+ }
+@@ -229,7 +230,7 @@
+ {
+ 	backup_file $ATH_MAKEFILE
+ 	perl -i -ne 'print if /'$1'/ || /CONFIG_ATH_/ || /ath-objs/ || /regd.o/ || /hw.o/ || /key.o/' $ATH_MAKEFILE
+-	disable_var_01
++	disable_var_02
+ }
+ 
+ function select_ath9k_driver
+@@ -356,6 +357,16 @@
  		disable_bt_usb_ethernet_var
  		disable_lib80211
  		;;
 +	esp)
-+		select_drivers	CONFIG_RT2X00 AT76C50X CONFIG_RTL8180 CONFIG_RTL8187 CONFIG_ATH_COMMON
++		select_drivers	CONFIG_RT2X00 AT76C50X CONFIG_RTL8180 \
++                                CONFIG_ATH_COMMON CONFIG_EEPROM_93CX6 \
++                                CONFIG_RTL8180 CONFIG_RTL8187
 +		disable_staging
-+		disable_bt_usb_ethernet_var
-+		disable_var_02
++		disable_bt_usb_ethernet
++		disable_ssb
++		disable_bcma
 +		select_ath9k_driver
 +		;;
  	wl12xx)
  		select_drivers		CONFIG_WL1251 \
  					CONFIG_WL12XX
 diff -ru compat-wireless-3.3-2-n.orig/scripts/gen-compat-autoconf.sh compat-wireless-3.3-2-n/scripts/gen-compat-autoconf.sh
---- compat-wireless-3.3-2-n.orig/scripts/gen-compat-autoconf.sh	2018-12-10 18:42:54.365578479 -0800
-+++ compat-wireless-3.3-2-n/scripts/gen-compat-autoconf.sh	2018-12-10 18:44:47.870751710 -0800
+--- compat-wireless-3.3-2-n.orig/scripts/gen-compat-autoconf.sh	2012-03-28 00:33:49.000000000 -0700
++++ compat-wireless-3.3-2-n/scripts/gen-compat-autoconf.sh	2018-12-13 21:45:27.590337361 -0800
 @@ -148,11 +148,11 @@
  for i in $(egrep '^CONFIG_|^ifdef CONFIG_|^ifndef CONFIG_|^endif #CONFIG_|^else #CONFIG_' $COMPAT_CONFIG | sed 's/ /+/'); do
  	case $i in
