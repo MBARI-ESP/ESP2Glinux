@@ -2,7 +2,7 @@
 # 1st arg should be HOSTTOP dest directory or ltib template dir will be used
 
 : ${LTIB:=$HOME/ltib}
-: ${HOSTTOP:=${1-$LTIB/rootfs.tmp}}
+HOSTTOP=${1-${HOSTTOP-$LTIB/rootfs.tmp}}
 : ${ARMGCC:=/ltibarm}
 : ${ARMHOST:=arm-none-linux-gnueabi}
 : ${ARMPREFIX:=$LTIB/rootfs/usr}
