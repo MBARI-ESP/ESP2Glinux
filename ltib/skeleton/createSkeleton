@@ -6,7 +6,7 @@ IMAGE=${2-$LTIB/rootfs.tmp}
 export LTIB IMAGE
 [ -z "$1" -o "$1" = "/" ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 4/24/16 brent@mbari.org
+Create new ltib root filesystem  -- 12/13/18 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
