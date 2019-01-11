@@ -10,7 +10,10 @@
 # to override previous values of the variables.
 
 
-# Uncomment following two lines and fix the paths if you have installed OpenSSL
+CFLAGS += -I$(HOME)/ltib/rootfs/usr/include
+LIBS_c += -L$(HOME)/ltib/rootfs/usr/lib
+
+## Uncomment following two lines and fix the paths if you have installed OpenSSL
 # or GnuTLS in non-default location
 #CFLAGS += -I/usr/local/openssl/include
 #LIBS += -L/usr/local/openssl/lib
@@ -169,7 +172,7 @@ CONFIG_PKCS12=y
 
 # Smartcard support (i.e., private key on a smartcard), e.g., with openssl
 # engine.
-CONFIG_SMARTCARD=y
+#CONFIG_SMARTCARD=y
 
 # PC/SC interface for smartcards (USIM, GSM SIM)
 # Enable this if EAP-SIM or EAP-AKA is included
@@ -200,7 +203,7 @@ CONFIG_CTRL_IFACE=y
 # When building a wpa_cli binary for distribution, please note that these
 # libraries are licensed under GPL and as such, BSD license may not apply for
 # the resulting binary.
-#CONFIG_READLINE=y
+CONFIG_READLINE=y
 
 # Include internal line edit mode in wpa_cli. This can be used as a replacement
 # for GNU Readline to provide limited command line editing and history support.
@@ -483,10 +486,21 @@ CONFIG_AP=y
 # See wpa_supplicant.conf for more information on autoscan usage.
 #
 # Enabling directly a module will enable autoscan support.
+#CONFIG_AUTOSCAN=y
 # For exponential module:
 #CONFIG_AUTOSCAN_EXPONENTIAL=y
 # For periodic module:
 #CONFIG_AUTOSCAN_PERIODIC=y
+
+# Background scan
+# This can be used to enable background scan support in wpa_supplicant.
+# See wpa_supplicant.conf for more information on usage.
+CONFIG_BGSCAN=y
+# For simple background scan module:
+CONFIG_BGSCAN_SIMPLE=y
+# For learning background scan module:
+CONFIG_BGSCAN_LEARN=y
+#
 
 # Password (and passphrase, etc.) backend for external storage
 # These optional mechanisms can be used to add support for storing passwords

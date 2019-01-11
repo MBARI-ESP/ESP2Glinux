@@ -4,8 +4,10 @@ DHCPNAME=`hostname`-wifi
 #VPN=$ESPshore/ppp6   #server IP / VPN interface
 
 ifPrep() {
+  wpa=wpa_supplicant
   iwconfig $IFNAME power off  #turn off power saving mode for reduced latency
-  wpa_supplicant -Bi $IFNAME -P /var/run/wpa-$IFNAME.pid -c /etc/wpa_supplicant.conf
+  mkdir -p /var/run/$wpa
+  $wpa -Bi $IFNAME -P /var/run/wpa-$IFNAME.pid -c /etc/$wpa.conf
 }
 
 hosts() {    #add lines before EOS
