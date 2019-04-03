@@ -1,9 +1,10 @@
-# pppd configuration for esp<->auv 3-wire serial link -- 9/21/17 brent@mbari.org
+# pppd configuration for esp<->auv 3-wire serial link -- 4/2/19 brent@mbari.org
 
 #connection
 linkname auv
 noauth       #no password authorization
 persist      #don't terminate if the link breaks
+passive      #wait passively for platform to connect
 holdoff 10   #try to reestablish link waiting this many seconds
 maxfail 0    #never give up!
 
