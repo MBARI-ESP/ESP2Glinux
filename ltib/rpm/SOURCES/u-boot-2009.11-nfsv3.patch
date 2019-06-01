@@ -1,0 +1,24 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2019-04-02 17:50:06.757537281 -0700
++++ u-boot-2009.11.modified/Makefile	2019-04-02 12:51:59.692712097 -0700
+@@ -24,7 +24,7 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbariB
++EXTRAVERSION = -mbariC
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2019-04-02 17:50:06.757537281 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2019-04-02 13:08:06.505278866 -0700
+@@ -124,7 +124,7 @@
+ "envOffset=40000\0" \
+ "envSize=10000\0" \
+ "serverip=134.89.10.221\0" \
+-"rootPath=/nfsroot/ea313x\0" \
++"rootPath=/nfsroot/ea313x,v3\0" \
+ "ubootFile=u-boot.bin\0" \
+ "kernel=uImage\0" \
+ "nfsKernel=nfsImage\0" \
