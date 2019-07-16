@@ -1,0 +1,11 @@
+# Purpose: Generic Verizon PPP Detach Script
+# Notes: CHAT is used to issue modem AT commands.
+# See CHAT man pages for more info.
+#
+TIMEOUT 5
+
+#send carridge return, then delay for autobaud
+"" ""
+#return to command mode, detach any call
+"" \d\p+++\d\pATH
+OK\r
