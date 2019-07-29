@@ -1,0 +1,72 @@
+diff -ruN dropbear-git/dbutil.c dropbear-mbari2/dbutil.c
+--- dropbear-git/dbutil.c	2019-07-29 15:50:04.760712745 -0700
++++ dropbear-mbari2/dbutil.c	2019-07-29 15:45:31.643174979 -0700
+@@ -552,11 +552,13 @@
+ 	TRACE(("leave setnonblocking"))
+ }
+ 
++#if !ALLOW_COREDUMPS
+ void disallow_core() {
+ 	struct rlimit lim;
+ 	lim.rlim_cur = lim.rlim_max = 0;
+ 	setrlimit(RLIMIT_CORE, &lim);
+ }
++#endif
+ 
+ /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE, with the result in *val */
+ int m_str_to_uint(const char* str, unsigned int *val) {
+diff -ruN dropbear-git/dbutil.h dropbear-mbari2/dbutil.h
+--- dropbear-git/dbutil.h	2019-07-29 15:50:04.760712745 -0700
++++ dropbear-mbari2/dbutil.h	2019-07-29 15:39:25.507887387 -0700
+@@ -68,7 +68,13 @@
+ 
+ void m_close(int fd);
+ void setnonblocking(int fd);
+-void disallow_core(void);
++
++#if ALLOW_COREDUMPS
++# define disallow_core()
++#else
++  void disallow_core(void);
++#endif
++
+ int m_str_to_uint(const char* str, unsigned int *val);
+ 
+ /* Used to force mp_ints to be initialised */
+diff -ruN dropbear-git/localoptions.h dropbear-mbari2/localoptions.h
+--- dropbear-git/localoptions.h	1969-12-31 16:00:00.000000000 -0800
++++ dropbear-mbari2/localoptions.h	2019-07-29 15:53:22.268000590 -0700
+@@ -0,0 +1,33 @@
++#ifndef DROPBEAR_LOCALOPTIONS_H
++#define DROPBEAR_LOCALOPTIONS_H_
++/*
++  Local options override those in default_options.h for ESP Linux
++  revised 7/30/19 by Brent Roman, brent@mbari.org
++*/
++#define DROPBEAR_VERSION "2019.78-mbari2"
++
++//do not disallow core dumps!
++#define ALLOW_COREDUMPS 1
++
++/* Set this if you want to use the DROPBEAR_SMALL_CODE option. This can save
++ * several kB in binary size however will make the symmetrical ciphers and hashes
++ * slower, perhaps by 50%. Recommended for small systems that aren't doing
++ * much traffic. */
++#define DROPBEAR_SMALL_CODE 0
++
++/* RSA must be >=1024 */
++ //2048bit keys take up to 20minutes to generate on slow ARM9 processors!
++#define DROPBEAR_DEFAULT_RSA_SIZE 1048
++
++/* Disable X11 Forwarding */
++#define DROPBEAR_X11FWD 0
++
++/* Enable the NONE CIPHER for use when encrpytion isn't needed */
++#define DROPBEAR_NONE_CIPHER 1
++
++/* Save a network roundtrip by sending a real auth request immediately after
++ * sending a query for the available methods. This is not yet enabled by default 
++ since it could cause problems with non-compliant servers */ 
++#define DROPBEAR_CLI_IMMEDIATE_AUTH 1
++
++#endif /* DROPBEAR_LOCALOPTIONS_H_ */

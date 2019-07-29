@@ -1,6 +1,6 @@
 #!/bin/bash
 # unpack, patch and configure dropbear-git build for arm-linux 
-#  -- 9/25/17 brent@mbari.org
+#  -- 7/30/19 brent@mbari.org
 : ${CFLAGS:=-O2}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -16,8 +16,8 @@ cd $DBVERS || {
 }
 git reset --hard &&
 git clean -dxf &&
-git checkout DROPBEAR_2017.75 &&
-patch < ../dropbear-mbari1.patch &&
+git checkout DROPBEAR_2019.78 &&
+patch < ../dropbear-mbari2.patch &&
 autoconf && autoheader &&
 configure --host=arm-unknown-linux $zlib \
  --disable-lastlog --disable-utmp --disable-utmpx \
