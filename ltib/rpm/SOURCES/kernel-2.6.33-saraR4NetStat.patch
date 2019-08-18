@@ -1,0 +1,99 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/net/ks8851_mll.c linux-2.6.33.modified/drivers/net/ks8851_mll.c
+--- linux-2.6.33/drivers/net/ks8851_mll.c	2019-08-18 13:09:13.686884732 -0700
++++ linux-2.6.33.modified/drivers/net/ks8851_mll.c	2019-08-01 22:31:40.719434295 -0700
+@@ -22,7 +22,8 @@
+  */
+ 
+ /**
+- * Revised:  9/16/14 brent@mbari.org
++ * Revised:  8/1/19 brent@mbari.org
++ *  Added partial netdev->stats support
+  *  Added support for setting MAC address via bootline option
+  *  Added support for setting power saving mode
+  *  Added support for agressive power saving (energy detect mode)
+@@ -856,6 +857,8 @@
+ 			/* read data block including CRC 4 bytes */
+ 			ks_read_qmu(ks, (u16 *)skb->data, frame_hdr->len);
+ 			skb_put(skb, frame_hdr->len);
++			netdev->stats.rx_bytes += frame_hdr->len;
++			netdev->stats.rx_packets++;
+ 			skb->dev = netdev;
+ 			skb->protocol = eth_type_trans(skb, netdev);
+ 			netif_rx(skb);
+@@ -864,6 +867,7 @@
+ 			ks_wrreg16(ks, KS_RXQCR, (ks->rc_rxqcr | RXQCR_RRXEF));
+ 			if (skb)
+ 				dev_kfree_skb_irq(skb);
++            netdev->stats.rx_dropped++;
+ 		}
+ 		frame_hdr++;
+ 	}
+@@ -1085,8 +1089,12 @@
+ 	if (likely(ks_tx_fifo_space(ks) >= skb->len + 12)) {
+ 		ks_write_qmu(ks, skb->data, skb->len);
+ 		dev_kfree_skb(skb);
+-	} else
++        netdev->stats.tx_bytes += skb->len;
++        netdev->stats.tx_packets++;
++	} else {
++    	netdev->stats.tx_dropped++;
+ 		retv = NETDEV_TX_BUSY;
++    }
+ 	spin_unlock(&ks->statelock);
+ 	ks_enable_int(ks);
+ 	enable_irq(netdev->irq);
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/serial/option.c linux-2.6.33.modified/drivers/usb/serial/option.c
+--- linux-2.6.33/drivers/usb/serial/option.c	2019-08-18 13:09:13.693551360 -0700
++++ linux-2.6.33.modified/drivers/usb/serial/option.c	2019-08-18 13:01:51.996181423 -0700
+@@ -313,6 +313,9 @@
+ 
+ #define MAXON_VENDOR_ID				0x16d8
+ 
++/* These ublox products use Qualcomm's vendor ID */
++#define UBLOX_PRODUCT_R410M			0x90b2
++
+ #define TELIT_VENDOR_ID				0x1bc7
+ #define TELIT_PRODUCT_UC864E			0x1003
+ #define TELIT_PRODUCT_UC864G			0x1004
+@@ -574,7 +577,22 @@
+ #define WETELECOM_PRODUCT_WMD300		0x6803
+ 
+ 
++/* Device flags */
++
++/* Interface does not support modem-control requests */
++#define NCTRL(ifnum)	((BIT(ifnum) & 0xff) << 8)
++
++/* Interface is reserved */
++#define RSVD(ifnum)	((BIT(ifnum) & 0xff) << 0)
++
++/* Interface must have two endpoints */
++#define NUMEP2		BIT(16)
++
++
+ static const struct usb_device_id option_ids[] = {
++	/* ublox products use Qualcomm vendor ID */
++	{ USB_DEVICE(QUALCOMM_VENDOR_ID, UBLOX_PRODUCT_R410M),
++	  .driver_info = RSVD(0) | RSVD(1) | RSVD(3) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
+@@ -1453,6 +1471,17 @@
+ 			const struct usb_device_id *id)
+ {
+ 	struct option_intf_private *data;
++	struct usb_interface_descriptor *iface_desc =
++				&serial->interface->cur_altsetting->desc;
++	unsigned long device_flags = id->driver_info;
++	/*
++	 * Don't bind reserved interfaces (like network ones) which often have
++	 * the same class/subclass/protocol as the serial interfaces.  Look at
++	 * the Windows driver .INF files for reserved interface numbers.
++	 */
++	if (device_flags & RSVD(iface_desc->bInterfaceNumber))
++		return -ENODEV;
++
+ 	/* D-Link DWM 652 still exposes CD-Rom emulation interface in modem mode */
+ 	if (serial->dev->descriptor.idVendor == DLINK_VENDOR_ID &&
+ 		serial->dev->descriptor.idProduct == DLINK_PRODUCT_DWM_652 &&

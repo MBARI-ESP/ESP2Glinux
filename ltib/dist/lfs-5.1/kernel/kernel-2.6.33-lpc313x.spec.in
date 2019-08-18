@@ -71,6 +71,7 @@ Patch55         : kernel-2.6.33-sierra.patch
 Patch56         : kernel-2.6.33-option.patch
 Patch57         : kernel-2.6.33-etherTiming.patch
 Patch58         : kernel-2.6.33-sharedSerialIRQ.patch
+Patch59         : kernel-2.6.33-saraR4NetStat.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -132,3 +133,4 @@ Linux 2.6.33 kernel from kernel.org + NXP LPC313x patches
 %patch56 -p1
 %patch57 -p1
 %patch58 -p1
+%patch59 -p1
