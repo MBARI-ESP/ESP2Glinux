@@ -1,13 +1,31 @@
 #!/bin/sh
 : ${HOME:=/root} #in case invoked from inittab
+: ${noGateDelay=300}  #retry delay if no gateway
+: ${pidFn=/var/run/tunnel2shore}
 export HOME
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnels to ESPshore for ssh and smtp
-Also forwards localhost:smtp to shore:smtp
+Bring up ssh tunnel to ESPshore for ssh and smtp
+Retries every $noGateDelay seconds until network available
 END
   exit 2
 }
+#kill any other instances
+oldPID=`cat $pidFn 2>/dev/null` && [ "$oldPID" ] && kill $oldPID
+echo $$ >$pidFn
+
+topIf() {
+  #output the name of the top priority network interface
+  local iface
+  read -r iface gateway 2>/dev/null </etc/resolv.conf &&
+  echo ${iface###}
+}
+
+while [ ! `topIf` ]; do
+  echo "No Network Gateway -- retrying tunnel in $noGateDelay seconds"
+  sleep $noGateDelay
+done
+
 fuser -sk 25/tcp
 shore="-p2323 `hostname`@ESPshore"
-sshPort=`ssh -y $shore tunnel close` &&
+sshPort=`ssh -y $shore tunnel close` && #request closure of far side of tunnel
 exec ssh -ygNK 180 -R$sshPort:localhost:22 -L25:ESPshore:25 $shore
