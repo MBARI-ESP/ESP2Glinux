@@ -1,3 +1,4 @@
 SUBSYSTEM=="net", ACTION=="add", RUN+="ifup %E{INTERFACE}" 
 SUBSYSTEM=="net", ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
-
+#for USB serial modems
+SUBSYSTEM=="tty", RUN+="ttyModem"

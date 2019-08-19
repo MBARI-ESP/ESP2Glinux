@@ -1,0 +1,22 @@
+#!/bin/sh
+#bring up/down network interface handled by serial modem
+#exec 2>>/tmp/ttyModem
+#date >&2
+#env >&2
+#set -x
+
+case "$ID_MODEL" in
+  Qualcomm_*_Technologies_*)
+    case "$ACTION" in
+      add) #this modem replaces any other
+      	ln -sf $DEVNAME /dev/modem
+      	sleep 3
+      	/usr/sbin/ifup ppp88
+      ;;
+      remove)
+        /usr/sbin/ifdown ppp88
+    esac
+  ;;
+  *)  #not a modem we handle
+    exit
+esac

@@ -1,6 +1,8 @@
 # Options common to all all PPTP servers
 #
-mtu 1368  #Verizon requires this.  Why?
-
 require-mppe-128
 require-mschap-v2
+
+mtu 1368  #Verizon requires this.  Why?
+
+vj-max-slots 16
