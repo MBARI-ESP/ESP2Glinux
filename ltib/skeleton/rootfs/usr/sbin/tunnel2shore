@@ -1,0 +1,13 @@
+#!/bin/sh
+: ${HOME:=/root} #in case invoked from inittab
+export HOME
+[ "$1" ] && { cat >&2 <<END
+Bring up ssh tunnels to ESPshore for ssh and smtp
+Also forwards localhost:smtp to shore:smtp
+END
+  exit 2
+}
+fuser -sk 25/tcp
+shore="-p2323 `hostname`@ESPshore"
+sshPort=`ssh -y $shore tunnel close` &&
+exec ssh -ygNK 180 -R$sshPort:localhost:22 -L25:ESPshore:25 $shore

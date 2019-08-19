@@ -1,7 +1,6 @@
 #Common networking utilities
-# -- revised: 6/14/18 brent@mbari.org
+# -- revised: 8/18/19 brent@mbari.org
 #
-ESPshore=134.89.2.91  #ESP shore server
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
@@ -28,9 +27,11 @@ ipUp() {
   [ "$NETWORK" ] && {
     route add -net $NETWORK$mask dev $IFNAME || return 3
   }
-  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return $?
+  oldGate=`topIf`
+  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
+  gatewayUpdated $oldGate
   return 0
 }
 
@@ -38,10 +39,12 @@ ipDown() {
 # tear down IP interface per shell environment variables:
 #  IFNAME = network device
   local netIface=${1:-$IFNAME}
+  oldGate=`topIf`
   hostDown $netIface
   gateDown $netIface
   gateUp
   hostsUp
+  gatewayUpdated $oldGate
 }
 
 vpnUp() {
@@ -50,8 +53,8 @@ vpnUp() {
 #Always bring down vpn if its current $carrier is of lower priority than $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
-    netIfIP $vpn >/dev/null && carrier=`hostIface $server` &&
-      lowerGatePriority "$2" "$carrier" && return 0
+    vpnServer=`netIfIP $vpn` && [ "$vpnServer" = "$server" ] &&
+      carrier=`hostIface $server` && lowerGatePriority "$2" "$carrier" && return
     ifdown $vpn
     ifup $vpn
   fi
@@ -60,7 +63,7 @@ server=`dirname $1` && [ "$server" != . ] &&
 lowerGatePriority() {
 #return 0 iff interface $1 has a lower gateway priority than $2
   [ "$1" = "$2" -o -z "$2" ] && return 1;
-  read -r ifs </etc/sysconfig/gateway.priority || return $?
+  read -r ifs </etc/sysconfig/gateway.priority || return
   for interface in $ifs; do  #consider only interfaces with gateways
     case "$2" in
       "$interface") return 0
@@ -152,7 +155,7 @@ hostsUp() {
   #update iface specific hosts file and merge with those of other ifaces
   #first adds interface specific hosts file if current iface specified
   [ "$1" ] && type hosts >/dev/null 2>&1 && {
-    hosts >/var/run/$1.hosts || return $?
+    hosts >/var/run/$1.hosts || return
   }
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
@@ -286,3 +289,9 @@ gateIP() {
   echo "$RESOLV_IF -- should begin with #$interface" >&2
   return 2
 }
+
+gatewayUpdated() {  #1st arg is old gateway interface
+#invoked after gateway interface updated
+#this dummy fn may be replaced by sitecfg below
+}
+. /etc/sysconfig/sitecfg
