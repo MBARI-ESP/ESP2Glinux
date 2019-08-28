@@ -53,7 +53,9 @@ fi
   }
 }
 
+oldGate=`topIf`
 gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE && {
   vpnUp $VPN $PPP_IFACE
+  gatewayUpdated $oldGate
   exit 0
 }

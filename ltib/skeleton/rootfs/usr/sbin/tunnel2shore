@@ -1,6 +1,6 @@
 #!/bin/sh
 : ${HOME:=/root} #in case invoked from inittab
-: ${noGateDelay=300}  #retry delay if no gateway
+: ${noGateDelay=600}  #retry delay if no gateway
 : ${pidFn=/var/run/tunnel2shore}
 export HOME
 [ "$1" ] && { cat >&2 <<END
@@ -10,7 +10,7 @@ END
   exit 2
 }
 #kill any other instances
-oldPID=`cat $pidFn 2>/dev/null` && [ "$oldPID" ] && kill $oldPID
+oldPID=`cat $pidFn 2>/dev/null` && kill -0 "$oldPID" 2>/dev/null && kill $oldPID
 echo $$ >$pidFn
 
 topIf() {

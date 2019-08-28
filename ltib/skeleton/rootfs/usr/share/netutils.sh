@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 8/18/19 brent@mbari.org
+# -- revised: 8/27/19 brent@mbari.org
 #
 
 ipUp() {
@@ -87,8 +87,8 @@ isUp() {
 }
 
 gateUp() {
-  # add any specified device with its gateway IP
-  # then activate the appropriate gateway with its associated resolv.conf
+# add any specified device with its gateway IP
+# then activate the appropriate gateway with its associated resolv.conf
   mkdir -p /var/run/resolv && cd /var/run/resolv || {
     echo "Cannot access /var/run/resolv directory" >&2
     return 1
@@ -137,7 +137,8 @@ gateUp() {
       if [ "$topIface" ]; then
         setGateway $topIface $gateway
       else
-:       echo "No prioritized net interfaces up -- gateway unchanged" >&2
+:       echo "No gateway interfaces up" >&2
+        rm -f /etc/resolv.conf
       fi
     else
       echo "Blank or missing $priorityFn" >&2
@@ -152,8 +153,8 @@ gateDown() {
 
 
 hostsUp() {
-  #update iface specific hosts file and merge with those of other ifaces
-  #first adds interface specific hosts file if current iface specified
+#update iface specific hosts file and merge with those of other ifaces
+#first adds interface specific hosts file if current iface specified
   [ "$1" ] && type hosts >/dev/null 2>&1 && {
     hosts >/var/run/$1.hosts || return
   }
@@ -170,8 +171,8 @@ hostDown() {
 
 
 setGateway() {
-  #update resolv.conf from device $1, then
-  #set up default gateway to following gateway IP addresses
+#update resolv.conf from device $1, then
+#set up default gateway to following gateway IP addresses
   local topIface=$1 gateway=$2
   cat /var/run/resolv/$topIface >/etc/resolv.conf 2>/dev/null
   if [ "$gateway" ]; then  #replace default routes if changed
@@ -200,8 +201,8 @@ setGateway() {
 
 
 defaultRoutes() {
-  #output ip addresses of default routes for specified net interface
-  #for all if $1 omitted
+#output ip addresses of default routes for specified net interface
+#for all if $1 omitted
   local zero defRoute junk
   route -n | grep "^0\.0\.0\.0 .* $1" | {
     while read -r zero defRoute junk; do
@@ -211,8 +212,8 @@ defaultRoutes() {
 }
 
 hostIface() {
-  #output name of interface associated with host route to specified IP address
-  #returns false if no such host route found
+#output name of interface associated with host route to specified IP address
+#returns false if no such host route found
   route -n | while read -r dest gate genmask flags metric ref use iface more; do
     [ "$dest" = "$1" -a "$genmask" = 255.255.255.255 ] && {
       echo $iface
@@ -222,8 +223,8 @@ hostIface() {
 }
 
 gateIface() {
-  #output name of interface associated w/specified gateway IP route
-  #returns false if no such host route found
+#output name of interface associated w/specified gateway IP route
+#returns false if no such host route found
   route -n | while read -r dest gate genmask flags metric ref use iface more; do
     [ "$gate" = "$1" ] && {
       echo $iface
@@ -234,7 +235,7 @@ gateIface() {
 
 
 searchDomains() {
-  #output list of search domains prefixed by any specified
+#output list of search domains prefixed by any specified
   local searchDomFn=/etc/DOMAINS
   [ -r $searchDomFn ] && {
     [ "$1" ] && {
@@ -247,8 +248,8 @@ searchDomains() {
 }
 
 netIfIP() {
-  #output the IP address of the specified network interface
-  #if there's a valid IP, any additional args are also output
+#output the IP address of the specified network interface
+#if there's a valid IP, any additional args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip
     read -r ignore
@@ -259,8 +260,8 @@ netIfIP() {
 }
 
 netIfPtp() {
-  #output the IP address of the PtP peer for specified PPP interface
-  #if there's a valid peer, any additional args are also output
+#output the IP address of the PtP peer for specified PPP interface
+#if there's a valid peer, any additional args are also output
   ifconfig $1 2>/dev/null | tr : " " | {
     local ignore inet addr ip ptp peer ignore
     read -r ignore
@@ -271,7 +272,7 @@ netIfPtp() {
 }
 
 topIf() {
-  #output the name of the top priority network interface
+#output the name of the top priority network interface
   local iface
   read -r iface gateway 2>/dev/null </etc/resolv.conf &&
   echo ${iface###}
@@ -293,5 +294,6 @@ gateIP() {
 gatewayUpdated() {  #1st arg is old gateway interface
 #invoked after gateway interface updated
 #this dummy fn may be replaced by sitecfg below
+:
 }
-. /etc/sysconfig/sitecfg
+. /etc/sysconfig/sitecfg.sh
