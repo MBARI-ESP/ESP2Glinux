@@ -41,7 +41,7 @@ diff -ruN dropbear-git/localoptions.h dropbear-mbari2/localoptions.h
 +#define DROPBEAR_LOCALOPTIONS_H_
 +/*
 +  Local options override those in default_options.h for ESP Linux
-+  revised 7/30/19 by Brent Roman, brent@mbari.org
++  revised 9/3/19 by Brent Roman, brent@mbari.org
 +*/
 +#define DROPBEAR_VERSION "2019.78-mbari2"
 +
@@ -56,7 +56,7 @@ diff -ruN dropbear-git/localoptions.h dropbear-mbari2/localoptions.h
 +
 +/* RSA must be >=1024 */
 + //2048bit keys take up to 20minutes to generate on slow ARM9 processors!
-+#define DROPBEAR_DEFAULT_RSA_SIZE 1048
++#define DROPBEAR_DEFAULT_RSA_SIZE 1024
 +
 +/* Disable X11 Forwarding */
 +#define DROPBEAR_X11FWD 0
