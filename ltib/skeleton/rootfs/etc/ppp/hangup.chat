@@ -1,0 +1,4 @@
+# Hang up the modem
+TIMEOUT 10
+"" "AT\r+++\d\p\p\c"
+"OK\r" "ATH0E0"

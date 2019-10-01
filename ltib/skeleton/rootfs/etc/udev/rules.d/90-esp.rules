@@ -22,4 +22,7 @@ ENV{ID_MODEL}=="Chipi-X", SYMLINK+="modem", GROUP="root"
 #ENV{ID_MODEL}=="FT232R_USB_UART", SYMLINK+="modem", GROUP="root"
 KERNEL=="ttyS8", SYMLINK+="modem", GROUP="root"
 
+#Iridium handset/modem
+ENV{ID_MODEL}=="Iridium_*_Handset", SYMLINK+="iridium", GROUP="root"
+
 LABEL="esp_end"
