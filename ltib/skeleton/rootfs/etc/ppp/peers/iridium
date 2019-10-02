@@ -15,7 +15,7 @@ noauth       #no password authorization
 #kdebug
 
 #logging options
-logfile /var/log/iridium.pppdlog
+#logfile /var/log/iridium.pppdlog
 #dump
 
 #RS-232 port configuration
@@ -51,3 +51,7 @@ connect "exec /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
 
 #hang up the phone on disconnect (ignore errors)
 disconnect "/usr/sbin/chat -vEf /etc/ppp/hangup.chat; true"
+
+#seems to sometimes require authentication.  Any user or password will do.
+user "I"
+password "I"

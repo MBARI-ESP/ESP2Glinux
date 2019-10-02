@@ -1,11 +1,11 @@
 #!/bin/sh
-# build & install setserial for arm-linux -- 8/1/12 brent@mbari.org
+# build & install pppd for arm-linux -- 9/10/19 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${TARGETTOP:=${2-}}
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
-: ${PPPBINS:=pppd/pppd chat/chat}  #pppdump/pppdump pppstat/pppstat
+: ${PPPprog:=pppd chat pppdump pppstats}
 : ${COPTS:="-Os -fomit-frame-pointer"}
 : ${INSTALL:="install --strip-program=$ARMSTRIP"}
 : ${CC:=$ARMGCC/bin/gcc}
@@ -13,11 +13,13 @@ echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 top=$PWD
 cd ${PPPVERS-ppp-2.4.5} || exit 2
-mkdir -pm 755 $HOSTTOP/usr/sbin &&
-for dir in chat pppd/plugins pppd; do make -C $dir install \
-   CC=$CC DESTDIR=$HOSTTOP/usr COPTS="$COPTS" INSTALL="$INSTALL" || exit 4
+mkdir -pm 755 $HOSTTOP/usr/sbin $HOSTTOP/usr/share/man/man8 &&
+make -C pppd/plugins install \
+  CC=$CC DESTDIR=$HOSTTOP/usr COPTS="$COPTS" INSTALL="$INSTALL" || exit 4
+for prog in $PPPprog; do make -C $prog $prog install \
+  CC=$CC DESTDIR=$HOSTTOP/usr COPTS="$COPTS" INSTALL="$INSTALL" || exit 4
 done
-rm -rf $HOSTTOP/usr/share/man  $HOSTTOP/usr/sbin/pptpsetup
+rm -rf $HOSTTOP/usr/share/man $HOSTTOP/usr/sbin/pptpsetup
 
 cd $top && cd ${PPTPVERS:=pptp-1.7.2} || exit 2
 make CC=$CC OPTIMIZE="$COPTS" INSTALL="$INSTALL" RELEASE=-mbari6 DEBUG= &&
