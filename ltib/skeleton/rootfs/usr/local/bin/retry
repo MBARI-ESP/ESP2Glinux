@@ -1,0 +1,18 @@
+#!/bin/sh
+self=`basename $0`
+[ "$2" ] || { cat <<END >&2
+Retry command on error -- brent@mbari.org -- 10/3/19
+Usage:
+  $self <tries> command
+where tries is the maxium number of times the following command can execute
+Environment variable \$retry is evaluated between each retry
+END
+  exit 2
+}
+try=$1
+shift
+while ! $@; do
+  try=$(($try-1))
+  [ "$try" -le 0 ] && break
+  eval $retry
+done

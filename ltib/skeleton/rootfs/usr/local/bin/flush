@@ -1,0 +1,14 @@
+#!/bin/sh
+self=`basename $0`
+[ "$1" ] && { cat <<END >&2
+flush stdin -- brent@mbari.org
+Usage:
+  $self
+flush all input from stdin
+END
+  exit 2
+}
+old_tty_settings=`stty -g`
+trap "stty $old_tty_settings" EXIT INT QUIT TERM HUP PIPE USR1 USR2
+stty -icanon min 0 time 0
+while read -sr; do :; done 

@@ -1,4 +1,4 @@
-# pppd configuration for internet via iridium 9555  - 10/1/19 brent@mbari.org
+# pppd configuration for internet via iridium 9555  - 10/3/19 brent@mbari.org
 
 #connection
 linkname iridium
@@ -47,7 +47,8 @@ deflate 15      #deflate within a 32kB window
 vj-max-slots 16 #allow header compression
 
 #connect to Iridium's internet service
-connect "exec /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
+connect "retry='sleep 5; flush' retry 3 \
+  /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
 
 #hang up the phone on disconnect (ignore errors)
 disconnect "/usr/sbin/chat -vEf /etc/ppp/hangup.chat; true"
