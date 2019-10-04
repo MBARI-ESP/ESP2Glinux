@@ -1,10 +1,12 @@
 #!/bin/sh
 : ${HOME:=/root} #in case invoked from inittab
-: ${noGateDelay=600}  #retry delay if no gateway
-: ${pidFn=/var/run/tunnel2shore}
+: ${noGateDelay:=600}  #retry delay if no gateway
+: ${pidFn:=/var/run/tunnel2shore.pid}
+: ${portFn:=/var/etc/tunnel2shore.port}
+: ${shore:="-p2323 `hostname`@ESPshore"}
 export HOME
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to ESPshore for ssh and smtp
+Bring up ssh tunnel to $shore for ssh and smtp
 Retries every $noGateDelay seconds until network available
 END
   exit 2
@@ -26,6 +28,11 @@ while [ ! `topIf` ]; do
 done
 
 fuser -sk 25/tcp
-shore="-p2323 `hostname`@ESPshore"
-sshPort=`ssh -y $shore tunnel close` && #request closure of far side of tunnel
-exec ssh -ygNK 180 -R$sshPort:localhost:22 -L25:ESPshore:25 $shore
+common="-ygNK 180 -L25:ESPshore:25"
+[ -s $portFn ] &&
+ ssh -oExitOnForwardFailure=yes $common -R`cat $portFn`:localhost:22 $shore || {
+  sshPort=`ssh -y $shore tunnel close` && {  #request far side of tunnel close
+    echo $sshPort >$portFn
+    exec ssh $common -R$sshPort:localhost:22 $shore  #try again
+  }
+}
