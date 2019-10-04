@@ -1,0 +1,30 @@
+#!/bin/sh
+tunId()
+#the UID for each user in the tunnel group == the TCP port for its tunnel
+{
+  for grp in `id -Gn $1`; do
+    [ "$grp" = tunnel ] && id -u $1 && return
+  done
+  user=${1-$USER}
+  echo "There is no ssh tunnel associated with $user" >&2
+  return 4
+}
+
+case "$1" in
+  disconnect|close)
+    [ `id -u` != 0 -a "$2" -a "$2" != $USER ] && {
+      echo "Only root user may close another's tunnel" >&2
+      return 2
+    }
+    port=`tunId $2` || return 4
+    fuser.root -sk $port/tcp || echo Failed >&2
+    echo $port
+;;
+  port) tunId $2
+;;
+  *) cat >&2 <<END
+tunnel port {user name}  #displays tunnel port number
+tunnel disconnect {user} #closes this user's tunnel and displays its port number
+tunnel close {user}      #closes tunnel and displays port number
+END
+esac
