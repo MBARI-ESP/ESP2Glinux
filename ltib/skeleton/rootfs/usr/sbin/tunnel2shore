@@ -2,17 +2,29 @@
 : ${HOME:=/root} #in case invoked from inittab
 : ${noGateDelay:=600}  #retry delay if no gateway
 : ${pidFn:=/var/run/tunnel2shore.pid}
-: ${portFn:=/var/etc/tunnel2shore.port}
-: ${shore:="-p2323 `hostname`@ESPshore"}
+: ${portFn:=/var/etc/tunnel2shore.port}  #stores last TCP port # assigned us
+#portFn=/dev/null   #uncomment to query for our remote port # on each connect
+: ${traceFn=/tmp/tunnel2shore.trace}
+: ${shore:=ESPshore}
+: ${shoreUser:=`hostname`}
+: ${shoreSSH:="-p2323 $shoreUser@$shore"}
 export HOME
 [ "$1" ] && { cat >&2 <<END
 Bring up ssh tunnel to $shore for ssh and smtp
-Retries every $noGateDelay seconds until network available
+Retries every $noGateDelay seconds until internet is available
 END
   exit 2
 }
+[ -w $traceFn ] && {
+  exec 2>>$traceFn
+  date >&2
+  env >&2
+  set -x
+}
+
 #kill any other instances
 oldPID=`cat $pidFn 2>/dev/null` && kill -0 "$oldPID" 2>/dev/null && kill $oldPID
+fuser -sk 25/tcp
 echo $$ >$pidFn
 
 topIf() {
@@ -27,12 +39,13 @@ while [ ! `topIf` ]; do
   sleep $noGateDelay
 done
 
-fuser -sk 25/tcp
-common="-ygNK 180 -L25:ESPshore:25"
-[ -s $portFn ] &&
- ssh -oExitOnForwardFailure=yes $common -R`cat $portFn`:localhost:22 $shore || {
-  sshPort=`ssh -y $shore tunnel close` && {  #request far side of tunnel close
-    echo $sshPort >$portFn
-    exec ssh $common -R$sshPort:localhost:22 $shore  #try again
+tunnelArgs="-L25:$shore:25 -oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
+local=localhost:22
+
+[ -s $portFn ] &&  #if known, try the port previously assigned us
+ ssh -R`cat $portFn`:$local $tunnelArgs || {
+  sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
+    echo $sshPort >$portFn     #remember the port assigned us
+    exec ssh -R$sshPort:$local $tunnelArgs
   }
 }
