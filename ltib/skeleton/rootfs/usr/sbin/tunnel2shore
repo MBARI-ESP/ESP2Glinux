@@ -39,6 +39,9 @@ while [ ! `topIf` ]; do
   sleep $noGateDelay
 done
 
+#ensure mail resolves to localhost
+grep -q '^127\..* mail$' /etc/hosts || echo '127.0.0.1 mail' >>/etc/hosts
+
 tunnelArgs="-L25:$shore:25 -oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
 

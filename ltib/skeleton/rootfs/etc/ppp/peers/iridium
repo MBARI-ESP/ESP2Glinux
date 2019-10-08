@@ -1,4 +1,4 @@
-# pppd configuration for internet via iridium 9555  - 10/3/19 brent@mbari.org
+# pppd configuration for internet via iridium 9555  - 10/7/19 brent@mbari.org
 
 #connection
 linkname iridium
@@ -53,6 +53,10 @@ connect "retry='sleep 5; flush' retry 3 \
 #hang up the phone on disconnect (ignore errors)
 disconnect "/usr/sbin/chat -vEf /etc/ppp/hangup.chat; true"
 
+#drop the expensive link after specified number of seconds
+maxconnect 600
+
 #seems to sometimes require authentication.  Any user or password will do.
-user "I"
-password "I"
+#using . seems to allow compression to work (maybe)
+user .
+password .

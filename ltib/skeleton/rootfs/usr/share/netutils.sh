@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 8/27/19 brent@mbari.org
+# -- revised: 10/7/19 brent@mbari.org
 #
 
 ipUp() {
@@ -27,11 +27,10 @@ ipUp() {
   [ "$NETWORK" ] && {
     route add -net $NETWORK$mask dev $IFNAME || return 3
   }
-  oldGate=`topIf`
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
-  gatewayUpdated $oldGate
+  gatewayUpdated
   return 0
 }
 
@@ -39,12 +38,11 @@ ipDown() {
 # tear down IP interface per shell environment variables:
 #  IFNAME = network device
   local netIface=${1:-$IFNAME}
-  oldGate=`topIf`
   hostDown $netIface
   gateDown $netIface
   gateUp
   hostsUp
-  gatewayUpdated $oldGate
+  gatewayUpdated
 }
 
 vpnUp() {

@@ -1,22 +1,21 @@
 #Site specific networking utilities & definitions
-# -- revised: 10/4/19 brent@mbari.org
+# -- revised: 10/7/19 brent@mbari.org
 #
 
 ESPshore=134.89.2.91  #ESP shore server
 
 gatewayUpdated() {
 #invoked after gateway interface updated
-#first argument is previous gateway interface's name
-  gate=`topIf` && [ "$gate" ] && {
-    [ "$1" != "$gate" ] && {
-      tunFn=/var/run/tunnel2shore.pid
-      #cause inittab to restart tunnel2shore
-      tunPID=`cat $tunFn 2>/dev/null` && {
-        rm $tunFn
-        kill -0 "$tunPID" 2>/dev/null && kill $tunPID
-      }
+  gate=`topIf`
+  oldGate=`cat /var/run/topIf 2>/dev/null`
+  [ "$oldGate" != "$gate" ] && {
+    echo "$gate" >/var/run/topIf
+    tunFn=/var/run/tunnel2shore.pid
+    #cause inittab to restart tunnel2shore
+    tunPID=`cat $tunFn 2>/dev/null` && {
+      rm $tunFn
+      kill -0 "$tunPID" 2>/dev/null && kill $tunPID
     }
-    echo 127.0.0.1 mail >>/etc/hosts
   }
   return 0
 }
