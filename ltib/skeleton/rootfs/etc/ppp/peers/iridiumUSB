@@ -1,4 +1,4 @@
-# pppd configuration for internet via Iridium 9555 RS232 serial port
+# pppd configuration for internet via Iridium 9555 USB port
 #  - 10/7/19 brent@mbari.org
 
 #connection
@@ -17,7 +17,7 @@ noauth       #no password authorization
 #dump
 
 #RS-232 port configuration
-ttyIridium   #symlink /dev/ttyIridium to the Iridium modem's serial port
+iridium      #symlink /dev/iridium to the Iridium modem's USB port
 crtscts      #hardware RTS/CTS handshaking
 modem        #monitor carrier detect
 lock         #request exclusive access to the port
@@ -48,8 +48,7 @@ vj-max-slots 16 #allow header compression
 connect "retry='sleep 5; flush' retry 3 \
   /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
 
-#hang up the phone on disconnect (ignore errors)
-disconnect "/usr/sbin/chat -vEf /etc/ppp/hangup.chat; true"
+#closing the USB emulated serial port ends data connection
 
 #drop the expensive link after specified number of seconds
 maxconnect 600

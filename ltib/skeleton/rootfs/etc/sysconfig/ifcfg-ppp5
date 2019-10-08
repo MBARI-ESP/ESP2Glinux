@@ -1,7 +1,7 @@
 IFNAME=ppp5
 AUTOSTART=no
 ifPrep() {
-  pppd call iridium unit ${IFNAME#ppp}
+  pppd call iridiumUSB unit ${IFNAME#ppp}
 }
 
 hosts() {    #add lines before EOS
