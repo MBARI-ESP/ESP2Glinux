@@ -1,4 +1,4 @@
-#special case for bringing up Versizon USB551L modem
+#special case for bringing up Verizon USB551L modem
 
 BOOTPROTO="dhcp-b"  #dhcp in background
 DHCPNAME=`hostname`
