@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 6/13/18 brent@mbari.org
+# -- revised: 10/25/19 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
@@ -80,7 +80,7 @@ ifup_function ()
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
         false
       ;;
-    esac || return $?
+    esac || return
     type ifPost >/dev/null 2>&1 || return 0
     ifPost
   }

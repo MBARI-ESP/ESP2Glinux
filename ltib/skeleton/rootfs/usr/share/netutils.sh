@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/7/19 brent@mbari.org
+# -- revised: 10/25/19 brent@mbari.org
 #
 
 ipUp() {
@@ -60,7 +60,7 @@ server=`dirname $1` && [ "$server" != . ] &&
 
 lowerGatePriority() {
 #return 0 iff interface $1 has a lower gateway priority than $2
-  [ "$1" = "$2" -o -z "$2" ] && return 1;
+  [ "$1" = "$2" -o -z "$2" ] && return 1
   read -r ifs </etc/sysconfig/gateway.priority || return
   for interface in $ifs; do  #consider only interfaces with gateways
     case "$2" in
