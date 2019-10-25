@@ -1,4 +1,5 @@
-#rename Communication Device Class devices masquerading as eth* to cdc*
+#Rename Communication Device Class devices masquerading as eth* to cdc*
+#Assign Verizon USB551L modem a unique interface name
+SUBSYSTEM=="net", ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1410", ATTRS{idProduct}=="b001", NAME="cdc551L"
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_*", KERNEL=="eth*", NAME="cdc%n"
 
-SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_ether",  KERNEL=="eth*", NAME="cdc%n"
-SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_subset", KERNEL=="eth*", NAME="cdc%n"
