@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/25/19 brent@mbari.org
+# -- revised: 11/7/19 brent@mbari.org
 #
 
 ipUp() {
@@ -289,7 +289,7 @@ gateIP() {
   return 2
 }
 
-gatewayUpdated() {  #1st arg is old gateway interface
+gatewayUpdated() {
 #invoked after gateway interface updated
 #this dummy fn may be replaced by sitecfg below
 :

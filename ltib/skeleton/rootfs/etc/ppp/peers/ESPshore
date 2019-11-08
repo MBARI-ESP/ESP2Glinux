@@ -18,3 +18,7 @@ usepeerdns
 persist
 holdoff 15
 maxfail 5
+
+lcp-echo-failure 3
+lcp-echo-interval 90
+

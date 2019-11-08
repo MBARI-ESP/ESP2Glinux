@@ -10,7 +10,7 @@
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 export HOME
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/7/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 2
@@ -23,9 +23,10 @@ END
 }
 
 #kill any other instances
-oldPID=`cat $pidFn 2>/dev/null` && kill -0 "$oldPID" 2>/dev/null && kill $oldPID
+oldPID=`cat $pidFn 2>/dev/null` && kill -0 "$oldPID" 2>/dev/null && kill -HUP $oldPID
 fuser -sk 25/tcp
 echo $$ >$pidFn
+trap "pkill -P $$; rm -f $pidFn" EXIT TERM HUP USR1 INT QUIT
 
 topIf() {
   #output the name of the top priority network interface
@@ -45,10 +46,13 @@ grep -q '^127\..* mail$' /etc/hosts || echo '127.0.0.1 mail' >>/etc/hosts
 tunnelArgs="-L25:$shore:25 -oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
 
-[ -s $portFn ] &&  #if known, try the port previously assigned us
- ssh -R`cat $portFn`:$local $tunnelArgs || {
+#delay to prevent restarting before interface is closed
+trap "trap '' USR1; pkill -P $$; trap \"rm -f $pidFn\" EXIT; sleep 4; exit 1" USR1
+
+#if known, try the port previously assigned us
+[ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnelArgs || {
   sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
-    exec ssh -R$sshPort:$local $tunnelArgs
+    ssh -R$sshPort:$local $tunnelArgs
   }
 }
