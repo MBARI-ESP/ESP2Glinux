@@ -12,7 +12,7 @@ exit 42
 : ${RUBYsiteLIB=$HOSTTOP/opt/mbari/lib/ruby/site_ruby/1.8}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 12/13/18 brent@mbari.org
+  -- 11/11/19 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -54,7 +54,7 @@ $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit $?
 
 for package in dyndns wpa_supplicant esp/dropbear usbmode dnsmasq \
-      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools; do
+      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync; do
   echo
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit $?
