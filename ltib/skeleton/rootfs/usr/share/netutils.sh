@@ -86,17 +86,16 @@ isUp() {
 gateUp() {
 # add any specified interface ($1) with its gateway IP ($2)
 # then activate the appropriate gateway with its associated resolv.conf
-  mkdir -p /var/run/resolv && cd /var/run/resolv || {
-    echo "Cannot access /var/run/resolv directory" >&2
-    return 1
-  }
-  local interface RESOLV_IF resolvDev gateway ifs ifs2 topIface
+  local oldPWD=$PWD
+  resolv=/var/run/resolv
+  cd $resolv 2>/dev/null || mkdir $resolv && cd $resolv || return
+  local interface resolvIF resolvDev gateway ifs ifs2 topIface
   [ "$1" ] && {
-    rm -f $1
+    rm -f "$1"
     [ "$2" ] && {
       echo "#$*" #store device and gateway in leading comment of its resolv.conf
       type resolv_conf >/dev/null 2>&1 && resolv_conf
-    } >$1
+    } >"$1"
   }
   local priorityFn=$syscfg/gateway.priority
   unset topIface
@@ -104,14 +103,13 @@ gateUp() {
     if read -r ifs; then
       for interface in $ifs; do  #first try only active ifaces with gateways
         [ -r "$interface" ] && notUnplugged "$interface" && {
-          RESOLV_IF="/var/run/resolv/$interface"
-          read -r resolvDev gateway <$RESOLV_IF
+          read -r resolvDev gateway <$interface
           if [ "$resolvDev" = "#$interface" ]; then
             [ "$gateway" ] && {
               topIface=$interface; break
             }
           else
-            echo "$RESOLV_IF -- should begin with #$interface" >&2
+            echo "$resolv/$interface -- should begin with #$interface" >&2
           fi
         }
       done
@@ -120,19 +118,19 @@ gateUp() {
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
           [ -r "$interface" ] && {
-            RESOLV_IF="/var/run/resolv/$interface"
-            read -r resolvDev gateway <$RESOLV_IF
+            read -r resolvDev gateway <$interface
             if [ "$resolvDev" = "#$interface" ]; then
               [ "$gateway" ] && {
                 topIface=$interface; break
               }
             else
-              echo "$RESOLV_IF -- should begin with #$interface" >&2
+              echo "$resolv/$interface -- should begin with #$interface" >&2
             fi
           }
         done
       }
-      : ${topIface:=$1}  #use newIf if no prioritized net iface found
+      cd $oldPWD
+      : ${topIface:=$1}  #use given interface no prioritized net iface found
       if [ "$topIface" ]; then
         setGateway $topIface $gateway
       else
@@ -141,6 +139,7 @@ gateUp() {
       fi
     else
       echo "Blank or missing $priorityFn" >&2
+      cd $oldPWD
       return 3
     fi
   } <$priorityFn
@@ -277,14 +276,14 @@ topIf() {
 
 gateIP() {
 #output the IP address of the gateway for the given interface
-  RESOLV_IF="/var/run/resolv/$1"
-  read -r resolvDev gateway 2>/dev/null <$RESOLV_IF &&
+  resolvIF="/var/run/resolv/$1"
+  read -r resolvDev gateway 2>/dev/null <$resolvIF &&
   [ "$resolvDev" = "#$1" ] && {
     [ "$gateway" ] || return 1
     echo $gateway
     return 0
   }
-  echo "$RESOLV_IF -- should begin with #$interface" >&2
+  echo "$resolvIF -- should begin with #$interface" >&2
   return 2
 }
 
