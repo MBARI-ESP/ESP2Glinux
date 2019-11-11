@@ -79,9 +79,9 @@ etc/rc.d/rcPowerDown.d/K70syslog -> ../init.d/syslog
 tmp -> /card/tmp
 var -> /card/var
 
-etc/hosts -> /var/etc/hosts
 etc/issue.net -> issue
-etc/resolv.conf -> /var/etc/resolv.conf
+etc/hosts -> /var/run/hosts
+etc/resolv.conf -> /var/run/resolv.conf
 etc/ppp/connect-errors -> /var/etc/ppp/connect-errors
 
 root/.profile -> /etc/profile

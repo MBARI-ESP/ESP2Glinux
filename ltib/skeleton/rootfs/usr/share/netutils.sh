@@ -137,7 +137,7 @@ gateUp() {
         setGateway $topIface $gateway
       else
 :       echo "No gateway interfaces up" >&2
-        rm -f /etc/resolv.conf
+        >/etc/resolv.conf
       fi
     else
       echo "Blank or missing $priorityFn" >&2
