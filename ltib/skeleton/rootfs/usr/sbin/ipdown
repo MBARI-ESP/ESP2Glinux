@@ -4,4 +4,3 @@
 . /usr/share/netutils.sh
 
 ipDown $1
-:

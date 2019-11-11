@@ -10,8 +10,8 @@ PPP_IPPARAM="$6"
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 
 . /usr/share/netutils.sh
-configfn=/etc/sysconfig/ifcfg-$PPP_IFACE
-[ -r $configfn ] && . $configfn
+cfg=$syscfg/ifcfg-$PPP_IFACE
+[ -r $cfg ] || cfg=$syscfg/if-default
 
 tracefn=/tmp/ip-up.trace
 if [ -w $tracefn ]; then
@@ -53,9 +53,8 @@ fi
   }
 }
 
-oldGate=`topIf`
 gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE && {
   vpnUp $VPN $PPP_IFACE
-  gatewayUpdated $oldGate
+  gatewayUpdated
   exit 0
 }

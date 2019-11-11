@@ -4,8 +4,8 @@
 export PPP_IFACE="$1"
 
 . /usr/share/netutils.sh
-configfn=/etc/sysconfig/ifcfg-$PPP_IFACE
-[ -r $configfn ] && . $configfn
+cfg=$syscfg/ifcfg-$PPP_IFACE
+[ -r $cfg ] || cfg=$syscfg/if-default
 
 tracefn=/tmp/ip-down.trace
 if [ -w $tracefn ]; then
@@ -17,3 +17,4 @@ fi
 type pppDown >/dev/null 2>&1 && pppDown
 
 ipDown $PPP_IFACE
+gatewayUpdated

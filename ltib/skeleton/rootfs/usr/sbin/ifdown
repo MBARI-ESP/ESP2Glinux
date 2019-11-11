@@ -15,21 +15,6 @@ END
   ;;
 esac
 
-#signal tunnel deamons that interface may close soon
-for tunFn in /var/run/tunnel*.pid; do
-  [ -s "$tunFn" ] && {
-    tun=`cat $tunFn` && {
-      kill -USR1 $tun && {
-        for t in 9 8 7 6 5 4 3 2 1 0; do  #wait for tunnel daemon to die
-          sleep 1
-          kill -0 $tun 2>/dev/null || break
-        done
-      }
-    }
-  }
-done
+trap "gateUp; hostsUp; gatewayUpdated" EXIT TERM INT HUP QUIT
 
 ifDown "$@"
-gateUp
-hostsUp
-gatewayUpdated

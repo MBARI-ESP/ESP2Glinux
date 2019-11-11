@@ -1,10 +1,10 @@
 #Common functions for bringing up network interfaces
-# -- revised: 10/25/19 brent@mbari.org
+# -- revised: 11/10/19 brent@mbari.org
 #
 
 . /usr/share/netutils.sh  #networking utilities
 
-usage ()
+usage()
 {
     echo "
 usage:  ifup [netInterface|full path to definition file] {mode}
@@ -15,7 +15,7 @@ usage:  ifup [netInterface|full path to definition file] {mode}
     return 1
 }
 
-ifup_function ()
+ifup_function()
 {
   [ "$IFNAME" ] || {
     echo "Network IFNAME to start was not specified"
@@ -86,3 +86,25 @@ ifup_function ()
   }
 }
 
+ifUp() {
+  devfn=$1
+  mode=$2
+  case "$devfn" in
+    "")  #take the interface definitions from the environment
+      [ "${IFNAME}" ] || usage
+      ifup_function $mode
+    ;;
+    -*)  #any flag is a request for help
+      usage
+    ;;
+    *) #anything else must be the name of an interface
+      unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+      unset NETWORK GATEWAY MTU AUTOSTART
+      unset hosts resolv_conf ifPrep ifPost
+      IFNAME="$devfn"
+      cfg=$syscfg/ifcfg-$IFNAME
+      [ -r $cfg ] || cfg=$syscfg/if-default
+      . $cfg
+      ifup_function $mode
+  esac
+}

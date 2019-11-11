@@ -6,4 +6,10 @@
 [ "$1" ] && IFNAME=$1
 unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
 unset NETWORK GATEWAY MTU AUTOSTART
-. /etc/sysconfig/ifcfg-$IFNAME && ipUp && echo $IFNAME IP=$IPADDR
+unset hosts resolv_conf ifPrep ifPost
+cfg=$syscfg/ifcfg-$IFNAME
+[ -r $cfg ] || cfg=$syscfg/if-default
+. $cfg && ipUp && {
+  echo $IFNAME IP=$IPADDR
+  gatewayUpdated
+}

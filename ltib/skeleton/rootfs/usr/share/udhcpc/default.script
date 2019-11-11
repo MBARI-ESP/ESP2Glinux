@@ -1,14 +1,14 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  6/13/16 by brent@mbari.org
+# revised:  11/10/19 by brent@mbari.org
 
 [ -z "$1" -o -z "$interface" ] &&
   echo "Error: should be called from udhcpc" && exit 1
 
-. /usr/share/netutils.sh
+. /usr/share/ifupfn.sh
 IFNAME=$interface
-cfg=/etc/sysconfig/ifcfg-$interface
-[ -r $cfg ] || cfg=/etc/sysconfig/if-default
+cfg=$syscfg/ifcfg-$interface
+[ -r $cfg ] || cfg=$syscfg/if-default
 . $cfg && {
   export VPN
   validIFconfig=1
@@ -24,7 +24,8 @@ fi
 leased=/var/run/$interface.lease
 
 case "$1" in  #ignore leasefail and renew
-  deconfig)
+  deconfig)  #optional kludge to shutdown aliases >=100 on deconfig
+#    eachAlias ifdown $interface $interface':???*'
     [ -f $leased ] && echo -n "$interface DHCP failed: "
     rm -f /var/run/resolv/$interface
     if [ "$validIFconfig" ] && ipUp; then
@@ -33,8 +34,8 @@ case "$1" in  #ignore leasefail and renew
       ifconfig $interface 0
     fi
     rm -f $leased
+    gatewayUpdated
   ;;
-
   bound)
     newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
     if [ "$ignoreDNS" ]; then
@@ -54,4 +55,6 @@ case "$1" in  #ignore leasefail and renew
       echo "DHCP $1 $interface to $ip$dnsMsg"
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
     }
+#    eachAlias ifUpIfDown $interface
+    gatewayUpdated
 esac

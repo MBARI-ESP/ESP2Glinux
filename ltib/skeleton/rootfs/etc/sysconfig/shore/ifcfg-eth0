@@ -1,5 +1,5 @@
 IFNAME=eth0
-BOOTPROTO="dhcp-b -m600 -s /usr/share/udhcpc/aliases.script"   #in background
+BOOTPROTO="dhcp-b -m600"   #in background
 DHCPNAME=`cat /etc/HOSTNAME`
 
 IPADDR=192.168.0.100   #use this configuration if dhcp fails

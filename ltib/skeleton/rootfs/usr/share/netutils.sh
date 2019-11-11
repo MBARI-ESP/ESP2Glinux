@@ -1,6 +1,7 @@
 #Common networking utilities
-# -- revised: 11/7/19 brent@mbari.org
+# -- revised: 11/10/19 brent@mbari.org
 #
+syscfg=/etc/sysconfig
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
@@ -30,7 +31,6 @@ ipUp() {
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
-  gatewayUpdated
   return 0
 }
 
@@ -42,7 +42,6 @@ ipDown() {
   gateDown $netIface
   gateUp
   hostsUp
-  gatewayUpdated
 }
 
 vpnUp() {
@@ -53,15 +52,15 @@ server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
     vpnServer=`netIfIP $vpn` && [ "$vpnServer" = "$server" ] &&
       carrier=`hostIface $server` && lowerGatePriority "$2" "$carrier" && return
-    ifdown $vpn
-    ifup $vpn
+    ifDown $vpn
+    ifUp $vpn
   fi
 }
 
 lowerGatePriority() {
 #return 0 iff interface $1 has a lower gateway priority than $2
   [ "$1" = "$2" -o -z "$2" ] && return 1
-  read -r ifs </etc/sysconfig/gateway.priority || return
+  read -r ifs <$syscfg/gateway.priority || return
   for interface in $ifs; do  #consider only interfaces with gateways
     case "$2" in
       "$interface") return 0
@@ -85,19 +84,21 @@ isUp() {
 }
 
 gateUp() {
-# add any specified device with its gateway IP
+# add any specified interface ($1) with its gateway IP ($2)
 # then activate the appropriate gateway with its associated resolv.conf
   mkdir -p /var/run/resolv && cd /var/run/resolv || {
     echo "Cannot access /var/run/resolv directory" >&2
     return 1
   }
-  local interface RESOLV_IF resolvDev gateway ifs ifs2 topIface newIface=$1
-  rm -f $newIface
-  [ "$2" ] && {
-    echo "#$*"  #store device and gateway in leading comment of its resolv.conf
-    type resolv_conf >/dev/null 2>&1 && resolv_conf
-  } >$newIface
-  local priorityFn=/etc/sysconfig/gateway.priority
+  local interface RESOLV_IF resolvDev gateway ifs ifs2 topIface
+  [ "$1" ] && {
+    rm -f $1
+    [ "$2" ] && {
+      echo "#$*" #store device and gateway in leading comment of its resolv.conf
+      type resolv_conf >/dev/null 2>&1 && resolv_conf
+    } >$1
+  }
+  local priorityFn=$syscfg/gateway.priority
   unset topIface
   { #read up to two lines of net interface types from $priorityFn
     if read -r ifs; then
@@ -131,7 +132,7 @@ gateUp() {
           }
         done
       }
-      : ${topIface:=$newIface}  #use newIf if no prioritized net iface found
+      : ${topIface:=$1}  #use newIf if no prioritized net iface found
       if [ "$topIface" ]; then
         setGateway $topIface $gateway
       else
@@ -153,9 +154,7 @@ gateDown() {
 hostsUp() {
 #update iface specific hosts file and merge with those of other ifaces
 #first adds interface specific hosts file if current iface specified
-  [ "$1" ] && type hosts >/dev/null 2>&1 && {
-    hosts >/var/run/$1.hosts || return
-  }
+  [ "$1" ] && type hosts >/dev/null 2>&1 && hosts >/var/run/$1.hosts
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
     cat /var/run/*.hosts
@@ -294,4 +293,18 @@ gatewayUpdated() {
 #this dummy fn may be replaced by sitecfg below
 :
 }
-. /etc/sysconfig/sitecfg.sh
+. $syscfg/sitecfg.sh
+
+eachAlias() {
+#do first arg for each of specified interface's alias configurations
+#additional args are passed through
+  cfg=$syscfg/ifcfg-
+  aliases=`echo $cfg$2:*`
+  arg1=$1
+  [ "$aliases" = "$cfg$2:*" ] || {
+    shift 2
+    for alias in $aliases; do
+       $arg1 ${alias#$cfg} ${@}
+    done
+  }
+}

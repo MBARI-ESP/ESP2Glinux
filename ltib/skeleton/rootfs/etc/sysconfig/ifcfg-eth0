@@ -13,5 +13,5 @@ EOS
 }
 
 ifPost() {
-  ifup eth0:10  #bring up static alias
+  ifUp eth0:10  #bring up static alias
 }

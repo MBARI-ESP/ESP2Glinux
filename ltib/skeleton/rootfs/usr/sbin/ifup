@@ -4,28 +4,6 @@
 #
 . /usr/share/ifupfn.sh
 
-devfn=$1
-mode=$2
-syscfg=/etc/sysconfig
+trap gatewayUpdated EXIT TERM INT HUP QUIT
 
-case "$devfn" in
-  "")  #take the interface definitions from the environment
-    [ "${IFNAME}" ] || usage
-    ifup_function $mode
-  ;;
-
-  -*)  #any flag is a request for help
-    usage
-  ;;
-
-  *) #anything else must be the name of an interface
-    unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-    unset NETWORK GATEWAY MTU AUTOSTART
-    IFNAME="$devfn"
-    cd /etc/sysconfig && {
-      cfg=$syscfg/ifcfg-$IFNAME
-      [ -r $cfg ] || cfg=$syscfg/if-default
-      . $cfg
-      ifup_function $mode
-    }
-esac
+ifUp "$@"

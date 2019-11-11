@@ -1,20 +1,22 @@
 #!/bin/sh
+self=`basename $0`
 : ${HOME:=/root} #in case invoked from inittab
 : ${noGateDelay:=600}  #retry delay if no gateway
-: ${pidFn:=/var/run/tunnel2shore.pid}
-: ${portFn:=/var/etc/tunnel2shore.port}  #stores last TCP port # assigned us
+: ${pidFn:=/var/run/$self.pid}
+: ${portFn:=/var/etc/$self.port}  #stores last TCP port # assigned us
 #portFn=/dev/null   #uncomment to query for our remote port # on each connect
-: ${traceFn=/tmp/tunnel2shore.trace}
+: ${traceFn=/tmp/$self.trace}
 : ${shore:=ESPshore}
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
-export HOME
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/7/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/10/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 2
 }
+tunHosts=/var/run/$self.hosts
+export HOME
 [ -w $traceFn ] && {
   exec 2>>$traceFn
   date >&2
@@ -22,11 +24,23 @@ END
   set -x
 }
 
-#kill any other instances
-oldPID=`cat $pidFn 2>/dev/null` && kill -0 "$oldPID" 2>/dev/null && kill -HUP $oldPID
-fuser -sk 25/tcp
-echo $$ >$pidFn
-trap "pkill -P $$; rm -f $pidFn" EXIT TERM HUP USR1 INT QUIT
+trap "rm -f $tunHosts $pidFn" EXIT
+trap "pkill -P $$; exit 1" TERM HUP INT QUIT
+trap "" USR1 USR2
+
+if [ -s "$pidFn" ];then
+  #kill any other instances
+  oldPID=`cat $pidFn 2>/dev/null` &&
+    kill -0 "$oldPID" 2>/dev/null && kill -HUP $oldPID
+  fuser -sk 25/tcp
+  echo $$ >$pidFn
+elif [ -e "$pidFn" ]; then  #empty .pid file
+  echo $$ >$pidFn
+  echo "Delaying reopening tunnel for $noGateDelay seconds"
+  sleep $noGateDelay
+else  #missing .pid file
+  echo $$ >$pidFn
+fi
 
 topIf() {
   #output the name of the top priority network interface
@@ -36,23 +50,25 @@ topIf() {
 }
 
 while [ ! `topIf` ]; do
-  echo "No Network Gateway -- retrying tunnel in $noGateDelay seconds"
+  echo "No Network Gateway -- reopening tunnel in $noGateDelay seconds"
   sleep $noGateDelay
 done
 
-#ensure mail resolves to localhost
-grep -q '^127\..* mail$' /etc/hosts || echo '127.0.0.1 mail' >>/etc/hosts
+#ensure shore and mail resolve to localhost
+echo '127.0.0.1 shore mail' >$tunHosts
+cat $tunHosts >>/etc/hosts
 
-tunnelArgs="-L25:$shore:25 -oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
+tunnels="-L25:$shore:25 -L873:$shore:873"
+tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
 
-#delay to prevent restarting before interface is closed
-trap "trap '' USR1; pkill -P $$; trap \"rm -f $pidFn\" EXIT; sleep 4; exit 1" USR1
+#delay until tunnel is closed.  Empty .pid file on exit to delay its reopening.
+trap "trap '' USR1 EXIT; pkill -P $$; wait; >$pidFn; exit 1" USR1
 
-#if known, try the port previously assigned us
-[ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnelArgs || {
+#first, try the port previously assigned us
+[ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnels $tunArgs || {
   sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
-    ssh -R$sshPort:$local $tunnelArgs
+    ssh -R$sshPort:$local $tunnels $tunArgs
   }
 }

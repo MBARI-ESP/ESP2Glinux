@@ -9,9 +9,8 @@ shift
   echo "Skipping network configuration so as not to disturb nfs root filesystem"
   exit 4
 }
-syscfg=/etc/sysconfig
-order=$syscfg/if-order
 
+order=/etc/sysconfig/if-order
 [ -r $order ] || exit 3
 . $order
 
@@ -20,14 +19,15 @@ case "$op" in
     . /usr/share/ifupfn.sh
     if [ "$1" ]; then
       for dev; do
-	ifup $dev
+        ifup $dev
       done
     else
       > /etc/resolv.conf
       > /etc/hosts
-      unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-      unset NETWORK GATEWAY MTU AUTOSTART
       for dev in $START; do (
+        unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+        unset NETWORK GATEWAY MTU AUTOSTART
+        unset hosts resolv_conf ifPrep ifPost
         IFNAME="$dev"
         cfg=$syscfg/ifcfg-$dev
         [ -r $cfg ] || cfg=$syscfg/if-default
