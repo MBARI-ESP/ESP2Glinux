@@ -1,6 +1,6 @@
 #Common networking utilities
-# -- revised: 11/10/19 brent@mbari.org
-#
+# -- revised: 11/11/19 brent@mbari.org
+
 syscfg=/etc/sysconfig
 
 ipUp() {
@@ -45,32 +45,35 @@ ipDown() {
 }
 
 vpnUp() {
-#if $1 specs "IP/vpn" iface, bring that iface up, unless it already up and
+#if $1 specs "IP/vpn" iface, bring that iface up, unless it is already up and
 #there is already a host route to the vpn server via an interface other than $2.
-#Always bring down vpn if its current $carrier is of lower priority than $2
+#Always reconnect vpn if its current $carrier will be replaced by $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
     vpnServer=`netIfIP $vpn` && [ "$vpnServer" = "$server" ] &&
-      carrier=`hostIface $server` && lowerGatePriority "$2" "$carrier" && return
+      carrier=`hostIface $server` && gatePriority "$2" "$carrier" || return
     ifDown $vpn
     ifUp $vpn
   fi
 }
 
-lowerGatePriority() {
-#return 0 iff interface $1 has a lower gateway priority than $2
-  [ "$1" = "$2" -o -z "$2" ] && return 1
-  read -r ifs <$syscfg/gateway.priority || return
+gatePriority() {
+#return 0 if active interface $1 has equal or higher gateway priority than $2
+#return 1 if active interface $1 should not effect routes on $2
+#return >1 if niether interface is has an active gateway
+  [ "$1" = "$2" ] && return
+  read -r ifs <$syscfg/gateway.priority || return 6
+  local oldPWD=$PWD
+  cd /var/run/resolv
   for interface in $ifs; do  #consider only interfaces with gateways
-    case "$2" in
-      "$interface") return 0
-    esac
-    case "$1" in
-      "$interface") return 1
+    case "$interface" in
+      "$1") cd $oldPWD; return 0
+    ;;
+      "$2") cd $oldPWD; return 1
     esac
   done
-  echo "lowerGatePriority():  unknown interface '$2'" >&2
-  return 9
+  cd $oldPWD
+  return 2
 }
 
 notUnplugged() {
@@ -270,8 +273,7 @@ netIfPtp() {
 topIf() {
 #output the name of the top priority network interface
   local iface
-  read -r iface gateway 2>/dev/null </etc/resolv.conf &&
-  echo ${iface###}
+  read -r iface gateway 2>/dev/null </etc/resolv.conf && echo ${iface###}
 }
 
 gateIP() {
@@ -285,6 +287,23 @@ gateIP() {
   }
   echo "$resolvIF -- should begin with #$interface" >&2
   return 2
+}
+
+closeTunnels() {
+  #signal tunnel deamons that interface will close soon
+  for tunFn in /var/run/tunnel*.pid; do
+    [ -s "$tunFn" ] && {
+      tun=`cat $tunFn` && {
+        kill -USR1 $tun && {
+          echo "Closing `basename ${tunFn%\.pid}`"
+          for t in 9 8 7 6 5 4 3 2 1 0; do  #wait for tunnel daemon to die
+            sleep 1
+            kill -0 $tun 2>/dev/null || break
+          done
+        }
+      }
+    }
+  done
 }
 
 gatewayUpdated() {

@@ -1,23 +1,7 @@
 #Common functions for bringing down network interfaces
-# -- revised: 11/10/19 brent@mbari.org
+# -- revised: 11/11/19 brent@mbari.org
 
 . /usr/share/netutils.sh
-
-closeTunnel() {
-  #signal tunnel deamons that interface will close soon
-  for tunFn in /var/run/tunnel*.pid; do
-    [ -s "$tunFn" ] && {
-      tun=`cat $tunFn` && {
-        kill -USR1 $tun && {
-          for t in 9 8 7 6 5 4 3 2 1 0; do  #wait for tunnel daemon to die
-            sleep 1
-            kill -0 $tun 2>/dev/null || break
-          done
-        }
-      }
-    }
-  done
-}
 
 ifAliasDown() {
   fn=/var/run/*$1.pid
@@ -26,7 +10,7 @@ ifAliasDown() {
     isUp $1 || return 0
   }
   echo "Shutting down interface $1 ..."
-  [ "$(topIf)" == "$1" ] && closeTunnel
+  [ "$(topIf)" == "$1" ] && closeTunnels
   for pidfn in $pidfns; do
     daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {

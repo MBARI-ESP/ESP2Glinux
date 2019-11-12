@@ -1,6 +1,5 @@
 #Common functions for bringing up network interfaces
 # -- revised: 11/10/19 brent@mbari.org
-#
 
 . /usr/share/netutils.sh  #networking utilities
 
@@ -46,6 +45,7 @@ ifup_function()
     }
   }
   echo "Bringing up interface $IFNAME ..."
+  top=`topIf` && [ "$top" ] && gatePriority $IFNAME $top && closeTunnels
   ! type ifPrep >/dev/null 2>&1 || ifPrep && {
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
