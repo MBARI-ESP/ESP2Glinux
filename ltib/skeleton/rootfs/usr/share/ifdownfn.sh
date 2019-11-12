@@ -1,5 +1,5 @@
 #Common functions for bringing down network interfaces
-# -- revised: 11/11/19 brent@mbari.org
+# -- revised: 11/12/19 brent@mbari.org
 
 . /usr/share/netutils.sh
 
@@ -10,7 +10,6 @@ ifAliasDown() {
     isUp $1 || return 0
   }
   echo "Shutting down interface $1 ..."
-  [ "$(topIf)" == "$1" ] && closeTunnels
   for pidfn in $pidfns; do
     daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {

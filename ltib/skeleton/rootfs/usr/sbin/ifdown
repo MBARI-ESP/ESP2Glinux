@@ -15,6 +15,13 @@ END
   ;;
 esac
 
-trap "gateUp; hostsUp; gatewayUpdated" EXIT TERM INT HUP QUIT
+trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
+
+tracefn=/tmp/ifdown.trace
+if [ -w $tracefn ]; then
+  (date; echo "$@"; env) >>$tracefn
+  exec 2>>$tracefn
+  set -x
+fi
 
 ifDown "$@"

@@ -55,6 +55,6 @@ fi
 
 gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE && {
   vpnUp $VPN $PPP_IFACE
-  gatewayUpdated
+  gateUpdated
   exit 0
 }

@@ -1,5 +1,5 @@
 #Common functions for bringing up network interfaces
-# -- revised: 11/10/19 brent@mbari.org
+# -- revised: 11/12/19 brent@mbari.org
 
 . /usr/share/netutils.sh  #networking utilities
 
@@ -11,21 +11,22 @@ usage:  ifup [netInterface|full path to definition file] {mode}
         only bring up IFNAME if its AUTOSTART mode matches regex {mode}
         or Yes or No if the mode parameter is omitted
 "
-    return 1
+    return 101
 }
 
 ifup_function()
+#returns true iff interface successfully brought up
 {
   [ "$IFNAME" ] || {
     echo "Network IFNAME to start was not specified"
     usage
-    return 200
+    return 102
   }
   startMode="^(${1-n|no||y|yes|true|false})$"  #yes, no, or missing
   echo "$AUTOSTART" | egrep -iq $startMode || {
 #      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
 #         $startMode" >&2
-    return 0
+    return 1
   }
   fn=/var/run/*$IFNAME.pid
   pidfns=`echo $fn`
@@ -41,11 +42,10 @@ ifup_function()
     done
     [ "$owners" ] && {
       echo "$IFNAME is already in use by process: $owners" >&2
-      return 7
+      return 2
     }
   }
   echo "Bringing up interface $IFNAME ..."
-  top=`topIf` && [ "$top" ] && gatePriority $IFNAME $top && closeTunnels
   ! type ifPrep >/dev/null 2>&1 || ifPrep && {
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
@@ -65,11 +65,13 @@ ifup_function()
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
             [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
-            $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME ||
+            $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME || {
               echo "DHCP failed:  $interface IP=$IPADDR" >&2
+              return 1
+            }
           else
               echo "No $daemon client daemon installed!" >&2
-              false
+              return 3
           fi
         }
       ;;
@@ -78,9 +80,9 @@ ifup_function()
       ;;
       *)
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
-        false
+        return 4
       ;;
-    esac || return
+    esac
     type ifPost >/dev/null 2>&1 || return 0
     ifPost
   }

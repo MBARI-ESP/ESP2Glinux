@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 11/11/19 brent@mbari.org
+# -- revised: 11/12/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -45,13 +45,15 @@ ipDown() {
 }
 
 vpnUp() {
-#if $1 specs "IP/vpn" iface, bring that iface up, unless it is already up and
+#if $1 is a "IP/vpn" iface, bring that iface up, unless it is already up and
 #there is already a host route to the vpn server via an interface other than $2.
 #Always reconnect vpn if its current $carrier will be replaced by $2
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
     vpnServer=`netIfIP $vpn` && [ "$vpnServer" = "$server" ] &&
-      carrier=`hostIface $server` && gatePriority "$2" "$carrier" || return
+      carrier=`hostIface $server` && {
+        gatePriority "$2" "$carrier" || return
+      }
     ifDown $vpn
     ifUp $vpn
   fi
@@ -65,7 +67,7 @@ gatePriority() {
   read -r ifs <$syscfg/gateway.priority || return 6
   local oldPWD=$PWD
   cd /var/run/resolv
-  for interface in $ifs; do  #consider only interfaces with gateways
+  for interface in $ifs; do  #consider only UP interfaces with gateways
     case "$interface" in
       "$1") cd $oldPWD; return 0
     ;;
@@ -89,9 +91,12 @@ isUp() {
 gateUp() {
 # add any specified interface ($1) with its gateway IP ($2)
 # then activate the appropriate gateway with its associated resolv.conf
+# if called without args, restore the highest priority gateway
   local oldPWD=$PWD
   resolv=/var/run/resolv
-  cd $resolv 2>/dev/null || mkdir $resolv && cd $resolv || return
+  cd $resolv 2>/dev/null || {
+    mkdir $resolv && cd $resolv || return
+  }
   local interface resolvIF resolvDev gateway ifs ifs2 topIface
   [ "$1" ] && {
     rm -f "$1"
@@ -137,7 +142,7 @@ gateUp() {
       if [ "$topIface" ]; then
         setGateway $topIface $gateway
       else
-:       echo "No gateway interfaces up" >&2
+#       echo "No gateway interfaces up" >&2
         >/etc/resolv.conf
       fi
     else
@@ -170,9 +175,10 @@ hostDown() {
 
 
 setGateway() {
-#update resolv.conf from device $1, then
-#set up default gateway to following gateway IP addresses
+#update resolv.conf from device $1
+#if $2 specified, set device $1's gw route to that IP address
   local topIface=$1 gateway=$2
+  gateChange $topIface
   cat /var/run/resolv/$topIface >/etc/resolv.conf 2>/dev/null
   if [ "$gateway" ]; then  #replace default routes if changed
     route -n | grep "^0\.0\.0\.0 " | {
@@ -289,26 +295,14 @@ gateIP() {
   return 2
 }
 
-closeTunnels() {
-  #signal tunnel deamons that interface will close soon
-  for tunFn in /var/run/tunnel*.pid; do
-    [ -s "$tunFn" ] && {
-      tun=`cat $tunFn` && {
-        kill -USR1 $tun && {
-          echo "Closing `basename ${tunFn%\.pid}`"
-          for t in 9 8 7 6 5 4 3 2 1 0; do  #wait for tunnel daemon to die
-            sleep 1
-            kill -0 $tun 2>/dev/null || break
-          done
-        }
-      }
-    }
-  done
-}
-
-gatewayUpdated() {
+gateUpdated() {
 #invoked after gateway interface updated
 #this dummy fn may be replaced by sitecfg below
+:
+}
+gateChange() {
+#invoked just before gateway interface may be updated
+#$1 is the new gateway interface
 :
 }
 . $syscfg/sitecfg.sh

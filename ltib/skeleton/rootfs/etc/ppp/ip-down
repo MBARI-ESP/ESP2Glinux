@@ -17,4 +17,4 @@ fi
 type pppDown >/dev/null 2>&1 && pppDown
 
 ipDown $PPP_IFACE
-gatewayUpdated
+gateUpdated

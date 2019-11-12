@@ -11,5 +11,5 @@ cfg=$syscfg/ifcfg-$IFNAME
 [ -r $cfg ] || cfg=$syscfg/if-default
 . $cfg && ipUp && {
   echo $IFNAME IP=$IPADDR
-  gatewayUpdated
+  gateUpdated
 }

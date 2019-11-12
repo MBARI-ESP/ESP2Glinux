@@ -34,7 +34,7 @@ case "$1" in  #ignore leasefail and renew
       ifconfig $interface 0
     fi
     rm -f $leased
-    gatewayUpdated
+    gateUpdated
   ;;
   bound)
     newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
@@ -56,5 +56,5 @@ case "$1" in  #ignore leasefail and renew
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
     }
 #    eachAlias ifUpIfDown $interface
-    gatewayUpdated
+    gateUpdated
 esac
