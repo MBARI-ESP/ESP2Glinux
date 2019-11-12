@@ -10,7 +10,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/10/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/11/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 2
@@ -36,7 +36,7 @@ if [ -s "$pidFn" ];then
   echo $$ >$pidFn
 elif [ -e "$pidFn" ]; then  #empty .pid file
   echo $$ >$pidFn
-  echo "Delaying reopening tunnel for $noGateDelay seconds"
+  echo "Delaying reopening $shore tunnel for $noGateDelay seconds"
   sleep $noGateDelay
 else  #missing .pid file
   echo $$ >$pidFn
@@ -50,7 +50,7 @@ topIf() {
 }
 
 while [ ! `topIf` ]; do
-  echo "No Network Gateway -- reopening tunnel in $noGateDelay seconds"
+  echo "No Network Gateway -- reopening $shore tunnel in $noGateDelay seconds"
   sleep $noGateDelay
 done
 
@@ -66,6 +66,7 @@ local=localhost:22
 trap "trap '' USR1 EXIT; pkill -P $$; wait; >$pidFn; exit 1" USR1
 
 #first, try the port previously assigned us
+echo "Opening tunnel to $shore"
 [ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnels $tunArgs || {
   sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
