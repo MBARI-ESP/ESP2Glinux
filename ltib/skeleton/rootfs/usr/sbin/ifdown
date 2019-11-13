@@ -3,8 +3,6 @@
 #  ifdown [interface name]
 #
 
-. /usr/share/ifdownfn.sh
-
 case "$1" in
   -*|*/*|'') #any flag is a request for help
     cat <<END >&2
@@ -15,7 +13,7 @@ END
   ;;
 esac
 
-trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
+. /usr/share/netutils.sh
 
 tracefn=/tmp/ifdown.trace
 if [ -w $tracefn ]; then
@@ -24,4 +22,14 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
-ifDown "$@"
+op=down
+case "$1" in
+  *:*) #an interface alias
+  ;;
+
+  *) #anything else must be the name of an interface
+    [ "$2" = "force" ] && eachAlias ifDown $1
+    isUp "$1:[[:digit:]][[:digit:]]*" && op=0   #leave UP if UP aliases remain
+esac
+trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
+ifDown $1 $op

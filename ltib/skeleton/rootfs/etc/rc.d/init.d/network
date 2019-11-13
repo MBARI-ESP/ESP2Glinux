@@ -17,11 +17,7 @@ order=/etc/sysconfig/if-order
 case "$op" in
   start)
     . /usr/share/ifupfn.sh
-    if [ "$1" ]; then
-      for dev; do
-        ifup $dev
-      done
-    else
+    [ "$1" ] || {
       > /etc/resolv.conf
       > /etc/hosts
       for dev in $START; do (
@@ -35,10 +31,13 @@ case "$op" in
         ifup_function
       ) done
       exec /lib/udev/catchup  #other interfaces start in parallel as discovered
-    fi
+    } #exec does not return
+    for dev; do
+      ifup $dev
+    done
 ;;
   stop)
-    . /usr/share/ifdownfn.sh
+    . /usr/share/netutils.sh
     globIfs() {
     #output list of valid interfaces from given template
       oldWD=`pwd`
@@ -90,16 +89,14 @@ case "$op" in
 
     takeDown() {
     #take down the specified interfaces
-    #do all in parallel if inParallel set
-      unset bg
-      [ $inParallel ] && bg='&'
-      for dev; do(
-        cfg=$syscfg/ifcfg-$dev
+    #do all in parallel if gang set to &
+      for iface; do
+        unset AUTOSTART
+        cfg=$syscfg/ifcfg-$iface
         [ -r $cfg ] || cfg=$syscfg/if-default
         . $cfg  #never stop 'ignored' or 'inittab' interfaces
-        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] &&
-          ifDown $dev force $bg
-      )done
+        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $iface $gang
+      done
       wait
     }
 
@@ -109,18 +106,18 @@ case "$op" in
       echo $out
     }
 
-    #update routing only ONCE, after deconfiguring interfaces
-    trap "gateUp; hostsUp; exit" EXIT INT TERM QUIT HUP
-
+    #restore default route for any remaining interfaces
+    trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
+    
     if [ "$1" ]; then  #stop only the specified interfaces
       takeDown "$@"
     else  #stop all interfaces
-      inParallel=  takeDown `globIfs $STOP`
-      export inParallel=yes
-      takeDown `pppIfs`  #all ppp interfaces
-      takeDown `ifs '^[[:alpha:]][[:alpha:][:digit:]]*:'` #all aliases
-      takeDown `ifs`
-      inParallel=  takeDown `reverse $START`
+      gang=    takeDown `globIfs $STOP`
+      gang='&' takeDown `pppIfs`  #all ppp interfaces
+      gang='&' takeDown `ifs '^[[:alpha:]][[:alpha:][:digit:]]*:'` #all aliases
+      gang=    takeDown `reverse $START`
+      gang='&' takeDown `ifs`  #any remaining
+      trap '' EXIT
     fi
 ;;
 

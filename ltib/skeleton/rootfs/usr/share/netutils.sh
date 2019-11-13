@@ -31,6 +31,7 @@ ipUp() {
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
+  gateUpdated
   return 0
 }
 
@@ -38,10 +39,10 @@ ipDown() {
 # tear down IP interface per shell environment variables:
 #  IFNAME = network device
   local netIface=${1:-$IFNAME}
-  hostDown $netIface
   gateDown $netIface
   gateUp
   hostsUp
+  gateUpdated
 }
 
 vpnUp() {
@@ -55,7 +56,7 @@ server=`dirname $1` && [ "$server" != . ] &&
         gatePriority "$2" "$carrier" || return
       }
     ifDown $vpn
-    ifUp $vpn
+    ifup $vpn
   fi
 }
 
@@ -85,7 +86,7 @@ notUnplugged() {
 
 isUp() {
 #return 0 if interface or alias is configured (UP)
-  ifconfig | grep -q ^$1
+  ifconfig | grep -q "^$1[[:space:]]"
 }
 
 gateUp() {
@@ -153,10 +154,6 @@ gateUp() {
   } <$priorityFn
 }
 
-gateDown() {
-  rm -f /var/run/resolv/$1
-}
-
 
 hostsUp() {
 #update iface specific hosts file and merge with those of other ifaces
@@ -169,8 +166,8 @@ hostsUp() {
   :
 }
 
-hostDown() {
-  rm -f /var/run/$1.hosts
+gateDown() {
+  rm -f /var/run/$1.hosts /var/run/resolv/$1
 }
 
 
@@ -319,4 +316,43 @@ eachAlias() {
        $arg1 ${alias#$cfg} ${@}
     done
   }
+}
+
+ifDown() {
+#shutdown given interface
+#additonal arguments passed through to ifconfig
+#Does not restore lost routes!
+  fn=/var/run/*$1.pid
+  pidfns=`echo $fn`
+  [ "$pidfns" = "$fn" ] && {
+    isUp $1 || return 0
+  }
+  echo "Shutting down interface $1 ..."
+  [ "$(topIf)" == "$1" ] && gateChange
+  for pidfn in $pidfns; do
+    daemon=`head -n1 $pidfn 2>/dev/null`
+    [ "$daemon" ] && {
+      case $pidfn in
+        *dhcp*-*) signal=HUP ;;
+        *) signal=TERM ;;
+      esac
+      for try in 1 2 last; do
+        kill -$signal $daemon 2>/dev/null  #relinquish any lease
+        for t in 1 2 3 4 5; do  #wait for daemon to die
+          sleep 1
+          kill -0 $daemon 2>/dev/null || break 2
+        done
+        [ "$try" = last ] && {
+          echo "Forcing $1 (PID $daemon) to terminate" >&2
+          rm $pidfn
+          kill -9 $daemon
+        }
+      done
+      #ppp will delete its own .pid files
+      [ "$signal" != TERM ] && rm -f $pidfn
+    }
+  done
+  gateDown $1
+  [ "$2" ] || set -- $1 down
+  ifconfig $* 2>/dev/null
 }

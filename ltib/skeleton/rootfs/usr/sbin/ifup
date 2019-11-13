@@ -4,8 +4,6 @@
 #
 . /usr/share/ifupfn.sh
 
-trap gateUpdated EXIT TERM INT HUP QUIT
-
 tracefn=/tmp/ifup.trace
 if [ -w $tracefn ]; then
   (date; echo "$@"; env) >>$tracefn
