@@ -1,4 +1,10 @@
 SUBSYSTEM=="net", ACTION=="add", RUN+="ifup %E{INTERFACE}" 
 SUBSYSTEM=="net", ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
-#for USB serial modems
-SUBSYSTEM=="tty", RUN+="ttyModem"
+
+#Quantec BG96
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296"\
+  , ENV{ID_IFACE}=="03", RUN+="ttyModem ppp88"
+
+#uBlox SARA-R4
+SUBSYSTEM=="tty", ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2"\
+  , ENV{ID_IFACE}=="01", RUN+="ttyModem ppp88"
