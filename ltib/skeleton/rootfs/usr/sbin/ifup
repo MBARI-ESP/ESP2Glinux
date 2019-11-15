@@ -33,5 +33,5 @@ case "$1" in
 esac
 
 [ "$IFNAME" ] || usage
-exec ifUp $2
+ifUp $2
 

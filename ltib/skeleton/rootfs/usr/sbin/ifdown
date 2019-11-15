@@ -28,7 +28,7 @@ eachAlias() {
   local aliases=`echo $cfg$IFNAME:*` alias
   [ "$aliases" = "$cfg$2:*" ] || {
     for alias in $aliases; do
-      ifcfg ${alias#$cfg}
+      ifCfg ${alias#$cfg}
       "${@}"
     done
   }
@@ -45,13 +45,14 @@ case "$1" in
     usage
 ;;
   *) #anything else must be the name of an interface
-    ifcfg $1
+    ifCfg $1
     [ "${IFNAME}" ] || usage
     [ "$2" = "force" ] && eachAlias ifDown
-    isUp "$1:[[:digit:]][[:digit:]]*" && op=0   #leave UP if UP aliases remain
-    ifcfg $1
+    #leave main interface UP if any aliases remain
+    isAliasUp "$1:[[:digit:]][[:digit:]]*" && op=0
 esac
 
+ifCfg $1
 [ "$IFNAME" ] || usage
 trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
-exec ifDown $op
+ifDown $op

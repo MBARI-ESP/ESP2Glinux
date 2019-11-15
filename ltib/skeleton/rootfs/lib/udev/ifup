@@ -13,15 +13,12 @@ case "$DEVPATH" in
  /devices/virtual/*) exit 0
 esac
 
-#exit if interface already UP
-flags=`cat /sys/class/net/$1/flags` && [ $(( $flags & 1 )) = 0 ] || exit 0
-
 lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
   exec 7<$lockFn
   flock -x 7 && [ -e $lockFn ] && exec echo -n "$1 " >>$lockFn
   exec 7<&-
 }
-exec /usr/sbin/ifup $1 '||y|yes|true' &  #only if AUTOSTART missing,yes, or true
+exec /usr/sbin/ifup $1 "''|y|yes|1|true" &  #if AUTOSTART missing,yes, or true
 
 #catchup command starts interfaces listed in ifup.pending

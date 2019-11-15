@@ -22,13 +22,14 @@ case "$op" in
       > /etc/resolv.conf
       > /etc/hosts
       for dev in $START; do
-        ifcfg $dev
-        ifup_function
+        ifCfg $dev
+        ifUp
       done
       exec /lib/udev/catchup  #other interfaces start in parallel as discovered
     } #exec does not return
     for dev; do
-      ifup $dev
+      ifCfg $dev
+      ifUp
     done
 ;;
   stop)
@@ -85,9 +86,9 @@ case "$op" in
     #take down the specified interfaces
     #do all in parallel if gang set to &
       for iface; do
-        ifcfg $iface
+        ifCfg $iface
         #never stop 'ignored' or 'inittab' interfaces
-        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $IFNAME $gang
+        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $gang
       done
       wait
     }

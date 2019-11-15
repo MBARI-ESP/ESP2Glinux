@@ -3,5 +3,5 @@
 
 . /usr/share/netutils.sh
 
-ifcfg $1
+ifCfg $1
 ipUp && echo $IFNAME IP=$IPADDR

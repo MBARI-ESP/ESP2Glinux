@@ -97,9 +97,17 @@ notUnplugged() {
   [ "`cat /sys/class/net/$1/carrier 2>/dev/null`" != 0 ]
 }
 
-isUp() {
-#return 0 if interface or alias is configured (UP)
+isAliasUp() {
+#return 0 if any matching interfaces or aliases are configured (UP)
   ifconfig | grep -q "^$1[[:space:]]"
+}
+
+isUp() {
+#return 0 if specified interface or pattern of interface aliases is UP
+  case $1 in
+    *:*) isAliasUp $1; return
+  esac
+  flags=`cat /sys/class/net/$1/flags` 2>/dev/null && [ $(( $flags & 1 )) = 1 ]
 }
 
 gateUp() {
@@ -329,7 +337,7 @@ ifDown() {
   local fn=/var/run/*$IFNAME.pid
   local pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] && {
-    isUp $IFNAME || return 0
+    isUp $IFNAME || return
   }
   echo "Shutting down interface $IFNAME ..."
   [ "$(topIf)" == "$IFNAME" ] && gateChange
@@ -362,19 +370,22 @@ ifDown() {
   ifconfig $IFNAME $* 2>/dev/null
 }
 
+autostart() {
+  #default to yes, no, or missing
+  eval "case \"$AUTOSTART\" in ${1-''|n|no|y|yes|1|0|true|false}) return;esac"
+  return 1
+}
+      
 ifUp()
 #returns true iff interface $IFNAME successfully brought up
+#$1 is optional regex of allowed $AUTOSTART values
 {
   [ "$IFNAME" ] || {
     echo "Network interface to start was not specified" >&2
     return 102
   }
-  local startMode="^(${1-n|no||y|yes|true|false})$"  #yes, no, or missing
-  echo "$AUTOSTART" | egrep -iq $startMode || {
-#      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
-#         $startMode" >&2
-    return 1
-  }
+  autostart $1 || return
+  isUp $IFNAME && exit 0
   local fn=/var/run/*$IFNAME.pid
   local pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || {  #check for active locks...

@@ -15,8 +15,10 @@ read -r ifNames <&7 || [ $? = 1 ] || {
 }
 rm $lockFn  #before giving up lock!
 exec 7<&-
-for IFNAME in $ifNames; do
-  flags=`cat /sys/class/net/$IFNAME/flags` 2>/dev/null &&
-          [ $(( $flags & 1 )) = 0 ] &&
-          /usr/sbin/ifup $IFNAME &
+
+. /usr/share/netutils.sh
+
+for iface in $ifNames; do
+  ifCfg $iface
+  ifUp "''|y|yes|1|true" &  #only if AUTOSTART missing,yes, or true
 done
