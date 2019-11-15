@@ -2,7 +2,17 @@
 #
 #  ifup [interface name|definition file]
 #
-. /usr/share/ifupfn.sh
+usage() {
+  cat <<END >&2
+usage:  ifup [netInterface] {mode}
+        configure and enable the specified network interface
+        only bring up IFNAME if its AUTOSTART mode matches regex {mode}
+        or Yes or No if the mode parameter is omitted
+END
+  exit 101
+}
+
+. /usr/share/netutils.sh
 
 tracefn=/tmp/ifup.trace
 if [ -w $tracefn ]; then
@@ -11,4 +21,17 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
-ifUp "$@"
+case "$1" in
+  "")  #take the interface definitions from the environment
+    [ "${IFNAME}" ] || usage
+  ;;
+  -*|*/*)  #any flag is a request for help
+    usage
+  ;;
+  *) #anything else must be the name of an interface
+    ifCfg $1
+esac
+
+[ "$IFNAME" ] || usage
+exec ifUp $2
+

@@ -1,3 +1,3 @@
 #!/bin/sh
 /sbin/modprobe option && sleep 2 &&
-echo 2c7c 0296 > /sys/bus/usb-serial/drivers/option1/new_id
+echo $* > /sys/bus/usb-serial/drivers/option1/new_id

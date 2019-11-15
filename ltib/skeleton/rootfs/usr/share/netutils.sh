@@ -1,7 +1,19 @@
 #Common networking utilities
-# -- revised: 11/12/19 brent@mbari.org
+# -- revised: 11/14/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
+
+ifCfg() {
+#read configuration for specified interface
+#IFNAME is the unaliased interface name
+  unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
+  unset NETWORK GATEWAY MTU AUTOSTART
+  unset hosts resolv_conf ifPrep ifPost
+  IFNAME="$1"
+  cfg=$syscfg/ifcfg-$IFNAME
+  [ -r $cfg ] || cfg=$syscfg/if-default
+  . $cfg
+}
 
 ipUp() {
 # set up basic internet protocol items per shell environment variables:
@@ -49,14 +61,14 @@ vpnUp() {
 #if $1 is a "IP/vpn" iface, bring that iface up, unless it is already up and
 #there is already a host route to the vpn server via an interface other than $2.
 #Always reconnect vpn if its current $carrier will be replaced by $2
+local vpn
 server=`dirname $1` && [ "$server" != . ] &&
   if vpn=`basename $1`; then #check for being carried by another iface
     vpnServer=`netIfIP $vpn` && [ "$vpnServer" = "$server" ] &&
       carrier=`hostIface $server` && {
         gatePriority "$2" "$carrier" || return
       }
-    ifDown $vpn
-    ifup $vpn
+    ifCfg $vpn; ifDown; ifUp
   fi
 }
 
@@ -65,6 +77,7 @@ gatePriority() {
 #return 1 if active interface $1 should not effect routes on $2
 #return >1 if niether interface is has an active gateway
   [ "$1" = "$2" ] && return
+  local ifs
   read -r ifs <$syscfg/gateway.priority || return 6
   local oldPWD=$PWD
   cd /var/run/resolv
@@ -94,7 +107,7 @@ gateUp() {
 # then activate the appropriate gateway with its associated resolv.conf
 # if called without args, restore the highest priority gateway
   local oldPWD=$PWD
-  resolv=/var/run/resolv
+  local resolv=/var/run/resolv
   cd $resolv 2>/dev/null || {
     mkdir $resolv && cd $resolv || return
   }
@@ -189,6 +202,7 @@ setGateway() {
         fi
       done
       [ "$add" ] && route add default gw $add dev $topIface
+      local oldGate
       for oldGate in $del; do
         IFS=/; set -- $oldGate; unset IFS
         route del default gw $1 dev $2
@@ -304,33 +318,24 @@ gateChange() {
 }
 . $syscfg/sitecfg.sh
 
-eachAlias() {
-#do first arg for each of specified interface's alias configurations
-#additional args are passed through
-  cfg=$syscfg/ifcfg-
-  aliases=`echo $cfg$2:*`
-  arg1=$1
-  [ "$aliases" = "$cfg$2:*" ] || {
-    shift 2
-    for alias in $aliases; do
-       $arg1 ${alias#$cfg} ${@}
-    done
-  }
-}
-
 ifDown() {
 #shutdown given interface
 #additonal arguments passed through to ifconfig
 #Does not restore lost routes!
-  fn=/var/run/*$1.pid
-  pidfns=`echo $fn`
-  [ "$pidfns" = "$fn" ] && {
-    isUp $1 || return 0
+  [ "$IFNAME" ] || {
+    echo "Network interface to stop was not specified" >&2
+    return 103
   }
-  echo "Shutting down interface $1 ..."
-  [ "$(topIf)" == "$1" ] && gateChange
+  local fn=/var/run/*$IFNAME.pid
+  local pidfns=`echo $fn`
+  [ "$pidfns" = "$fn" ] && {
+    isUp $IFNAME || return 0
+  }
+  echo "Shutting down interface $IFNAME ..."
+  [ "$(topIf)" == "$IFNAME" ] && gateChange
+  local pidfn
   for pidfn in $pidfns; do
-    daemon=`head -n1 $pidfn 2>/dev/null`
+    local daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {
       case $pidfn in
         *dhcp*-*) signal=HUP ;;
@@ -343,7 +348,7 @@ ifDown() {
           kill -0 $daemon 2>/dev/null || break 2
         done
         [ "$try" = last ] && {
-          echo "Forcing $1 (PID $daemon) to terminate" >&2
+          echo "Forcing $IFNAME (PID $daemon) to terminate" >&2
           rm $pidfn
           kill -9 $daemon
         }
@@ -352,7 +357,80 @@ ifDown() {
       [ "$signal" != TERM ] && rm -f $pidfn
     }
   done
-  gateDown $1
-  [ "$2" ] || set -- $1 down
-  ifconfig $* 2>/dev/null
+  gateDown $IFNAME
+  [ "$1" ] || set -- down
+  ifconfig $IFNAME $* 2>/dev/null
+}
+
+ifUp()
+#returns true iff interface $IFNAME successfully brought up
+{
+  [ "$IFNAME" ] || {
+    echo "Network interface to start was not specified" >&2
+    return 102
+  }
+  local startMode="^(${1-n|no||y|yes|true|false})$"  #yes, no, or missing
+  echo "$AUTOSTART" | egrep -iq $startMode || {
+#      echo -e "Skipping $IFNAME because its AUTOSTART mode does not match
+#         $startMode" >&2
+    return 1
+  }
+  local fn=/var/run/*$IFNAME.pid
+  local pidfns=`echo $fn`
+  [ "$pidfns" = "$fn" ] || {  #check for active locks...
+    local owners= owner
+    for pidfn in $pidfns; do  #while removing stale ones
+      owner=`head -n1 $pidfn` 2>/dev/null
+      if [ "$owner" ] && kill -0 "$owner" 2>/dev/null; then
+        owners="$owners $owner"
+      else
+        rm $pidfn  #remove stale pidfile
+      fi
+    done
+    [ "$owners" ] && {
+      echo "$IFNAME is already in use by process: $owners" >&2
+      return 2
+    }
+  }
+  echo "Bringing up interface $IFNAME ..."
+  ! type ifPrep >/dev/null 2>&1 || ifPrep && {
+    case "$BOOTPROTO" in
+      "")  #unspecified BOOTPROTO defers ipUp
+      ;;
+      dhcp*)
+        ipUp && {
+          daemon=/sbin/udhcpc  #only use this dhcp client
+          if test -x $daemon  ; then
+            pidfn=/var/run/udhcpc-$IFNAME.pid
+            if [ -r $pidfn ]; then
+              kill `head -n1 $pidfn` 2>/dev/null
+            else
+              mkdir -p `dirname $pidfn`
+            fi
+            echo -n "Determining IP configuration for $IFNAME...."
+            insmod af_packet >/dev/null 2>&1
+            mode=${BOOTPROTO#dhcp-}
+            [ "$mode" = "$BOOTPROTO" ] && mode=n
+            [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
+            $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME || {
+              echo "DHCP failed:  $interface IP=$IPADDR" >&2
+              return 1
+            }
+          else
+            echo "No $daemon client daemon installed!" >&2
+            return 3
+          fi
+        }
+      ;;
+      static)
+        ipUp && echo "$IFNAME IP=$IPADDR"
+      ;;
+      *)
+        echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
+        return 4
+      ;;
+    esac
+    type ifPost >/dev/null 2>&1 || return 0
+    ifPost
+  }
 }

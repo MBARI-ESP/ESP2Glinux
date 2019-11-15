@@ -2,7 +2,7 @@
 [ "$1" ] || {
   cat >&2 <<-END
 Bring up/down ppp network interface handled by serial modem
-First argument should be the interface name (ppp*)
+First argument should be the interface name
 END
   exit 2
 }
@@ -15,10 +15,12 @@ END
 
 case "$ACTION" in
   add) #this modem replaces any other
-    ln -sf $DEVNAME /dev/modem
+    mkdir -p /dev/AT
+    ln -sf $DEVNAME /dev/AT/$1
     sleep 3
-    exec /usr/sbin/ifup $1
+    exec `basename $0`/ifup $1
   ;;
   remove)
+    rm -f /dev/AT/$1
     exec /usr/sbin/ifdown $1
 esac

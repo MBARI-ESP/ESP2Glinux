@@ -1,11 +1,10 @@
-IFNAME=ppp88  #USB serial modem
+IFNAME=ppp89  #USB serial modem
 isp=attm2m  #specify hologram,verizon,usmobile,ting, or att (for t-mobile)
 #VPN=$ESPshore/ppp6   #server IP / VPN interface
-: ${modemTTY:=/dev/AT/saraR4}
+: ${modemTTY:=/dev/AT/bg96}
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
-  ATTACH=saraR4 \
-    pppd call $isp unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"}
+  ATTACH=bg96 pppd call $isp unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"}
 }
 
 hosts() {    #add lines before EOS

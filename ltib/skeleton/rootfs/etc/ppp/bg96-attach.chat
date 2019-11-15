@@ -1,4 +1,4 @@
-# Connect to the uBlox SARA R410M modem
+# Connect to the Qantec BG96 modem
 #  APN environment variable should be set appropriately
 #
 TIMEOUT 10
@@ -6,12 +6,10 @@ ABORT "ERROR"
 
 #turn echo off and define PDP context
 "" ATE0
+# Log signal strength, connect with the PDP Context definition
 #OK AT+CGDCONT=1,"IP","$APN"
 #log signal strength and shutdown modem
-OK AT+CSQ;+CFUN=0
-#SARA R410M must "dial" within 5 seconds of restarting!
-OK \dAT+CFUN=1
-OK ATZQ0&S0H
+OK AT+CSQ
 
 ABORT "NO CARRIER"
 ABORT "NO DIALTONE"
@@ -21,7 +19,6 @@ ABORT "DELAYED"
 ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
-# Log signal strength, connect with the PDP Context definition above.
 TIMEOUT 20
-OK ATD*99***1#
+OK ATD*99#
 CONNECT \p\c

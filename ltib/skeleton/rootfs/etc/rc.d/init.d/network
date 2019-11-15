@@ -10,26 +10,21 @@ shift
   exit 4
 }
 
-order=/etc/sysconfig/if-order
+. /usr/share/netutils.sh
+
+order=$syscfg/if-order
 [ -r $order ] || exit 3
 . $order
 
 case "$op" in
   start)
-    . /usr/share/ifupfn.sh
     [ "$1" ] || {
       > /etc/resolv.conf
       > /etc/hosts
-      for dev in $START; do (
-        unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-        unset NETWORK GATEWAY MTU AUTOSTART
-        unset hosts resolv_conf ifPrep ifPost
-        IFNAME="$dev"
-        cfg=$syscfg/ifcfg-$dev
-        [ -r $cfg ] || cfg=$syscfg/if-default
-        . $cfg
+      for dev in $START; do
+        ifcfg $dev
         ifup_function
-      ) done
+      done
       exec /lib/udev/catchup  #other interfaces start in parallel as discovered
     } #exec does not return
     for dev; do
@@ -37,7 +32,6 @@ case "$op" in
     done
 ;;
   stop)
-    . /usr/share/netutils.sh
     globIfs() {
     #output list of valid interfaces from given template
       oldWD=`pwd`
@@ -91,11 +85,9 @@ case "$op" in
     #take down the specified interfaces
     #do all in parallel if gang set to &
       for iface; do
-        unset AUTOSTART
-        cfg=$syscfg/ifcfg-$iface
-        [ -r $cfg ] || cfg=$syscfg/if-default
-        . $cfg  #never stop 'ignored' or 'inittab' interfaces
-        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $iface $gang
+        ifcfg $iface
+        #never stop 'ignored' or 'inittab' interfaces
+        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $IFNAME $gang
       done
       wait
     }
@@ -108,7 +100,7 @@ case "$op" in
 
     #restore default route for any remaining interfaces
     trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
-    
+
     if [ "$1" ]; then  #stop only the specified interfaces
       takeDown "$@"
     else  #stop all interfaces

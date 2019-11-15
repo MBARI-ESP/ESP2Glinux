@@ -1,5 +1,5 @@
-# pppd configuration for internet via Iridium 9555 RS232 serial port
-#  - 10/7/19 brent@mbari.org
+# pppd configuration for internet via Iridium 9555 USB port
+#  - 10/11/19 brent@mbari.org
 
 #connection
 linkname iridium
@@ -17,7 +17,7 @@ noauth       #no password authorization
 #dump
 
 #RS-232 port configuration
-ttyIridium   #symlink /dev/ttyIridium to the Iridium modem's serial port
+iridium      #symlink /dev/iridium to the Iridium modem's USB port
 crtscts      #hardware RTS/CTS handshaking
 modem        #monitor carrier detect
 lock         #request exclusive access to the port
@@ -28,33 +28,38 @@ defaultroute
 #
 # Advises PPPD to request any DHCP address, none in particular.
 noipdefault
+
 #
 # Advises PPPD to use the DNS provided by DHCP.
 usepeerdns
+
+#modem will signal dropped link
+lcp-echo-failure 0
 
 #
 # Allows the PPPD daemon to accept DHCP assigned IPs.
 ipcp-accept-local
 ipcp-accept-remote
 
-#modem will signal dropped link
-lcp-echo-failure 0
+#bring up link on attempt to connect to shore 
+#:ESPshore   
+#demand
 
 #Iridium internet gateway supports compression :-)
 deflate 15      #deflate within a 32kB window
 vj-max-slots 16 #allow header compression
 
 #connect to Iridium's internet service
-connect "retry='sleep 5; flush' retry 3 \
+connect "flush; retry='sleep 5; flush' retry 3 \
   /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
 
-#hang up the phone on disconnect (ignore errors)
-disconnect "/usr/sbin/chat -vEf /etc/ppp/hangup.chat; true"
+#closing the USB emulated serial port ends data connection
 
 #drop the expensive link after specified number of seconds
 maxconnect 600
+idle 30
 
 #seems to sometimes require authentication.  Any user or password will do.
-#using . seems to allow compression to work (maybe)
+#when authentication required, compression is rejected :-(
 user .
 password .

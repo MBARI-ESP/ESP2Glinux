@@ -3,15 +3,14 @@
 #  ifdown [interface name]
 #
 
-case "$1" in
-  -*|*/*|'') #any flag is a request for help
-    cat <<END >&2
-usage:  ifdown [network interface or alias name]
+usage() {
+  cat <<END >&2
+usage:  ifdown [network interface or alias name] {force}
         deconfigure and disable the specified network interface or alias
+        optional 2nd "force" argument forces all aliases down
 END
-    exit 1
-  ;;
-esac
+  exit 101
+}
 
 . /usr/share/netutils.sh
 
@@ -22,14 +21,37 @@ if [ -w $tracefn ]; then
   set -x
 fi
 
+eachAlias() {
+#do first arg for each of specified interface's alias configurations
+#additional args are passed through
+  local cfg=$syscfg/ifcfg-
+  local aliases=`echo $cfg$IFNAME:*` alias
+  [ "$aliases" = "$cfg$2:*" ] || {
+    for alias in $aliases; do
+      ifcfg ${alias#$cfg}
+      "${@}"
+    done
+  }
+}
+
 op=down
 case "$1" in
   *:*) #an interface alias
-  ;;
-
+;;
+  "")  #take the interface definitions from the environment
+    [ "${IFNAME}" ] || usage
+;;
+  -*|*/*)  #any flag is a request for help
+    usage
+;;
   *) #anything else must be the name of an interface
-    [ "$2" = "force" ] && eachAlias ifDown $1
+    ifcfg $1
+    [ "${IFNAME}" ] || usage
+    [ "$2" = "force" ] && eachAlias ifDown
     isUp "$1:[[:digit:]][[:digit:]]*" && op=0   #leave UP if UP aliases remain
+    ifcfg $1
 esac
+
+[ "$IFNAME" ] || usage
 trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
-ifDown $1 $op
+exec ifDown $op
