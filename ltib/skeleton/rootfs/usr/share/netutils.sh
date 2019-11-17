@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 11/14/19 brent@mbari.org
+# -- revised: 11/17/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -104,10 +104,20 @@ isAliasUp() {
 
 isUp() {
 #return 0 if specified interface or pattern of interface aliases is UP
-  case $1 in
+  case "$1" in
     *:*) isAliasUp $1; return
   esac
-  flags=`cat /sys/class/net/$1/flags` 2>/dev/null && [ $(( $flags & 1 )) = 1 ]
+  flags=`cat /sys/class/net/$1/flags 2>/dev/null` && [ $(( $flags & 1 )) = 1 ]
+}
+
+hasIP() {
+#return 0 if specified interface is assigned an IP address
+  case "$1" in
+    *:*) isAliasUp $1; return
+  esac
+  flags=`cat /sys/class/net/$1/flags 2>/dev/null` &&
+    [ $(( $flags & 1 )) = 1 ] && netIfIP $1 >/dev/null
+  #ifdown may leave main iface up w/o IP address if aliases active
 }
 
 gateUp() {
@@ -375,7 +385,7 @@ autostart() {
   eval "case \"$AUTOSTART\" in ${1-''|n|no|y|yes|1|0|true|false}) return;esac"
   return 1
 }
-      
+
 ifUp()
 #returns true iff interface $IFNAME successfully brought up
 #$1 is optional regex of allowed $AUTOSTART values
@@ -385,7 +395,7 @@ ifUp()
     return 102
   }
   autostart $1 || return
-  isUp $IFNAME && exit 0
+  hasIP $IFNAME && return
   local fn=/var/run/*$IFNAME.pid
   local pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || {  #check for active locks...
