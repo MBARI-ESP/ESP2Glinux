@@ -3,7 +3,7 @@
 BOOTPROTO="dhcp-b"  #dhcp in background
 DHCPNAME=`hostname`
 
-#VPN=$ESPshore/ppp6   #server IP / VPN interface
+#VPN=$ESPshore/espvpn   #server IP / VPN interface
 
 ifPrep() {  #chat with modem to establish ethernet-like connection
   sleep 5

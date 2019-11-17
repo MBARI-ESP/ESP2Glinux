@@ -1,6 +1,6 @@
-IFNAME=ppp89  #USB serial modem
+IFNAME=ppp89  #Quantec BG96 USB LTE-Cat M1 / 2G modem
 isp=attm2m  #specify hologram,verizon,usmobile,ting, or att (for t-mobile)
-#VPN=$ESPshore/ppp6   #server IP / VPN interface
+#VPN=$ESPshore/espvpn   #server IP / VPN interface
 : ${modemTTY:=/dev/AT/bg96}
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name

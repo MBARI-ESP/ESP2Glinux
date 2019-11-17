@@ -1,7 +1,8 @@
+#USB Iridium modem
 IFNAME=ppp5
 AUTOSTART=no
 
-#VPN=$ESPshore/ppp6   #server IP / VPN interface
+#VPN=$ESPshore/espvpn   #server IP / VPN interface
 
 ifPrep() {
   pppd call iridium unit ${IFNAME#ppp} updetach

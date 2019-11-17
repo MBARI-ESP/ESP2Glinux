@@ -1,6 +1,6 @@
-IFNAME=ppp88  #USB serial modem
+IFNAME=ppp88  #uBlox sara-R4xx USB Cat M1 modem
 isp=attm2m  #specify hologram,verizon,usmobile,ting, or att (for t-mobile)
-#VPN=$ESPshore/ppp6   #server IP / VPN interface
+#VPN=$ESPshore/espvpn   #server IP / VPN interface
 : ${modemTTY:=/dev/AT/saraR4}
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name

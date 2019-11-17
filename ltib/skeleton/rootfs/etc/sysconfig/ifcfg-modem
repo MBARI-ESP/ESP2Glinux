@@ -1,6 +1,6 @@
 IFNAME=ppp8
 serialPort=/dev/modem
-VPN=$ESPshore/ppp6   #server IP / VPN interface
+VPN=$ESPshore/espvpn   #server IP / VPN interface
 
 isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
