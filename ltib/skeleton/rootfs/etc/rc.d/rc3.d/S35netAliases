@@ -1,0 +1,7 @@
+#!/bin/sh
+#Create required networking interface aliasing symlinks
+
+echo "Creating network interface aliases"
+updateNetAliases
+
+rm $0
