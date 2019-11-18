@@ -1,3 +1,4 @@
+IFALIAS=shore
 IFNAME=ppp6
 provider=ESPshore
 username=`hostname`

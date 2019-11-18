@@ -1,17 +1,11 @@
+. $syscfg/if-default
+IFALIAS=wifi
 IFNAME=wlan0
 BOOTPROTO="dhcp-b -t15" #background after 15s
-DHCPNAME=`hostname`  #-wifi #append wifi if router bridges wired and WiFi LANs
-#VPN=$ESPshore/espvpn   #server IP / VPN interface
 
 ifPrep() {
   wpa=wpa_supplicant
   iwconfig $IFNAME power off  #turn off power saving mode for reduced latency
   mkdir -p /var/run/$wpa
   $wpa -Bi $IFNAME -P /var/run/wpa-$IFNAME.pid -c /etc/$wpa.conf
-}
-
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME `hostname`-$IFNAME)
-EOS
 }

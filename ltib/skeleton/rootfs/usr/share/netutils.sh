@@ -7,9 +7,20 @@ ifCfg() {
 #read configuration for specified interface
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-  unset NETWORK GATEWAY MTU AUTOSTART
-  unset hosts resolv_conf ifPrep ifPost
+  unset NETWORK GATEWAY MTU AUTOSTART IFALIAS
   IFNAME="$1"
+  resolv_conf() {
+    :  #stdout incorporated into /etc/resolv.conf
+  }
+  hosts() {
+    :  #stdout incorporated into /etc/hosts
+  }
+  ifPrep() {
+    :  #invoked at start of ifUp
+  }
+  ifPost() {
+    :  #invoked at end of ifUp
+  }
   cfg=$syscfg/ifcfg-$IFNAME
   [ -r $cfg ] || cfg=$syscfg/if-default
   . $cfg
@@ -134,7 +145,7 @@ gateUp() {
     rm -f "$1"
     [ "$2" ] && {
       echo "#$*" #store device and gateway in leading comment of its resolv.conf
-      type resolv_conf >/dev/null 2>&1 && resolv_conf
+      resolv_conf
     } >"$1"
   }
   local priorityFn=$syscfg/gateway.priority
@@ -189,7 +200,7 @@ gateUp() {
 hostsUp() {
 #update iface specific hosts file and merge with those of other ifaces
 #first adds interface specific hosts file if current iface specified
-  [ "$1" ] && type hosts >/dev/null 2>&1 && hosts >/var/run/$1.hosts
+  [ "$1" ] && hosts >/var/run/$1.hosts
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
     cat /var/run/*.hosts
@@ -349,7 +360,7 @@ ifDown() {
   [ "$pidfns" = "$fn" ] && {
     isUp $IFNAME || return
   }
-  echo "Shutting down interface $IFNAME ..."
+  echo "Shutting down interface ${IFALIAS-$IFNAME} ..."
   [ "$(topIf)" == "$IFNAME" ] && gateChange
   local pidfn
   for pidfn in $pidfns; do
@@ -366,7 +377,7 @@ ifDown() {
           kill -0 $daemon 2>/dev/null || break 2
         done
         [ "$try" = last ] && {
-          echo "Forcing $IFNAME (PID $daemon) to terminate" >&2
+          echo "Forcing ${IFALIAS-$IFNAME} (PID $daemon) to terminate" >&2
           rm $pidfn
           kill -9 $daemon
         }
@@ -413,8 +424,8 @@ ifUp()
       return 2
     }
   }
-  echo "Bringing up interface $IFNAME ..."
-  ! type ifPrep >/dev/null 2>&1 || ifPrep && {
+  echo "Bringing up interface ${IFALIAS-$IFNAME} ..."
+  ifPrep && {
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
       ;;
@@ -428,7 +439,7 @@ ifUp()
             else
               mkdir -p `dirname $pidfn`
             fi
-            echo -n "Determining IP configuration for $IFNAME...."
+            echo -n "Determining IP configuration for ${IFALIAS-$IFNAME}...."
             insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
@@ -444,14 +455,13 @@ ifUp()
         }
       ;;
       static)
-        ipUp && echo "$IFNAME IP=$IPADDR"
+        ipUp && echo "${IFALIAS-$IFNAME} IP=$IPADDR"
       ;;
       *)
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
         return 4
       ;;
     esac
-    type ifPost >/dev/null 2>&1 || return 0
     ifPost
   }
 }

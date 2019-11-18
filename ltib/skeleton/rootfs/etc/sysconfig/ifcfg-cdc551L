@@ -1,9 +1,5 @@
 #special case for bringing up Verizon USB551L modem
-
-BOOTPROTO="dhcp-b"  #dhcp in background
-DHCPNAME=`hostname`
-
-#VPN=$ESPshore/espvpn   #server IP / VPN interface
+. $syscfg/if-default
 
 ifPrep() {  #chat with modem to establish ethernet-like connection
   sleep 5
@@ -18,11 +14,4 @@ ifPrep() {  #chat with modem to establish ethernet-like connection
       return
     }
   done
-}
-
-
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
-EOS
 }

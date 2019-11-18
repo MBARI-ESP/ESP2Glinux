@@ -1,8 +1,11 @@
+IFALIAS=inetmodem
 IFNAME=ppp8
 serialPort=/dev/modem
-VPN=$ESPshore/espvpn   #server IP / VPN interface
+VPN=$ESPshore/shore   #server IP / VPN interface
 
 isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
+
+. $syscfg/inetppp.sh
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
   [ "$serialPort" ] && {
@@ -11,17 +14,5 @@ ifPrep() {  #specify ip address of vpn server/vpn iface name
       stty -F $serialPort 2>/dev/null >&2 || return $?  #if failed after reset
     }
   }
-  pppd call $isp unit ${IFNAME#ppp} $serialPort ipparam $VPN
-}
-
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$isp)
-$ESPshore ESPshore
-EOS
-}
-
-pppDown() {
-  ckpid=`cat /var/run/inadyn.pid 2>/dev/null` &&
-    kill -CONT $ckpid
+  pppd call $isp unit ${IFNAME#ppp} $serialPort${VPN:+" ipparam $VPN"}
 }

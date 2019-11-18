@@ -1,16 +1,8 @@
+. $syscfg/if-default
+IFALIAS=wired
 IFNAME=eth0
 BOOTPROTO="dhcp-b -m600"  #dhcp in background, renew every 10 min
 IPADDR=192.168.0.50    #use this (static) configuration if dhcp fails
-
-#VPN=$ESPshore/espvpn   #server IP / VPN interface
-
-DHCPNAME=`hostname`
-
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
-EOS
-}
 
 ifPost() {
   ifup direct  #bring up static alias

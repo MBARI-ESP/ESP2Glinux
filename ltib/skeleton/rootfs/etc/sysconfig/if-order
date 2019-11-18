@@ -4,4 +4,4 @@
 #  Interfaces in START are stopped last in reverse order
 
 START='lo eth0'
-STOP='espvpn'
+STOP='shore'

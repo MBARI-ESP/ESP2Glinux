@@ -2,10 +2,10 @@
 BOOTPROTO="dhcp-b"  #dhcp in background
 DHCPNAME=`hostname`
 
-#VPN=$ESPshore/espvpn   #server IP / VPN interface
+#VPN=$ESPshore/shore   #server IP / VPN interface
 
 hosts() {    #add lines before EOS
   cat <<EOS
-$(netIfIP $IFNAME $DHCPNAME-$IFNAME)
+$(netIfIP $IFNAME $DHCPNAME-${IFALIAS-$IFNAME})
 EOS
 }
