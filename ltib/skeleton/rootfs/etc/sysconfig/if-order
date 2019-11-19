@@ -3,5 +3,5 @@
 #  Interfaces in STOP list are stopped in sequence before others
 #  Interfaces in START are stopped last in reverse order
 
-START='lo eth0'
+START='lo wired'
 STOP='ppp6'
