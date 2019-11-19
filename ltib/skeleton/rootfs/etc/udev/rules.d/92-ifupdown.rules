@@ -10,3 +10,8 @@ SUBSYSTEM=="tty",\
 SUBSYSTEM=="tty",\
   , ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02"\
   ,RUN+="ttyModem saraR4"
+
+#Iridium 9555 Satphone Handset
+SUBSYSTEM=="tty",\
+  , ATTRS{idVendor}=="1edd", ATTRS{idProduct}=="a555", ENV{ID_IFACE}=="00"\
+  ,RUN+="ttyModem iridium"

@@ -1,0 +1,4 @@
+. $syscfg/inetppp.sh
+IFALIAS=bg96  #Quantec BG96 USB LTE-Cat M1 / 2G modem
+IFNAME=ppp89
+modemTTY=/dev/AT/bg96

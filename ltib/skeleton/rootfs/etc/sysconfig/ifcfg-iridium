@@ -1,14 +1,9 @@
+. $syscfg/inetppp.sh
+IFALIAS=iridium  #USB Iridium modem
 IFNAME=ppp5
 AUTOSTART=no
-
-#VPN=$ESPshore/ppp6   #server IP / VPN interface
+modemTTY=/dev/AT/iridium
 
 ifPrep() {
-  pppd call iridium unit ${IFNAME#ppp} updetach
-}
-
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-iridium)
-EOS
+  pppd call iridium unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"} updetach
 }

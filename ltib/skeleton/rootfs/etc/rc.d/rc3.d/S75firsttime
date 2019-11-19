@@ -2,9 +2,9 @@
 #  first-time boot system and users configuration
 
 echo "Setting up users"
-cd /home
+cd /home || exit 1
 for user in *; do
   chown -Rh $user:mbari $user
 done
 
-rm $0  #this script will self-destruct...
+rm $0

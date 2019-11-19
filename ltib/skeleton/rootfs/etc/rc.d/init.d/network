@@ -107,7 +107,7 @@ case "$op" in
     else  #stop all interfaces
       gang=    takeDown `globIfs $STOP`
       gang='&' takeDown `pppIfs`  #all ppp interfaces
-      gang='&' takeDown `ifs '^[[:alpha:]][[:alpha:][:digit:]]*:'` #all aliases
+      gang='&' takeDown `ifs ':'` #all aliases
       gang=    takeDown `reverse $START`
       gang='&' takeDown `ifs`  #any remaining
       trap '' EXIT

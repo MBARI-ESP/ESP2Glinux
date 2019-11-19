@@ -15,9 +15,9 @@ esac
 
 lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
-  exec 7<$lockFn
-  flock -x 7 && [ -e $lockFn ] && exec echo -n "$1 " >>$lockFn
-  exec 7<&-
+  exec 7<$lockFn  #acquire lock
+  flock -x 7 && [ -e $lockFn ] && exec echo -n "$1 " >>$lockFn  #defer ifup
+  exec 7<&-       #release lock.  Did not need to defer ifup.  Do it now!
 }
 exec /usr/sbin/ifup $1 "''|y|yes|1|true" &  #if AUTOSTART missing,yes, or true
 

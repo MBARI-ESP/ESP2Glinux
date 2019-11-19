@@ -2,7 +2,7 @@ IFNAME=eth0
 BOOTPROTO="dhcp-b -m600"  #dhcp in background, renew every 10 min
 #BOOTPROTO=static         #uncomment to disable DHCP
 DHCPNAME=`hostname`
-VPN=$ESPshore/ppp6   #server IP / VPN interface
+VPN=$ESPshore/espvpn   #server IP / VPN interface
 
 IPADDR=192.168.0.50    #use this (static) configuration if dhcp fails
 NETMASK=255.255.254.0
