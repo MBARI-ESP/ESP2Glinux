@@ -1,3 +1,3 @@
-#Zoom 4650 (Quantec BG96)
+#Zoom 4650 (Quectel BG96)
 SUBSYSTEM=="usb",ACTION=="add", ATTR{idVendor}=="2c7c",ATTR{idProduct}=="0296"\
   ,RUN+="addOption 2c7c 296"

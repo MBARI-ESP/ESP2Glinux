@@ -1,5 +1,5 @@
-# pppd configuration for internet via Iridium 9555 USB port
-#  - 10/11/19 brent@mbari.org
+# pppd configuration for internet via Iridium handset on USB port
+#  - 11/19/19 brent@mbari.org
 
 #connection
 linkname iridium
@@ -17,7 +17,7 @@ noauth       #no password authorization
 #dump
 
 #RS-232 port configuration
-iridium      #symlink /dev/iridium to the Iridium modem's USB port
+AT/iridium      #symlink /dev/iridium to the Iridium modem's USB port
 crtscts      #hardware RTS/CTS handshaking
 modem        #monitor carrier detect
 lock         #request exclusive access to the port

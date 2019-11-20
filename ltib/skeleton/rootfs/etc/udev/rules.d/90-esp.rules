@@ -1,4 +1,4 @@
-# ESP specific udev rules -- 9/21/17 brent@mbari.org
+# ESP specific udev rules -- 11/19/19 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
@@ -17,12 +17,9 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 #KERNEL=="ttyS5", SYMLINK+="AM3"
 
 #Radio modem serial port (in order of preference)
-ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem", GROUP="root"
-ENV{ID_MODEL}=="Chipi-X", SYMLINK+="modem", GROUP="root"
-#ENV{ID_MODEL}=="FT232R_USB_UART", SYMLINK+="modem", GROUP="root"
+#ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem"
+#ENV{ID_MODEL}=="Chipi-X", SYMLINK+="modem"
+#ENV{ID_MODEL}=="FT232R_USB_UART", SYMLINK+="modem"
 KERNEL=="ttyS8", SYMLINK+="modem", GROUP="root"
-
-#Iridium handset/modem
-ENV{ID_MODEL}=="Iridium_*_Handset", SYMLINK+="iridium", GROUP="root"
 
 LABEL="esp_end"

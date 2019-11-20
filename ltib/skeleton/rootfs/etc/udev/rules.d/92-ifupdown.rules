@@ -1,17 +1,18 @@
 SUBSYSTEM=="net", ACTION=="add", RUN+="ifup %E{INTERFACE}"
 SUBSYSTEM=="net", ACTION=="remove", RUN+="/usr/sbin/ifdown %E{INTERFACE}"
 
-#Quantec BG96
-SUBSYSTEM=="tty",\
-  , ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03"\
+SUBSYSTEM!="tty", GOTO="notIFupdownTTY"
+
+#Quectel BG96
+ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03"\
   ,RUN+="ttyModem bg96"
 
 #uBlox SARA-R4
-SUBSYSTEM=="tty",\
-  , ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02"\
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02"\
   ,RUN+="ttyModem saraR4"
 
-#Iridium 9555 Satphone Handset
-SUBSYSTEM=="tty",\
-  , ATTRS{idVendor}=="1edd", ATTRS{idProduct}=="a555", ENV{ID_IFACE}=="00"\
+#Iridium Satphone Handset
+ENV{ID_MODEL}=="Iridium_*_Handset", ENV{ID_IFACE}=="00"\
   ,RUN+="ttyModem iridium"
+
+LABEL="notIFupdownTTY"
