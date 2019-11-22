@@ -4,7 +4,7 @@
 #otherwise, this brings interface UP if it was down
 exec 7<&- 5<&-
 exec >>/dev/console 2>&1
-#exec >>/tmp/ifup-$1.trace 2>&1
+#exec >>/var/run/trace/ifup-$1.trace 2>&1
 #echo "udev: ifup $1" >&2
 #set -x
 

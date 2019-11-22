@@ -1,19 +1,15 @@
 #!/bin/sh
 # executed after disconnecting the ppp interface.
 #$IFNAME is not assigned on retries, but $1 is.
+[ "$1" ] || exit 1
 export PPP_IFACE="$1"
 
+pppDown() {
+  :  #after ppp goes down
+}
 . /usr/share/netutils.sh
-cfg=$syscfg/ifcfg-$PPP_IFACE
-[ -r $cfg ] || cfg=$syscfg/if-default
+ifCfg $1
 
-tracefn=/tmp/ip-down.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
+pppDown
 
-type pppDown >/dev/null 2>&1 && pppDown
-
-ipDown $PPP_IFACE
+ipDown $IFNAME

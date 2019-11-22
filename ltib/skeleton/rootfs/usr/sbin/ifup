@@ -14,13 +14,6 @@ END
 
 . /usr/share/netutils.sh
 
-tracefn=/tmp/ifup.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
-
 case "$1" in
   "")  #take the interface definitions from the environment
     [ "${IFNAME}" ] || usage

@@ -1,7 +1,6 @@
 #!/bin/sh
 #catch up all pending udev ifup operations
-#exec 2>>/tmp/catchup.trace
-#set -x
+
 lockFn=/var/lock/ifup.pending
 [ -r $lockFn ] || exit
 exec 7<$lockFn

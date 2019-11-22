@@ -2,10 +2,10 @@
 #  connect to specified cellular network
 
 tag=`basename $0`
-tracefn=/tmp/${tag}.trace
-[ -w $tracefn ] && {
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
+traceFn=/var/run/trace/$tag
+[ -w $traceFn ] && {
+  (date; echo $0 "$@"; env) >>$traceFn
+  exec 2>>$traceFn
   set -x
 }
 

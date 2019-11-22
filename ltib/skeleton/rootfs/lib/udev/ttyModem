@@ -1,25 +1,3 @@
 #!/bin/sh
-[ "$1" ] || {
-  cat >&2 <<-END
-Bring up/down ppp network interface handled by serial modem
-First argument should be the interface name
-END
-  exit 2
-}
-[ -w /tmp/ttyModem ] && {
-  exec 2>>/tmp/ttyModem
-  date >&2
-  env >&2
-  set -x
-}
-
-case "$ACTION" in
-  add) #this modem replaces any other
-    mkdir -p /dev/AT
-    ln -sf $DEVNAME /dev/AT/$1
-    sleep 3
-    /lib/udev/ifup $1
-  ;;
-  remove)
-    rm -f /dev/AT/$1
-esac
+sleep ${2-3}
+exec /lib/udev/ifup $1

@@ -1,31 +1,22 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  11/12/19 by brent@mbari.org
+# revised:  11/21/19 by brent@mbari.org
 
-[ -z "$1" -o -z "$interface" ] &&
-  echo "Error: should be called from udhcpc" && exit 1
-
+[ "$1" -a "$interface" ] || {
+  echo "Error: should be called from udhcpc"
+  exit 1
+}
 . /usr/share/netutils.sh
-IFNAME=$interface
-cfg=$syscfg/ifcfg-$interface
-[ -r $cfg ] || cfg=$syscfg/if-default
-. $cfg && {
+ifCfg $interface && {
   export VPN
   validIFconfig=1
 }
 
-tracefn=/tmp/udhcpc.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
-
 leased=/var/run/$interface.lease
 
 case "$1" in  #ignore leasefail and renew
-  deconfig)  #optional kludge to shutdown aliases >=100 on deconfig
-    [ -f $leased ] && echo -n "$interface DHCP failed: "
+  deconfig)
+    [ -f $leased ] && echo -n "${IFALIAS-$interface} DHCP failed: "
     rm -f /var/run/resolv/$interface
     if [ "$validIFconfig" ] && ipUp; then
       [ -f $leased ] && echo "IP=$IPADDR"
@@ -50,7 +41,7 @@ case "$1" in  #ignore leasefail and renew
     fi
     IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
       [ "$dns" ] && dnsMsg=" with DNS $dns"
-      echo "DHCP $1 $interface to $ip$dnsMsg"
+      echo "DHCP $1 ${IFALIAS-$interface} to $ip$dnsMsg"
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
     }
 esac

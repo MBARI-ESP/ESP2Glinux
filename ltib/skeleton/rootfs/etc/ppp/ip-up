@@ -1,26 +1,21 @@
 #!/bin/sh
 # executed after connecting the ppp interface.
+[ "$5" ] || exit 1
 
-PPP_IFACE="$1"
 PPP_TTY="$2"
 PPP_SPEED="$3"
 PPP_LOCAL="$4"
 PPP_REMOTE="$5"
 PPP_IPPARAM="$6"
-export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
+export PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 
+pppUp() {
+  :  #before ppp interface comes up
+}
 . /usr/share/netutils.sh
-cfg=$syscfg/ifcfg-$PPP_IFACE
-[ -r $cfg ] || cfg=$syscfg/if-default
+ifCfg $1
 
-tracefn=/tmp/ip-up.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
-
-type pppUp >/dev/null 2>&1 && pppUp
+pppUp
 
 unset domain gateway
 [ "$DEFAULTROUTE" ] && gateway=" $IPREMOTE"
@@ -53,5 +48,6 @@ fi
   }
 }
 
-gateUp $PPP_IFACE $gateway && hostsUp $PPP_IFACE && vpnUp $VPN $PPP_IFACE
+gateUp $IFNAME $gateway && hostsUp $IFNAME &&
+  [ "$VPN" ] && vpnUp "$VPN" $IFNAME
 gateUpdated

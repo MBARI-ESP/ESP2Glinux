@@ -14,13 +14,6 @@ END
 
 . /usr/share/netutils.sh
 
-tracefn=/tmp/ifdown.trace
-if [ -w $tracefn ]; then
-  (date; echo "$@"; env) >>$tracefn
-  exec 2>>$tracefn
-  set -x
-fi
-
 eachAlias() {
 #do first arg for each of specified interface's alias configurations
 #additional args are passed through
@@ -29,7 +22,7 @@ eachAlias() {
   [ "$aliases" = "$cfg$2:*" ] || {
     for alias in $aliases; do
       ifCfg ${alias#$cfg}
-      "${@}"
+      "$@"
     done
   }
 }

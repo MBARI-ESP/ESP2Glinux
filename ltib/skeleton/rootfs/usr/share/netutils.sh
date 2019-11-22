@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 11/17/19 brent@mbari.org
+# -- revised: 11/22/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -360,7 +360,7 @@ ifDown() {
   [ "$pidfns" = "$fn" ] && {
     isUp $IFNAME || return
   }
-  echo "Shutting down interface ${IFALIAS-$IFNAME} ..."
+  echo "Shutting down ${IFALIAS-$IFNAME} ..."
   [ "$(topIf)" == "$IFNAME" ] && gateChange
   local pidfn
   for pidfn in $pidfns; do
@@ -424,7 +424,7 @@ ifUp()
       return 2
     }
   }
-  echo "Bringing up interface ${IFALIAS-$IFNAME} ..."
+  echo "Bringing up ${IFALIAS-$IFNAME} ..."
   ifPrep && {
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
@@ -439,7 +439,7 @@ ifUp()
             else
               mkdir -p `dirname $pidfn`
             fi
-            echo -n "Determining IP configuration for ${IFALIAS-$IFNAME}...."
+            echo -n "Determining IP configuration for ${IFALIAS-$IFNAME} ..."
             insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
@@ -464,4 +464,12 @@ ifUp()
     esac
     ifPost
   }
+}
+
+#append to trace file if it is writable
+: ${traceFn:=/var/run/trace/`basename $0`}
+[ -w $traceFn ] && {
+  { date; echo $0 "$@"; env; } >>$traceFn
+  exec 2>>$traceFn
+  set -x
 }

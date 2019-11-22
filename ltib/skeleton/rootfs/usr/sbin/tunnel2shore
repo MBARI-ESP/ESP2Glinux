@@ -5,12 +5,12 @@ self=`basename $0`
 : ${pidFn:=/var/run/$self.pid}
 : ${portFn:=/var/etc/$self.port}  #stores last TCP port # assigned us
 #portFn=/dev/null   #uncomment to query for our remote port # on each connect
-: ${traceFn=/tmp/$self.trace}
+: ${traceFn=/var/run/trace/$self}
 : ${shore:=ESPshore}
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/13/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/21/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -18,9 +18,8 @@ END
 tunHosts=/var/run/$self.hosts
 export HOME
 [ -w $traceFn ] && {
+  { date; echo $0 "$@"; env; } >>$traceFn
   exec 2>>$traceFn
-  date >&2
-  env >&2
   set -x
 }
 

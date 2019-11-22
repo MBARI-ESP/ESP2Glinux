@@ -1,5 +1,5 @@
 . $syscfg/if-default
-IFALIAS=wifi
+IFALIAS=WiFi
 IFNAME=wlan0
 BOOTPROTO="dhcp-b -t15" #background after 15s
 
