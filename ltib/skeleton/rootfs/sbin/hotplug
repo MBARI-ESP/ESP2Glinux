@@ -1,0 +1,14 @@
+#!/bin/sh
+# Both $DEVPATH and $FIRMWARE are already provided in the environment
+# This fallback script provides for firmware loading when udevd is absent
+
+[ "$FIRMWARE" ] || exit 0  #ignore other hotplug events
+
+HOTPLUG_FW_DIR=/lib/firmware
+
+echo 1 > /sys/$DEVPATH/loading
+cat $HOTPLUG_FW_DIR/$FIRMWARE > /sys/$DEVPATH/data
+echo 0 > /sys/$DEVPATH/loading
+
+# To cancel the load in case of error:
+#	echo -1 > /sys/$DEVPATH/loading

@@ -1,16 +1,16 @@
-# scan for installed devices       
+# handle kernel events for installed devices
 PATH=/usr/sbin:/sbin:/bin
 
 case "$1" in
   start)
     if pidof udevd >/dev/null; then
       echo 'Handling pending "coldplug" device events'
+      udevtrigger
     else
-      echo "Starting device events dispatcher"   
+      echo "Starting device events handler"
       touch /var/lock/ifup.pending  #defer bringing up net interfaces
-      udevd --daemon
+      startudevd
     fi
-    udevtrigger
     udevsettle --timeout=30
      ;;
 

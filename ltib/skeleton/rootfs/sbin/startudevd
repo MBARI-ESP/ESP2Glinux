@@ -1,0 +1,4 @@
+#!/bin/sh
+/sbin/udevd --daemon || exit
+echo "" > /proc/sys/kernel/hotplug  #udevd takes over firmware loading
+exec /sbin/udevtrigger

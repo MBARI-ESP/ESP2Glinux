@@ -86,11 +86,7 @@ case "$1" in
       card=`realPath /card` &&
          [ ! -r $card/$birth -a -r $initial/$birth -a -d $card ] &&
          redoIfRO $card "cp -af $initial/. $card"
-
-        #start udevd as soon as tmpfs filesystems are mounted
-      touch /var/lock/ifup.pending  #defer bringing up net interfaces
-      udevd --daemon
-       ;;
+      ;;
 
     stop)
       echo -n "Unmounting file systems ... "
