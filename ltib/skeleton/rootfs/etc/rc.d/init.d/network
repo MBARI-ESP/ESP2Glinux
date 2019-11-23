@@ -21,12 +21,8 @@ case "$op" in
     [ "$1" ] || {
       > /etc/resolv.conf
       > /etc/hosts
-      for dev in $START; do
-        ifCfg $dev
-        ifUp
-      done
-      exec /lib/udev/catchup  #other interfaces start in parallel as discovered
-    } #exec does not return
+      set -- $START
+    }
     for dev; do
       ifCfg $dev
       ifUp

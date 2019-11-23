@@ -1,12 +1,12 @@
-# start handling hotplug devices
+# scan for installed devices       
 PATH=/usr/sbin:/sbin:/bin
 
 case "$1" in
   start)
-    if pidof udevd >/dev/null 2>&1; then
-      echo "Handling hotplug events"
+    if pidof udevd >/dev/null; then
+      echo 'Handling pending "coldplug" device events'
     else
-      echo "Starting hotplug events dispatcher udevd"
+      echo "Starting device events dispatcher"   
       touch /var/lock/ifup.pending  #defer bringing up net interfaces
       udevd --daemon
     fi
@@ -19,5 +19,5 @@ case "$1" in
      ;;
 
    *)
-     echo "usage: local {start}"
+     echo "usage: coldplug {start}"
 esac

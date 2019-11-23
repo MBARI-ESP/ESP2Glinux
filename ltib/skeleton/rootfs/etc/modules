@@ -4,3 +4,4 @@
 # at boot time, one per line. Text on each line after # is ignored.
 # Parameters may be specified after each module's name.
 
+rtc_ds3234

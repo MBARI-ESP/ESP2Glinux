@@ -1,0 +1,76 @@
+#!/bin/sh
+self=`basename $0`
+tmpMnt=/var/lock/${self}_root.$$
+devOrig=/.dev-minimal  #where to keep the original, minimal /dev
+rcDir=/etc/rc.d/rc3.d
+inittab=/etc/inittab
+
+mountRoot() {
+  [ "`mntPt /dev`" = /dev ] || {
+    echo "/dev is mounted properly" >&2
+    exit 4
+  }
+  trap "umountRoot" EXIT
+  mkdir $tmpMnt && mount --bind / $tmpMnt || exit
+}
+
+umountRoot() {
+  umount $tmpMnt
+  rmdir $tmpMnt
+}
+
+mntPt() {
+#output the mount point of the filesystem containing given path
+  [ -e "$1" ] || return
+  /bin/df "$1" | tail -n1 | (
+    read -r fsTyp sz used aval use mntpt other; echo $mntpt
+  )
+}
+
+updateInittab() {
+  sed -i $@ $inittab 
+}
+
+updateRC() {
+  mkdir -p $rcDir/$2
+  mv $rcDir/$1 $rcDir/$2 2>/dev/null
+}
+
+case "$1" in
+ early|--early)
+  [ -d $devOrig ] || {
+    echo "Cannot restore early $self configuration due to missing $devOrig" >&2
+    exit 2
+  }
+  mountRoot
+  rm -rf $tmpMnt/dev/*
+  cp -a $devOrig/* $tmpMnt/dev   &&    #revert to minimal /dev
+  updateInittab 's/^DEV.:/#&/g' &&    #disable starting udev from inittab
+  updateRC 'disable/*coldplug'
+;;
+ late|--late)
+  mountRoot
+  rm -rf $tmpMnt/dev/*
+  cp -a /dev/* $tmpMnt/dev &&   #store /dev for currently configured hardware
+  updateInittab 's/^#\(DEV.:\)/\1/g' $inittab && #start udev from inittab
+  updateRC '*coldplug' disable
+;;
+ disable|--disable)
+  updateInittab 's/^DEV.:/#&/g' &&
+  updateRC '*coldplug' disable
+;;
+ *) cat >&2 <<END
+Configure recognition of installed devices -- 11/22/19 brent@mbari.org
+ Usage:
+  $self early   #delay boot up until all installed devices recognized
+  $self late    #recognize installed devices only after boot up completed
+  $self disable #do not recognize (USB) devices until they are plugged in
+ Notes:
+  early is the default -- most flexible, but slow.
+  $self late typically boots up about 20 seconds faster than $self early.
+  $self "disabled" or "late" require that any kernel modules
+  needed during boot be listed in /etc/modules
+  Changes take effect on next boot.
+END
+  exit 9
+esac

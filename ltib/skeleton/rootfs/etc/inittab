@@ -8,11 +8,11 @@
 #   3 - (default) multiuser mode
 #   6 - reboot
 
-# Default Runlevel to Go into
-dflt:3:initdefault:
-
 # System Startup. Do these process before anything else
 strt::sysinit:/etc/rc.d/sysinit
+
+# Default Runlevel to Go into
+dflt:3:initdefault:
 
 # Process to do for each specific Runlevel
 r3:3:wait:/etc/rc.d/rc 3
@@ -21,8 +21,14 @@ r6:6:wait:/etc/rc.d/rc 6
 # Start console logins
 co:12345:respawn:/sbin/getty -L 115200 ttyS0
 
+#bring up deferred net interfaces
+ifup:3:once:/lib/udev/catchup
+
 # Keep basic network services running
 net:12345:respawn:/usr/sbin/inetd -f
+
+# start hot plugging devices only after boot completed
+#DEVT:3:once:/sbin/udevtrigger
 
 # Keep the freewave ppp interface up
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null
