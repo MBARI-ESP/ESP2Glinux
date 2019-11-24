@@ -11,7 +11,7 @@ case "$1" in
       touch /var/lock/ifup.pending  #defer bringing up net interfaces
       startudevd
     fi
-    udevsettle --timeout=30
+    udevsettle --timeout=60
      ;;
 
   stop)

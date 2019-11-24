@@ -4,30 +4,19 @@
 # to be done before any other system startup scripts are executed
 
 # Ingore CTRL+C
-trap ":" INT QUIT TSTP
+trap "" INT QUIT HUP TSTP
 
 # Set our Path
-PATH='/bin:/sbin:/usr/bin:/usr/sbin'
-export PATH
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
 echo "MBARI ESP Embedded Linux    http://www.mbari.org   mailto:brent@mbari.org"
 hostname -F /etc/HOSTNAME
 hostname
 
 mount -n -t proc proc /proc
+mount -n -t sysfs sys /sys
 
-if  test -x /sbin/dmesg  ; then
-   if  test -f /etc/consolelog.level  ; then
-	   . /etc/consolelog.level
-   else
-	   LOGLEVEL=1
-   fi
-   /sbin/dmesg -n $LOGLEVEL
-fi
-
-mount -n -t sysfs sys /sys || exit $?
-
-#initialize dev file system
+#initialize dev filesystem
 mount -n -o mode=0755 -t tmpfs tmpfs /mnt
 cp -a /dev/. /mnt
-mount --move /mnt /dev
+exec mount --move /mnt /dev
