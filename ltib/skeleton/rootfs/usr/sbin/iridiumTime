@@ -2,16 +2,24 @@
 #sychronize real-time with Iridium network
 
 PATH=/usr/sbin:/sbin:/usr/bin:/bin
+ATport=/dev/AT/iridium
 
-case "$1" in
-    start|"")
-      sysTime=`iridiumTime` && date -us "$sysTime"
-       ;;
-
-    stop)
-       ;;
-
-     *)
-       echo "usage: `basename $0` {start|stop}"
-       ;;
-esac
+#output Iridium system time in a format suitable for date utility
+{
+  /usr/local/bin/flush
+  echo -ne "ATE0;+CCLK?\r"
+  count=15
+  while let --count && IFS=: read -rt 3 cclk dateTime; do
+#echo -n "$dateTime" | hexdump -C >&2
+    [ "$dateTime" ] && break
+  done
+} <$ATport >$ATport || {
+  echo "Failed to read UTC time from $ATport" >&2
+  return 2
+}
+itime=`echo -n "$dateTime" | tr -d '\r\n' | tr '/,' '- '`
+[ "$itime" ] || {
+  echo "Missing UTC time from $ATport" >&2
+  return 1
+}
+echo "20$itime"
