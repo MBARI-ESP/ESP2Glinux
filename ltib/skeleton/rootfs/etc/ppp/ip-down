@@ -3,6 +3,7 @@
 #$IFNAME is not assigned on retries, but $1 is.
 [ "$1" ] || exit 1
 export PPP_IFACE="$1"
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 pppDown() {
   :  #after ppp goes down

@@ -1,12 +1,11 @@
 #!/bin/sh
 #sychronize real-time with Iridium network
 
-PATH=/usr/sbin:/sbin:/usr/bin:/bin
 ATport=/dev/AT/iridium
 
 #output Iridium system time in a format suitable for date utility
 {
-  /usr/local/bin/flush
+  flush
   echo -ne "ATE0;+CCLK?\r"
   count=15
   while let --count && IFS=: read -rt 3 cclk dateTime; do

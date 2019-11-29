@@ -10,7 +10,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/21/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/28/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9

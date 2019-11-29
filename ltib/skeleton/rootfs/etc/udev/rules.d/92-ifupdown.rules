@@ -1,6 +1,13 @@
-SUBSYSTEM=="net", ACTION=="add", RUN+="ifup %E{INTERFACE}"
-SUBSYSTEM=="net", ACTION=="remove", RUN+="/usr/sbin/ifdown %E{INTERFACE}"
+#ignore virtual network interfaces
+SUBSYSTEM!="net", GOTO="skipIf"
+ENV{DEVPATH}=="/devices/virtual/*", GOTO="skipIf"
 
+ACTION=="add", RUN+="ifup %E{INTERFACE}"
+ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
+
+LABEL="skipIf"
+
+#handle serial modems
 SUBSYSTEM!="tty", GOTO="notNewTTYif"
 ACTION!="add", GOTO="notNewTTYif"
 

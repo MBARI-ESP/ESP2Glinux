@@ -1,13 +1,13 @@
 #!/bin/sh
 # executed after connecting the ppp interface.
 [ "$5" ] || exit 1
-
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
 PPP_TTY="$2"
 PPP_SPEED="$3"
 PPP_LOCAL="$4"
 PPP_REMOTE="$5"
 PPP_IPPARAM="$6"
-export PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
+export PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM PATH
 
 pppUp() {
   :  #before ppp interface comes up
