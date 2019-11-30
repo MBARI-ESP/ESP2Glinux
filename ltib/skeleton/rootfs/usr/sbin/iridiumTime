@@ -4,9 +4,10 @@
 ATport=/dev/AT/iridium
 
 #output Iridium system time in a format suitable for date utility
+#this also selects simple RING reports to ensure we're in the right mode
 {
   flush
-  echo -ne "ATE0;+CCLK?\r"
+  echo -ne "ATE0;+CRC=0;+CCLK?\r"
   count=15
   while let --count && IFS=: read -rt 3 cclk dateTime; do
 #echo -n "$dateTime" | hexdump -C >&2

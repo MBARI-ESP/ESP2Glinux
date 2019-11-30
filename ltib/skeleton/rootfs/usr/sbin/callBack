@@ -1,0 +1,14 @@
+#!/bin/sh
+#when "RING" received on /dev/modem, bring up specified network interface
+#1st optional argument is initial delay
+#2nd optional argument is interface to bring up
+#3rd optional argument is serial port to monitor for RING
+#4th optional argument is serial port configuration
+
+sleep ${1-20}
+exec <${3-/dev/modem}
+stty ${4-"-cooked 115200"}
+flush
+while read line; do
+  [ "$line" = RING$'\r' ] && exec ifup ${2-iridium} </dev/null
+done
