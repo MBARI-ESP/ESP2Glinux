@@ -6,26 +6,11 @@
 #  1 if powerdown preparations failed
 #  2 if ready to powerdown, but modem did not sleep
 
-export PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
 POWERDOWN=PowerDown
 RUN=3
-modem=/dev/modem
-export baud=115200
-export chat=/usr/sbin/chat
 export recovering=yes  #don't clear /tmp or restart espserver
-
-sleepModem()
-#terminate any call in progress and ask nicely to sleep
-# if that fails, reset the modem and ask again
-{
-  stty $baud &&
-  $chat -f /etc/ppp/gprs-detach.chat &&
-  $chat -t 5 '' 'AT+W32K=1' OK || return $?
-
-  #leave modem port open with its DTR line deasserted
-  holdopen dtroff
-}
 
 exec 2>/dev/console
 exec >&2

@@ -12,7 +12,7 @@ exit 42
 : ${RUBYsiteLIB=$HOSTTOP/opt/mbari/lib/ruby/site_ruby/1.8}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 11/11/19 brent@mbari.org
+  -- 11/30/19 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -45,7 +45,7 @@ $STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd || exit $?
 echo "  ===>  Building holdopen  <==="
 cd ~/misc/holdopen &&
 make CC=$ARMGCC/bin/gcc clean ltib/holdopen &&
-$STRIP -o $LOCALBIN/holdopen ltib/holdopen || exit $?
+$STRIP -o $SYSBIN/holdopen ltib/holdopen || exit $?
 
 echo "  ===>  Building suscript  <==="
 cd ~/misc/suscript &&

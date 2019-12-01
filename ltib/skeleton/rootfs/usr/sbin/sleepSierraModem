@@ -1,0 +1,17 @@
+#!/bin/sh
+#Put SierraWireless 2G serial modem into a low-power sleep state
+#from which it can still receive calls (RING)
+
+modem=/dev/modem
+baud=115200
+chat=/usr/sbin/chat
+
+exec <$modem >$modem
+#terminate any call in progress and ask nicely to sleep
+# if that fails, reset the modem and ask again
+stty $baud &&
+$chat -f /etc/ppp/gprs-detach.chat &&
+$chat -t 5 '' 'AT+W32K=1' OK &&
+
+#leave modem port open with its DTR line deasserted
+holdopen dtroff
