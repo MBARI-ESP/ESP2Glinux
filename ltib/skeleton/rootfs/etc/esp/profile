@@ -1,4 +1,4 @@
-# set up environment for ESP gen2 target -- 6/15/18 Brent@mbari.org
+# set up environment for ESP gen2 target -- 12/1/19 Brent@mbari.org
 #echo /etc/esp/profile: $0 "$@" >&2
 
 export PATH=.:$HOME/bin:/opt/mbari/bin:${PATH#.:$HOME/bin:/opt/mbari/bin}
@@ -27,3 +27,7 @@ ESPmode=real
 else
   echo 'WARNING:  ESPhome is undefined!' >&2
 fi
+
+bye=/suscript/esp/disconnectNetwork
+[ -x $bye ] && alias bye="exec $bye"
+unset bye
