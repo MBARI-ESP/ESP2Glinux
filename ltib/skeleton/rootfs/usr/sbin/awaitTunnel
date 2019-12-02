@@ -1,0 +1,10 @@
+#!/bin/sh
+#wait for tunnel to be opened
+#returns false if tunnel could not be opened
+maxDelay=${1-90}  #longest to wait (seconds)
+port=${2-25}      #local port number to test (SMTP)
+
+while ! fuser -s $port/tcp; do
+  let maxDelay-- || exit
+  sleep 1
+done

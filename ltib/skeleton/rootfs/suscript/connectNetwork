@@ -1,3 +1,8 @@
 #!/bin/sh
+#wait until tunnel to shore established
+#returns true if tunnel was newly established
+#returns false if tunnel already existed or could not be established
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
-exec ifup bg96
+awaitTunnel 0 && exit 1
+ifup bg96
+exec awaitTunnel
