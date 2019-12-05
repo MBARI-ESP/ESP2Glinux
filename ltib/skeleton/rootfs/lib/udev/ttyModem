@@ -1,3 +1,10 @@
 #!/bin/sh
-sleep ${2-3}
-exec /lib/udev/ifup $1
+#bring network interface associated with /dev/AT/$1 up or down
+case "$ACTION" in
+  add)
+    sleep ${2-0}
+    exec /lib/udev/ifup $1
+;;
+  remove)
+    exec /lib/udev/ifdown $1
+esac
