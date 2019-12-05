@@ -1,5 +1,6 @@
 #!/bin/sh
 #first argument the name of a newly detected network interface
+#optional 2nd argument is start up (sleep) delay
 #when /var/lock/if.pending exists, actions are deferred
 #otherwise, this brings interface UP if it was down
 exec 7<&- 5<&- >>/dev/console 2>&1
@@ -11,6 +12,7 @@ lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
   flock -x 7 && [ -e $lockFn ] && exec echo -n "$1 " >>$lockFn  #defer ifup
   exec 7<&-       #release lock.  Did not need to defer ifup.  Do it now!
 }
-exec ifup $1 "''|y|yes|1|true" &  #if AUTOSTART missing,yes, or true
+[ "$2" ] && sleep "$2"
+exec ifup "$1" "''|y|yes|1|true" &  #if AUTOSTART missing,yes, or true
 
 #catchup command starts interfaces listed in ifup.pending

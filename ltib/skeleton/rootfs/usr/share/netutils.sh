@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 11/22/19 brent@mbari.org
+# -- revised: 12/4/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -389,6 +389,7 @@ ifDown() {
   gateDown $IFNAME
   [ "$1" ] || set -- down
   ifconfig $IFNAME $* 2>/dev/null
+  :
 }
 
 autostart() {
