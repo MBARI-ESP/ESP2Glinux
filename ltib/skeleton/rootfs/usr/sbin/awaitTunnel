@@ -4,7 +4,7 @@
 maxDelay=${1-90}  #longest to wait (seconds)
 port=${2-25}      #local port number to test (SMTP)
 
-while ! fuser -s $port/tcp; do
+while ! fuser -s $port/tcp 2>/dev/null; do
   let maxDelay-- || exit
   sleep 1
 done
