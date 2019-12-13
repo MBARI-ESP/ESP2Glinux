@@ -4,7 +4,7 @@
 #exit status:
 #  0 if ready to powerdown
 #  1 if powerdown preparations failed
-#  2 if ready to powerdown, but modem did not sleep
+#  2 modem did not sleep
 
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
@@ -17,15 +17,8 @@ exec >&2
 #set -x
 
 sync
-/etc/rc.d/rc $POWERDOWN || {  #if power down fails
-  /etc/rc.d/rc $RUN           #...try to recover
-  exit 1
-}
+/etc/rc.d/rc $POWERDOWN || exit 1
 #coax modem into low power state
-sleepModem <$modem >$modem || {
-  echo -e "\nFailed to put modem to sleep!  Restarting..." >&2
-  /etc/rc.d/rc $RUN  #...try to recover
-  exit 2
-}
+sleepModem || exit 2
 echo
 exec /etc/init.d/sysmount stop

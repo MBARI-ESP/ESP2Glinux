@@ -1,0 +1,13 @@
+#!/bin/sh
+#attempt to recover from failed powerdown
+
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+
+RUN=3
+export recovering=yes  #don't clear /tmp or restart espserver
+
+exec 2>/dev/console
+exec >&2
+#set -x
+mount -oremount,rw /card  #in case SD card was remounted read-only
+exec /etc/rc.d/rc $RUN
