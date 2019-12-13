@@ -10,7 +10,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/28/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 12/10/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -69,7 +69,7 @@ done
 echo '127.0.0.1 shore mail' >$tunHosts
 cat $tunHosts >>/etc/hosts
 
-tunnels="-L25:$shore:25 -L873:$shore:873"
+tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded after rsync
 tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
 
