@@ -1,18 +1,28 @@
 #!/bin/sh
 #when "RING" received on /dev/modem, bring up specified network interface
-#1st optional argument is initial delay
-#2nd optional argument is interface to bring up
-#3rd optional argument is serial port to monitor for RING
+#1st optional argument is shell command(s) to run when RING detected
+#2nd optional argument is serial port to monitor for RING
+#3rd optional argument is initial delay
 #any remaining optional arguments are passed thru to stty
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
-
-sleep ${1-20}
-iface=${2-iridium}
-eval "exec <${3-/dev/modem}"
+cmd=${1-sleep 60; ifup iridium}  #delay to avoid BUSY on connect
+port=${2-/dev/modem}
+tag="`basename $0`[$$]"
+sleep ${3-20}
+[ -r "$port" ] || {
+  logger -t $tag Cannot open $port
+  exit 1
+}
+eval "exec <${port}"
 shift 3
 [ "$1" ] || set -- -cooked 115200
 stty "$@"
 flush
+logger -t $tag Awaiting RING on $port to $cmd
 while read line; do
-  [ "$line" = RING$'\r' ] && exec ifup $iface </dev/null
+  [ "$line" = RING$'\r' ] && {
+    logger -t $tag Got RING on $port --> $cmd
+    eval "$cmd" </dev/null
+    break
+  }
 done
