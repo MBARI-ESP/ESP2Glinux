@@ -1,7 +1,8 @@
 #!/bin/sh
 self=`basename $0`
 tmpMnt=/var/lock/${self}_root.$$
-devMin=sys/.dev-minimal  #where to keep the original, minimal /dev
+dev=dev/.dev.tgz  #normal /dev for late or disabled coldplug
+devMin=dev/.dev-minimal.tgz  #minimal /dev for early coldplug
 rcDir=/etc/rc.d/rc3.d
 inittab=/etc/inittab
 
@@ -39,27 +40,20 @@ updateRC() {
 case "$1" in
  early|--early)
   mountRoot
-  [ -d $tmpMnt/$devMin ] || {
+  [ -e $tmpMnt/$devMin ] || {
     echo "Cannot restore early $self configuration due to missing /$devMin" >&2
     exit 2
   }
-  rm -rf $tmpMnt/dev/*
-  cp -a $tmpMnt/$devMin/* $tmpMnt/dev   &&   #revert to minimal /dev
-  updateInittab 's/^DEV.:/#&/g' &&    #disable starting udev from inittab
+  cp $tmpMnt/$devMin $tmpMnt/$dev &&   #revert to minimal /dev
+  updateInittab 's/^DEV.:/#&/g'   &&   #disable starting udev from inittab
   updateRC 'disable/*coldplug'
 ;;
  late|--late)
   mountRoot
-  if [ -e $tmpMnt/$devMin ]; then
-    [ -d $tmpMnt/$devMin ] || {
-      echo "/$devMin should be a directory!" >&2
-      exit 7
-    }
-    rm -rf $tmpMnt/dev/*
-  else
-    mkdir $tmpMnt/$devMin && mv $tmpMnt/dev/* $tmpMnt/$devMin
-  fi || exit
-  cp -a /dev/* $tmpMnt/dev && #update for currently configured hardware
+  [ -e $tmpMnt/$devMin ] || {  #save original dev as devMin(imal)
+    cp $tmpMnt/$dev $tmpMnt/$devMin || exit
+  } #archive /dev for currently configured hardware (skip sockets)
+  (cd /dev && tar -czf $tmpMnt/$dev `find * ! -type s`) &&
   updateInittab 's/^#\(DEV.:\)/\1/g' $inittab && #start udev from inittab
   updateRC '*coldplug' disable
 ;;
@@ -68,7 +62,7 @@ case "$1" in
   updateRC '*coldplug' disable
 ;;
  *) cat >&2 <<END
-Configure recognition of installed devices -- 11/23/19 brent@mbari.org
+Configure recognition of installed devices -- 12/13/19 brent@mbari.org
  Usage:
   $self early   #delay boot up until all installed devices recognized
   $self late    #recognize new devices only after boot up completed

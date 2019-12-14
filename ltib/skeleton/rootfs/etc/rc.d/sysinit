@@ -17,6 +17,6 @@ mount -n -t proc proc /proc
 mount -n -t sysfs sys /sys
 
 #initialize dev filesystem
-mount -n -o mode=0755 -t tmpfs tmpfs /mnt
-cp -a /dev/. /mnt
+mount -n -t tmpfs dev /mnt &&
+tar -C /mnt -xmzf /dev/.dev.tgz &&
 exec mount --move /mnt /dev
