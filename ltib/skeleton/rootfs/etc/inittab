@@ -45,5 +45,8 @@ net:12345:respawn:/usr/sbin/inetd -f
 # keep an espclient up on ttyS3
 #esp:3:respawn:/sbin/getty -L 9600 -nl /etc/esp/client ttyS3
 
+# start ESP server
+#ESP:3:once:/bin/su - esp -c "start esp mission"
+
 # call back if modem RINGs
 #call:3:respawn:/usr/sbin/callBack
