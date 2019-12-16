@@ -27,8 +27,8 @@ ifup:3:once:/lib/udev/catchup
 # Keep basic network services running
 net:12345:respawn:/usr/sbin/inetd -f
 
-# start handling device events N seconds after boot completed
-#DEVD:3:once:/sbin/startudevd 1
+# start handling device events (optionally after specified delay in seconds)
+#DEVD:3:once:/sbin/startudevd
 
 # Keep the freewave ppp interface up
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null

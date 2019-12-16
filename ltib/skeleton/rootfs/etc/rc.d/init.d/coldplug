@@ -12,6 +12,7 @@ case "$1" in
       startudevd
     fi
     udevsettle --timeout=60
+    cat /proc/uptime >/var/run/coldplugged
      ;;
 
   stop)

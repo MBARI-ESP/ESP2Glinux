@@ -1,0 +1,14 @@
+#!/bin/sh
+#prompt for login (once)
+#ignore during coldplugging
+[ -e "/var/run/coldplugged" ] || exit 0
+tag="`basename $0`[$$]"
+dev=${1-$DEVNAME}
+baud=${2-115200}
+[ "$dev" ] || {
+  logger -t $tag Missing tty device path
+  exit 2
+}
+tty=${dev#/dev/}
+logger -t $tag Accepting login on $tty @$baud baud for 30 seconds
+exec /sbin/getty -L $baud ${3-"-wt30"} $tty &

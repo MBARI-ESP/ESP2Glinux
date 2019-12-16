@@ -1,0 +1,3 @@
+#allow one login from newly inserted USB serial port
+ACTION=="add", SUBSYSTEM=="tty", DRIVERS=="pl2303|ftdi_sio|mct_u232", \
+  RUN+="ttyLogin"

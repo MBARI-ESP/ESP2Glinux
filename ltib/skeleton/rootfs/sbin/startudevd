@@ -2,4 +2,6 @@
 [ "$1" ] && sleep $1
 /sbin/udevd --daemon || exit
 echo "" > /proc/sys/kernel/hotplug  #udevd takes over firmware loading
-exec /sbin/udevtrigger
+/sbin/udevtrigger
+/sbin/udevsettle --timeout=60
+cat /proc/uptime >/var/run/coldplugged
