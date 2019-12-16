@@ -6,7 +6,7 @@ IMAGE=${2-$LTIB/rootfs.tmp}
 export LTIB IMAGE
 [ -z "$1" -o "$1" = "/" ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 12/13/18 brent@mbari.org
+Create new ltib root filesystem  -- 12/15/19 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
@@ -29,7 +29,7 @@ sudo sh <<END
   chown $USER:$group $1
 END
 cp -a --no-preserve=owner $IMAGE/. $1
-chmod -R +w $1  #in case $IMAGE was marked read-only
+chmod -Rh +w $1  #in case $IMAGE was marked read-only
 
 $here/replaceSkeleton $1
 [ -z "$BAREBONES" ] && $here/augmentSkeleton $1
@@ -56,10 +56,10 @@ echo Changing ownership of $1 to root and finalizing image
 : ${espSu:=$1/suscript/esp}
 : ${tftpdir:=/tftp}
 sudo sh <<END
-  rm -rf $1/dev &&
+  rm -rf $1/dev && mkdir $1/dev && cp $here/dev.tgz $1/dev/.dev.tgz &&
   chown -Rh root:root $1 &&
   #seed with (just) needed dev entries
-  tar xzpf $here/dev.tgz -C $1 && (cd $1/etc &&
+  tar -xzf $here/dev.tgz --numeric-owner -C $1/dev && (cd $1/etc &&
   chmod o-r shadow &&
   for secret in wpa_supplicant.conf ppp/*secret*; do
     [ -r \$secret ] && chmod go-r \$secret

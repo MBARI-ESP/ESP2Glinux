@@ -40,19 +40,18 @@ updateRC() {
 case "$1" in
  early|--early)
   mountRoot
-  [ -e $tmpMnt/$devMin ] || {
-    echo "Cannot restore early $self configuration due to missing /$devMin" >&2
-    exit 2
+  [ -e $tmpMnt/$dev -a -e $tmpMnt/$devMin ] && {
+    ln -sf `basename $devMin` $tmpMnt/$dev || exit   #revert to minimal /dev
   }
-  cp $tmpMnt/$devMin $tmpMnt/$dev &&   #revert to minimal /dev
   updateInittab 's/^DEV.:/#&/g'   &&   #disable starting udev from inittab
   updateRC 'disable/*coldplug'
 ;;
  late|--late)
   mountRoot
   [ -e $tmpMnt/$devMin ] || {  #save original dev as devMin(imal)
-    cp $tmpMnt/$dev $tmpMnt/$devMin || exit
+    mv $tmpMnt/$dev $tmpMnt/$devMin || exit
   } #archive /dev for currently configured hardware (skip sockets)
+  rm -f $tmpMnt/$dev
   (cd /dev && tar -czf $tmpMnt/$dev `find * ! -type s`) &&
   updateInittab 's/^#\(DEV.:\)/\1/g' $inittab && #start udev from inittab
   updateRC '*coldplug' disable
@@ -62,7 +61,7 @@ case "$1" in
   updateRC '*coldplug' disable
 ;;
  *) cat >&2 <<END
-Configure recognition of installed devices -- 12/13/19 brent@mbari.org
+Configure recognition of installed devices -- 12/15/19 brent@mbari.org
  Usage:
   $self early   #delay boot up until all installed devices recognized
   $self late    #recognize new devices only after boot up completed

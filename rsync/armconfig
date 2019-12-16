@@ -6,6 +6,6 @@ rm -rf $rsync &&
 tar xzf $rsync.tar.gz && 
 #cat $rsync.patch | (cd $rsync && patch -p1) && 
 cd $rsync || exit
-configure --host=arm-softfloat-linux --disable-ipv6 --disable-locale \
+configure --host=arm-none-linux-gnueabi --disable-ipv6 --disable-locale \
   --with-included-zlib --with-included-popt &&
 echo Done.
