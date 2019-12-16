@@ -29,7 +29,7 @@ sudo sh <<END
   chown $USER:$group $1
 END
 cp -a --no-preserve=owner $IMAGE/. $1
-chmod -Rh +w $1  #in case $IMAGE was marked read-only
+chmod -R +w $1  #in case $IMAGE was marked read-only
 
 $here/replaceSkeleton $1
 [ -z "$BAREBONES" ] && $here/augmentSkeleton $1
