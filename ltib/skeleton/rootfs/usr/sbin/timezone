@@ -34,13 +34,13 @@ exit 2
       exit 3
     }
     echo ${zf#$zoneinfo/}
-    exit $?
+    exit
 ;;
   /*)
 ;;
   -l*|--l*)
     cd $zoneinfo && ls -R *
-    exit $?
+    exit
 ;;
   *)
     tz=$zoneinfo/$tz
