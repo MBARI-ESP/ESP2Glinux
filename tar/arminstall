@@ -1,0 +1,17 @@
+#!/bin/sh
+# build & install tar daemon for arm-linux -- 12/13/19 brent@mbari.org
+
+: ${ARMGCC:=/ltibarm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-bin}}
+: ${HOSTTOP:=${1-$HOME/ltib/rootfs.tmp}}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+cd tar-1.26 &&
+make CC=$CC CFLAGS="$CFLAGS" || exit 1
+mkdir -p $TOP || exit 4
+$ARMSTRIP src/tar -o $TOP/tar || exit 3
+echo "Done."

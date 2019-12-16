@@ -1,0 +1,12 @@
+#!/bin/sh
+# unpack & patch rsync for arm-linux -- 12/13/19 brent@mbari.org
+
+: ${tar:=tar-1.26}
+rm -rf $tar && 
+tar xaf $tar.tar.xz && 
+cd $tar || exit
+ac_cv_func_utimensat=no ac_cv_func_futimens=no LIBS=-lrt configure \
+ --host=arm-none-linux-gnueabi --with-gnu-ld --without-libiconv-prefix \
+ --with-rmt=/usr/libexec/rmt --without-libintl-prefix --disable-nls \
+ --with-packager=MBARI1 &&
+echo Done.
