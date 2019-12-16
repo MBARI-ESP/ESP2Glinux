@@ -52,7 +52,7 @@ case "$1" in
     mv $tmpMnt/$dev $tmpMnt/$devMin || exit
   } #archive /dev for currently configured hardware (skip sockets)
   rm -f $tmpMnt/$dev
-  (cd /dev && tar -czf $tmpMnt/$dev `find * ! -type s`) &&
+  (cd /dev && tar --warning=no-file-ignored -czf $tmpMnt/$dev *) &&
   updateInittab 's/^#\(DEV.:\)/\1/g' $inittab && #start udev from inittab
   updateRC '*coldplug' disable
 ;;
@@ -61,7 +61,7 @@ case "$1" in
   updateRC '*coldplug' disable
 ;;
  *) cat >&2 <<END
-Configure recognition of installed devices -- 12/15/19 brent@mbari.org
+Configure recognition of installed devices -- 12/16/19 brent@mbari.org
  Usage:
   $self early   #delay boot up until all installed devices recognized
   $self late    #recognize new devices only after boot up completed
