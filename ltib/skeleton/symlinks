@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 12/1/19 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 12/16/19 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -94,9 +94,13 @@ home/esp/bin/su -> /usr/bin/be
 home/esp/.profile -> /etc/esp/profile
 home/esp/.irbrc -> /etc/esp/irbrc
 
+usr/share/terminfo/x/xterm-256color -> xterm
+
 suscript/reboot -> /sbin/reboot
 
+#superuser commands made accessible via suscript
 suscript/esp/reboot -> /usr/sbin/suscript
 suscript/esp/powerdown -> /usr/sbin/suscript
-
-usr/share/terminfo/x/xterm-256color -> xterm
+suscript/esp/powerup -> /usr/sbin/suscript
+suscript/esp/connectNetwork -> /usr/sbin/suscript
+suscript/esp/disconnectNetwork -> /usr/sbin/suscript
