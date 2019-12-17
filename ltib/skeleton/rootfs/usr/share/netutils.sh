@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/4/19 brent@mbari.org
+# -- revised: 12/16/19 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -420,10 +420,7 @@ ifUp()
         rm $pidfn  #remove stale pidfile
       fi
     done
-    [ "$owners" ] && {
-      echo "$IFNAME is already in use by process: $owners" >&2
-      return 2
-    }
+    [ "$owners" ] && return
   }
   echo "Bringing up ${IFALIAS-$IFNAME} ..."
   ifPrep && {
