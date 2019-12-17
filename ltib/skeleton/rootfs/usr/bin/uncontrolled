@@ -1,0 +1,15 @@
+#!/bin/sh
+self=`basename $0`
+[ "$1" ] || { cat <<END >&2
+Run command without a controlling terminal -- brent@mbari.org
+Usage:
+  $self [-q] comand args
+optional -q (quiet) flag redirects stdout and stderr to /dev/null
+END
+  exit 2
+}
+[ "$1" = -q ] && {
+  shift
+  exec >/dev/null 2>&1
+}
+: | setsid "$@"

@@ -10,7 +10,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 12/10/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 12/16/19 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -60,8 +60,9 @@ topIf() {
 }
 
 sleep 5  #wait for net config to stabilize
+tag="`basename $0`[$$]"
 while [ ! "$(topIf)" ]; do
-#  echo "No Network Gateway -- reopening $shore tunnel in $noGateDelay seconds"
+#  logger -t $tag -p warning "No Gateway -- reopening $shore tunnel in $noGateDelay seconds"
   sleep $noGateDelay
 done
 
@@ -74,7 +75,7 @@ tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
 
 #first, try the port previously assigned us
-echo "Opening tunnel to $shore"
+logger -t $tag "Opening tunnel to $shore"
 [ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnels $tunArgs || {
   sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
