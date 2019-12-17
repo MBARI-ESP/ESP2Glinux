@@ -1,11 +1,12 @@
 #!/bin/sh
 self=`basename $0`
+run=/var/run
 : ${HOME:=/root} #in case invoked from inittab
 : ${noGateDelay:=600}  #retry delay if no gateway
-: ${pidFn:=/var/run/$self.pid}
+: ${pidFn:=$run/$self.pid}
 : ${portFn:=/var/etc/$self.port}  #stores last TCP port # assigned us
 #portFn=/dev/null   #uncomment to query for our remote port # on each connect
-: ${traceFn=/var/run/trace/$self}
+: ${traceFn=$run/trace/$self}
 : ${shore:=ESPshore}
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
@@ -15,7 +16,7 @@ Retries every $noGateDelay seconds until internet is available
 END
   exit 9
 }
-tunHosts=/var/run/$self.hosts
+tunHostsFn=$run/$self.hosts
 export HOME
 [ -w $traceFn ] && {
   { date; echo $0 "$@"; env; } >>$traceFn
@@ -24,11 +25,11 @@ export HOME
 }
 
 #restart if network changed  (pid does not change!)
-trap "pkill -P $$; wait; rm -f $tunHosts; exec $0" HUP
+trap "pkill -P $$; wait; rm -f $tunHostsFn; exec $0" HUP
 #Empty .pid file to delay restart after waiting until tunnel is closed.
-trap "pkill -P $$; rm -f $tunHosts; wait; >$pidFn; exec $0" USR1
+trap "pkill -P $$; rm -f $tunHostsFn; wait; >$pidFn; exec $0" USR1
 #clean up on request to exit
-trap "pkill -P $$; wait; rm -f $tunHosts $pidFn; exit 129" TERM INT QUIT
+trap "pkill -P $$; wait; rm -f $tunHostsFn $pidFn; exit 129" TERM INT QUIT
 
 if [ -s "$pidFn" ];then
   #terminate any other instances
@@ -67,18 +68,25 @@ while [ ! "$(topIf)" ]; do
 done
 
 #ensure shore and mail resolve to localhost
-echo '127.0.0.1 shore mail' >$tunHosts
-cat $tunHosts >>/etc/hosts
+#(done this way in case netutils updates /etc/hosts first)
+tunHosts='127.0.0.1 shore mail'
+echo $tunHosts >$tunHostsFn
+grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
 
 tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded after rsync
 tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
 local=localhost:22
+export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
+
+SSH() {
+  : | setsid dbclient -i $HOME/.ssh/id_rsa "$@" 2>$run/$self.err
+}
 
 #first, try the port previously assigned us
 logger -t $tag "Opening tunnel to $shore"
-[ -s $portFn ] && ssh -R`cat $portFn`:$local $tunnels $tunArgs || {
-  sshPort=`ssh -y $shoreSSH tunnel close` && {  #request far side close tunnel
+[ -s $portFn ] && SSH -R`cat $portFn`:$local $tunnels $tunArgs || {
+  sshPort=`SSH -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
-    ssh -R$sshPort:$local $tunnels $tunArgs
+    SSH -R$sshPort:$local $tunnels $tunArgs
   }
 }
