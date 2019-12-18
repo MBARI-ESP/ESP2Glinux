@@ -18,7 +18,7 @@ exec >&2
 
 sync
 /etc/rc.d/rc $POWERDOWN || exit 1
-#coax modem into low power state
-sleepModem || exit 2
+# Put modem into low power state while host is powered off
+#sleepIridiumHandset || exit 2
 echo
 exec /etc/init.d/sysmount stop
