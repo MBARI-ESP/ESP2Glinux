@@ -6,13 +6,19 @@ PATH=/usr/sbin:/sbin:/usr/bin:/bin
 case "$1" in
     start|"")
       echo "Syncing time with Iridium network"
-      sysTime=`iridiumTime` && date -us "$sysTime"
+      sysTime=`iridiumTime`; retCode=$?
+      case $retCode in
+         0) date -us "$sysTime"
        ;;
-
+        99) exit 99
+       ;;
+         *) /etc/ppp/reset-modem 15
+            exit $retCode
+      esac
+     ;;
     stop)
-       ;;
+ ;;
 
      *)
        echo "usage: `basename $0` {start|stop}"
-       ;;
 esac
