@@ -1,8 +1,17 @@
 #!/bin/sh
 #sychronize real-time with Iridium network
+#returns 0 if successful
+#returns 1 if could not read time
+#returns 2 if time formatted incorrectly
+#returns 99 if serial port was locked
 
 ATport=/dev/AT/iridium
+ATlock=/var/lock/LCK..AT_iridium
 
+[ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "$owner" && {
+  echo "$ATport is locked by pid $owner" >&2
+  return 99
+}
 #output Iridium system time in a format suitable for date utility
 #this also selects simple RING reports to ensure we're in the right mode
 {

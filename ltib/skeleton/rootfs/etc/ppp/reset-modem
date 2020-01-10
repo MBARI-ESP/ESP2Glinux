@@ -9,7 +9,8 @@ esp=${3-esp}    #esp user for case where no espclient available
 mRstCmd="/usr/sbin/sleepyCmd --device=$gateway resetModem $offSecs"
 tag=`basename $0`
 
-resetUSBunlessBusy >/dev/null &  #in case modem is on a USB serial port
+[ "$noUSBreset" ] &&
+  resetUSBunlessBusy >/dev/null &  #in case modem is on a USB serial port
 
 fuser -u $gateway 2>&1 | tr \(\) " " | (
   while read dev espPid espUser ignored; do
