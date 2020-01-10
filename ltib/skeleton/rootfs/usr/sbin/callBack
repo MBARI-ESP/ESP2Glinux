@@ -18,10 +18,10 @@ shift 3
 [ "$1" ] || set -- -cooked 115200
 stty "$@"
 flush
-logger -t $tag Awaiting RING on $port to $cmd
+logger -t $tag "Awaiting RING on $port to {$cmd}"
 while read line; do
   [ "$line" = RING$'\r' ] && {
-    logger -t $tag Got RING on $port --> $cmd
+    logger -t $tag "Got RING on $port --> {$cmd}"
     eval "$cmd" </dev/null
     break
   }
