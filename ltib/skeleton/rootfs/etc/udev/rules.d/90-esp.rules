@@ -1,10 +1,13 @@
-# ESP specific udev rules -- 11/19/19 brent@mbari.org
+# ESP specific udev rules -- 1/14/20 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
 
 #ESP 2G application serial ports (uncomment those in use)
 #KERNEL=="ttyS1", SYMLINK+="ctd"
+#for APL mooring:
+#ENV{ID_VENDOR}=="FTDI", ENV{ID_MODEL}=="Chipi-X", ENV{ID_IFACE}=="00",\
+#  SYMLINK+="ctd"
 #KERNEL=="ttyS2", SYMLINK+="isus"
 #KERNEL=="ttyS4", SYMLINK+="I2Cgate"
 #KERNEL=="ttyS5", SYMLINK+="pcr"
