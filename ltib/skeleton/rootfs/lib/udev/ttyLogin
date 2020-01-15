@@ -9,6 +9,15 @@ baud=${2-115200}
   logger -t $tag Missing tty device path
   exit 2
 }
-tty=${dev#/dev/}
+node=`readlink -f "$dev"` && [ -c "$node" ] || {
+  logger -t $tag "Invalid login device: $dev"
+  exit 3
+}
+loginDev=${node}.login
+cp -a $dev $loginDev || {
+  logger -t $tag "Cannot create login device: $loginDev"
+  exit 4
+}
+tty=${loginDev#/dev/}
 logger -t $tag Accepting login on $tty @$baud baud for 30 seconds
-exec /sbin/getty -L $baud ${3-"-wt30"} $tty &
+(/sbin/getty -L $baud ${3-"-wt30"} $tty; rm $loginDev) &
