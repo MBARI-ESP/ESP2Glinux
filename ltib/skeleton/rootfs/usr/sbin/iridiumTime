@@ -1,5 +1,5 @@
 #!/bin/sh
-#sychronize real-time with Iridium network
+#output Iridium system time in a format suitable for Unix date utility
 #returns 0 if successful
 #returns 1 if could not read time
 #returns 2 if time formatted incorrectly
@@ -16,19 +16,14 @@ ATlock=/var/lock/LCK..AT_iridium
 #this also selects simple RING reports to ensure we're in the right mode
 {
   flush
-  echo -ne "ATE0;+CRC=0;+CCLK?\r"
-  count=15
-  while let --count && IFS=: read -rt 3 cclk dateTime; do
-#echo -n "$dateTime" | hexdump -C >&2
-    [ "$dateTime" ] && break
+  echo -ne "ATE0;+CRC=0;-MSSTM\r"
+  count=20
+  while let --count && IFS=: read -rt 3 cclk tics; do
+#echo -n "$tics" | hexdump -C >&2
+    [ "$tics" ] && break
   done
 } <$ATport >$ATport || {
-  echo "Failed to read UTC time from $ATport" >&2
+  echo "Failed to read system time from $ATport" >&2
   return 2
 }
-itime=`echo -n "$dateTime" | tr -d '\r\n' | tr '/,' '- '`
-[ "$itime" ] || {
-  echo "Missing UTC time from $ATport" >&2
-  return 1
-}
-echo "20$itime"
+exec iridiumUTC ${tics/ }

@@ -1,5 +1,5 @@
 #!/bin/sh
-#sychronize real-time with Iridium network
+#sychronize real-time with Iridium network and log geo location
 
 PATH=/usr/sbin:/sbin:/usr/bin:/bin
 
@@ -9,6 +9,8 @@ case "$1" in
       sysTime=`iridiumTime`; retCode=$?
       case $retCode in
          0) date -us "$sysTime"
+            geo=`iridiumLocation` &&
+            logger -t IridiumLocation -p warning -- $geo
        ;;
         99) exit 99
        ;;

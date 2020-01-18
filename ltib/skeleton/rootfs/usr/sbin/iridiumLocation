@@ -1,0 +1,26 @@
+#!/bin/sh
+#output Iridium geo location
+#returns 0 if successful
+#returns 1 if could not read geo location
+#returns 99 if serial port was locked
+
+ATport=/dev/AT/iridium
+ATlock=/var/lock/LCK..AT_iridium
+
+[ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "$owner" && {
+  echo "$ATport is locked by pid $owner" >&2
+  return 99
+}
+
+{
+  flush
+  echo -ne "AT-MSGEO\r"
+  count=20
+  while let --count && IFS=: read -rt 3 MSGEO geo; do
+    [ "$geo" ] && break
+  done
+} <$ATport >$ATport || {
+  echo "Failed to read geo location from $ATport" >&2
+  return 1
+}
+echo "${geo/ }"

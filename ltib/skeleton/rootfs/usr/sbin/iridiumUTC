@@ -1,0 +1,21 @@
+#!/opt/mbari/bin/ruby
+epoch = Time.utc(2014,5,11,14,23,55)
+timeFmt = '%Y-%m-%d %H:%M:%S'
+if ARGV.empty?
+  STDERR.puts <<END
+Output UTC time as (#{timeFmt})
+corresponding to specified Iridium System Time
+(hexidecimal 90hz tics since #{epoch.strftime timeFmt})
+Second optional argument overrides time ouput format
+NOTE:  Each Iridium era/epoch lasts approximately 12 years!
+END
+  exit 2
+end
+
+tics = ARGV[0].hex
+if tics == 0
+  STDERR.puts "Invalid Iridium system time: #{ARGV[0]}"
+  exit 1
+end
+timeFmt = ARGV[1] if ARGV.length>1
+puts (epoch+0.09*tics).strftime timeFmt
