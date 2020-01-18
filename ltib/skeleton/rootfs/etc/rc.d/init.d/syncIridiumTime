@@ -10,7 +10,7 @@ case "$1" in
       case $retCode in
          0) date -us "$sysTime"
             geo=`iridiumLocation` &&
-            logger -t IridiumLocation -p warning -- $geo
+            logger -t IridiumLocation -p warning -- "$geo"
        ;;
         99) exit 99
        ;;

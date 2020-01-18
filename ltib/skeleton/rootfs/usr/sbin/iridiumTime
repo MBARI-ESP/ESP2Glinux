@@ -26,4 +26,6 @@ ATlock=/var/lock/LCK..AT_iridium
   echo "Failed to read system time from $ATport" >&2
   return 2
 }
+cr=$'\r'
+tics=${tics%$cr}
 exec iridiumUTC ${tics/ }

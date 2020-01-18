@@ -23,4 +23,6 @@ ATlock=/var/lock/LCK..AT_iridium
   echo "Failed to read geo location from $ATport" >&2
   return 1
 }
-echo "${geo/ }"
+geo=${geo/ }
+cr=$'\r'
+echo "${geo%$cr}"
