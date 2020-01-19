@@ -19,10 +19,12 @@ ATlock=/var/lock/LCK..AT_iridium
   while let --count && IFS=: read -rt 3 MSGEO geo; do
     [ "$geo" ] && break
   done
-} <$ATport >$ATport || {
+} <$ATport >$ATport
+geo="${geo/ }"
+cr=$'\r'
+geo="${geo%$cr}"
+[ "$geo" ] || {
   echo "Failed to read geo location from $ATport" >&2
   return 1
 }
-geo=${geo/ }
-cr=$'\r'
-echo "${geo%$cr}"
+echo "$geo"

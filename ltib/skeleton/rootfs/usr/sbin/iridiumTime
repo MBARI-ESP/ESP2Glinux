@@ -22,10 +22,12 @@ ATlock=/var/lock/LCK..AT_iridium
 #echo -n "$tics" | hexdump -C >&2
     [ "$tics" ] && break
   done
-} <$ATport >$ATport || {
+} <$ATport >$ATport
+tics=${tics/ }
+cr=$'\r'
+tics=${tics%$cr}
+[ "$tics" ] || {
   echo "Failed to read system time from $ATport" >&2
   return 2
 }
-cr=$'\r'
-tics=${tics%$cr}
 exec iridiumUTC ${tics/ }
