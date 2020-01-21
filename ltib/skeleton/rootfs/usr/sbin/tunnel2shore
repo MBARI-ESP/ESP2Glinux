@@ -11,7 +11,7 @@ run=/var/run
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 12/16/19 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 1/20/20 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -73,20 +73,26 @@ tunHosts='127.0.0.1 shore mail'
 echo $tunHosts >$tunHostsFn
 grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
 
-tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded after rsync
+tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded last
 tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
-local=localhost:22
+local=localhost
 export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
 
 SSH() {
   : | setsid dbclient -i $HOME/.ssh/id_rsa "$@" 2>$run/$self.err
 }
+openTunnel() {
+#open tunnel from shore's $1 port to our local ssh port
+#tunnel from shore's 1$1 port ($1 prefixed by 1) to our optional espclient port
+  SSH -R$1:$local:22 -R1$1:$local:9999 $tunnels $tunArgs
+}
 
 #first, try the port previously assigned us
 logger -t $tag "Opening tunnel to $shore"
-[ -s $portFn ] && SSH -R`cat $portFn`:$local $tunnels $tunArgs || {
+[ -s $portFn ] && sshPort=`cat $portFn` &&
+    openTunnel $sshPort || {
   sshPort=`SSH -y $shoreSSH tunnel close` && {  #request far side close tunnel
     echo $sshPort >$portFn     #remember the port assigned us
-    SSH -R$sshPort:$local $tunnels $tunArgs
+    openTunnel $sshPort
   }
 }
