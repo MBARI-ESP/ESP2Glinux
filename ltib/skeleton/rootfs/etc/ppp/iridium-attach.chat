@@ -7,13 +7,12 @@ ABORT "BUSY"
 ABORT "Username/Password Incorrect"
 # Hang up the modem if in use
 TIMEOUT 10
-"" "AT\r\d\p\p+++\d\p\p\c"
-"OK\r" "ATH0E0+CBST=71,0,1"
+"" "AT+CBST=71,0,1"
 # Log the signal strength measurement
 "OK\r" "AT+CSQF"
 "OK\r" "\c"
 # Set the time out to receive a reply
 TIMEOUT 150
-# Dial the number
-"" "ATD\T"
+# Dial the telephone number
+"" "ATD$MSISDN"
 "CONNECT" "\c"

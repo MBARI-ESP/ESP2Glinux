@@ -15,7 +15,7 @@ tag=`basename $0`
 fuser -u $gateway 2>&1 | tr \(\) " " | (
   while read dev espPid espUser ignored; do
     if [ -n "$espPid" -a -n "$espUser" ]; then
-      logger -t$tag "Cycling power via $espUser's espclient"
+      logger -t$tag -pwarn "Cycling power via $espUser's espclient"
       result=$(exec 5>&1; su - $espUser >&2 <<EOS
         espclient --server=$espPid $tag >&5 <<EOC
           Gate.cycleModemPower! $offSecs
@@ -32,9 +32,9 @@ EOS
   #   failing that, output warning in log and try resetting as root
   logger -t$tag "No espclient -- resetting via $gateway"
   errmsg=`su $esp -c "$mRstCmd" 2>&1 >&-` && return
-  logger -t$tag "Retrying as root after $esp failed with $errmsg"
+  logger -t$tag -pwarn "Retrying as root after $esp failed with $errmsg"
   errmsg=`$mRstCmd 2>&1 >&-` && return
-  logger -t$tag "also failed as root -- $errmsg"
+  logger -t$tag -perr "also failed as root -- $errmsg"
   return 5
 )
 result=$?

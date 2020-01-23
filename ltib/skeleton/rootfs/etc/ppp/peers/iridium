@@ -7,6 +7,9 @@ remotename iridium
 
 noauth       #no password authorization
 
+mtu 500	     #to improve latency over slow link
+mru 500
+
 #debugging options
 #debug
 #record /tmp/ppptrace.out
@@ -41,23 +44,21 @@ lcp-echo-failure 0
 ipcp-accept-local
 ipcp-accept-remote
 
-#bring up link on attempt to connect to shore 
-#:ESPshore   
+#bring up link on attempt to connect to shore
+#:ESPshore
 #demand
 
 #Iridium internet gateway supports compression :-)
 deflate 15      #deflate within a 32kB window
 vj-max-slots 16 #allow header compression
 
-#connect to Iridium's internet service
-connect "flush; retry='sleep 5; flush' retry 3 \
-  /usr/sbin/chat -T 008816000025 -vEf /etc/ppp/iridium.chat"
-
+#connect to Iridium's internet gateway
+connect "noUSBreset=1 MSISDN=008816000025 exec /etc/ppp/connect iridium"
 #closing the USB emulated serial port ends data connection
 
 #drop the expensive link after specified number of seconds
-maxconnect 600
-idle 30
+maxconnect 900
+idle 300
 
 #seems to sometimes require authentication.  Any user or password will do.
 #when authentication required, compression is rejected :-(

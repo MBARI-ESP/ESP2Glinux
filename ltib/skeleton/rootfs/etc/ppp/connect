@@ -34,8 +34,8 @@ exit 1
 }
 cd `dirname $0` || exit 2
 
-until /usr/sbin/chat -vf $cellular-detach.chat; do
-  logger -t$tag "Modem will not detach"
+until tcflush; /usr/sbin/chat -vEf $cellular-detach.chat; do
+  logger -t$tag -pwarn "Modem will not detach"
   resetDelay=$resetHoldOff
   [ $resetDelay -lt 0 ] && resetDelay=$((-($resetDelay)))
   now=`date +%s`
@@ -49,12 +49,12 @@ until /usr/sbin/chat -vf $cellular-detach.chat; do
   fi
   [ $resetHoldOff -ge 0 ] && {
     [ $resetHoldOff -ne 0 ] && {
-      logger -t$tag "Waiting $resetDelay seconds before reporting failure"
+      logger -t$tag -pwarn "Waiting $resetDelay seconds before reporting failure"
       sleep $resetDelay
     }
     exit 7
   }
-  logger -t$tag "Waiting $resetDelay seconds before retrying..."
+  logger -t$tag -pwarn "Waiting $resetDelay seconds before retrying..."
   sleep $resetDelay
 done
 rm -f $lastResetFn

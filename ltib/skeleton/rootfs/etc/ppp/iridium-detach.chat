@@ -1,0 +1,4 @@
+# Hang up the satphone
+TIMEOUT 8
+"" "\d\p\p+++\d\p\pATE0H0\r"
+"OK\r" "\c"
