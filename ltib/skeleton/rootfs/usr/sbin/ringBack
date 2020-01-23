@@ -10,14 +10,14 @@ port=${2-/dev/modem}
 tag="`basename $0`[$$]"
 sleep ${3-20}
 [ -r "$port" ] || {
-  logger -t $tag Cannot open $port
+  logger -t $tag -perr Cannot open $port
   exit 1
 }
 eval "exec <${port}"
 shift 3
 [ "$1" ] || set -- -cooked 115200
 stty "$@"
-flush
+tcflush
 logger -t $tag "Awaiting RING on $port to {$cmd}"
 while read line; do
   [ "$line" = RING$'\r' ] && {

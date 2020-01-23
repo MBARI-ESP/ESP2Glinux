@@ -28,7 +28,7 @@ ifup:3:once:/lib/udev/catchup
 net:12345:respawn:/usr/sbin/inetd -f
 
 # start handling device events (optionally after specified delay in seconds)
-#DEVD:3:once:/sbin/startudevd
+DEVD:3:once:/sbin/startudevd 40
 
 # Keep the freewave ppp interface up
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null
@@ -40,13 +40,13 @@ net:12345:respawn:/usr/sbin/inetd -f
 #vpn:12345:respawn:/bin/sh -c "sleep 300; exec /usr/sbin/inadyn"
 
 # Keep ssh tunnel to MBARI up
-#tun:12345:respawn:/usr/sbin/tunnel2shore
+tun:12345:respawn:/usr/sbin/tunnel2shore
 
 # keep an espclient up on ttyS3
 #esp:3:respawn:/sbin/getty -L 9600 -nl /etc/esp/client ttyS3
 
-# start ESP server
-#ESP:3:once:/bin/su - esp -c "start esp mission"
-
 # call back if modem RINGs
-#call:3:respawn:/usr/sbin/callBack
+#ring:3:respawn:/usr/sbin/ringBack
+
+# start ESP server running yourMission script
+#ESP:3:once:/bin/su - esp -c "sleep 5;ESPcmdPort=9999 start esp yourMission"
