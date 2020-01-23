@@ -30,3 +30,5 @@ lrzsz/lrzsz-*/
 ltib/compat-wireless/compat-wireless-*/
 psmisc/psmisc-*/
 wpa_supplicant/wpa_supplicant-*/
+tcflush/tcflush
+
