@@ -6,7 +6,7 @@
 export interface=$1
 
 [ $interface ] || {
-  logger -st keepup "Missing interface name"
+  logger -st keepup -perr "Missing interface name"
   exit 1
 }
 export ifaceFn=/var/run/$interface.pid

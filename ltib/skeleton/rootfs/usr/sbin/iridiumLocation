@@ -13,7 +13,7 @@ ATlock=/var/lock/LCK..AT_iridium
 }
 
 {
-  flush
+  tcflush
   echo -ne "AT-MSGEO\r"
   count=20
   while let --count && IFS=: read -rt 3 MSGEO geo; do

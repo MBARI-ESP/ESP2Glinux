@@ -15,7 +15,7 @@ ATlock=/var/lock/LCK..AT_iridium
 #output Iridium system time in a format suitable for date utility
 #this also selects simple RING reports to ensure we're in the right mode
 {
-  flush
+  tcflush
   echo -ne "ATE0;+CRC=0;-MSSTM\r"
   count=20
   while let --count && IFS=: read -rt 3 cclk tics; do
