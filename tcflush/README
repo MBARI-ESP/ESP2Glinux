@@ -1,0 +1,12 @@
+
+flush
+
+by Brent Roman (brent@mbari.org)
+
+Flush input FIFO associated with stdin
+and output FIFO associated with stdout
+
+If both stdin and stdout are terminals,
+stdout is flushed first, then, after a shore delay,
+stdin is flushed.
+

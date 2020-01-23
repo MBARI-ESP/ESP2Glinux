@@ -20,6 +20,11 @@ EOS
 
 mkdir -p $LOCALBIN
 
+echo "  ===>  Building tcflush  <==="
+cd ~/linux/tcflush &&
+make CC=$ARMGCC/bin/gcc clean tcflush &&
+$STRIP -o $HOSTTOP/bin/tcflush tcflush || exit $?
+
 echo "  ===>  Building picocom  <==="
 cd ~/linux/picocom &&
 make CC=$ARMGCC/bin/gcc clean picocom &&
