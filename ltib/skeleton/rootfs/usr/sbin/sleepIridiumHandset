@@ -4,12 +4,10 @@
 
 modem=/dev/AT/iridium
 
-{ #terminate any data call in progress and
-  #ensure modem will simply report RING on incoming calls
-  /usr/sbin/chat -t 9 '' "AT\r\d\p\p+++\d\p\p\c" OK AT+CRC=0 OK &&
+exec <$modem >$modem
+#terminate any data call in progress and
+#ensure modem will simply report RING on incoming calls
+/usr/sbin/chat -t 9 '' "AT\r\d\p\p+++\d\p\p\c" OK AT+CRC=0 OK &&
 
-  #leave modem port open with its DTR line deasserted
-  holdopen dtroff
-} <$modem >$modem
-#Cycle power to Iridium 9555 handset to reset it in case of firmware crash 
-noUSBreset=1 exec /etc/ppp/reset-modem 30
+#leave modem port open with its DTR line deasserted
+holdopen dtroff
