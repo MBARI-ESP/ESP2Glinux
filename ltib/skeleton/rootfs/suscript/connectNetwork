@@ -4,5 +4,9 @@
 #returns false if tunnel already existed or could not be established
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 awaitTunnel 0 && exit 1
-ifup bg96
+for try in 1 2; do  #in case iridiumTime or iridiumLocation was being queried
+  ifup iridium
+  [ "$?" != 6 ] && break  #try again after short delay if serial port in use
+  sleep 8
+done
 exec awaitTunnel

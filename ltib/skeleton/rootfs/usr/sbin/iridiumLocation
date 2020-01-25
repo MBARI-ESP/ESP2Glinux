@@ -11,6 +11,8 @@ ATlock=/var/lock/LCK..AT_iridium
   echo "$ATport is locked by pid $owner" >&2
   return 99
 }
+trap "rm -f $ATlock" EXIT INT QUIT TERM HUP
+echo $$ >$ATlock
 
 {
   tcflush

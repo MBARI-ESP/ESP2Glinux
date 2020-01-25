@@ -12,6 +12,9 @@ ATlock=/var/lock/LCK..AT_iridium
   echo "$ATport is locked by pid $owner" >&2
   return 99
 }
+trap "rm -f $ATlock" EXIT INT QUIT TERM HUP
+echo $$ >$ATlock
+
 #output Iridium system time in a format suitable for date utility
 #this also selects simple RING reports to ensure we're in the right mode
 {
@@ -30,4 +33,4 @@ tics=${tics%$cr}
   echo "Failed to read system time from $ATport" >&2
   return 2
 }
-exec iridiumUTC ${tics/ }
+iridiumUTC ${tics/ }
