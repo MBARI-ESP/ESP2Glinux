@@ -28,7 +28,7 @@ ifup:3:once:/lib/udev/catchup
 net:12345:respawn:/usr/sbin/inetd -f
 
 # start handling device events (optionally after specified delay in seconds)
-DEVD:3:once:/sbin/startudevd 40
+DEVD:3:once:/sbin/startudevd 90
 
 # Keep the freewave ppp interface up
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null
@@ -48,5 +48,8 @@ tun:12345:respawn:/usr/sbin/tunnel2shore
 # call back if modem RINGs
 #ring:3:respawn:/usr/sbin/ringBack
 
+#query Iridium modem every 4 hours -- cycle USB and modem power if unresponsive
+#time:3:respawn:/bin/sh -c "sleep 4h && /etc/init.d/syncIridiumTime"
+
 # start ESP server running yourMission script
-#ESP:3:once:/bin/su - esp -c "sleep 5;ESPcmdPort=9999 start esp yourMission"
+#ESP:3:once:/bin/su - esp -c "ESPcmdPort=9999 start esp yourMission"
