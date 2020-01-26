@@ -7,3 +7,9 @@ modemTTY=/dev/AT/iridium
 ifPrep() {
   pppd call iridium unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"} updetach
 }
+
+KILLSECS=30   #allow longer for pppd to terminate
+KILLSIGS=KILL #don't allow retries after term request
+ifDetach() {
+  noUSBreset=1 detachIridium
+}

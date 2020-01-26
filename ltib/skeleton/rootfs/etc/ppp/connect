@@ -10,7 +10,7 @@ traceFn=/var/run/trace/$tag
 }
 
 cellular=$1
-resetHoldOff=${2-300}    #fail 5 minutes after resetting modem
+resetHoldOff=${2-180}    #fail 3 minutes after resetting modem
 offSecs=${3-5}           #default to 5 seconds w/pwr off
 gateway=${4-/dev/I2Cgate}
 lastResetFn=/var/run/`basename $gateway`.reset

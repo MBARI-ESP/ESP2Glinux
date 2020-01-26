@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/16/19 brent@mbari.org
+# -- revised: 1/26/20 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -8,6 +8,7 @@ ifCfg() {
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
   unset NETWORK GATEWAY MTU AUTOSTART IFALIAS
+  unset KILLSECS KILLSIGS
   IFNAME="$1"
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -20,6 +21,9 @@ ifCfg() {
   }
   ifPost() {
     :  #invoked at end of ifUp
+  }
+  ifDetach() {
+    :  #invoked at end of ifDown
   }
   cfg=$syscfg/ifcfg-$IFNAME
   [ -r $cfg ] || cfg=$syscfg/if-default
@@ -370,16 +374,17 @@ ifDown() {
         *dhcp*-*) signal=HUP ;;
         *) signal=TERM ;;
       esac
-      for try in 1 2 last; do
+      for try in ${KILLSIGS-1 KILL}; do
         kill -$signal $daemon 2>/dev/null  #relinquish any lease
-        for t in 1 2 3 4 5; do  #wait for daemon to die
+        t=${KILLSECS-7}
+        while let --t; do  #wait for daemon to die
           sleep 1
           kill -0 $daemon 2>/dev/null || break 2
         done
-        [ "$try" = last ] && {
+        [ "$try" = KILL ] && {
           echo "Forcing ${IFALIAS-$IFNAME} (PID $daemon) to terminate" >&2
-          rm $pidfn
-          kill -9 $daemon
+          kill -KILL $daemon
+          rm -f $pidfn
         }
       done
       #ppp will delete its own .pid files
@@ -389,6 +394,7 @@ ifDown() {
   gateDown $IFNAME
   [ "$1" ] || set -- down
   ifconfig $IFNAME $* 2>/dev/null
+  ifDetach $IFNAME #hang up associated modem
   :
 }
 
@@ -414,7 +420,7 @@ ifUp()
     local owners= owner
     for pidfn in $pidfns; do  #while removing stale ones
       owner=`head -n1 $pidfn` 2>/dev/null
-      if [ "$owner" ] && kill -0 "$owner" 2>/dev/null; then
+      if [ "$owner" ] && kill -0 "${owner// }" 2>/dev/null; then
         owners="$owners $owner"
       else
         rm $pidfn  #remove stale pidfile
