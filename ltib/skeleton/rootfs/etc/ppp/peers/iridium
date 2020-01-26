@@ -1,11 +1,11 @@
 # pppd configuration for internet via Iridium handset on USB port
-#  - 11/19/19 brent@mbari.org
+#  - 1/25/20 brent@mbari.org
 
 #connection
 linkname iridium
 remotename iridium
 
-noauth       #no password authorization
+noauth       #require no password authorization
 
 mtu 500	     #to improve latency over slow link
 mru 500
@@ -20,7 +20,7 @@ mru 500
 #dump
 
 #RS-232 port configuration
-AT/iridium      #symlink /dev/iridium to the Iridium modem's USB port
+AT/iridium   #symlink to the Iridium satphone's USB port
 crtscts      #hardware RTS/CTS handshaking
 modem        #monitor carrier detect
 lock         #request exclusive access to the port
@@ -44,23 +44,23 @@ lcp-echo-failure 0
 ipcp-accept-local
 ipcp-accept-remote
 
-#bring up link on attempt to connect to shore
+# Bring up link on attempt to connect to shore
 #:ESPshore
 #demand
 
-#Iridium internet gateway supports compression :-)
+# Iridium internet gateway supports compression :-)
 deflate 15      #deflate within a 32kB window
 vj-max-slots 16 #allow header compression
 
-#connect to Iridium's internet gateway
+# Connect to Iridium's internet gateway
 connect "noUSBreset=1 MSISDN=008816000025 exec /etc/ppp/connect iridium"
 #closing the USB emulated serial port ends data connection
 
-#drop the expensive link after specified number of seconds
-maxconnect 900
-idle 300
+#Drop the expensive link after specified number of seconds
+maxconnect 1800  #30 minutes
+idle 300         # 5 minutes
 
-#seems to sometimes require authentication.  Any user or password will do.
-#when authentication required, compression is rejected :-(
+#Internet gate sometimes requires authentication.  Any user or password will do.
+#When authentication required, compression is rejected :-(
 user .
 password .
