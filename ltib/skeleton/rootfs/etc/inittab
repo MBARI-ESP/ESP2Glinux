@@ -52,4 +52,4 @@ tun:12345:respawn:/usr/sbin/tunnel2shore
 #time:3:respawn:/bin/sh -c "sleep 4h && /etc/init.d/syncIridiumTime"
 
 # start ESP server running yourMission script
-#ESP:3:once:/bin/su - esp -c "ESPcmdPort=9999 start esp yourMission"
+#ESP:3:once:/bin/su - esp -c "sleep 5 && ESPcmdPort=9999 start esp yourMission"
