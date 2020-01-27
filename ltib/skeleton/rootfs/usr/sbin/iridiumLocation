@@ -4,16 +4,7 @@
 #returns 1 if could not read geo location
 #returns 99 if serial port was locked
 
-ATport=/dev/AT/iridium
-ATlock=/var/lock/LCK..AT_iridium
-
-[ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "${owner// }" && {
-  echo "$ATport is locked by pid $owner" >&2
-  return 99
-}
-trap "rm -f $ATlock" EXIT INT QUIT TERM HUP
-echo $$ >$ATlock
-
+. lockIridium || return
 {
   tcflush
   echo -ne "AT-MSGEO\r"
@@ -22,11 +13,11 @@ echo $$ >$ATlock
     [ "$geo" ] && break
   done
 } <$ATport >$ATport
-geo="${geo/ }"
+geo="${geo// }"
 cr=$'\r'
-geo="${geo%$cr}"
+geo="${geo%%$cr}"
 [ "$geo" ] || {
   echo "Failed to read geo location from $ATport" >&2
   return 1
 }
-echo "$geo"
+printf '%s\n' "$geo"

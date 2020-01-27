@@ -39,4 +39,4 @@ EOS
 )
 result=$?
 wait
-exit $result
+return $result

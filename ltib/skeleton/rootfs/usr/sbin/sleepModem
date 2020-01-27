@@ -1,0 +1,6 @@
+#!/bin/sh
+#try to hang up the Iridium modem
+#always return 0
+
+noUSBreset=1 detachIridium
+:

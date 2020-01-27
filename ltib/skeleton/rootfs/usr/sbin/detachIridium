@@ -2,15 +2,7 @@
 #Disconnect/Detatch the USB connected Iridium Handset
 #so it will receive calls (RING)
 
-ATport=/dev/AT/iridium
-ATlock=/var/lock/LCK..AT_iridium
-
-[ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "${owner// }" && {
-  echo "$ATport is locked by pid $owner" >&2
-  return 99
-}
-trap "rm -f $ATlock" EXIT INT QUIT TERM HUP
-echo $$ >$ATlock
+. lockIridium || return
 
 #terminate any data call in progress and
 #ensure modem will simply report RING on incoming calls
@@ -19,4 +11,4 @@ echo $$ >$ATlock
 
 #power cycle modem if above chat fails
 /etc/ppp/reset-modem
-return 0
+return 1
