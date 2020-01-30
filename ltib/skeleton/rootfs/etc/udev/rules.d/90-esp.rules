@@ -1,4 +1,4 @@
-# ESP specific udev rules -- 1/14/20 brent@mbari.org
+# ESP specific udev rules -- 1/29/20 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
@@ -11,6 +11,8 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 #KERNEL=="ttyS2", SYMLINK+="isus"
 #KERNEL=="ttyS4", SYMLINK+="I2Cgate"
 #KERNEL=="ttyS5", SYMLINK+="pcr"
+#KERNEL=="ttyS6", SYMLINK+="flowMeter"
+#KERNEL=="ttyS7", SYMLINK+="extSampler"
 
 #ESP 3G serial ports
 #KERNEL=="ttyS1", SYMLINK+="platform"
