@@ -1,18 +1,20 @@
 #!/bin/sh
 offSecs=5
+minOff=2
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Power cycle USB bus -- 7/12/18 brent@mbari.org
+Power cycle USB bus -- 1/31/20 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {offSecs}
 Notes:
   turns bus off for $offSecs seconds if offSecs omitted
+  Minimum off time allowed is $minOff seconds
 END
 }
 
 cmdErr() {
-  echo "$progName: $1" >&2
+  echo "$progName": "$@" >&2
   exit 2
 }
 
@@ -26,12 +28,24 @@ case "$*" in
   ;;
   *)
     showHelp
-    exit 2
+    exit 3
 esac
 
+extraSecs=`expr "$offSecs" - $minOff` || [ "$?" = 1 ] || exit 3
+[ "$extraSecs" -lt 0 ] &&
+  cmdErr "bus must be powered off for at least $minOff seconds"
+
 USB5V=/sys/class/gpio/USB+5V
-echo 0 >$USB5V/value
+on()
+{
+  sleep $minOff
+  echo 1 >$USB5V/value && echo USB bus ON
+}
+
+trap "on; exit 128" INT TERM QUIT HUP TSTP
+
+echo 0 >$USB5V/value || cmdErr "Failed to power off USB"
+
 echo USB bus off for $offSecs seconds
-sleep "$offSecs" || sleep 5
-echo 1 >$USB5V/value
-echo USB bus ON
+sleep "$extraSecs"
+on
