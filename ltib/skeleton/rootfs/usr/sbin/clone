@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create bootable image -- 8/7/18 brent@mbari.org
+Clone ESP linux to create bootable image -- 2/5/20 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -28,7 +28,7 @@ Environment Variables:
 Notes:
   If --to is not specified, the destination is assumed to be the storage medium
   that is currently NOT in use.  In practice, this means...
-  If rootfs is the SD card, destination is internal flash and visaversa.
+  If rootfs is the SD card, destination is internal flash and vice-versa.
   The --factory flag and source argument are mutually exclusive
 Examples:
   $p
