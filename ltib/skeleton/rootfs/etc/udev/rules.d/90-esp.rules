@@ -6,7 +6,7 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 #ESP 2G application serial ports (uncomment those in use)
 #KERNEL=="ttyS1", SYMLINK+="ctd"
 #for APL mooring:
-ENV{ID_VENDOR}=="FTDI", ENV{ID_MODEL}=="Chipi-X", ENV{ID_IFACE}=="00",\
+#ENV{ID_VENDOR}=="FTDI", ENV{ID_MODEL}=="Chipi-X", ENV{ID_IFACE}=="00",\
   SYMLINK+="buoyConsole"
 #KERNEL=="ttyS2", SYMLINK+="isus"
 #KERNEL=="ttyS4", SYMLINK+="I2Cgate"
