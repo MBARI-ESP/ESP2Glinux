@@ -1,0 +1,14 @@
+#!/bin/sh
+self=`basename $0`
+[ "$1" ] || { cat <<END >&2
+Unlock Filesystem -- brent@mbari.org -- 2/5/20 brent@mbari
+Usage:
+  $self <fs>
+Remounts the filesystem on <fs> to make it writable
+Example:
+  $self  /
+Makes the root filesystem writable  
+END
+  exit 2
+}
+mount -oremount,rw $1

@@ -1,0 +1,14 @@
+#!/bin/sh
+self=`basename $0`
+[ "$1" ] || { cat <<END >&2
+Lock Filesystem -- brent@mbari.org -- 2/5/20 brent@mbari
+Usage:
+  $self <fs>
+Remounts the filesystem on <fs> to make it read only
+Example:
+  $self  /
+Makes the root filesystem read only
+END
+  exit 2
+}
+mount -oremount,ro $1
