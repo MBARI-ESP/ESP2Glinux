@@ -1,4 +1,4 @@
-# ESP specific udev rules -- 1/31/20 brent@mbari.org
+# ESP specific udev rules -- 2/12/20 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
@@ -7,7 +7,7 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 #KERNEL=="ttyS1", SYMLINK+="ctd"
 #for APL mooring:
 #ENV{ID_VENDOR}=="FTDI", ENV{ID_MODEL}=="Chipi-X", ENV{ID_IFACE}=="00",\
-  SYMLINK+="buoyConsole"
+#  SYMLINK+="buoyConsole"
 #KERNEL=="ttyS2", SYMLINK+="isus"
 #KERNEL=="ttyS4", SYMLINK+="I2Cgate"
 #KERNEL=="ttyS5", SYMLINK+="pcr"
