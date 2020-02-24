@@ -1,4 +1,5 @@
-# Hang up the satphone
-TIMEOUT 8
-"" "\d\p\p+++\d\p\pATE0H0\r"
-"OK\r" "\c"
+# Hang up the satphone and ensure it will ring on incoming calls
+TIMEOUT 9
+"" \d\p\p+++\d\p\pATE0H0\r\c
+OK AT+CRC=0\r\c
+OK \c

@@ -6,8 +6,7 @@
 
 #terminate any data call in progress and
 #ensure modem will simply report RING on incoming calls
-/usr/sbin/chat -t 9 \
-  '' "AT\r\d\p\p+++\d\p\p\c" OK AT+CRC=0 OK <$ATport >$ATport && return
+/usr/sbin/chat -f /etc/ppp/iridium-detach.chat <$ATport >$ATport && return
 
 #power cycle modem if above chat fails
 /etc/ppp/reset-modem
