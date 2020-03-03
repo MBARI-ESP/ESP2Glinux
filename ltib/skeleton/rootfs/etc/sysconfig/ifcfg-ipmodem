@@ -1,4 +1,4 @@
-IFALIAS=inetmodem
+IFALIAS=ipmodem
 IFNAME=ppp8
 serialPort=/dev/modem
 VPN=$ESPshore/shore   #server IP / VPN interface

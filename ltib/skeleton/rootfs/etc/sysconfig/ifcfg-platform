@@ -1,3 +1,4 @@
+IFALIAS=platform
 IFNAME=ppp2
 ifPrep() {
   pppd call platform unit ${IFNAME#ppp}

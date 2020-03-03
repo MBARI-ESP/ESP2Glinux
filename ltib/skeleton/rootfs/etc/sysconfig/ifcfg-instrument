@@ -1,7 +1,7 @@
-IFNAME=ppp0
-AUTOSTART=ignore
+IFALIAS=instrument
+IFNAME=ppp1
 ifPrep() {
-  pppd call shore unit ${IFNAME#ppp}
+  pppd call instrument unit ${IFNAME#ppp}
 }
 
 hosts() {    #add lines before EOS
