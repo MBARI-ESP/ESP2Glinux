@@ -1,3 +1,4 @@
+IFALIAS=shore
 IFNAME=ppp0
 AUTOSTART=ignore
 ifPrep() {
