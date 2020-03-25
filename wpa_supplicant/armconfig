@@ -1,8 +1,8 @@
 #!/bin/sh
-# unpack & patch wpa_supplicant daemon for arm-linux -- 4/22/16 brent@mbari.org
+# unpack & patch wpa_supplicant daemon for arm-linux -- 3/24/20 brent@mbari.org
 
 : ${wpa_supplicant:=wpa_supplicant-2.5}
 rm -rf $wpa_supplicant && 
 tar xzf $wpa_supplicant.tar.gz && 
-cat $wpa_supplicant.patch | (cd $wpa_supplicant && patch -p1) && 
+#cat $wpa_supplicant.patch | (cd $wpa_supplicant && patch -p1) && 
 echo Done.
