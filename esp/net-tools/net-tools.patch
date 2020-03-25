@@ -8,3 +8,13 @@
  #include <sys/types.h>
  #include <sys/socket.h>
  #include <net/if_arp.h>
+--- net-tools-1.60/lib/net-support.h	2020-03-24 20:50:12.102118795 -0700
++++ net-tools-1.60.new/lib/net-support.h	2000-10-28 03:59:42.000000000 -0700
+@@ -30,6 +30,7 @@
+  *              Foundation;  either  version 2 of the License, or  (at
+  *              your option) any later version.
+  */
++#include <stddef.h>
+ #include <sys/socket.h>
+ 
+ /* This structure defines protocol families and their handlers. */

@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install setserial for arm-linux -- 3/18/16 brent@mbari.org
+# build & install net-tools for arm-linux -- 3/24/20 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
