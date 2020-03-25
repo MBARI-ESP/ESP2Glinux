@@ -1,9 +1,9 @@
 #!/bin/sh
-# build & install thttpd daemon for arm-linux -- 4/9/16 brent@mbari.org
+# build & install thttpd daemon for arm-linux -- 3/24/20 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
-: ${TARGETTOP:=${2-/}}
+: ${TARGETTOP:=${2-usr/sbin}}
 : ${HOSTTOP:=${1-$HOME/armHost$TARGETTOP}}
 : ${CFLAGS:=-Os -fomit-frame-pointer}
 : ${CC:=$ARMGCC/bin/gcc}
