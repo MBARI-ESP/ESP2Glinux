@@ -1,5 +1,5 @@
 IFALIAS=freewave
-IFNAME=ppp0
+IFNAME=ppp3
 AUTOSTART=ignore
 ifPrep() {
   pppd call shore unit ${IFNAME#ppp}
