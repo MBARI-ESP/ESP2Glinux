@@ -1,12 +1,23 @@
 IFALIAS=shore
-IFNAME=ppp0
-AUTOSTART=ignore
+IFNAME=ppp6
+provider=ESPshore
+username=`hostname`
+
+. /etc/sysconfig/mbari.net
+
 ifPrep() {
-  pppd call shore unit ${IFNAME#ppp}
+  pppd call $provider unit ${IFNAME#ppp} name $username
 }
 
-hosts() {    #add lines before EOS
-  cat <<EOS
-$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+pppUp() { #direct MBARI traffic bypasses VPN
+  case `topIf` in
+    eth*)  route add $mbari $gate1 || route add $mbari $gate2
+  esac 2>/dev/null
+}
+
+hosts() {
+  cat <<EOS    #add lines before EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-$provider)
+$(netIfPtp $IFNAME shore mail)
 EOS
 }

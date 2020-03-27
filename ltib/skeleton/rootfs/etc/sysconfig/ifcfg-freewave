@@ -1,0 +1,12 @@
+IFALIAS=freewave
+IFNAME=ppp0
+AUTOSTART=ignore
+ifPrep() {
+  pppd call shore unit ${IFNAME#ppp}
+}
+
+hosts() {    #add lines before EOS
+  cat <<EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
+EOS
+}
