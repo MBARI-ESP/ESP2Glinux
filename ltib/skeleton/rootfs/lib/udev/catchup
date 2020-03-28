@@ -18,6 +18,10 @@ exec 7<&-
 . /usr/share/netutils.sh
 
 for iface in $ifNames; do
-  ifCfg $iface
-  ifUp "''|y|yes|1|true" &  #only if AUTOSTART missing,yes, or true
+  case $iface in
+    [0-9]*) sleep $iface  #delay specified # of seconds
+  ;;
+    *) ifCfg $iface
+       ifUp "''|y|yes|1|true" &  #only if AUTOSTART missing,yes, or true
+  esac
 done
