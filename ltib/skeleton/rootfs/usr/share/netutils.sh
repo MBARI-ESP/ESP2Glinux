@@ -407,12 +407,14 @@ autostart() {
 ifUp()
 #returns true iff interface $IFNAME successfully brought up
 #$1 is optional regex of allowed $AUTOSTART values
+#$2 is optional # of seconds to delay beforehand
 {
   [ "$IFNAME" ] || {
     echo "Network interface to start was not specified" >&2
     return 102
   }
   autostart $1 || return
+  [ "$2" ] && sleep $2
   hasIP $IFNAME && return
   local fn=/var/run/*$IFNAME.pid
   local pidfns=`echo $fn`

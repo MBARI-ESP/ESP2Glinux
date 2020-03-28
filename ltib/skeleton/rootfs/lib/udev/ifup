@@ -13,7 +13,6 @@ lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
     exec echo -n "${2:+$2 }$1 " >>$lockFn
   exec 7<&-       #release lock.  Did not need to defer ifup.  ifup now!
 }
-auto="''|y|yes|1|true"  #if AUTOSTART missing,yes, or true
-([ "$2" ] && sleep "$2"; exec ifup "$1" $auto) &
+ifup "$1" "''|y|yes|1|true" $2 &  #if AUTOSTART missing,yes, or true
 
 #catchup command starts interfaces listed in ifup.pending

@@ -4,7 +4,7 @@
 #
 usage() {
   cat <<END >&2
-usage:  ifup [netInterface] {mode}
+usage:  ifup [netInterface] {mode} {delay}
         configure and enable the specified network interface
         only bring up IFNAME if its AUTOSTART mode matches regex {mode}
         or Yes or No if the mode parameter is omitted
@@ -14,7 +14,9 @@ END
 
 . /usr/share/netutils.sh
 
-case "$1" in
+iface=$1
+shift
+case "$iface" in
   "")  #take the interface definitions from the environment
     [ "${IFNAME}" ] || usage
   ;;
@@ -22,9 +24,8 @@ case "$1" in
     usage
   ;;
   *) #anything else must be the name of an interface
-    ifCfg $1
+    ifCfg $iface
 esac
 
 [ "$IFNAME" ] || usage
-ifUp $2
-
+ifUp "$@"
