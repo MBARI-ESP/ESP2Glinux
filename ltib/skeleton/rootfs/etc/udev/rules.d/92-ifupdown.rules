@@ -18,7 +18,7 @@ ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
 
 #uBlox SARA-R4 (after 8 second delay)
 ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
-  SYMLINK+="AT/saraR4", GROUP="root", RUN+="ifup saraR4 8"
+  SYMLINK+="AT/saraR4", GROUP="root", RUN+="ifup saraR4 4"
 
 #Iridium Satphone Handset
 ENV{ID_MODEL}=="Iridium_*_Handset", ENV{ID_IFACE}=="00",\
