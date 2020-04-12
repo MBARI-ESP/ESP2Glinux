@@ -1,0 +1,4 @@
+. $syscfg/inetppp.sh
+IFALIAS=saraR4  #uBlox sara-R4xx USB Cat M1 modem
+IFNAME=ppp88
+modemTTY="/dev/ttyUSB0 115200 local"

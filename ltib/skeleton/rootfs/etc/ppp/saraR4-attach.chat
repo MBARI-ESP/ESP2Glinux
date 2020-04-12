@@ -1,17 +1,25 @@
 # Connect to the uBlox SARA R410M modem
 #  APN environment variable should be set appropriately
 #
-TIMEOUT 10
+TIMEOUT 5
 ABORT "ERROR"
 
-#turn echo off and define PDP context
-"" ATE0
-#OK AT+CGDCONT=1,"IP","$APN"
-#log signal strength and shutdown modem
+#get modem's attention [in case +UPSV=4]
+"" " \pATZE0"
+#log signal strenth and shutdown modem
 OK AT+CSQ;+CFUN=0
+
+#hang up, enable flow control, hang up on loss of DTR
+OK ATHQ0&S0&D2&K3
+#override profile to disable serial shutdown and radio deep sleep
+#OK AT+UPSV=0;+CPSMS=0
+#or, to Enable serial shutdown and radio deep sleep
+#OK AT+UPSV=4;+CPSMS=1
+
+#define PDP context (otherwise, use context in profile)
+#OK AT+CGDCONT=1,"IP","$APN"
 #SARA R410M must "dial" within 5 seconds of restarting!
-OK \dAT+CFUN=1
-OK ATZQ0&S0H
+OK AT+CFUN=1
 
 ABORT "NO CARRIER"
 ABORT "NO DIALTONE"
@@ -21,7 +29,7 @@ ABORT "DELAYED"
 ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
-# Log signal strength, connect with the PDP Context definition above.
-TIMEOUT 20
+# Connect with the PDP Context definition above.
+TIMEOUT 30
 OK ATD*99***1#
-CONNECT \p\c
+CONNECT \c
