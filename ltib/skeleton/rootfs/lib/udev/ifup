@@ -9,8 +9,12 @@ export PATH=/usr/sbin:/sbin:/usr/bin:/bin
 lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
   exec 7<$lockFn  #acquire lock
-  flock -x 7 && [ -e $lockFn ] &&  #got lock, so defer ifup
-    exec echo -n "${2:+$2 }$1 " >>$lockFn
+  flock -x 7 && [ -e $lockFn ] && { #got lock, so defer ifup
+    [ "$2" ] || exec echo -n "$1 " >>$lockFn  #no start delay
+    IFS=. read now idle </proc/uptime  #uptime in secs
+    let "start=now+$2"  #interface's deferred start time
+    exec echo -n "$start $1 " >>$lockFn
+  }
   exec 7<&-       #release lock.  Did not need to defer ifup.  ifup now!
 }
 ifup "$1" "''|y|yes|1|true" $2 &  #if AUTOSTART missing,yes, or true

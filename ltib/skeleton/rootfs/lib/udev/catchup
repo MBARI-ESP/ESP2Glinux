@@ -20,7 +20,8 @@ exec 7<&-
 delay=
 for iface in $ifNames; do
   case $iface in
-    [0-9]*) delay=$iface
+    [0-9]*) IFS=. read now idle </proc/uptime  #uptime in secs
+            let "iface>now" && let "delay=iface-now"
   ;;
     *) ifCfg $iface
        ifUp "''|y|yes|1|true" $delay &  #only if AUTOSTART missing,yes, or true
