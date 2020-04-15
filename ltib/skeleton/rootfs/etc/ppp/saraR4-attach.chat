@@ -4,9 +4,8 @@
 TIMEOUT 5
 ABORT "ERROR"
 
-#get modem's attention [in case +UPSV=4]
-"" " \pATZE0"
-#log signal strenth and shutdown modem
+"" \rATZE0
+#log signal quality and shutdown modem
 OK AT+CSQ;+CFUN=0
 
 #hang up, enable flow control, hang up on loss of DTR
@@ -18,7 +17,7 @@ OK ATHQ0&S0&D2&K3
 
 #define PDP context (otherwise, use context in profile)
 #OK AT+CGDCONT=1,"IP","$APN"
-#SARA R410M must "dial" within 5 seconds of restarting!
+#SARA R410M must "dial" within 5 seconds of setting CFUN=1
 OK AT+CFUN=1
 
 ABORT "NO CARRIER"
@@ -29,7 +28,7 @@ ABORT "DELAYED"
 ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
-# Connect with the PDP Context definition above.
+# Connect with the PDP Context definition above
 TIMEOUT 30
 OK ATD*99***1#
 CONNECT \c

@@ -1,1 +1,7 @@
-#placeholder disconnect chat script for uBlox R410M
+#assumes DTR has been deasserted to exit data mode
+#(saraR4 does not respond to +++ command escape)
+#get modem's attention [in case +UPSV=4] and hang up
+TIMEOUT 3
+HANGUP OFF
+"" \s\p\rATH
+OK-\s\p\rATH-OK
