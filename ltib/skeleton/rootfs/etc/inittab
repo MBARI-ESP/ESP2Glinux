@@ -42,7 +42,7 @@ net:12345:respawn:/usr/sbin/inetd -f
 #vpn:12345:respawn:/bin/sh -c "sleep 300; exec /usr/sbin/inadyn"
 
 # Keep ssh tunnel to MBARI up
-tun:12345:respawn:/usr/sbin/tunnel2shore
+#tun:12345:respawn:/usr/sbin/tunnel2shore
 
 # keep an espclient up on ttyS3
 #esp:3:respawn:/sbin/getty -L 9600 -nl /etc/esp/client ttyS3
