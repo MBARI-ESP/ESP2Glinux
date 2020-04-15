@@ -1,7 +1,8 @@
 #assumes DTR has been deasserted to exit data mode
 #(saraR4 does not respond to +++ command escape)
 #get modem's attention [in case +UPSV=4] and hang up
-TIMEOUT 3
+#put the SARA-R4 into Airplane mode
 HANGUP OFF
-"" \s\p\rATH
-OK-\s\p\rATH-OK
+TIMEOUT 3
+"" \s\p\rAT+CFUN=4
+OK-\s\p\rAT+CFUN=4-OK

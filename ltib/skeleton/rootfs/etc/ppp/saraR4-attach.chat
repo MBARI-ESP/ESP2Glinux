@@ -6,7 +6,7 @@ ABORT "ERROR"
 
 "" \rATZE0
 #log signal quality and shutdown modem
-OK AT+CSQ;+CFUN=0
+#OK AT+CSQ;+CFUN=0
 
 #hang up, enable flow control, hang up on loss of DTR
 OK ATHQ0&S0&D2&K3
