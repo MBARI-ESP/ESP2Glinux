@@ -9,7 +9,7 @@ ABORT "ERROR"
 #OK AT+CSQ;+CFUN=0
 
 #hang up, enable flow control, hang up on loss of DTR
-OK ATHQ0&S0&D2&K3
+OK ATQ0&S0&D2&K3
 #override profile to disable serial shutdown and radio deep sleep
 #OK AT+UPSV=0;+CPSMS=0
 #or, to Enable serial shutdown and radio deep sleep

@@ -9,12 +9,12 @@ ipparam attm2m
 modem
 crtscts
 
-# SARAR4 crashes often and does not seem to recognize when a link is broken
+# uBlox SaraR4 on AT&T seems to recover after link has been broken for hours
+lcp-echo-interval 0
 lcp-echo-failure 3
-lcp-echo-interval 180
 
 connect "APN=m2m64.com.attz exec /etc/ppp/connect $ATTACH"
-disconnect "tcflush; /usr/sbin/chat -vEf /etc/ppp/$ATTACH-detach.chat"
+disconnect "sleep 1; tcflush; /usr/sbin/chat -vEf /etc/ppp/$ATTACH-detach.chat"
 
 # Add the PPP interface as the default route to the IP routing table.
 defaultroute
@@ -23,22 +23,22 @@ defaultroute
 persist
 holdoff 15
 #
-# Advises PPPD to request any DHCP address, none in particular.
+# Advises PPPD to request any address, none in particular.
 noipdefault
 #
-# Advises PPPD to use the DNS provided by DHCP.
+# Advises PPPD to use the networks suggested DNS
 usepeerdns
 
 #
-# Allows the PPPD daemon to accept DHCP assigned IPs.
+# Allows the PPPD daemon to accept network assigned addresses
 :10.64.64.152
 ipcp-accept-local
 ipcp-accept-remote
 
-#do not require remote system to authenticate itself
+#do not require AT&T to authenticate itself
 noauth
 
-#ATT does not support any of these extensions
+#AT&T does not support any of these extensions
 nobsdcomp
 nodeflate
 novj

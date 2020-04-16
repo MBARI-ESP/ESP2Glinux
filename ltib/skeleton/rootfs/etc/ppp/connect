@@ -35,7 +35,7 @@ exit 1
 cd `dirname $0` || exit 2
 
 until tcflush; /usr/sbin/chat -vEf $cellular-detach.chat; do
-  logger -t$tag -pwarn "Modem will not detach"
+  logger -t$tag -pwarn "$cellular modem will not detach"
   resetDelay=$resetHoldOff
   [ $resetDelay -lt 0 ] && resetDelay=$((-($resetDelay)))
   now=`date +%s`

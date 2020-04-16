@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 1/26/20 brent@mbari.org
+# -- revised: 4/15/20 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -376,7 +376,7 @@ ifDown() {
       esac
       for try in ${KILLSIGS-1 KILL}; do
         kill -$signal $daemon 2>/dev/null  #relinquish any lease
-        t=${KILLSECS-7}
+        t=${KILLSECS-9}
         while let --t; do  #wait for daemon to die
           sleep 1
           kill -0 $daemon 2>/dev/null || break 2
