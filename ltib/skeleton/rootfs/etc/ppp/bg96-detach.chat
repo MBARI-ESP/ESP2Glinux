@@ -1,0 +1,8 @@
+# Quectel BG96 PPP Detach Script
+#
+TIMEOUT 5
+
+#return to command mode, detach any GPRS call
+"" \d\p\p+++\d\p\pATH
+#reset modem if detach fails
+OK-\rAT+CFUN=1,1-OK

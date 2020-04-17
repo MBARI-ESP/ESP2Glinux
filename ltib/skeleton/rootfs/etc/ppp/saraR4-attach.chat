@@ -11,7 +11,7 @@ ABORT "ERROR"
 #hang up, enable flow control, hang up on loss of DTR
 OK ATQ0&S0&D2&K3
 #override profile to disable serial shutdown and radio deep sleep
-#OK AT+UPSV=0;+CPSMS=0
+OK AT+UPSV=0;+CPSMS=0
 #or, to Enable serial shutdown and radio deep sleep
 #OK AT+UPSV=4;+CPSMS=1
 

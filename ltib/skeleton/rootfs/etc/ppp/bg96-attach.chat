@@ -1,15 +1,20 @@
-# Connect to the Qantec BG96 modem
+# Connect to the Quectel BG96 modem
 #  APN environment variable should be set appropriately
 #
-TIMEOUT 10
+TIMEOUT 5
 ABORT "ERROR"
 
-#turn echo off and define PDP context
-"" ATE0
-# Log signal strength, connect with the PDP Context definition
-#OK AT+CGDCONT=1,"IP","$APN"
-#log signal strength and shutdown modem
-OK AT+CSQ
+#return to factory defaults, echo off
+"" \pAT&FE0
+
+#hang up on loss of DTR
+OK ATQ0&S0&D2
+
+#define PDP context (otherwise, use context in profile)
+OK AT+CGDCONT=1,"IP","$APN"
+
+#get out of airplane mode and log signal strength
+OK AT+CFUN=1;+CSQ
 
 ABORT "NO CARRIER"
 ABORT "NO DIALTONE"
@@ -19,6 +24,7 @@ ABORT "DELAYED"
 ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
-TIMEOUT 20
-OK ATD*99#
-CONNECT \p\c
+# Connect with the PDP Context definition above
+TIMEOUT 30
+OK ATD*99***1#
+CONNECT \c
