@@ -16,7 +16,7 @@ OK ATQ0&S0&D2&K3
 #OK AT+UPSV=4;+CPSMS=1
 
 #define PDP context (otherwise, use context in profile)
-#OK AT+CGDCONT=1,"IP","$APN"
+OK AT+CGDCONT=1,"IP","$APN"
 #SARA R410M must "dial" within 5 seconds of setting CFUN=1
 OK AT+CFUN=1
 

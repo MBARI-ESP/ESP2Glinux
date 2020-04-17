@@ -1,6 +1,6 @@
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
-ENV{DEVPATH}=="/devices/virtual/*", GOTO="notTTYIf"
+ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
 
 ACTION=="add", RUN+="ifup %E{INTERFACE}"
 ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
@@ -16,19 +16,19 @@ ACTION!="add", GOTO="updownEND"
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
   SYMLINK+="AT/bg96", GROUP="root", RUN+="ifup bg96"
 
-#Iridium Satphone Handset
-ENV{ID_MODEL}=="Iridium_*_Handset", ENV{ID_IFACE}=="00",\
-  SYMLINK+="AT/iridium", GROUP="root", RUN+="ifup iridium"
-
 #delay SARA-R4 ifup by a few seconds
 ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
   SYMLINK+="AT/saraR4", GROUP="root", RUN+="ifup saraR4 14"
 
-GOTO="updownEND"
+#Iridium Satphone Handset
+ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
+  SYMLINK+="AT/iridium", GROUP="root", RUN+="ifup iridium"
+
+ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
 
 #cycle USB power whenever the SARA-R4 modem fireware crashes
 ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2",\
-  ATTRS{product}=="*USB__BULK", RUN+="/usr/sbin/resetUSB", GOTO="notTTYIf"
+  ATTRS{product}=="*USB__BULK", RUN+="/usr/sbin/resetUSB"
 
 LABEL="updownEND"
