@@ -1,0 +1,16 @@
+#!/bin/sh
+act=$1
+: ${updates:=${KLIB-missingKLIB}/lib/modules/*/updates}
+[ "$act" ] || {
+  cat >&2 <<END
+Take specified action on original versions of updates -- 4/20/20 brent@mbari.org
+First arg is action to take on original versions of under
+ $(echo $updates)
+Optional remaining args are passed to find {default: -name '*.ko'}
+END
+  exit 2
+}
+shift
+[ "$*" ] || set -- -name '*.ko'
+cd $updates &&
+find "$@" -exec $act ../kernel/{} \;

@@ -1,0 +1,26 @@
+#!/bin/sh
+#  configure backports 3.14 for ltibarm kernel
+# -- 4/20/20 brent@mbari.org
+#
+: ${kernel=3.14.30}
+: ${backported:=backported-$kernel}
+: ${overlay:=overlay-$kernel}
+: ${linux:=linux-$kernel}
+: ${tag:=v3.14.22-1}
+: ${backports:=backports-$tag}
+[ -d $backports ] || git clone --branch $tag --single-branch \
+ https://git.kernel.org/pub/scm/linux/kernel/git/backports/backports.git \
+ $backports || exit
+[ -d $linux ] || {
+  [ -r $linux.tar.xz ] || 
+    wget https://kernel.org/pub/linux/kernel/v3.0/$linux.tar.xz || exit
+  tar axf $linux.tar.xz || exit
+}
+start=`pwd` &&
+cd $backports && 
+gentree.py --clean ../$linux ../$backported
+cd $start/$backported &&
+cp -a $start/$overlay/. . &&
+make oldconfig &&
+make -C kconf mconf &&
+echo Build ltibarm kernel sources and rootfs image, then arminstall

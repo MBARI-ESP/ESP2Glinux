@@ -1,0 +1,75 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/include/asm/atomic.h linux-2.6.33.modified/arch/arm/include/asm/atomic.h
+--- linux-2.6.33/arch/arm/include/asm/atomic.h	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/arch/arm/include/asm/atomic.h	2020-04-18 23:17:06.904481778 -0700
+@@ -236,5 +236,6 @@
+ #define smp_mb__after_atomic_inc()	smp_mb()
+ 
+ #include <asm-generic/atomic-long.h>
++
+ #endif
+ #endif
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/arch/arm/mach-lpc313x/include/mach/registers.h linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/registers.h
+--- linux-2.6.33/arch/arm/mach-lpc313x/include/mach/registers.h	2020-04-20 21:24:51.249273550 -0700
++++ linux-2.6.33.modified/arch/arm/mach-lpc313x/include/mach/registers.h	2020-04-18 21:08:54.907050827 -0700
+@@ -317,7 +317,7 @@
+ 
+ #define GPIO_OUT_LOW(port, pin)  do { GPIO_M1_SET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
+ #define GPIO_OUT_HIGH(port, pin) do { GPIO_M1_SET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
+-#define GPIO_IN(port, pin)       do { GPIO_M1_RESET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
++#define GPIO_INP(port, pin)      do { GPIO_M1_RESET(port) = pin; GPIO_M0_RESET(port) = pin;} while(0)
+ #define GPIO_DRV_IP(port, pin)   do { GPIO_M1_RESET(port) = pin; GPIO_M0_SET(port) = pin;} while(0)
+ 
+ #define IOCONF_EBI_MCI       (0x000)
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/usb/serial/option.c linux-2.6.33.modified/drivers/usb/serial/option.c
+--- linux-2.6.33/drivers/usb/serial/option.c	2020-04-20 21:24:51.269273504 -0700
++++ linux-2.6.33.modified/drivers/usb/serial/option.c	2020-04-19 22:03:12.145055944 -0700
+@@ -1,5 +1,5 @@
+ /*
+-  USB Driver for GSM modems -- updated 10/23/19 brent@mbari.org
++  USB Driver for GSM modems -- updated 4/19/20 brent@mbari.org
+ 
+   Copyright (C) 2005  Matthias Urlichs <smurf@smurf.noris.de>
+ 
+@@ -166,6 +166,7 @@
+ #define HUAWEI_PRODUCT_E143E			0x143E
+ #define HUAWEI_PRODUCT_E143F			0x143F
+ #define HUAWEI_PRODUCT_E14AC			0x14AC
++#define HUAWEI_PRODUCT_E1506			0x1506
+ 
+ #define QUANTA_VENDOR_ID			0x0408
+ #define QUANTA_PRODUCT_Q101			0xEA02
+@@ -691,6 +692,7 @@
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143E, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143F, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E14AC) },
++	{ USB_DEVICE(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E1506) },  //added E3272h 4/19/20 brent@mbari.org
+ 	{ USB_DEVICE(AMOI_VENDOR_ID, AMOI_PRODUCT_9508) },
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V640) }, /* Novatel Merlin V640/XV620 */
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V620) }, /* Novatel Merlin V620/S620 */
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/lib/Kconfig linux-2.6.33.modified/lib/Kconfig
+--- linux-2.6.33/lib/Kconfig	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/lib/Kconfig	2020-04-18 22:53:09.814632926 -0700
+@@ -202,7 +202,9 @@
+ # Generic 64-bit atomic support is selected if needed
+ #
+ config GENERIC_ATOMIC64
+-       bool
++	depends on !(CPU_V6 || CPU_V7)
++	bool "Generic Atomic 64-bit operations"
++        default n
+ 
+ config LRU_CACHE
+ 	tristate
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/lib/atomic64.c linux-2.6.33.modified/lib/atomic64.c
+--- linux-2.6.33/lib/atomic64.c	2010-02-24 10:52:17.000000000 -0800
++++ linux-2.6.33.modified/lib/atomic64.c	2020-04-18 23:19:11.624179371 -0700
+@@ -14,7 +14,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+-#include <asm/atomic.h>
++#include <asm-generic/atomic64.h>
+ 
+ /*
+  * We use a hashed array of spinlocks to provide exclusive access

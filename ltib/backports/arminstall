@@ -1,0 +1,31 @@
+#!/bin/sh
+#  Build backported kernel modules for updating ltibarm kernel
+#  Binaries from mod-init-tools 
+#    should already be installed in ~/linux/ltib/bin
+#    (configure and make in ltib/rpm/BUILD/mod-init-tools-3.* to generate these)
+#
+#  install all modules in /lib/modules/*/updates directory
+#  Many wireless devices require firmware which can be simply copied 
+#  from desktop linux into /lib/firmware (see also the firmware directory here)
+# -- 4/20/20 brent@mbari.org
+#
+: ${backported:=backported-3.*}
+: ${ltib:=~/ltib}
+: ${root:=$ltib/rootfs.tmp} &&
+: ${KLIB_BUILD:=$ltib/rpm/BUILD/linux}
+: ${KLIB:=`eval echo $root/lib/modules/2.6.3*`}
+: ${kmodPath:="KMODPATH_ARG=\"INSTALL_MOD_PATH=$root\""} &&
+
+[ -d $KLIB_BUILD -a -d $KLIB ] || {
+  echo "-->  You must first prep and build the ltib kernel with cmds below <--"
+  echo "$ cd $ltib"
+  echo "$ ltib -p kernel -m prep
+  echo "$ ltib -p kernel -m scbuild
+  echo "$ ltib"
+  exit 2
+}
+start=`pwd` &&
+cd $backported &&
+ltibMake -j4 $kmodPath INSTALL_MOD_STRIP=1 modules_install &&
+$start/updatedOriginal 'rm -f'
+
