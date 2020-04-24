@@ -1,8 +1,10 @@
 #!/bin/sh
-# unpack & patch wpa_supplicant daemon for arm-linux -- 3/27/20 brent@mbari.org
+# unpack & patch wpa_supplicant daemon for arm-linux -- 4/24/20 brent@mbari.org
 
 : ${wpa_supplicant:=wpa_supplicant-2.5}
 rm -rf $wpa_supplicant && 
 tar xzf $wpa_supplicant.tar.gz && 
+#sed -i 's/-O2/-Os/g' `find -name Makefile` &&
 cat $wpa_supplicant.patch | (cd $wpa_supplicant && patch -p1) && 
+cp buildConfig wpa_supplicant-2.5/wpa_supplicant/.config &&
 echo Done.

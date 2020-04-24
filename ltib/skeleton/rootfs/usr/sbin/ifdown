@@ -34,7 +34,7 @@ case "$1" in
   "")  #take the interface definitions from the environment
     [ "${IFNAME}" ] || usage
 ;;
-  -*|*/*)  #any flag is a request for help
+  -*)  #any flag is a request for help
     usage
 ;;
   *) #anything else must be the name of an interface

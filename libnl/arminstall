@@ -1,0 +1,22 @@
+#!/bin/sh
+# build & install libnl for arm-linux
+# -- 4/24/20 brent@mbari.org
+
+: ${libnl:=libnl3_2_21}
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${TARGETTOP:=${2-$HOSTTOP/usr/lib}}
+: ${CC:=$ARMGCC/bin/gcc}
+
+echo "Installing libnl in $HOSTTOP"
+cd ${libnl} || exit
+make -j4 &&
+cd lib/.libs/
+for so in libnl-3.so* libnl-genl-3.so*; do
+  if [ -h $so ]; then
+    cp -a $so $TARGETTOP
+  else
+    $ARMSTRIP -o $TARGETTOP/$so $so
+  fi
+done && echo "Done."

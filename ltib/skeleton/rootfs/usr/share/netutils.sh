@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/15/20 brent@mbari.org
+# -- revised: 4/23/20 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -9,7 +9,7 @@ ifCfg() {
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
   unset NETWORK GATEWAY MTU AUTOSTART IFALIAS
   unset KILLSECS KILLSIGS
-  IFNAME="$1"
+  IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
   }
@@ -25,7 +25,7 @@ ifCfg() {
   ifDetach() {
     :  #invoked at end of ifDown
   }
-  cfg=$syscfg/ifcfg-$IFNAME
+  cfg=$syscfg/`dirname "$1"`/ifcfg-$IFNAME
   [ -r $cfg ] || cfg=$syscfg/if-default
   . $cfg
 }
@@ -371,7 +371,7 @@ ifDown() {
     local daemon=`head -n1 $pidfn 2>/dev/null`
     [ "$daemon" ] && {
       case $pidfn in
-        *dhcp*-*) signal=HUP ;;
+        *dhcpc*-*) signal=HUP ;;
         *) signal=TERM ;;
       esac
       for try in ${KILLSIGS-1 KILL}; do

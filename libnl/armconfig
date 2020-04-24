@@ -1,0 +1,19 @@
+#!/bin/bash
+# unpack & configure libnl build for arm-linux -- 4/24/20 brent@mbari.org
+: ${libnl:=libnl3_2_21}
+: ${tag:=$libnl}
+: ${HOST:=arm-none-linux-gnueabi}
+: ${KINC=/home/brent/ltibLinux/include}
+if [ -d $libnl ]; then
+  cd $libnl
+  git clean -dfxe configure -e build-aux -e "**/*.in" -e m4
+else
+ git clone --branch $tag --single-branch git@github.com:tgraf/libnl.git $libnl&&
+ cd $libnl
+fi || exit
+[ -x configure ] || autogen.sh &&
+[ -e $KINC/asm ] || ln -s asm-generic $KINC/asm &&
+configure --host=$HOST KBUILDPATH=$KINC CFLAGS=-Os CPPFLAGS=-I$KINC &&
+make config.status &&
+all Makefile -- sed -i 's/bison -y/bison -yWnone/g' &&
+echo "Now, run arminstall"

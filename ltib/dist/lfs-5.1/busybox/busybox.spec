@@ -17,6 +17,7 @@ Patch5          : busybox-1.11.2-msh-alias-1.patch
 Patch6          : busybox-1.11.2-makefile-implicit-rules.patch
 Patch7          : busybox-1.11.2-mbari-1.patch
 Patch8          : busybox-1.11.2-dhcpc-maxlease.patch
+Patch9          : busybox-1.11.2-mbari-2.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -32,6 +33,7 @@ Prefix          : %{pfx}
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch9 -p1
 
 %Build
 PKG_BUSYBOX_PRECONFIG=${PKG_BUSYBOX_PRECONFIG:-busybox.config}
@@ -93,6 +95,8 @@ rm -rf $RPM_BUILD_ROOT
 %{pfx}/*
 
 %changelog
+* Thu Apr 23 2020 Brent Roman <brent@mbari.org>
+- vi no longer crashes if one has no previous regular expression
 * Thu Apr 28 2011 Brent Roman <brent@mbari.org>
 - added --maxlease option to dhcpcd and made it handle aliased interfaces
 * Thu Jul 21 2005 Stuart Hughes <stuarth@freescale.com>
