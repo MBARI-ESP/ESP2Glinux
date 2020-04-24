@@ -1,0 +1,29 @@
+#Act as an WiFi access point
+. $syscfg/if-default
+IFALIAS=AP/WiFi
+IFNAME=wlan0
+BOOTPROTO=static
+IPADDR=192.168.234.1
+NETMASK=255.255.255.0
+
+ifPrep() {
+  iwconfig $IFNAME power off  #turn off power saving mode for reduced latency
+  : ignore errors from iwconfig
+}
+
+ifDetach() {
+  iptables -t nat -F
+}
+
+ifPost() {
+  wpa=wpa_supplicant
+  mkdir -p /var/run/$wpa
+  cd /etc/sysconfig/AP
+  udhcpd udhcpd-$IFNAME.conf
+  $wpa -Bi $IFNAME -P/var/run/wpa-$IFNAME.pid -c$wpa.conf -e/var/tmp/wpa.rand
+  mv /var/run/udhcpd.pid /var/run/udhcpd-$IFNAME.pid
+  ifDetach
+  outIf=`topIf` && extIP=`netIfIP $outIf` &&
+  iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
+}
+
