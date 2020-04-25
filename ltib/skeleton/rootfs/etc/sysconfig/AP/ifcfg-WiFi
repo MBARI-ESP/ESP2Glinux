@@ -13,16 +13,20 @@ ifPrep() {
 
 ifDetach() {
   iptables -t nat -F
+  rm -f /var/run/wpa-$IFNAME.conf
 }
 
 ifPost() {
-  wpa=wpa_supplicant
-  mkdir -p /var/run/$wpa
-  cd /etc/sysconfig/AP
-  udhcpd udhcpd-$IFNAME.conf
-  $wpa -Bi $IFNAME -P/var/run/wpa-$IFNAME.pid -c$wpa.conf -e/var/tmp/wpa.rand
-  mv /var/run/udhcpd.pid /var/run/udhcpd-$IFNAME.pid
   ifDetach
+  wpa=wpa_supplicant
+  mkdir -p /var/run/$wpa /card/tftp
+  cd /etc/sysconfig/AP
+  dnsmasq -C dnsmasq-$IFNAME.conf
+  runIF=/var/run/wpa-$IFNAME
+  >$runIF.conf
+  chmod og-rw $runIF.conf
+  sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf 
+  $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
   outIf=`topIf` && extIP=`netIfIP $outIf` &&
   iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
 }
