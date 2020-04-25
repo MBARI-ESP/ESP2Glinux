@@ -19,7 +19,7 @@ ifDetach() {
 ifPost() {
   ifDetach
   wpa=wpa_supplicant
-  mkdir -p /var/run/$wpa /card/tftp
+  mkdir -p /var/run/$wpa
   cd /etc/sysconfig/AP
   dnsmasq -C dnsmasq-$IFNAME.conf
   runIF=/var/run/wpa-$IFNAME

@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/23/20 brent@mbari.org
+# -- revised: 4/25/20 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -209,6 +209,9 @@ hostsUp() {
     echo "$(netIfIP $(topIf)) $(hostname)"
     cat /var/run/*.hosts
   } >/etc/hosts 2>/dev/null
+  #signal main dnsmasq instance to reread /etc/hosts
+  local masqPID=`cat /var/run/dnsmasq.pid 2>/dev/null` && [ "$masqPID" ] &&
+    kill -HUP "$masqPID"
   :
 }
 
