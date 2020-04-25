@@ -6,14 +6,12 @@
 : ${KINC=/home/brent/ltibLinux/include}
 if [ -d $libnl ]; then
   cd $libnl
-  git clean -dfxe configure -e build-aux -e "**/*.in" -e m4
+  git clean -dfxe configure -e build-aux -e m4 -e "**/*.in" -e "**/*.m4"
 else
  git clone --branch $tag --single-branch git@github.com:tgraf/libnl.git $libnl&&
  cd $libnl
 fi || exit
 [ -x configure ] || autogen.sh &&
 [ -e $KINC/asm ] || ln -s asm-generic $KINC/asm &&
-configure --host=$HOST KBUILDPATH=$KINC CFLAGS=-Os CPPFLAGS=-I$KINC &&
-make config.status &&
-all Makefile -- sed -i 's/bison -y/bison -yWnone/g' &&
+configure --host=$HOST YACC="bison -yWnone" CFLAGS=-Os CPPFLAGS=-I$KINC &&
 echo "Now, run arminstall"
