@@ -1,9 +1,19 @@
 #!/bin/sh
-# unpack & patch openssh for arm-linux -- 6/14/16 brent@mbari.org
+# unpack & patch openssh for arm-linux -- 4/26/20 brent@mbari.org
 
 : ${openssh:=openssh-7.2p2}
+: ${LTIB=~/ltib}
+rootssl=$LTIB/rootfs/usr/include/openssl
+ssl=$(realpath `dirname $0`/openssl)
+[ -e "$rootssl" ] || {
+  [ -d "$ssl" ] || {
+    echo "Missing $ssl include file directory"
+    exit 9
+  }
+  ln -s $ssl $rootssl
+} &&
 rm -rf $openssh && 
 tar xzf $openssh.tar.gz &&
 cd $openssh &&
-ltibConfigure --without-openssl
+ltibConfigure --without-openssl &&
 echo Done.

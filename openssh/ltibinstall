@@ -1,6 +1,6 @@
 #!/bin/sh
 # build & install stfp-server from openssh for arm-linux
-#  -- 6/14/16 brent@mbari.org
+#  -- 4/26/20 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -11,10 +11,10 @@ echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
 cd openssh-7.2p2 &&
-ltibMake -j9 sftp-server || exit 1
-mkdir -p $TOP || exit 4
+ltibMake -j9 sftp-server &&
+mkdir -p $TOP &&
 for prog in sftp-server; do
   $ARMSTRIP $prog -o $TOP/$prog &&
-  chmod +x $TOP/$prog || exit 3
-done
+  chmod +x $TOP/$prog || exit
+done &&
 echo "Done."

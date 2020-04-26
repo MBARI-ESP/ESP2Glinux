@@ -6,7 +6,7 @@ IMAGE=${2-$LTIB/rootfs.tmp}
 export LTIB IMAGE
 [ -z "$1" -o "$1" = "/" ] && {
   cat <<EOS >&2
-Create new ltib root filesystem  -- 12/15/19 brent@mbari.org
+Create new ltib root filesystem  -- 4/25/20 brent@mbari.org
 Usage:
   `basename $0` newRootDir  {templateDir}
 templateDir defaults to $IMAGE
@@ -57,6 +57,7 @@ echo Changing ownership of $1 to root and finalizing image
 : ${tftpdir:=/tftp}
 sudo sh <<END
   rm -rf $1/dev && mkdir $1/dev && cp $here/dev.tgz $1/dev/.dev.tgz &&
+  rm -f $1/usr/lib/*{.bak,_orig} &&
   chown -Rh root:root $1 &&
   #seed with (just) needed dev entries
   tar -xzf $here/dev.tgz --numeric-owner -C $1/dev && (cd $1/etc &&

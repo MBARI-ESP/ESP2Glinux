@@ -7,16 +7,18 @@
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${HOSTTOP:=${1-$HOME/armHost}}
 : ${TARGETTOP:=${2-$HOSTTOP/usr/lib}}
+: ${LTIB:=${3-~/ltib}}
 : ${CC:=$ARMGCC/bin/gcc}
 
 echo "Installing libnl in $HOSTTOP"
 cd ${libnl} || exit
 make -j4 &&
-cd lib/.libs/
+cd lib/.libs/ &&
+cp -a *.so* *.a $LTIB/rootfs/usr/lib &&
 for so in libnl-3.so* libnl-genl-3.so*; do
   if [ -h $so ]; then
     cp -a $so $TARGETTOP
   else
-    $ARMSTRIP -o $TARGETTOP/$so $so
-  fi
+    $ARMSTRIP --strip-unneeded -o $TARGETTOP/$so $so
+  fi || exit
 done && echo "Done."

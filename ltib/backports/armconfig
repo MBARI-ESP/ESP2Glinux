@@ -1,6 +1,6 @@
 #!/bin/sh
 #  configure backports 3.14 for ltibarm kernel
-# -- 4/20/20 brent@mbari.org
+# -- 4/25/20 brent@mbari.org
 #
 : ${kernel=3.14.30}
 : ${backported:=backported-$kernel}
@@ -16,6 +16,10 @@
     wget https://kernel.org/pub/linux/kernel/v3.0/$linux.tar.xz || exit
   tar axf $linux.tar.xz || exit
 }
+: ${ltib:=~/ltib}
+: ${KLIB:=$ltib/rootfs.tmp}
+: ${KLIB_BUILD:=$ltib/rpm/BUILD/linux}
+export KLIB KLIB_BUILD
 start=`pwd` &&
 cd $backports && 
 gentree.py --clean ../$linux ../$backported

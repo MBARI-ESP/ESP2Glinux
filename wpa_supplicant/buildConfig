@@ -38,7 +38,7 @@ CONFIG_DRIVER_NL80211=y
 # you may need to point hostapd to your version of libnl.
 #
 #CFLAGS += -I$<path to libnl include files>
-LIBS += -L$(HOME)/ltib/rootfs.tmp/usr/lib
+LIBS += -L$(HOME)/ltib/rootfs/usr/lib
 
 # Use libnl v2.0 (or 3.0) libraries.
 #CONFIG_LIBNL20=y

@@ -1,5 +1,6 @@
 #!/bin/bash
 # unpack & configure libnl build for arm-linux -- 4/24/20 brent@mbari.org
+
 : ${libnl:=libnl3_2_21}
 : ${tag:=$libnl}
 : ${HOST:=arm-none-linux-gnueabi}
@@ -14,4 +15,5 @@ fi || exit
 [ -x configure ] || autogen.sh &&
 [ -e $KINC/asm ] || ln -s asm-generic $KINC/asm &&
 configure --host=$HOST YACC="bison -yWnone" CFLAGS=-Os CPPFLAGS=-I$KINC &&
+cp -a include/netlink $LTIB/rootfs/usr/include &&
 echo "Now, run arminstall"

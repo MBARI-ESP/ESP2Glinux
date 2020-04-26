@@ -1,0 +1,14 @@
+#!/bin/sh
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+[ "$1" ] || {
+cat >&2 <<END
+Huawei modems in their "stick" mode need AT commands to connect
+First argument is the path to the modem's AT command port
+2nd optional argument is delay in seconds
+Assumes that the first profile is appropriately configured
+ typically:  AT+CGDCONT=1,"IP","APN"
+END
+exit 2
+}
+( [ "$2" ] && sleep $2; echo "AT^NDISDUP=1,1" >$1 ) &
+

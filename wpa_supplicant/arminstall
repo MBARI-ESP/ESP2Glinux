@@ -13,6 +13,6 @@ cd wpa_supplicant-2.5/wpa_supplicant &&
 make -j4 CC=$CC || exit 1
 mkdir -p $TOP || exit 4
 for prog in wpa_supplicant wpa_cli wpa_passphrase; do
-  $ARMSTRIP $prog -o $TOP/$prog || exit 3
+  $ARMSTRIP $prog -o $TOP/$prog || exit
 done
 echo "Done."
