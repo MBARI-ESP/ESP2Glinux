@@ -1,6 +1,6 @@
 #!/bin/sh
 # build & install dnsmasq from openwrt to arm-linux
-# -- 12/4/18 brent@mbari.org
+# -- 4/20/18 brent@mbari.org
 
 : ${gitTop:=~/git}
 : ${dnsmasqTop:=$gitTop/dnsmasq}
@@ -14,6 +14,6 @@ make clean &&
 make CC=$HOST-gcc COPTS=-DNO_INOTIFY &&
 $HOST-strip -o $HOSTTOP/usr/sbin/dnsmasq src/dnsmasq &&
 cd $here &&
-cp dnsmasq.conf $HOSTTOP/etc &&
+[ -e $HOSTTOP/etc/dnsmasq.conf ] || cp dnsmasq.conf $HOSTTOP/etc &&
 cp dnsmasq $HOSTTOP/etc/rc.d/init.d &&
 echo "Done."
