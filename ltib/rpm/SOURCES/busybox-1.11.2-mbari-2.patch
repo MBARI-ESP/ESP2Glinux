@@ -1,0 +1,45 @@
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/editors/vi.c busybox-1.11.2.modified/editors/vi.c
+--- busybox-1.11.2/editors/vi.c	2008-07-11 13:22:20.000000000 -0700
++++ busybox-1.11.2.modified/editors/vi.c	2020-04-24 01:08:43.569071390 -0700
+@@ -4,6 +4,7 @@
+  * Copyright (C) 2000, 2001 Sterling Huxley <sterling@europa.com>
+  *
+  * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
++ * Revised:  4/23/20 brent@mbari.org -- removed NULL ptr deref on missing previous regex
+  */
+ 
+ /*
+@@ -3311,6 +3312,10 @@
+ 		buf[1] = '\0';
+ 		q = get_input_line(buf);	// get input line- use "status line"
+ 		if (q[0] && !q[1]) {
++			if (last_search_pattern == 0) {
++        		msg = "No previous regular expression";
++        		goto dc2;
++			}
+ 			if (last_search_pattern[0])
+ 			    last_search_pattern[0] = c;
+ 			goto dc3; // if no pat re-use old pat
+@@ -3342,10 +3347,6 @@
+ 			do_cmd(c);
+ 		}				// repeat cnt
+  dc3:
+-		if (last_search_pattern == 0) {
+-			msg = "No previous regular expression";
+-			goto dc2;
+-		}
+ 		if (last_search_pattern[0] == '/') {
+ 			dir = FORWARD;	// assume FORWARD search
+ 			p = dot + 1;
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/libbb/messages.c busybox-1.11.2.modified/libbb/messages.c
+--- busybox-1.11.2/libbb/messages.c	2020-04-24 01:28:35.359885291 -0700
++++ busybox-1.11.2.modified/libbb/messages.c	2020-04-23 18:16:47.726632867 -0700
+@@ -7,7 +7,7 @@
+ 
+ #include "libbb.h"
+ 
+-#define BB_EXTRA_VERSION "mbari-1"  //brent@mbari.org  4/28/11
++#define BB_EXTRA_VERSION "mbari-2"  //brent@mbari.org  4/23/20
+ 
+ /* allow default system PATH to be extended via CFLAGS */
+ #ifndef BB_ADDITIONAL_PATH
