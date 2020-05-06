@@ -1,0 +1,98 @@
+Binary files linux-2.6.33/arch/arm/boot/compressed/piggy.gzip and linux-2.6.33.modified/arch/arm/boot/compressed/piggy.gzip differ
+diff --exclude CVS --exclude .git -uNr linux-2.6.33/drivers/serial/8250.c linux-2.6.33.modified/drivers/serial/8250.c
+--- linux-2.6.33/drivers/serial/8250.c	2020-05-05 20:41:48.554965491 -0700
++++ linux-2.6.33.modified/drivers/serial/8250.c	2020-05-05 20:39:24.188531892 -0700
+@@ -2022,10 +2022,10 @@
+ 	}
+ 
+ 	if (up->port.type == PORT_XR16788) {
+-		//RXTRG and TXRTG registers to determine fifo trigger points
+-		serial_outp(up, 11,  40);  //RX interrupt when fifo has >=40 bytes
+-		serial_outp(up, 10,  14);  //refill TX fifo when <14 bytes remain
+-		serial_outp(up,  8,0xCC);  //+/- 12 byte auto-RTS hysterisis
++		//RXTRG and TXRTG registers determine fifo trigger points
++		serial_outp(up, 10,  24);  //refill TX fifo when <24 bytes remain
++		serial_outp(up, 11,  28);  //RX interrupt when fifo has >=28 bytes
++		serial_outp(up,  8,0xC6);  //+/- 24 byte auto-RTS hysterisis
+ 	}
+ 	/*
+ 	 * For a XR16C850, we need to set the trigger levels
+@@ -2382,8 +2382,7 @@
+      */
+         serial_outp(up, 9,   //xr16788 EFR register
+           termios->c_cflag & CRTSCTS ? UART_EFR_CTS|UART_EFR_RTS : 0);
+-    }else{
+-	  if (up->capabilities & UART_CAP_EFR) {
++    }else if (up->capabilities & UART_CAP_EFR) {
+ 		  unsigned char efr = 0;
+ 		  /*
+ 		   * TI16C752/Startech hardware flow control.  FIXME:
+@@ -2395,8 +2394,6 @@
+ 
+ 		  serial_outp(up, UART_LCR, 0xBF);
+ 		  serial_outp(up, UART_EFR, efr);
+-	  }
+-
+ #ifdef CONFIG_ARCH_OMAP
+ 	  /* Workaround to enable 115200 baud on OMAP1510 internal ports */
+ 	  if (cpu_is_omap1510() && is_omap_port(up)) {
+@@ -2406,10 +2403,10 @@
+ 		  } else
+ 			  serial_out(up, UART_OMAP_OSC_12M_SEL, 0);
+ 	  }
+- #endif
++#endif
++	}
+ 
+-        }
+-        if (up->capabilities & UART_NATSEMI) {
++    if (up->capabilities & UART_NATSEMI) {
+ 		/* Switch to bank 2 not bank 1, to avoid resetting EXCR2 */
+ 		serial_outp(up, UART_LCR, 0xe0);
+ 	} else {
+@@ -2642,6 +2639,35 @@
+ 	return uart_config[type].name;
+ }
+ 
++
++#if 0  //for testing auto RTS handshaking
++static int serial8250_ioctl(struct uart_port *port,
++		    unsigned int cmd, unsigned long arg)
++{
++	struct uart_8250_port *up = (struct uart_8250_port *)port;
++	switch (cmd) {
++		case 0x5480:	/* enable/disable Rx interrupt, return FIFO level */
++        	switch(arg) {
++            	case 0:
++					up->ier &= ~(UART_IER_RLSI | UART_IER_RDI);
++					up->port.read_status_mask &= ~UART_LSR_DR;
++					serial_out(up, UART_IER, up->ier);
++					return 0;
++                case 1:
++					up->ier |= UART_IER_RLSI | UART_IER_RDI;
++					up->port.read_status_mask |= UART_LSR_DR;
++					serial_out(up, UART_IER, up->ier);
++                    return 0;
++                default:  //return the Rx FIFO level
++    				if (up->port.type == PORT_XR16788)
++    					return serial_inp(up, 11);
++			}
++	}
++    return -ENOIOCTLCMD;
++}
++#endif
++
++
+ static struct uart_ops serial8250_pops = {
+ 	.tx_empty	= serial8250_tx_empty,
+ 	.set_mctrl	= serial8250_set_mctrl,
+@@ -2664,6 +2690,9 @@
+ 	.poll_get_char = serial8250_get_poll_char,
+ 	.poll_put_char = serial8250_put_poll_char,
+ #endif
++#if 0
++	.ioctl		= serial8250_ioctl
++#endif
+ };
+ 
+ static struct uart_8250_port serial8250_ports[UART_NR];
