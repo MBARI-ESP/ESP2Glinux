@@ -1,3 +1,4 @@
 #!/bin/sh
 export SHELL=/bin/sh
-exec $SHELL -l "$@"
+[ -t 0 ] || exec $SHELL -l "$@"
+exec $SHELL -li "$@"
