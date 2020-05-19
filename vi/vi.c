@@ -102,6 +102,8 @@ typedef signed char smallint;
 
 #endif
 
+#include <limits.h>
+
 /* the CRASHME code is unmaintained, and doesn't currently build */
 #define ENABLE_FEATURE_VI_CRASHME 0
 
@@ -2852,11 +2854,11 @@ static void screen_erase(void)
 
 static size_t escapesIn(const char *s)
 //return the number unprintable characters in s
-//simply assumes that any ESC prefixes 3 more unprinted characters
+//simply assumes that any ESC begins SOlen unprinted characters
 {
 	size_t escaped = 0;
 	while(*(s = strchrnul(s, *SOs))) {
-		size_t escSeqLen = strnlen(s, SOlen);  //string terminated just after ESC?!
+		size_t escSeqLen = strnlen(s, SOlen);  //string ends just after ESC?!
 		escaped += escSeqLen;
 		s += escSeqLen;
 	}
@@ -2868,7 +2870,7 @@ static const char *scompare(const char *s, const char *ref)
 {
 	while(*s && *s == *ref)
 		s++, ref++;
-	return *s ? s : NULL;
+	return *s == *ref ? NULL : s;
 }
 
 //----- Draw the status line at bottom of the screen -------------
@@ -2883,7 +2885,9 @@ static void show_status_line(void)
 	if (changed) {
 		size_t unchanged = changed - buffer;
     	strcpy(displayed_buffer+unchanged, changed);
-		place_cursor(rows - 1, unchanged, FALSE);	// put cursor on status line
+    	//place cursor on correct column if line begins with standout text
+		place_cursor(rows - 1,	// put cursor on status line
+			*buffer==*SOs ? unchanged - SOlen : unchanged, FALSE);
 		clear_to_eol();
 		size_t escapes = escapesIn(buffer);
 		if (unchanged && escapes) { //need to start in stand-out mode
@@ -2905,9 +2909,9 @@ static void show_status_line(void)
 		}
 		write1(buffer);  //this leaves cursor correctly placed for LINE_INPUT
 		if (!(cmd_mode & CMODE_LINE_INPUT))
-			place_cursor(crow, ccol, TRUE);
+			place_cursor(crow, ccol, TRUE); //otherwise, replace it in text area
 	}else if (cmd_mode & CMODE_LINE_INPUT)  //in case status area was correct
-		place_cursor(rows-1, strlen(buffer), FALSE);
+		place_cursor(rows-1, strlen(buffer), FALSE);  //put cursor at its end
 	else  //put cursor back in text area
 		place_cursor(crow, ccol, TRUE);
 	fflush(stdout);
@@ -3227,17 +3231,12 @@ re0:
 //----- Execute a Vi Command -----------------------------------
 static void do_cmd(char c)
 {
-	const char *msg = msg; // for compiler
+	const char *msg;
 	char c1, *p, *q, *save_dot;
 	char buf[12];
-	int dir = dir; // for compiler
-	int cnt, i, j;
+	int dir, cnt, i, j;
 
-//	c1 = c; // quiet the compiler
-//	cnt = yf = 0; // quiet the compiler
-//	msg = p = q = save_dot = buf; // quiet the compiler
-	memset(buf, '\0', 12);
-
+again:
 	/* if this is a cursor key, skip these checks */
 	switch (c) {
 		case VI_K_UP:
@@ -3349,7 +3348,7 @@ static void do_cmd(char c)
 		break;
 	case 7:		{	// ctrl-G  show current status
 			int flen = format_edit_status();
-			if (flen >= 0 && flen < STATUS_BUFFER_LEN - 20)
+			if (flen >= 0 && flen < STATUS_BUFFER_LEN - 30)
 				sprintf(status_buffer+flen, " col %d", offset+ccol+1);
 		}
 		break;
@@ -3357,20 +3356,17 @@ static void do_cmd(char c)
 	case VI_K_LEFT:	// cursor key Left
 	case 8:		// ctrl-H- move left    (This may be ERASE char)
 	case 0x7f:	// DEL- move left   (This may be ERASE char)
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_left();
+repeat:
+		if (cmdcnt-- > 1)
+			goto again;
 		break;
 	case 10:			// Newline ^J
 	case 'j':			// j- goto next line, same col
 	case VI_K_DOWN:	// cursor key Down
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_next();		// go to next B-o-l
 		dot = move_to_col(dot, ccol + offset);	// try stay in same col
-		break;
+		goto repeat;
 	case 12:			// ctrl-L  force redraw whole screen
 	case 18:			// ctrl-R  force redraw
 		place_cursor(0, 0, FALSE);	// put cursor in correct place
@@ -3381,12 +3377,9 @@ static void do_cmd(char c)
 		break;
 	case 13:			// Carriage Return ^M
 	case '+':			// +- goto next line
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_next();
 		dot_skip_over_ws();
-		break;
+		goto repeat;
 	case 21:			// ctrl-U  scroll up   half screen
 		dot_scroll((rows - 2) / 2, -1);
 		break;
@@ -3402,11 +3395,8 @@ static void do_cmd(char c)
 	case ' ':			// move right
 	case 'l':			// move right
 	case VI_K_RIGHT:	// Cursor Key Right
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_right();
-		break;
+		goto repeat;
 #if ENABLE_FEATURE_VI_YANKMARK
 	case '"':			// "- name a register to use for Delete/Yank
 		c1 = get_one_char();
@@ -3492,11 +3482,8 @@ static void do_cmd(char c)
 #endif /* FEATURE_VI_YANKMARK */
 	case '$':			// $- goto end of line
 	case VI_K_END:		// Cursor Key End
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot = end_line(dot);
-		break;
+		goto repeat;
 	case '%':			// %- find matching char of pair () [] {}
 		for (q = dot; q < end && *q != '\n'; q++) {
 			if (strchr("()[]{}", *q) != NULL) {
@@ -3520,9 +3507,6 @@ static void do_cmd(char c)
 		//
 		//**** fall through to ... ';'
 	case ';':			// ;- look at rest of line for last forward char
-		if (cmdcnt-- > 1) {
-			do_cmd(';');
-		}				// repeat cnt
 		if (last_forward_char == 0)
 			break;
 		q = dot + 1;
@@ -3531,11 +3515,8 @@ static void do_cmd(char c)
 		}
 		if (*q == last_forward_char)
 			dot = q;
-		break;
+		c = ';'; goto repeat;
 	case ',':           // repeat latest 'f' in opposite direction
-		if (cmdcnt-- > 1) {
-			do_cmd(',');
-		}                               // repeat cnt
 		if (last_forward_char == 0)
 			break;
 		q = dot - 1;
@@ -3544,15 +3525,12 @@ static void do_cmd(char c)
 		}
 		if (q >= text && *q == last_forward_char)
 			dot = q;
-		break;
+		c = ','; goto repeat;
 
 	case '-':			// -- goto prev line
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_prev();
 		dot_skip_over_ws();
-		break;
+		goto repeat;
 #if ENABLE_FEATURE_VI_DOT_CMD
 	case '.':			// .- repeat the last modifying command
 		// Stuff the last_modifying_cmd back into stdin
@@ -3569,60 +3547,38 @@ static void do_cmd(char c)
 		buf[0] = c;
 		buf[1] = '\0';
 		q = get_input_line(buf);	// get input line- use "status line"
-		if (q[0] && !q[1]) {
-			if (!last_search_pattern) {
-dc0:
-        		msg = "No previous regular expression";
-        		goto dc2;
-			}
-			if (last_search_pattern[0])
-			    last_search_pattern[0] = c;
-			goto dc3; // if no pat re-use old pat
-		}
-		if (q[0]) {       // strlen(q) > 1: new pat- save it and find
-			// there is a new pat
+		if (!*q)
+			break;	// bail out if user erased the entire pattern
+		if (q[1]) { // strlen(q) > 1: new pat- save it and find
 			free(last_search_pattern);
 			last_search_pattern = xstrdup(q);
-			goto dc3;	// now find the pattern
-		}
-		// user changed mind and erased the "/"-  do nothing
-		break;
-	case 'N':			// N- backward search for last pattern
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
-		dir = BACK;		// assume BACKWARD search
-		p = dot - 1;
-		if (!last_search_pattern)
-			goto dc0;
-		if (last_search_pattern[0] == '?') {
-			dir = FORWARD;
-			p = dot + 1;
-		}
-		goto dc4;		// now search for pattern
-	case 'n':			// n- repeat search for last pattern
+		    goto findNormal;	// new pattern determines search direction
+		}  //Reuse pattern. If c=='?', search in direction opposite pattern's
+		if (c == '/')
+			goto findNormal;
+		c = 'N';
+	case 'N':		 // N- repeat search in opposite direction of last pattern
+		dir = BACK;  //BACK here means "opposite" pattern's spec'd direction
+		goto findPattern;
+
+findNormal:
+		c = 'n';
+	case 'n':		// n- repeat search for last pattern in "normal" direction
 		// search rest of text[] starting at next char
 		// if search fails return orignal "p" not the "p+1" address
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
-dc3:
-		if (!last_search_pattern)
-			goto dc0;
-		if (last_search_pattern[0] == '/') {
-			dir = FORWARD;	// assume FORWARD search
-			p = dot + 1;
-		}
-		if (last_search_pattern[0] == '?') {
-			dir = BACK;
-			p = dot - 1;
-		}
-dc4:
+		dir = FORWARD; //in pattern's spec'd direction
+findPattern:
+		if (!last_search_pattern) {
+			msg = "No previous regular expression";
+			goto dc2;
+		}  //derive absolute search direction from that relative to pattern's
+		if (*last_search_pattern == '?')
+			dir = -dir;  //relies on FORWARD/BACK being 1/-1, respectively
+		p = dot + dir;
 		q = char_search(p, last_search_pattern + 1, dir, FULL);
 		if (q != NULL) {
 			dot = q;	// good search, update "dot"
-			msg = "";
-			goto dc2;
+			goto repeat;
 		}
 		// no pattern found between "dot" and "end"- continue at top
 		p = text;
@@ -3633,15 +3589,12 @@ dc4:
 		if (q != NULL) {	// found something
 			dot = q;	// found new pattern- goto it
 			msg = "search hit BOTTOM, continuing at TOP";
-			if (dir == BACK) {
+			if (dir == BACK)
 				msg = "search hit TOP, continuing at BOTTOM";
-			}
-		} else {
+		} else
 			msg = "Pattern not found";
-		}
 dc2:
-		if (*msg)
-			status_line_bold("%s", msg);
+		status_line_bold("%s", msg);
 		break;
 	case '{':			// {- move backward paragraph
 		q = char_search(dot, "\n\n", BACK, FULL);
@@ -3669,7 +3622,16 @@ dc2:
 		if (c == '0' && cmdcnt < 1) {
 			dot_begin();	// this was a standalone zero
 		} else {
+			int flen = format_edit_status();
+			if (cmdcnt >= INT_MAX/10) {
+				cmdcnt = 0;
+				status_line_bold("Repeat Count OVERFLOW");
+				return;
+			}
 			cmdcnt = cmdcnt * 10 + (c - '0');	// this 0 is part of a number
+			if (cmdcnt != 1 && flen >= 0 && flen < STATUS_BUFFER_LEN - 55)
+				sprintf(status_buffer+flen, " col %d {%d times}",
+						offset+ccol+1, cmdcnt);
 		}
 		break;
 	case ':':			// :- the colon mode commands
@@ -3759,9 +3721,6 @@ dc2:
 	case 'B':			// B- back a blank-delimited Word
 	case 'E':			// E- end of a blank-delimited word
 	case 'W':			// W- forward a blank-delimited word
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dir = FORWARD;
 		if (c == 'B')
 			dir = BACK;
@@ -3771,7 +3730,7 @@ dc2:
 		}
 		if (c != 'W')
 			dot = skip_thing(dot, 1, dir, S_BEFORE_WS);
-		break;
+		goto repeat;
 	case 'C':			// C- Change to e-o-l
 	case 'D':			// D- delete to e-o-l
 		save_dot = dot;
@@ -3821,13 +3780,10 @@ dc2:
 		//**** fall through to ... 'i'
 	case 'i':			// i- insert before current char
 	case VI_K_INSERT:	// Cursor Key Insert
- dc_i:
+dc_i:
 		cmd_mode = CMODE_INSERT;	// start insrting
 		break;
 	case 'J':			// J- join current and next lines together
-		if (cmdcnt-- > 2) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_end();		// move to NL
 		if (dot < end - 1) {	// make sure not last char in text[]
 			*dot++ = ' ';	// replace NL with space
@@ -3837,6 +3793,8 @@ dc2:
 			}
 		}
 		end_cmd_q();	// stop adding to q
+		if (cmdcnt-- > 2)
+			goto again;
 		break;
 	case 'L':			// L- goto bottom line on screen
 		dot = end_screen();
@@ -3870,7 +3828,7 @@ dc2:
 		goto dc_i;
 		break;
 	case 'R':			// R- continuous Replace char
- dc5:
+dc5:
 		cmd_mode = CMODE_REPLACE;
 		break;
 	case VI_K_DELETE:
@@ -3879,9 +3837,6 @@ dc2:
 	case 'X':			// X- delete char before dot
 	case 'x':			// x- delete the current char
 	case 's':			// s- substitute the current char
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dir = 0;
 		if (c == 'X')
 			dir = -1;
@@ -3893,7 +3848,7 @@ dc2:
 		if (c == 's')
 			goto dc_i;	// start insrting
 		end_cmd_q();	// stop adding to q
-		break;
+		goto repeat;
 	case 'Z':			// Z- if modified, {write}; exit
 		// ZZ means to save file (if necessary), then exit
 		c1 = get_one_char();
@@ -3923,9 +3878,6 @@ dc2:
 		break;
 	case 'b':			// b- back a word
 	case 'e':			// e- end of word
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dir = FORWARD;
 		if (c == 'b')
 			dir = BACK;
@@ -3940,7 +3892,7 @@ dc2:
 		} else if (ispunct(*dot)) {
 			dot = skip_thing(dot, 1, dir, S_END_PUNCT);
 		}
-		break;
+		goto repeat;
 	case 'c':			// c- change something
 	case 'd':			// d- delete something
 #if ENABLE_FEATURE_VI_YANKMARK
@@ -4024,12 +3976,9 @@ dc2:
 		break;
 	case 'k':			// k- goto prev line, same col
 	case VI_K_UP:		// cursor key Up
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		dot_prev();
 		dot = move_to_col(dot, ccol + offset);	// try stay in same col
-		break;
+		goto repeat;
 	case 'r':			// r- replace the current char with user input
 		c1 = get_one_char();	// get the replacement char
 		if (*dot != '\n') {
@@ -4046,9 +3995,6 @@ dc2:
 		last_forward_char= 0;
 		break;
 	case 'w':			// w- forward a word
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		if (isalnum(*dot) || *dot == '_') {	// we are on ALNUM
 			dot = skip_thing(dot, 1, FORWARD, S_END_ALNUM);
 		} else if (ispunct(*dot)) {	// we are on PUNCT
@@ -4059,7 +4005,7 @@ dc2:
 		if (isspace(*dot)) {
 			dot = skip_thing(dot, 2, FORWARD, S_OVER_WS);
 		}
-		break;
+		goto repeat;
 	case 'z':			// z-
 		c1 = get_one_char();	// get the replacement char
 		cnt = 0;
@@ -4074,9 +4020,6 @@ dc2:
 		dot = move_to_col(dot, cmdcnt - 1);	// try to move to column
 		break;
 	case '~':			// ~- flip the case of letters   a-z -> A-Z
-		if (cmdcnt-- > 1) {
-			do_cmd(c);
-		}				// repeat cnt
 		if (islower(*dot)) {
 			*dot = toupper(*dot);
 			file_modified++;
@@ -4086,7 +4029,7 @@ dc2:
 		}
 		dot_right();
 		end_cmd_q();	// stop adding to q
-		break;
+		goto repeat;
 		//----- The Cursor and Function Keys -----------------------------
 	case VI_K_HOME:	// Cursor Key Home
 		dot_begin();
@@ -4107,7 +4050,7 @@ dc2:
 		break;
 	}
 
- dc1:
+dc1:
 	// if text[] just became empty, add back an empty line
 	if (end == text) {
 		char_insert(text, '\n');	// start empty buf with dummy line
