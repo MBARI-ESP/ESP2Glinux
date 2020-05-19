@@ -128,9 +128,9 @@ typedef signed char smallint;
 #endif
 
 #if ENABLE_FEATURE_VI_READONLY
-#define EDIT_STATUS		"%s %s%s%s line %d/%d %d%%"
+#define EDIT_STATUS		"%s: %s%s%s line %d/%d %d%%"
 #else
-#define EDIT_STATUS		"%s %s%s line %d/%d %d%%"
+#define EDIT_STATUS		"%s: %s%s line %d/%d %d%%"
 #endif
 
 enum {
@@ -3612,7 +3612,8 @@ dc2:
 				return;
 			}
 			cmdcnt = cmdcnt * 10 + (c - '0');	// this 0 is part of a number
-			format_edit_status(EDIT_STATUS " col %d {%d times}");
+			if (cmdcnt!=1)
+			  format_edit_status(EDIT_STATUS " col %d {%d times}");
 		}
 		break;
 	case ':':			// :- the colon mode commands
