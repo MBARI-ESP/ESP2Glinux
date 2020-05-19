@@ -127,6 +127,11 @@ typedef signed char smallint;
 
 #endif
 
+#if ENABLE_FEATURE_VI_READONLY
+#define EDIT_STATUS		"%s %s%s%s line %d/%d %d%%"
+#else
+#define EDIT_STATUS		"%s %s%s line %d/%d %d%%"
+#endif
 
 enum {
 	MAX_TABSTOP = 32, // sanity limit
@@ -439,7 +444,7 @@ static void show_status_line(void);	// put a message on the bottom line
 static void status_line(const char *, ...);     // print to status buf
 static void status_line_bold(const char *, ...);
 static void not_implemented(const char *); // display "Not implemented" message
-static int format_edit_status(void);	// format file status on status line
+static int format_edit_status(const char *fmt); //file status on status line
 static void redraw(int);	// force a full screen refresh
 static char* format_line(char* /*, int*/);
 static void refresh(int);	// update the terminal from screen[]
@@ -2852,19 +2857,6 @@ static void screen_erase(void)
 	memset(screen, ' ', screensize);	// clear new screen
 }
 
-static size_t escapesIn(const char *s)
-//return the number unprintable characters in s
-//simply assumes that any ESC begins SOlen unprinted characters
-{
-	size_t escaped = 0;
-	while(*(s = strchrnul(s, *SOs))) {
-		size_t escSeqLen = strnlen(s, SOlen);  //string ends just after ESC?!
-		escaped += escSeqLen;
-		s += escSeqLen;
-	}
-	return escaped;
-}
-
 static const char *scompare(const char *s, const char *ref)
 // why isn't this in the ANSI 'C' library?
 {
@@ -2880,16 +2872,16 @@ static void show_status_line(void)
 	// create one.
 	const char *buffer = status_buffer;
 	if (!*buffer)
-	  format_edit_status();
+	  format_edit_status(EDIT_STATUS);
 	const char *changed = scompare(buffer, displayed_buffer);
 	if (changed) {
 		size_t unchanged = changed - buffer;
     	strcpy(displayed_buffer+unchanged, changed);
     	//place cursor on correct column if line begins with standout text
+		size_t escapes = *buffer == *SOs ? 2*SOlen : 0;
 		place_cursor(rows - 1,	// put cursor on status line
-			*buffer==*SOs ? unchanged - SOlen : unchanged, FALSE);
+			escapes ? unchanged - SOlen : unchanged, FALSE);
 		clear_to_eol();
-		size_t escapes = escapesIn(buffer);
 		if (unchanged && escapes) { //need to start in stand-out mode
 			unsigned count = SOlen;
 			do  //NOTE:  this assumes entire status text was in stand-out mode
@@ -2986,7 +2978,7 @@ static void not_implemented(const char *s)
 }
 
 // show file status on status line
-static int format_edit_status(void)
+static int format_edit_status(const char *fmt)
 {
 #define tot format_edit_status__tot
 
@@ -3022,19 +3014,14 @@ static int format_edit_status(void)
 	trunc_at = columns < STATUS_BUFFER_LEN-1 ?
 		columns : STATUS_BUFFER_LEN-1;
 
-	ret = snprintf(status_buffer, trunc_at+1,
-#if ENABLE_FEATURE_VI_READONLY
-		"%s -- \"%s\"%s%s %d/%d %d%%",
-#else
-		"%s -- \"%s\"%s %d/%d %d%%",
-#endif
+	ret = snprintf(status_buffer, trunc_at+1, fmt,
 		cmd_mode_indicator[cmd_mode & CMODES],
 		(current_filename != NULL ? current_filename : "No file"),
 #if ENABLE_FEATURE_VI_READONLY
 		(readonly_mode ? " [Readonly]" : ""),
 #endif
 		(file_modified ? " [Modified]" : ""),
-		cur, tot, percent);
+		cur, tot, percent, offset+ccol+1, cmdcnt);
 
 	if (ret >= 0 && ret < trunc_at)
 		return ret;  /* it all fit */
@@ -3346,11 +3333,8 @@ again:
 	case VI_K_PAGEDOWN:	// Cursor Key Page Down
 		dot_scroll(rows - 2, 1);
 		break;
-	case 7:		{	// ctrl-G  show current status
-			int flen = format_edit_status();
-			if (flen >= 0 && flen < STATUS_BUFFER_LEN - 30)
-				sprintf(status_buffer+flen, " col %d", offset+ccol+1);
-		}
+	case 7:			// ctrl-G  show current status
+		format_edit_status(EDIT_STATUS " col %d");
 		break;
 	case 'h':			// h- move left
 	case VI_K_LEFT:	// cursor key Left
@@ -3622,16 +3606,13 @@ dc2:
 		if (c == '0' && cmdcnt < 1) {
 			dot_begin();	// this was a standalone zero
 		} else {
-			int flen = format_edit_status();
 			if (cmdcnt >= INT_MAX/10) {
 				cmdcnt = 0;
 				status_line_bold("Repeat Count OVERFLOW");
 				return;
 			}
 			cmdcnt = cmdcnt * 10 + (c - '0');	// this 0 is part of a number
-			if (cmdcnt != 1 && flen >= 0 && flen < STATUS_BUFFER_LEN - 55)
-				sprintf(status_buffer+flen, " col %d {%d times}",
-						offset+ccol+1, cmdcnt);
+			format_edit_status(EDIT_STATUS " col %d {%d times}");
 		}
 		break;
 	case ':':			// :- the colon mode commands
