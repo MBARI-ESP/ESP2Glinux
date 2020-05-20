@@ -3010,20 +3010,15 @@ static void show_status_line(void)
 		size_t escapes = *buffer == *SOs ? 2*SOlen : 0;
 		place_cursor(rows - 1,	// put cursor on status line
 			escapes ? unchanged - SOlen : unchanged, FALSE);
-		clear_to_eol();
-		if (unchanged && escapes) { //need to start in stand-out mode
-			unsigned count = SOlen;
-			do  //NOTE:  this assumes entire status text was in stand-out mode
-				putchar(*buffer++);
-			while(--count);
-		}
+		clear_to_eol(); //NOTE: assumes entire status text was in stand-out mode
+		if (unchanged && escapes)   //need to start in stand-out mode
+			fwrite(buffer, SOlen, 1, stdout);
 		size_t len = unchanged + strlen(buffer=changed);
 		if (len - escapes > columns) {
 			const char *limit = status_buffer + columns;
 			if (escapes)
 				limit += SOlen;
-			while(buffer<limit)
-				putchar(*buffer++);
+			fwrite(buffer, limit-buffer, 1, stdout);
 			buffer = status_buffer + len;
 			if (escapes && len > 2*SOlen) //end w/restore to normal ESC sequence
 				buffer-=SOlen;
