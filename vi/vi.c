@@ -3290,7 +3290,7 @@ static void refresh(void)
 		if (cs < 0) cs = 0;
 		if (ce > columns - 1) ce = columns - 1;
 		if (cs > ce) { cs = 0; ce = columns - 1; }
-		// is there a change between vitual screen and out_buf
+		// is there a change between virtual screen and out_buf
 		if (changed) {
 			// copy changed part of buffer to virtual screen
 			memcpy(sp+cs, out_buf+cs, ce-cs+1);
