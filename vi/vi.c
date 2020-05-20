@@ -491,6 +491,8 @@ static int crashme = 0;
 #endif
 
 #ifdef STANDALONE
+  struct globals G;
+
 void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
@@ -528,26 +530,28 @@ void *xrealloc(void *old, size_t size)
 	exit(68);
 }
 
+# if ENABLE_FEATURE_VI_WIN_RESIZE
+void clampTermSize(void)
+{
+	if (rows < 1)
+		rows = 1;
+	else if (rows > MAX_SCR_ROWS)
+		rows = MAX_SCR_ROWS;
+	if (columns < 1)
+		columns = 1;
+	else if (columns > MAX_SCR_COLS)
+		columns = MAX_SCR_COLS;
+}
+
 void get_terminal_width_height(int fd, unsigned *width, unsigned *height)
 {
 	struct winsize win = { 0, 0, 0, 0 };
-	if (ioctl(fd, TIOCGWINSZ, &win) != 0) {
-		win.ws_row = 24;
-		win.ws_col = 80;
-	}
-	if (win.ws_row <= 1) {
-		win.ws_row = 24;
-	}
-	if (win.ws_col <= 1) {
-		win.ws_col = 80;
-	}
-	if (height) {
-		*height = (int) win.ws_row;
-	}
-	if (width) {
-		*width = (int) win.ws_col;
+	if (ioctl(fd, TIOCGWINSZ, &win)) {
+		win.ws_row = rows;
+		win.ws_col = columns;
 	}
 }
+# endif
 
 /* Find out if the last character of a string matches the one given.
  * Don't underrun the buffer if the string length is 0.
@@ -640,8 +644,6 @@ ssize_t full_write(int fd, const void *buf, size_t len)
 
 	return total;
 }
-
-  struct globals G;
 #endif
 
 static void write1(const char *out)
@@ -662,6 +664,19 @@ int vi_main(int argc, char **argv)
 	int c;
 
 	INIT_G();
+	rows = 24;
+	columns = 80;
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+	{  //try to get terminal dimensions from environment
+		char *txt = getenv("LINES");
+		if (txt)
+			rows = atoi(txt);
+		txt = getenv("COLUMNS");
+		if (txt)
+			columns = atoi(txt);
+		clampTermSize();
+	}
+#endif
 
 #if ENABLE_FEATURE_VI_USE_SIGNALS || ENABLE_FEATURE_VI_CRASHME
 	my_pid = getpid();
@@ -691,7 +706,7 @@ int vi_main(int argc, char **argv)
 			initial_cmds[0] = xstrndup(p, MAX_INPUT_LEN);
 	}
 #endif
-	while ((c = getopt(argc, argv, "hCRH" USE_FEATURE_VI_COLON("c:"))) != -1) {
+	while ((c = getopt(argc, argv, "hCRH-" USE_FEATURE_VI_COLON("c:"))) != -1) {
 		switch (c) {
 #if ENABLE_FEATURE_VI_CRASHME
 		case 'C':
@@ -710,6 +725,7 @@ int vi_main(int argc, char **argv)
 			break;
 #endif
 		case 'H':
+		case '-':
 			show_help();
 			/* fall through */
 		default:
@@ -781,13 +797,10 @@ static void edit_file(char *fn)
 
 	editing = 1;	// 0 = exit, 1 = one file, 2 = multiple files
 	rawmode();
-	rows = 24;
-	columns = 80;
-	if (ENABLE_FEATURE_VI_WIN_RESIZE) {
-		get_terminal_width_height(0, &columns, &rows);
-		if (rows > MAX_SCR_ROWS) rows = MAX_SCR_ROWS;
-		if (columns > MAX_SCR_COLS) columns = MAX_SCR_COLS;
-	}
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+	get_terminal_width_height(0, &columns, &rows);
+	clampTermSize();
+#endif
 	new_screen(rows, columns);	// get memory for virtual screen
 	init_text_buffer(fn);
 
@@ -2395,11 +2408,10 @@ static void cookmode(void)
 static void winch_sig(int sig ATTRIBUTE_UNUSED)
 {
 	// FIXME: do it in main loop!!!
-	if (ENABLE_FEATURE_VI_WIN_RESIZE) {
-		get_terminal_width_height(0, &columns, &rows);
-		if (rows > MAX_SCR_ROWS) rows = MAX_SCR_ROWS;
-		if (columns > MAX_SCR_COLS) columns = MAX_SCR_COLS;
-	}
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+	get_terminal_width_height(0, &columns, &rows);
+	clampTermSize();
+#endif
 	new_screen(rows, columns);	// get memory for virtual screen
 	redraw(TRUE);		// re-draw the screen
 }
@@ -3107,13 +3119,12 @@ static void refresh(int full_screen)
 	int li, changed;
 	char *tp, *sp;		// pointer into text[] and screen[]
 
-	if (ENABLE_FEATURE_VI_WIN_RESIZE) {
-		unsigned c = columns, r = rows;
-		get_terminal_width_height(0, &columns, &rows);
-		if (rows > MAX_SCR_ROWS) rows = MAX_SCR_ROWS;
-		if (columns > MAX_SCR_COLS) columns = MAX_SCR_COLS;
-		full_screen |= (c - columns) | (r - rows);
-	}
+#if 0 && ENABLE_FEATURE_VI_WIN_RESIZE
+	unsigned c = columns, r = rows;
+	get_terminal_width_height(0, &columns, &rows);
+	clampTermSize();
+	full_screen |= (c - columns) | (r - rows);
+#endif
 	sync_cursor(dot, &crow, &ccol);	// where cursor will be (on "dot")
 	tp = screenbegin;	// index into text[] of top line
 
