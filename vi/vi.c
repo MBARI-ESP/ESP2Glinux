@@ -79,6 +79,8 @@
 #define ARRAY_SIZE(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
 
 #define INIT_G()
+struct globals G;
+
 typedef signed char smallint;
 
 #define bb_show_usage()
@@ -179,6 +181,10 @@ static const char Ceol[] ALIGN1 = "\033[0K";
 static const char Ceos[] ALIGN1 = "\033[0J";
 /* Cursor motion arbitrary destination ESC sequence */
 static const char CMrc[] ALIGN1 = "\033[%d;%dH";
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+/* Report cursor positon */
+static const char CPreport[] ALIGN1 = "\033[6n";
+#endif
 #ifdef ENABLE_FEATURE_VI_OPTIMIZE_CURSOR
 /* Cursor motion up and down ESC sequence */
 static const char CMup[] ALIGN1 = "\033[A";
@@ -466,6 +472,8 @@ static void colon(char *);	// execute the "colon" mode cmds
 static void winch_sig(int);	// catch window size changes
 static void suspend_sig(int);	// catch ctrl-Z
 static void catch_sig(int);     // catch ctrl-C and alarm time-outs
+static void quit_sig(int);		// catch quit
+static void term_sig(int);		// catch TERM, PIPE, or HUP
 #endif
 #if ENABLE_FEATURE_VI_DOT_CMD
 static void start_new_cmd_q(char);	// new queue for command
@@ -490,9 +498,8 @@ static void crash_test();
 static int crashme = 0;
 #endif
 
-#ifdef STANDALONE
-  struct globals G;
 
+#ifdef STANDALONE
 void *xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
@@ -529,29 +536,6 @@ void *xrealloc(void *old, size_t size)
 	perror("realloc");
 	exit(68);
 }
-
-# if ENABLE_FEATURE_VI_WIN_RESIZE
-void clampTermSize(void)
-{
-	if (rows < 1)
-		rows = 1;
-	else if (rows > MAX_SCR_ROWS)
-		rows = MAX_SCR_ROWS;
-	if (columns < 1)
-		columns = 1;
-	else if (columns > MAX_SCR_COLS)
-		columns = MAX_SCR_COLS;
-}
-
-void get_terminal_width_height(int fd, unsigned *width, unsigned *height)
-{
-	struct winsize win = { 0, 0, 0, 0 };
-	if (ioctl(fd, TIOCGWINSZ, &win)) {
-		win.ws_row = rows;
-		win.ws_col = columns;
-	}
-}
-# endif
 
 /* Find out if the last character of a string matches the one given.
  * Don't underrun the buffer if the string length is 0.
@@ -658,6 +642,89 @@ static void clear_screen(void)
 	screen_erase();		// erase the internal screen buffer
 }
 
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+void clampScreenSize(void)
+{
+	if (rows < 2)
+		rows = 2;
+	else if (rows > MAX_SCR_ROWS)
+		rows = MAX_SCR_ROWS;
+	if (columns < 2)
+		columns = 2;
+	else if (columns > MAX_SCR_COLS)
+		columns = MAX_SCR_COLS;
+}
+
+static const char *snchr(const char *s, int c, size_t n)
+{
+	while (n--)
+		if (*s++ == c) return --s;
+	return NULL;
+}
+
+static ssize_t
+  readResponse(char *buf, size_t bufSize, unsigned maxMs, int endByte)
+//read response from STDIN into buf allowing maxMs delay to receive end byte
+{
+	char *cursor = buf, *bufEnd = buf + bufSize;
+	for(;cursor<bufEnd;) {
+		int pollResult = mysleep(100);
+		if (pollResult <= 0)
+			return -ETIME;
+		int r = safe_read(STDIN_FILENO, cursor, bufEnd - cursor);
+		if (r <= 0)
+			return r < 0 ? r : -EIO;
+		if (snchr(cursor, endByte, r))
+			return cursor - buf + r;
+		cursor += r;
+	}
+	return -E2BIG;
+}
+
+int getScreenSize(unsigned *width, unsigned *height)
+// assigns width and height to screen size
+// If all else fails, try querying the terminal emulator for its screen size
+//    using VT100 escape codes
+// returns 0 if successful
+// Does not alter *width or *height unless successful
+{
+	struct winsize win = { 0, 0, 0, 0 };
+	int err = -1; //ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
+	if (err || !win.ws_row || !win.ws_col) {
+		err = -ENOENT;
+		if (!mysleep(0)) { //don't try reading from terminal if input pending
+			place_cursor(999, 999, FALSE);  //to lower right corner
+			write1(CPreport);
+			char buf[12];  //allow 100ms to rcv position report ending in R
+			int rspLen = readResponse(buf, sizeof(buf)-1, 100, 'R');
+			if (rspLen > 5 && buf[0]==27 && buf[1]=='[') { //possibily valid
+				buf[rspLen]=0; //terminate response string
+				char *term;
+				unsigned long ul = strtoul(buf+2, &term, 10);
+				if (*term == ';') {
+					win.ws_row = ul;
+					ul = strtoul(term+1, &term, 10);
+					if (*term == 'R') {
+						win.ws_col = ul;
+						err = 0;
+					}
+				}
+			}
+		}
+	}
+	if (!err)
+		if (win.ws_row && win.ws_col) {
+			if (height)
+				*height = (int) win.ws_row;
+			if (width)
+				*width = (int) win.ws_col;
+		else
+			err = -ENOENT;
+		}
+	return err;
+}
+#endif
+
 int vi_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int vi_main(int argc, char **argv)
 {
@@ -674,7 +741,7 @@ int vi_main(int argc, char **argv)
 		txt = getenv("COLUMNS");
 		if (txt)
 			columns = atoi(txt);
-		clampTermSize();
+		clampScreenSize();
 	}
 #endif
 
@@ -798,8 +865,8 @@ static void edit_file(char *fn)
 	editing = 1;	// 0 = exit, 1 = one file, 2 = multiple files
 	rawmode();
 #if ENABLE_FEATURE_VI_WIN_RESIZE
-	get_terminal_width_height(0, &columns, &rows);
-	clampTermSize();
+	getScreenSize(&columns, &rows);
+	clampScreenSize();
 #endif
 	new_screen(rows, columns);	// get memory for virtual screen
 	init_text_buffer(fn);
@@ -818,6 +885,10 @@ static void edit_file(char *fn)
 	catch_sig(0);
 	signal(SIGWINCH, winch_sig);
 	signal(SIGTSTP, suspend_sig);
+	signal(SIGQUIT, quit_sig);
+	signal(SIGTERM, term_sig);
+	signal(SIGPIPE, term_sig);
+	signal(SIGHUP, term_sig);
 	sig = sigsetjmp(restart, 1);
 	if (sig != 0) {
 		screenbegin = dot = text;
@@ -895,10 +966,9 @@ static void edit_file(char *fn)
 		// poll to see if there is input already waiting. if we are
 		// not able to display output fast enough to keep up, skip
 		// the display update until we catch up with input.
-		if (mysleep(0) == 0) {
+		if (mysleep(0) == 0)
 			// no input pending- so update output
 			refresh(FALSE);
-		}
 #if ENABLE_FEATURE_VI_CRASHME
 		if (crashme > 0)
 			crash_test();	// test editor variables
@@ -2399,8 +2469,13 @@ static void rawmode(void)
 
 static void cookmode(void)
 {
-	fflush(stdout);
 	tcsetattr(0, TCSANOW, &term_orig);
+}
+
+static void cleanupAfter(int sig)
+{
+	cookmode();
+	printf("\n%s  \n", strsignal(sig));
 }
 
 //----- Come here when we get a window resize signal ---------
@@ -2409,11 +2484,26 @@ static void winch_sig(int sig ATTRIBUTE_UNUSED)
 {
 	// FIXME: do it in main loop!!!
 #if ENABLE_FEATURE_VI_WIN_RESIZE
-	get_terminal_width_height(0, &columns, &rows);
-	clampTermSize();
+	getScreenSize(&columns, &rows);
+	clampScreenSize();
 #endif
 	new_screen(rows, columns);	// get memory for virtual screen
 	redraw(TRUE);		// re-draw the screen
+}
+
+//----- Come here on QUIT ----------------------
+static void quit_sig(int sig)
+{
+	cleanupAfter(sig);
+	signal(sig, SIG_DFL);
+	kill(my_pid, sig);
+}
+
+//----- Come here on PIPE, TERM, HUP ----------------------
+static void term_sig(int sig)
+{
+	cleanupAfter(sig);
+	exit(128 + sig);
 }
 
 //----- Come here when we get a continue signal -------------------
@@ -2440,7 +2530,7 @@ static void suspend_sig(int sig ATTRIBUTE_UNUSED)
 	kill(my_pid, SIGTSTP);
 }
 
-//----- Come here when we get a signal ---------------------------
+//----- Come here when we get a INT signal ---------------------------
 static void catch_sig(int sig)
 {
 	signal(SIGINT, catch_sig);
@@ -2451,6 +2541,7 @@ static void catch_sig(int sig)
 
 static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
 {
+	fflush(stdout);
 	struct pollfd pfd[1];
 
 	pfd[0].fd = 0;
@@ -2527,7 +2618,7 @@ static char readit(void)	// read (maybe cursor) key from stdin
 			// more chars to read after the ESC. This would
 			// be a Function or Cursor Key sequence.
 			struct pollfd pfd[1];
-			pfd[0].fd = 0;
+			pfd[0].fd = STDIN_FILENO;
 			pfd[0].events = POLLIN;
 			// keep reading while there are input chars, and room in buffer
 			// for a complete ESC sequence (assuming 8 chars is enough)
@@ -2560,7 +2651,7 @@ static char readit(void)	// read (maybe cursor) key from stdin
 		// defined ESC sequence not found
 	}
 	n = 1;
- found:
+found:
 	// remove key sequence from Q
 	chars_to_parse -= n;
 	memmove(readbuffer, readbuffer + n, sizeof(readbuffer) - n);
@@ -2918,7 +3009,6 @@ static void show_status_line(void)
 		place_cursor(rows-1, strlen(buffer), FALSE);  //put cursor at its end
 	else  //put cursor back in text area
 		place_cursor(crow, ccol, TRUE);
-	fflush(stdout);
 }
 
 //----- format the status buffer, the bottom line of screen ------
@@ -3119,12 +3209,6 @@ static void refresh(int full_screen)
 	int li, changed;
 	char *tp, *sp;		// pointer into text[] and screen[]
 
-#if 0 && ENABLE_FEATURE_VI_WIN_RESIZE
-	unsigned c = columns, r = rows;
-	get_terminal_width_height(0, &columns, &rows);
-	clampTermSize();
-	full_screen |= (c - columns) | (r - rows);
-#endif
 	sync_cursor(dot, &crow, &ccol);	// where cursor will be (on "dot")
 	tp = screenbegin;	// index into text[] of top line
 
@@ -3367,6 +3451,10 @@ repeat:
 		place_cursor(0, 0, FALSE);	// put cursor in correct place
 		clear_to_eos();	// tel terminal to erase display
 		mysleep(10);
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+		getScreenSize(&columns, &rows);
+		clampScreenSize();
+#endif
 		screen_erase();	// erase the internal screen buffer
 		refresh(TRUE);	// this will redraw the entire display
 		break;
