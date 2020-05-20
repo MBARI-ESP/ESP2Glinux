@@ -12,7 +12,7 @@ exit 42
 : ${RUBYsiteLIB=$HOSTTOP/opt/mbari/lib/ruby/site_ruby/1.8}
 cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 11/30/19 brent@mbari.org
+  -- 5/17/20 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -20,62 +20,60 @@ EOS
 
 mkdir -p $LOCALBIN
 
-echo "  ===>  Building tcflush  <==="
-cd ~/linux/tcflush &&
-make CC=$ARMGCC/bin/gcc clean tcflush &&
-$STRIP -o $HOSTTOP/bin/tcflush tcflush || exit $?
+echo "  ===>  Building vi  <==="
+cd ~/linux/vi && make CC=$ARMGCC/bin/gcc clean ltib/vi &&
+$STRIP -o $HOSTTOP/bin/vi ltib/vi || exit
 
-echo "  ===>  Building picocom  <==="
-cd ~/linux/picocom &&
-make CC=$ARMGCC/bin/gcc clean picocom &&
-$STRIP -o $LOCALBIN/picocom picocom || exit $?
+echo "  ===>  Building tcflush  <==="
+cd ~/linux/tcflush && make CC=$ARMGCC/bin/gcc clean tcflush &&
+$STRIP -o $HOSTTOP/bin/tcflush tcflush || exit
+
+echo "  ===>  Building picocom <==="
+cd ~/linux/picocom && make CC=$ARMGCC/bin/gcc clean picocom &&
+$STRIP -o $LOCALBIN/picocom picocom || exit
 
 echo "  ===>  Building starlightXpress  <==="
 cd ~/linux/starlight &&
-ltibBuild || exit $?
+ltibBuild || exit
 
 echo "  ===>  Building snap  <==="
 cd ~/misc/camera/starlight &&
-make CC=$ARMGCC/bin/gcc clean ltib/snap || exit $?
-$STRIP -o $LOCALBIN/snap ltib/snap
+make CC=$ARMGCC/bin/gcc clean ltib/snap &&
+$STRIP -o $LOCALBIN/snap ltib/snap || exit
 
 echo "  ===>  Building timelimit  <==="
-cd ~/misc/timelimit && armconfig && arminstall || exit $?
+cd ~/misc/timelimit && armconfig && arminstall || exit
 
 echo "  ===>  Building sleepyCmd  <==="
 cd ~/misc/sleepyCmd &&
 make CC=$ARMGCC/bin/gcc clean ltib/sleepyCmd &&
-$STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd || exit $?
+$STRIP -o $SYSBIN/sleepyCmd ltib/sleepyCmd || exit
 
 echo "  ===>  Building holdopen  <==="
 cd ~/misc/holdopen &&
 make CC=$ARMGCC/bin/gcc clean ltib/holdopen &&
-$STRIP -o $SYSBIN/holdopen ltib/holdopen || exit $?
+$STRIP -o $SYSBIN/holdopen ltib/holdopen || exit
 
 echo "  ===>  Building suscript  <==="
 cd ~/misc/suscript &&
 make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
-chmod u+s $HOSTTOP/usr/sbin/suscript || exit $?
+chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
 for package in libnl dyndns wpa_supplicant esp/dropbear usbmode dnsmasq \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync tar; do
-  echo
   echo "  ===>  Building $package  <==="
-  cd ~/linux/$package && armconfig && arminstall || exit $?
+  cd ~/linux/$package && armconfig && arminstall || exit
 done
 
-echo
 echo "  ===>  Building sftp-server  <==="
-cd ~/linux/openssh && ltibconfig && ltibinstall || exit $?
+cd ~/linux/openssh && ltibconfig && ltibinstall || exit
 
-echo
 echo "  ===>  Building Ruby  <==="
-cd ~/ruby/mbariRuby && armconfig && arminstall || exit $?
+cd ~/ruby/mbariRuby && armconfig && arminstall || exit
 
 for package in bindata rbelftools; do
-  echo
   echo "  ===>  Installing Ruby $package package in $RUBYsiteLIB  <==="
-  cd ~/ruby/$package/lib && cp -a * $RUBYsiteLIB || exit $?
+  cd ~/ruby/$package/lib && cp -a * $RUBYsiteLIB || exit
 done
 

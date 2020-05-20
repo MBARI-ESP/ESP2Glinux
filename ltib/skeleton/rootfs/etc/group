@@ -1,8 +1,8 @@
 root::0:root
-mbari:x:20:esp,brent,preston,methane,pargett,sjensen
-esp:x:7700:esp,brent,preston,methane,pargett,sjensen
-uucp:x:4:esp,brent,preston,methane,pargett,sjensen
-log:x:96:esp,brent,preston,methane,pargett,sjensen
+mbari:x:20:esp,brent,preston,methane,pargett,sjensen,dack,cloie
+esp:x:7700:esp,brent,preston,methane,pargett,sjensen,dack,cloie
+uucp:x:4:esp,brent,preston,methane,pargett,sjensen,dack,cloie
+log:x:96:esp,brent,preston,methane,pargett,sjensen,dack,cloie
 labjack:x:492:esp,brent
 guest:x:666:
 tty::5:

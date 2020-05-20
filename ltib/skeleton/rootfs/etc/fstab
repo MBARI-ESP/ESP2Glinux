@@ -4,26 +4,26 @@
 # [remember to run /usr/sbin/mkcardroot before booting from
 #  a root filesystem copied from flash to an (sd) card]
 #
-# file sys  mount           type    options
-proc        /proc           proc    defaults
-devpts      /dev/pts        devpts  gid=5,mode=620
-usbfs       /proc/bus/usb   usbfs   defaults
-shm         /dev/shm        tmpfs   defaults
+# file sys	mount		type	options
+proc		/proc		proc	defaults
+devpts		/dev/pts	devpts	gid=5,mode=620
+usbfs		/proc/bus/usb	usbfs	defaults
+shm		/dev/shm	tmpfs	defaults
 
 #change rw to ro for a read/only root filesystem
-/dev/root   /               auto    rw
+/dev/root	/		auto	rw
 
-/dev/mmcblk0p2	/card	    auto    defaults
-/dev/mtdblock2	/flash	    auto    ro,noauto
-/dev/mmcblk0p1  /boot	    vfat    ro,noauto
+/dev/mmcblk0p2	/card		auto	defaults
+/dev/mtdblock2	/flash		auto	ro,noauto
+/dev/mmcblk0p1  /boot		vfat	ro,noauto
 
-tmpfs       /card/var/run   tmpfs   defaults
-tmpfs       /card/var/lock  tmpfs   defaults
+tmpfs 		/card/var/run	tmpfs	defaults
+tmpfs		/card/var/lock	tmpfs	defaults
 
-none	    /debug	    debugfs noauto
+none		/debug		debugfs noauto
 
 #optional swapfile on (sd) card
-/card/.SWAP swap            swap
+/card/.SWAP	swap            swap
 
 #END nfsmount service ignores entries below this line END#
 

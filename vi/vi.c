@@ -307,6 +307,7 @@ struct globals {
 	sigjmp_buf restart;     // catch_sig()
 #endif
 	struct termios term_orig, term_vi; // remember what the cooked mode was
+	unsigned ticsPerChar;	//# of 100hz tics per character received
 #if ENABLE_FEATURE_VI_COLON
 	char *initial_cmds[3];  // currently 2 entries, NULL terminated
 #endif
@@ -382,6 +383,7 @@ struct globals {
 #define context_end    (G.context_end   )
 #define restart        (G.restart       )
 #define term_orig      (G.term_orig     )
+#define ticsPerChar	   (G.ticsPerChar   )
 #define term_vi        (G.term_vi       )
 #define initial_cmds   (G.initial_cmds  )
 #define readbuffer     (G.readbuffer    )
@@ -453,7 +455,7 @@ static void not_implemented(const char *); // display "Not implemented" message
 static int format_edit_status(const char *fmt); //file status on status line
 static void redraw(void);	// force a full screen refresh
 static char* format_line(char* /*, int*/);
-static void refresh(int);	// update the terminal from screen[]
+static void refresh(void);	// update the terminal from screen[]
 
 static void Indicate_Error(void);       // use flash or beep to indicate error
 #define indicate_error(c) Indicate_Error()
@@ -665,16 +667,15 @@ static ssize_t
   readResponse(char *buf, size_t bufSize, int endByte)
 //read response from STDIN into buf until timeout or endByte received
 {
-	char *cursor = buf, *bufEnd = buf + bufSize;
-	while (cursor < bufEnd) {
-		int pollResult = mysleep(50);  //should work as slow as 300baud
-		if (pollResult <= 0)
-			return pollResult < 0 ? pollResult : -ETIME;
-		int r = safe_read(STDIN_FILENO, cursor, bufEnd - cursor);
+	size_t cursor = 0;
+	while (cursor < bufSize) {
+		if (!mysleep(ticsPerChar))
+			return -ETIME;
+		int r = safe_read(STDIN_FILENO, buf + cursor, bufSize - cursor);
 		if (r <= 0)
 			return r < 0 ? r : -EIO;
-		if (snchr(cursor, endByte, r))
-			return cursor - buf + r;
+		if (snchr(buf+cursor, endByte, r))
+			return cursor + r;
 		cursor += r;
 	}
 	return -E2BIG;
@@ -946,7 +947,7 @@ static void edit_file(char *fn)
 	clear_screen();
 	//------This is the main Vi cmd handling loop -----------------------
 	while (editing > 0) {
-		refresh(FALSE);
+		refresh();
 #if ENABLE_FEATURE_VI_CRASHME
 		if (crashme > 0) {
 			if ((end - text) > 1) {
@@ -977,14 +978,13 @@ static void edit_file(char *fn)
 		}
 #endif
 		do_cmd(c);		// execute the user command
-		refresh(FALSE);
 #if ENABLE_FEATURE_VI_CRASHME
 		if (crashme > 0)
 			crash_test();	// test editor variables
 #endif
 	}
 	//-------------------------------------------------------------------
-
+	refresh();
 	place_cursor(rows, 0, FALSE);	// go to bottom of screen
 	clear_to_eol();		// Erase to end of line
 	cookmode();
@@ -1109,10 +1109,10 @@ static void showmatching(char *p)
 		// "q" now points to matching pair
 		save_dot = dot;	// remember where we are
 		dot = q;		// go to new loc
-		refresh(FALSE);	// let the user see it
+		refresh();		// let the user see it
 		mysleep(40);	// give user some time
 		dot = save_dot;	// go back to old loc
-		refresh(FALSE);
+		refresh();
 	}
 }
 
@@ -2013,7 +2013,7 @@ static char *char_insert(char *p, char c) // insert the char c at 'p'
 	if (c == 22) {		// Is this an ctrl-V?
 		p = stupid_insert(p, '^');	// use ^ to indicate literal next
 		p--;			// backup onto ^
-		refresh(FALSE);	// show the ^
+		refresh();		// show the ^
 		c = get_one_char();
 		*p = c;
 		p++;
@@ -2474,6 +2474,34 @@ static void rawmode(void)
 	term_vi.c_cc[VTIME] = 0;
 	erase_char = term_vi.c_cc[VERASE];
 	tcsetattr(0, TCSANOW, &term_vi);
+
+	unsigned tics = 1;
+    switch (cfgetispeed(&term_vi)) {
+	case B600:
+		tics = 2;
+		break;
+	case B300:
+		tics = 4;
+		break;
+	case B200:
+		tics = 6;
+		break;
+	case B150:
+		tics = 7;
+		break;
+	case B134:
+		tics = 8;
+		break;
+	case B110:
+		tics = 10;
+		break;
+	case B75:
+		tics = 15;
+		break;
+	case B50:
+		tics = 21;
+	} //determines how long to wait for ESCAPE sequences
+	ticsPerChar = tics;
 }
 
 static void cookmode(void)
@@ -2492,6 +2520,7 @@ static void winch_sig(int sig ATTRIBUTE_UNUSED)
 #endif
 	new_screen(rows, columns);	// get memory for virtual screen
 	redraw();
+	fflush(stdout);
 }
 
 //----- Come here on QUIT, PIPE, TERM, HUP ----------------------
@@ -2539,6 +2568,7 @@ static void catch_sig(int sig)
 #endif /* FEATURE_VI_USE_SIGNALS */
 
 static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
+//returns true if input is available
 {
 	fflush(stdout);
 	tcdrain(STDOUT_FILENO);
@@ -2553,7 +2583,7 @@ static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
 static char readit(void)	// read (maybe cursor) key from stdin
 {
 	char c;
-	int n;
+	size_t n;
 	struct esc_cmds {
 		const char seq[4];
 		char val;
@@ -2598,11 +2628,11 @@ static char readit(void)	// read (maybe cursor) key from stdin
 	};
 	enum { ESCCMDS_COUNT = ARRAY_SIZE(esccmds) };
 
-	fflush(stdout);
 	n = chars_to_parse;
 	// get input from User- are there already input chars in Q?
 	if (n <= 0) {
 		// the Q is empty, wait for a typed char
+		fflush(stdout);
 		n = safe_read(STDIN_FILENO, readbuffer, sizeof(readbuffer));
 		if (n < 0) {
 			if (errno == EBADF || errno == EFAULT || errno == EINVAL
@@ -2617,16 +2647,12 @@ static char readit(void)	// read (maybe cursor) key from stdin
 			// Could be bare Esc key. See if there are any
 			// more chars to read after the ESC. This would
 			// be a Function or Cursor Key sequence.
-			struct pollfd pfd[1];
-			pfd[0].fd = STDIN_FILENO;
-			pfd[0].events = POLLIN;
 			// keep reading while there are input chars, and room in buffer
 			// for a complete ESC sequence (assuming 8 chars is enough)
-			while ((safe_poll(pfd, 1, 0) > 0)
-			 && ((size_t)n <= (sizeof(readbuffer) - 8))
-			) {
+			while(mysleep(ticsPerChar) && (n <= (sizeof(readbuffer) - 8))) {
 				// read the rest of the ESC string
-				int r = safe_read(STDIN_FILENO, readbuffer + n, sizeof(readbuffer) - n);
+				int r = safe_read(STDIN_FILENO,
+						readbuffer + n, sizeof(readbuffer) - n);
 				if (r > 0)
 					n += r;
 			}
@@ -3009,7 +3035,6 @@ static void show_status_line(void)
 		place_cursor(rows-1, strlen(buffer), FALSE);  //put cursor at its end
 	else  //put cursor back in text area
 		place_cursor(crow, ccol, TRUE);
-	fflush(stdout);
 }
 
 //----- format the status buffer, the bottom line of screen ------
@@ -3137,7 +3162,7 @@ static int format_edit_status(const char *fmt)
 static void redraw(void)
 {
 	clear_screen();
-	refresh(TRUE);	// this will redraw the entire display
+	refresh();
 }
 
 //----- Format a text[] line into a buffer ---------------------
@@ -3203,7 +3228,7 @@ static char* format_line(char *src /*, int li*/)
 // if the current screenline is different from the new buffer.
 // If they differ then that line needs redrawing on the terminal.
 //
-static void refresh(int full_screen)
+static void refresh(void)
 {
 #define old_offset refresh__old_offset
 
@@ -3213,7 +3238,7 @@ static void refresh(int full_screen)
 	// poll to see if there is input already waiting. if we are
 	// not able to display output fast enough to keep up, skip
 	// the display update until we catch up with input.
-	if (!full_screen && (chars_to_parse || mysleep(0)))
+	if (chars_to_parse || mysleep(0))
 		return;
 
 	sync_cursor(dot, &crow, &ccol);	// where cursor will be (on "dot")
@@ -3238,10 +3263,6 @@ static void refresh(int full_screen)
 		cs = 0;
 		ce = columns - 1;
 		sp = &screen[li * columns];	// start of screen line
-		if (full_screen) {
-			// force re-draw of every single column from 0 - columns-1
-			goto re0;
-		}
 		// compare newly formatted buffer with virtual screen
 		// look forward for first difference between buf and screen
 		for (; cs <= ce; cs++) {
@@ -3262,7 +3283,6 @@ static void refresh(int full_screen)
 
 		// if horz offset has changed, force a redraw
 		if (offset != old_offset) {
-re0:
 			changed = TRUE;
 		}
 
@@ -3457,13 +3477,11 @@ repeat:
 	case 18:			// ctrl-R  force redraw
 		place_cursor(0, 0, FALSE);	// put cursor in correct place
 		clear_to_eos();	// tel terminal to erase display
-		mysleep(10);
 #if ENABLE_FEATURE_VI_WIN_RESIZE
 		getScreenSize(&columns, &rows);
 		clampScreenSize();
 #endif
-		screen_erase();	// erase the internal screen buffer
-		refresh(TRUE);	// this will redraw the entire display
+		redraw();
 		break;
 	case 13:			// Carriage Return ^M
 	case '+':			// +- goto next line
