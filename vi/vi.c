@@ -24,7 +24,7 @@
  */
 
 #ifdef STANDALONE
-#define BB_VER "version 2.58"
+#define BB_VER "version 2.60"
 #define BB_BT "brent@mbari.org"
 
 #define _GNU_SOURCE
@@ -451,7 +451,7 @@ static void status_line(const char *, ...);     // print to status buf
 static void status_line_bold(const char *, ...);
 static void not_implemented(const char *); // display "Not implemented" message
 static int format_edit_status(const char *fmt); //file status on status line
-static void redraw(int);	// force a full screen refresh
+static void redraw(void);	// force a full screen refresh
 static char* format_line(char* /*, int*/);
 static void refresh(int);	// update the terminal from screen[]
 
@@ -472,8 +472,7 @@ static void colon(char *);	// execute the "colon" mode cmds
 static void winch_sig(int);	// catch window size changes
 static void suspend_sig(int);	// catch ctrl-Z
 static void catch_sig(int);     // catch ctrl-C and alarm time-outs
-static void quit_sig(int);		// catch quit
-static void term_sig(int);		// catch TERM, PIPE, or HUP
+static void quit_sig(int);		// catch QUIT, TERM, PIPE, or HUP
 #endif
 #if ENABLE_FEATURE_VI_DOT_CMD
 static void start_new_cmd_q(char);	// new queue for command
@@ -663,14 +662,14 @@ static const char *snchr(const char *s, int c, size_t n)
 }
 
 static ssize_t
-  readResponse(char *buf, size_t bufSize, unsigned maxMs, int endByte)
-//read response from STDIN into buf allowing maxMs delay to receive end byte
+  readResponse(char *buf, size_t bufSize, int endByte)
+//read response from STDIN into buf until timeout or endByte received
 {
 	char *cursor = buf, *bufEnd = buf + bufSize;
-	for(;cursor<bufEnd;) {
-		int pollResult = mysleep(100);
+	while (cursor < bufEnd) {
+		int pollResult = mysleep(50);  //should work as slow as 300baud
 		if (pollResult <= 0)
-			return -ETIME;
+			return pollResult < 0 ? pollResult : -ETIME;
 		int r = safe_read(STDIN_FILENO, cursor, bufEnd - cursor);
 		if (r <= 0)
 			return r < 0 ? r : -EIO;
@@ -679,6 +678,17 @@ static ssize_t
 		cursor += r;
 	}
 	return -E2BIG;
+}
+
+static void queueAnyInput(void)
+//add any pending user input to readbuffer
+{
+	if (mysleep(0)) {
+	  char *s = readbuffer + chars_to_parse;
+	  int r = safe_read(STDIN_FILENO, s, readbuffer+sizeof(readbuffer) - s);
+	  if (r > 0)
+	    chars_to_parse += r;
+	}
 }
 
 int getScreenSize(unsigned *width, unsigned *height)
@@ -692,10 +702,11 @@ int getScreenSize(unsigned *width, unsigned *height)
 	int err = ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
 	if (err || !win.ws_row || !win.ws_col) {
 		err = -ENOENT;
-		if (!mysleep(0)) { //don't try reading from terminal if input pending
+		queueAnyInput();
+		if (!mysleep(0)) {  //can't query term if there's pending user input
 			write1(CtextAreaQuery);
 			char buf[16];  //allow 100ms to rcv position report ending in R
-			int rspLen = readResponse(buf, sizeof(buf)-1, 100, 't');
+			int rspLen = readResponse(buf, sizeof(buf)-1, 't');
 			if (rspLen > 7 && buf[0]==27 && buf[1]=='[' &&
 				buf[2]=='8' && buf[3]==';') {
 				buf[rspLen]=0; //terminate response string
@@ -883,16 +894,20 @@ static void edit_file(char *fn)
 
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 	catch_sig(0);
-	signal(SIGWINCH, winch_sig);
-	signal(SIGTSTP, suspend_sig);
-	signal(SIGQUIT, quit_sig);
-	signal(SIGTERM, term_sig);
-	signal(SIGPIPE, term_sig);
-	signal(SIGHUP, term_sig);
 	sig = sigsetjmp(restart, 1);
 	if (sig != 0) {
 		screenbegin = dot = text;
 	}
+	signal(SIGWINCH, winch_sig);
+	signal(SIGTSTP, suspend_sig);
+	signal(SIGQUIT, quit_sig);
+	signal(SIGTERM, quit_sig);
+	signal(SIGPIPE, quit_sig);
+	signal(SIGHUP, quit_sig);
+	signal(SIGILL, quit_sig);
+	signal(SIGSEGV, quit_sig);
+	signal(SIGBUS, quit_sig);
+	signal(SIGABRT, quit_sig);
 #endif
 
 	cmd_mode = CMODE_COMMAND;
@@ -962,13 +977,7 @@ static void edit_file(char *fn)
 		}
 #endif
 		do_cmd(c);		// execute the user command
-		//
-		// poll to see if there is input already waiting. if we are
-		// not able to display output fast enough to keep up, skip
-		// the display update until we catch up with input.
-		if (mysleep(0) == 0)
-			// no input pending- so update output
-			refresh(FALSE);
+		refresh(FALSE);
 #if ENABLE_FEATURE_VI_CRASHME
 		if (crashme > 0)
 			crash_test();	// test editor variables
@@ -1565,7 +1574,7 @@ static void Hit_Return(void)
 	standout_end();
 	while ((c = get_one_char()) != '\n' && c != '\r' && c != 27)
 		continue;
-	redraw(TRUE);		// force redraw all
+	redraw();
 }
 
 static int next_tabstop(int col)
@@ -2472,12 +2481,6 @@ static void cookmode(void)
 	tcsetattr(0, TCSANOW, &term_orig);
 }
 
-static void cleanupAfter(int sig)
-{
-	cookmode();
-	printf("\n%s  \n", strsignal(sig));
-}
-
 //----- Come here when we get a window resize signal ---------
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 static void winch_sig(int sig ATTRIBUTE_UNUSED)
@@ -2488,30 +2491,26 @@ static void winch_sig(int sig ATTRIBUTE_UNUSED)
 	clampScreenSize();
 #endif
 	new_screen(rows, columns);	// get memory for virtual screen
-	redraw(TRUE);		// re-draw the screen
+	redraw();
 }
 
-//----- Come here on QUIT ----------------------
+//----- Come here on QUIT, PIPE, TERM, HUP ----------------------
 static void quit_sig(int sig)
 {
-	cleanupAfter(sig);
+	cookmode();
 	signal(sig, SIG_DFL);
+	puts("");
+	clear_to_eos();
 	kill(my_pid, sig);
 }
 
-//----- Come here on PIPE, TERM, HUP ----------------------
-static void term_sig(int sig)
-{
-	cleanupAfter(sig);
-	exit(128 + sig);
-}
 
 //----- Come here when we get a continue signal -------------------
 static void cont_sig(int sig ATTRIBUTE_UNUSED)
 {
 	rawmode();			// terminal to "raw"
 	*status_buffer=0;	// force status update
-	redraw(TRUE);		// re-draw the screen
+	redraw();
 
 	signal(SIGTSTP, suspend_sig);
 	signal(SIGCONT, SIG_DFL);
@@ -2542,6 +2541,7 @@ static void catch_sig(int sig)
 static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
 {
 	fflush(stdout);
+	tcdrain(STDOUT_FILENO);
 	struct pollfd pfd[1];
 
 	pfd[0].fd = 0;
@@ -2934,10 +2934,10 @@ static void standout_end(void) // send "end reverse video" sequence
 static void flash(int h)
 {
 	standout_start();	// send "start reverse video" sequence
-	redraw(TRUE);
+	redraw();
 	mysleep(h);
 	standout_end();		// send "end reverse video" sequence
-	redraw(TRUE);
+	redraw();
 }
 
 static void Indicate_Error(void)
@@ -3134,10 +3134,10 @@ static int format_edit_status(const char *fmt)
 }
 
 //----- Force refresh of all Lines -----------------------------
-static void redraw(int full_screen)
+static void redraw(void)
 {
 	clear_screen();
-	refresh(full_screen);	// this will redraw the entire display
+	refresh(TRUE);	// this will redraw the entire display
 }
 
 //----- Format a text[] line into a buffer ---------------------
@@ -3209,6 +3209,12 @@ static void refresh(int full_screen)
 
 	int li, changed;
 	char *tp, *sp;		// pointer into text[] and screen[]
+
+	// poll to see if there is input already waiting. if we are
+	// not able to display output fast enough to keep up, skip
+	// the display update until we catch up with input.
+	if (!full_screen && (chars_to_parse || mysleep(0)))
+		return;
 
 	sync_cursor(dot, &crow, &ccol);	// where cursor will be (on "dot")
 	tp = screenbegin;	// index into text[] of top line
