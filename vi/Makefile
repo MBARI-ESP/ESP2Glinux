@@ -11,11 +11,19 @@ CFLAGS = -Wall -Os -s
 LDFLAGS = $(DEBUG)
 LDLIBS =
 
+all:	vi arm/vi ltib/vi
+
 vi : vi.c Makefile
 	$(CC) $(CPPFLAGS) $(CFLAGS) vi.c -o vi
 
+ltib/vi:  Makefile vi.c
+	mkdir -p ltib && /ltibarm/bin/gcc $(CPPFLAGS) $(CFLAGS) vi.c -o $@
+
+arm/vi:  Makefile vi.c
+	mkdir -p arm && /arm/bin/gcc $(CPPFLAGS) $(CFLAGS) vi.c -o $@
+
 clean:
-	rm -f vi
+	rm -f vi ltib/vi arm/vi
 
 distclean: clean
 
