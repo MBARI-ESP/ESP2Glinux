@@ -183,7 +183,7 @@ static const char Ceos[] ALIGN1 = "\033[0J";
 static const char CMrc[] ALIGN1 = "\033[%d;%dH";
 #if ENABLE_FEATURE_VI_WIN_RESIZE
 /* Report cursor positon */
-static const char CPreport[] ALIGN1 = "\033[6n";
+static const char CtextAreaQuery[] ALIGN1 = "\033[18t";
 #endif
 #ifdef ENABLE_FEATURE_VI_OPTIMIZE_CURSOR
 /* Cursor motion up and down ESC sequence */
@@ -689,22 +689,22 @@ int getScreenSize(unsigned *width, unsigned *height)
 // Does not alter *width or *height unless successful
 {
 	struct winsize win = { 0, 0, 0, 0 };
-	int err = -1; //ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
+	int err = ioctl(STDIN_FILENO, TIOCGWINSZ, &win);
 	if (err || !win.ws_row || !win.ws_col) {
 		err = -ENOENT;
 		if (!mysleep(0)) { //don't try reading from terminal if input pending
-			place_cursor(999, 999, FALSE);  //to lower right corner
-			write1(CPreport);
-			char buf[12];  //allow 100ms to rcv position report ending in R
-			int rspLen = readResponse(buf, sizeof(buf)-1, 100, 'R');
-			if (rspLen > 5 && buf[0]==27 && buf[1]=='[') { //possibily valid
+			write1(CtextAreaQuery);
+			char buf[16];  //allow 100ms to rcv position report ending in R
+			int rspLen = readResponse(buf, sizeof(buf)-1, 100, 't');
+			if (rspLen > 7 && buf[0]==27 && buf[1]=='[' &&
+				buf[2]=='8' && buf[3]==';') {
 				buf[rspLen]=0; //terminate response string
 				char *term;
-				unsigned long ul = strtoul(buf+2, &term, 10);
+				unsigned long ul = strtoul(buf+4, &term, 10);
 				if (*term == ';') {
 					win.ws_row = ul;
 					ul = strtoul(term+1, &term, 10);
-					if (*term == 'R') {
+					if (*term == 't') {
 						win.ws_col = ul;
 						err = 0;
 					}
@@ -3009,6 +3009,7 @@ static void show_status_line(void)
 		place_cursor(rows-1, strlen(buffer), FALSE);  //put cursor at its end
 	else  //put cursor back in text area
 		place_cursor(crow, ccol, TRUE);
+	fflush(stdout);
 }
 
 //----- format the status buffer, the bottom line of screen ------
