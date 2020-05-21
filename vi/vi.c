@@ -183,7 +183,8 @@ static const char Ceos[] ALIGN1 = "\033[0J";
 static const char CMrc[] ALIGN1 = "\033[%d;%dH";
 #if ENABLE_FEATURE_VI_WIN_RESIZE
 /* Report cursor positon */
-static const char CtextAreaQuery[] ALIGN1 = "\033[18t";
+static const char CtextAreaQuery[] ALIGN1 =
+	"\0337\033[r\033[999;999H\033[6n\0338";
 #endif
 #ifdef ENABLE_FEATURE_VI_OPTIMIZE_CURSOR
 /* Cursor motion up and down ESC sequence */
@@ -709,16 +710,15 @@ int getScreenSize(unsigned *width, unsigned *height)
 		if (!awaitInput(0)) {  //can't query term if there's pending user input
 			write1(CtextAreaQuery);
 			char buf[16];
-			int rspLen = readResponse(buf, sizeof(buf)-1, 't');
-			if (rspLen > 7 && buf[0]==27 && buf[1]=='[' &&
-				buf[2]=='8' && buf[3]==';') {
+			int rspLen = readResponse(buf, sizeof(buf)-1, 'R');
+			if (rspLen > 5 && buf[0]==27 && buf[1]=='[') {
 				buf[rspLen]=0; //terminate response string
 				char *term;
-				unsigned long ul = strtoul(buf+4, &term, 10);
+				unsigned long ul = strtoul(buf+2, &term, 10);
 				if (*term == ';') {
 					win.ws_row = ul;
 					ul = strtoul(term+1, &term, 10);
-					if (*term == 't') {
+					if (*term == 'R') {
 						win.ws_col = ul;
 						err = 0;
 					}
