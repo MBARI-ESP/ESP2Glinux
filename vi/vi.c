@@ -24,7 +24,7 @@
  */
 
 #ifdef STANDALONE
-#define BB_VER "version 2.60"
+#define BB_VER "version 2.61"
 #define BB_BT "brent@mbari.org"
 
 #define _GNU_SOURCE
@@ -183,8 +183,7 @@ static const char Ceos[] ALIGN1 = "\033[0J";
 static const char CMrc[] ALIGN1 = "\033[%d;%dH";
 #if ENABLE_FEATURE_VI_WIN_RESIZE
 /* Report cursor positon */
-static const char CtextAreaQuery[] ALIGN1 =
-	"\0337\033[r\033[999;999H\033[6n\0338";
+static const char CtextAreaQuery[] ALIGN1 = "\033[r\033[999;999H\033[6n";
 #endif
 #ifdef ENABLE_FEATURE_VI_OPTIMIZE_CURSOR
 /* Cursor motion up and down ESC sequence */
