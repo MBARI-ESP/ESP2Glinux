@@ -882,10 +882,6 @@ static void edit_file(char *fn)
 #define cur_line edit_file__cur_line
 #endif
 	char c;
-#if ENABLE_FEATURE_VI_USE_SIGNALS
-	int sig;
-#endif
-
 	editing = 1;	// 0 = exit, 1 = one file, 2 = multiple files
 	rawmode();
 	createScreen();
@@ -900,14 +896,13 @@ static void edit_file(char *fn)
 	last_forward_char = last_input_char = '\0';
 	crow = 0;
 	ccol = 0;
+	tabstop = 8;
+	offset = 0;			// no horizontal offset
 	clear_screen();
 
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 	catch_sig(0);
-	sig = sigsetjmp(restart, 1);
-	if (sig != 0) {
-		screenbegin = dot = text;
-	}
+	sigsetjmp(restart, 1);
 	signal(SIGWINCH, winch_sig);
 	signal(SIGTSTP, suspend_sig);
 	signal(SIGQUIT, quit_sig);
@@ -922,8 +917,6 @@ static void edit_file(char *fn)
 
 	cmd_mode = CMODE_COMMAND;
 	cmdcnt = 0;
-	tabstop = 8;
-	offset = 0;			// no horizontal offset
 	c = '\0';
 #if ENABLE_FEATURE_VI_DOT_CMD
 	free(ioq_start);
