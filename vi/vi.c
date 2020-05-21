@@ -313,11 +313,7 @@ struct globals {
 #endif
 	// Should be just enough to hold a key sequence,
 	// but CRASME mode uses it as generated command buffer too
-#if ENABLE_FEATURE_VI_CRASHME
 	char readbuffer[128];
-#else
-	char readbuffer[32];
-#endif
 #define STATUS_BUFFER_LEN  200
 	char status_buffer[STATUS_BUFFER_LEN]; // messages to the user
 	char displayed_buffer[STATUS_BUFFER_LEN];  //  displayed status
@@ -427,8 +423,7 @@ static char *yank_delete(char *, char *, int, int);	// yank text[] into register
 static void show_help(void);	// display some help info
 static void rawmode(void);	// set "raw" mode on tty
 static void cookmode(void);	// return to "cooked" mode on tty
-// sleep for 'h' 1/100 seconds, return 1/0 if stdin is (ready for read)/(not ready)
-static int mysleep(int);
+static int awaitInput(int); //for specified number of 1/100th seconds
 static char readit(void);	// read (maybe cursor) key from stdin
 static char get_one_char(void);	// read 1 char from stdin
 static int file_size(const char *);   // what is the byte size of "fn"
@@ -669,7 +664,7 @@ static ssize_t
 {
 	size_t cursor = 0;
 	while (cursor < bufSize) {
-		if (!mysleep(ticsPerChar))
+		if (!awaitInput(ticsPerChar+2))
 			return -ETIME;
 		int r = safe_read(STDIN_FILENO, buf + cursor, bufSize - cursor);
 		if (r <= 0)
@@ -684,7 +679,7 @@ static ssize_t
 static void queueAnyInput(void)
 //add any pending user input to readbuffer
 {
-	if (mysleep(0)) {
+	if (awaitInput(0)) {
 	  char *s = readbuffer + chars_to_parse;
 	  int r = safe_read(STDIN_FILENO, s, readbuffer+sizeof(readbuffer) - s);
 	  if (r > 0)
@@ -704,9 +699,9 @@ int getScreenSize(unsigned *width, unsigned *height)
 	if (err || !win.ws_row || !win.ws_col) {
 		err = -ENOENT;
 		queueAnyInput();
-		if (!mysleep(0)) {  //can't query term if there's pending user input
+		if (!awaitInput(0)) {  //can't query term if there's pending user input
 			write1(CtextAreaQuery);
-			char buf[16];  //allow 100ms to rcv position report ending in R
+			char buf[16];
 			int rspLen = readResponse(buf, sizeof(buf)-1, 't');
 			if (rspLen > 7 && buf[0]==27 && buf[1]=='[' &&
 				buf[2]=='8' && buf[3]==';') {
@@ -1110,7 +1105,7 @@ static void showmatching(char *p)
 		save_dot = dot;	// remember where we are
 		dot = q;		// go to new loc
 		refresh();		// let the user see it
-		mysleep(40);	// give user some time
+		awaitInput(40);	// give user some time
 		dot = save_dot;	// go back to old loc
 		refresh();
 	}
@@ -1896,9 +1891,8 @@ static char *new_screen(int ro, int co)
 	// initialize the new screen. assume this will be a empty file.
 	screen_erase();
 	//   non-existent text[] lines start with a tilde (~).
-	for (li = 1; li < ro - 1; li++) {
-		screen[(li * co) + 0] = '~';
-	}
+	for (li = 1; li < ro - 1; li++)
+		screen[li * co] = '~';
 	return screen;
 }
 
@@ -2567,8 +2561,8 @@ static void catch_sig(int sig)
 }
 #endif /* FEATURE_VI_USE_SIGNALS */
 
-static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
-//returns true if input is available
+static int awaitInput(int tics)
+//returns true if input is becomes available within tics/100 seconds
 {
 	fflush(stdout);
 	tcdrain(STDOUT_FILENO);
@@ -2576,7 +2570,7 @@ static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
 
 	pfd[0].fd = 0;
 	pfd[0].events = POLLIN;
-	return safe_poll(pfd, 1, hund*10) > 0;
+	return safe_poll(pfd, 1, tics*10) > 0;
 }
 
 //----- IO Routines --------------------------------------------
@@ -2647,14 +2641,17 @@ static char readit(void)	// read (maybe cursor) key from stdin
 			// Could be bare Esc key. See if there are any
 			// more chars to read after the ESC. This would
 			// be a Function or Cursor Key sequence.
-			// keep reading while there are input chars, and room in buffer
+			// keep reading while there are input chars and room in buffer
 			// for a complete ESC sequence (assuming 8 chars is enough)
-			while(mysleep(ticsPerChar) && (n <= (sizeof(readbuffer) - 8))) {
+			while(awaitInput(ticsPerChar)) {
 				// read the rest of the ESC string
 				int r = safe_read(STDIN_FILENO,
 						readbuffer + n, sizeof(readbuffer) - n);
-				if (r > 0)
-					n += r;
+				if (r <= 0)
+					break;
+				n += r;
+				if (n > sizeof(readbuffer)-8)
+					break;
 			}
 		}
 		chars_to_parse = n;
@@ -2961,7 +2958,7 @@ static void flash(int h)
 {
 	standout_start();	// send "start reverse video" sequence
 	redraw();
-	mysleep(h);
+	awaitInput(h);
 	standout_end();		// send "end reverse video" sequence
 	redraw();
 }
@@ -3233,14 +3230,14 @@ static void refresh(void)
 	// poll to see if there is input already waiting. if we are
 	// not able to display output fast enough to keep up, skip
 	// the display update until we catch up with input.
-	if (chars_to_parse || mysleep(0))
+	if (chars_to_parse || awaitInput(0))
 		return;
 
 	sync_cursor(dot, &crow, &ccol);	// where cursor will be (on "dot")
 	tp = screenbegin;	// index into text[] of top line
 
 	// compare text[] to screen[] and mark screen[] lines that need updating
-	for (li = 0; li < rows - 1; li++) {
+	for (li = 0; li < rows - 1 && !awaitInput(0); li++) {
 		int cs, ce;				// column start & end
 		char *out_buf;
 		// format current text line
@@ -4328,7 +4325,7 @@ static void crash_dummy()
  cd1:
 	totalcmds++;
 	if (sleeptime > 0)
-		mysleep(sleeptime);      // sleep 1/100 sec
+		awaitInput(sleeptime);      // sleep 1/100 sec
 }
 
 // test to see if there are any errors
