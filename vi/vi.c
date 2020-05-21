@@ -635,7 +635,14 @@ static void clear_screen(void)
 {
 	place_cursor(0, 0, FALSE);	// put cursor in correct place
 	clear_to_eos();		// tell terminal to erase display
-	screen_erase();		// erase the internal screen buffer
+}
+
+static void gracefulExit(void)
+{
+	cookmode();
+	place_cursor(rows-1, 0, FALSE);	// go to bottom of screen
+	clear_to_eol();		// Erase to end of line
+	fflush(stdout);
 }
 
 #if ENABLE_FEATURE_VI_WIN_RESIZE
@@ -664,7 +671,7 @@ static ssize_t
 {
 	size_t cursor = 0;
 	while (cursor < bufSize) {
-		if (!awaitInput(ticsPerChar+2))
+		if (!awaitInput(ticsPerChar+9))
 			return -ETIME;
 		int r = safe_read(STDIN_FILENO, buf + cursor, bufSize - cursor);
 		if (r <= 0)
@@ -731,6 +738,17 @@ int getScreenSize(unsigned *width, unsigned *height)
 	return err;
 }
 #endif
+
+
+static void createScreen(void)
+{
+#if ENABLE_FEATURE_VI_WIN_RESIZE
+	getScreenSize(&columns, &rows);
+	clampScreenSize();
+#endif
+	new_screen(rows, columns);	// get memory for virtual screen
+}
+
 
 int vi_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int vi_main(int argc, char **argv)
@@ -871,11 +889,7 @@ static void edit_file(char *fn)
 
 	editing = 1;	// 0 = exit, 1 = one file, 2 = multiple files
 	rawmode();
-#if ENABLE_FEATURE_VI_WIN_RESIZE
-	getScreenSize(&columns, &rows);
-	clampScreenSize();
-#endif
-	new_screen(rows, columns);	// get memory for virtual screen
+	createScreen();
 	init_text_buffer(fn);
 
 #if ENABLE_FEATURE_VI_YANKMARK
@@ -887,6 +901,7 @@ static void edit_file(char *fn)
 	last_forward_char = last_input_char = '\0';
 	crow = 0;
 	ccol = 0;
+	clear_screen();
 
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 	catch_sig(0);
@@ -939,7 +954,7 @@ static void edit_file(char *fn)
 		}
 	}
 #endif
-	clear_screen();
+
 	//------This is the main Vi cmd handling loop -----------------------
 	while (editing > 0) {
 		refresh();
@@ -980,9 +995,7 @@ static void edit_file(char *fn)
 	}
 	//-------------------------------------------------------------------
 	refresh();
-	place_cursor(rows, 0, FALSE);	// go to bottom of screen
-	clear_to_eol();		// Erase to end of line
-	cookmode();
+	gracefulExit();
 #undef cur_line
 }
 
@@ -1883,16 +1896,10 @@ static char *bound_dot(char *p) // make sure  text[0] <= P < "end"
 
 static char *new_screen(int ro, int co)
 {
-	int li;
-
 	free(screen);
 	screensize = ro * co + 8;
 	screen = xmalloc(screensize);
-	// initialize the new screen. assume this will be a empty file.
 	screen_erase();
-	//   non-existent text[] lines start with a tilde (~).
-	for (li = 1; li < ro - 1; li++)
-		screen[li * co] = '~';
 	return screen;
 }
 
@@ -2507,12 +2514,7 @@ static void cookmode(void)
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 static void winch_sig(int sig ATTRIBUTE_UNUSED)
 {
-	// FIXME: do it in main loop!!!
-#if ENABLE_FEATURE_VI_WIN_RESIZE
-	getScreenSize(&columns, &rows);
-	clampScreenSize();
-#endif
-	new_screen(rows, columns);	// get memory for virtual screen
+	createScreen();
 	redraw();
 	fflush(stdout);
 }
@@ -2520,10 +2522,8 @@ static void winch_sig(int sig ATTRIBUTE_UNUSED)
 //----- Come here on QUIT, PIPE, TERM, HUP ----------------------
 static void quit_sig(int sig)
 {
-	cookmode();
+	gracefulExit();
 	signal(sig, SIG_DFL);
-	puts("");
-	clear_to_eos();
 	kill(my_pid, sig);
 }
 
@@ -2534,7 +2534,7 @@ static void cont_sig(int sig ATTRIBUTE_UNUSED)
 	rawmode();			// terminal to "raw"
 	*status_buffer=0;	// force status update
 	redraw();
-
+	fflush(stdout);
 	signal(SIGTSTP, suspend_sig);
 	signal(SIGCONT, SIG_DFL);
 	kill(my_pid, SIGCONT);
@@ -2543,10 +2543,7 @@ static void cont_sig(int sig ATTRIBUTE_UNUSED)
 //----- Come here when we get a Suspend signal -------------------
 static void suspend_sig(int sig ATTRIBUTE_UNUSED)
 {
-	place_cursor(rows - 1, 0, FALSE);	// go to bottom of screen
-	clear_to_eol();		// Erase to end of line
-	cookmode();			// terminal to "cooked"
-
+	gracefulExit();
 	signal(SIGCONT, cont_sig);
 	signal(SIGTSTP, SIG_DFL);
 	kill(my_pid, SIGTSTP);
@@ -3153,7 +3150,8 @@ static int format_edit_status(const char *fmt)
 //----- Force refresh of all Lines -----------------------------
 static void redraw(void)
 {
-	clear_screen();
+	clear_screen();		//clear teminal screen and our image of it
+	screen_erase();
 	refresh();
 }
 
@@ -3467,12 +3465,7 @@ repeat:
 		goto repeat;
 	case 12:			// ctrl-L  force redraw whole screen
 	case 18:			// ctrl-R  force redraw
-		place_cursor(0, 0, FALSE);	// put cursor in correct place
-		clear_to_eos();	// tel terminal to erase display
-#if ENABLE_FEATURE_VI_WIN_RESIZE
-		getScreenSize(&columns, &rows);
-		clampScreenSize();
-#endif
+		createScreen();
 		redraw();
 		break;
 	case 13:			// Carriage Return ^M
