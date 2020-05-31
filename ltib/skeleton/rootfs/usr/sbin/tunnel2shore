@@ -11,7 +11,7 @@ run=/var/run
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 1/20/20 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 5/30/20 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -74,12 +74,12 @@ echo $tunHosts >$tunHostsFn
 grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
 
 tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded last
-tunArgs="-oExitOnForwardFailure=yes -ygNK 180 $shoreSSH"
+tunArgs="-oExitOnForwardFailure=yes -ygN $shoreSSH"
 local=localhost
 export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
 
-SSH() {
-  : | setsid dbclient -i $HOME/.ssh/id_rsa "$@" 2>$run/$self.err
+SSH() {  #start TCP keepalives after idle 3 minutes
+  : | setsid dbclient -i $HOME/.ssh/id_rsa -S180 "$@" 2>$run/$self.err
 }
 openTunnel() {
 #open tunnel from shore's $1 port to our local ssh port

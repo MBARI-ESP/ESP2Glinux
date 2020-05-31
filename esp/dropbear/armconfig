@@ -1,6 +1,6 @@
 #!/bin/bash
 # unpack, patch and configure dropbear-git build for arm-linux 
-#  -- 7/30/19 brent@mbari.org
+#  -- 5/30/20 brent@mbari.org
 : ${CFLAGS:=-O2}
 : ${CXXFLAGS:=$CFLAGS}
 : ${ARMGCC:=/arm}
@@ -11,15 +11,15 @@ export CC CFLAGS CXXFLAGS
 unset zlib
 [ "$ARMPREFIX" ] && zlib="--with-zlib=$ARMPREFIX"
 cd $DBVERS || {
-  git clone https://github.com/mkj/dropbear.git $DBVERS &&
+  git clone https://github.com/brentr/dropbear.git $DBVERS &&
   cd $DBVERS || exit $?
 }
 git reset --hard &&
 git clean -dxf &&
-git checkout DROPBEAR_2019.78 &&
-patch < ../dropbear-mbari2.patch &&
+git checkout mbari &&
+cp localoptions.h $DBVERS &&
 autoconf && autoheader &&
 configure --host=arm-unknown-linux $zlib \
- --disable-lastlog --disable-utmp --disable-utmpx \
+ --disable-lastlog --disable-utmp --disable-utmpx --disable-harden \
  --disable-wtmp --disable-wtmpx --disable-pututline --disable-pututxline &&
 echo "Next, run arminstall here"

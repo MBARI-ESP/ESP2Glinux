@@ -11,6 +11,9 @@ EOS
 }
 
 ifPost() {
-  echo 1 > /proc/sys/net/ipv4/ip_forward &&
+  ipv4=/proc/sys/net/ipv4
+  echo  7 >$ipv4/tcp_keepalive_probes
+  echo 43 >$ipv4/tcp_keepalive_intvl
+  echo  1 >$ipv4/ip_forward &&
   echo "Packet forwarding enabled"
 }
