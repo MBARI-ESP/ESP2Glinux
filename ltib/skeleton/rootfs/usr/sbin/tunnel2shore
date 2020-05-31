@@ -79,7 +79,7 @@ local=localhost
 export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
 
 SSH() {  #start TCP keepalives after idle 3 minutes
-  : | setsid dbclient -i $HOME/.ssh/id_rsa -S180 "$@" 2>$run/$self.err
+  : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
 }
 openTunnel() {
 #open tunnel from shore's $1 port to our local ssh port
