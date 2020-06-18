@@ -1,13 +1,31 @@
-# revised:  12/5/14 brent@mbari.org
+# revised:  6/18/20 brent@mbari.org
+# most of this does not work with the Segger dongle
+# Here's a procedure for debugging the linux kernel:
+#   reset will reset the target.
+#   Interrupt it at the boot prompt with Control-C
+#   start the debugger
+#     jlink ~/ltibUboot/u-boot
+#   this halt the target!
+#     break do_bootm_linux
+#     cont
+#   run sdBoot (boot the kernel from the bootloader)
+#     break *images->ep
+#     cont
+#     delete
+#     symbol-file  ~/git/linux/vmlinux
+#     hbreak start_kernel
+#     cont
+#     delete
+
 
 source jlinktarget.gdb
-cd ~/ltib/rpm/BUILD/u-boot-2009.11
+#cd ~/ltib/rpm/BUILD/u-boot-2009.11
 
 define bootload
   #load bootloader into SRAM
   #uboot must have been built with -Os optimization, or it will not fit
   #this load offset puts it at 0x1102900 -- see jump below
-  monitor reset 9
+  monitor reset 7
   file
   file u-boot
   load u-boot 0xdda29000
@@ -23,7 +41,7 @@ end
 define reload
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  file u-boot
+#  file u-boot
   load
   thbreak start.S:135
 end
@@ -31,8 +49,9 @@ end
 define reset
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  monitor reset 9
-  reload
+  #undocumented reset strategy #7 is the only one that works
+  #but, cannot halt the system afterwords
+  monitor reset 7
 end
 
 define reinit
@@ -46,6 +65,7 @@ end
 
 define restart
   reset
+  reload
   continue
   set $pc = stack_setup
 #  thbreak lpc313x_init

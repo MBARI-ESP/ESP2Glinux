@@ -1,7 +1,7 @@
-# revised:  11/19/14 brent@mbari.org
+# revised:  6/18/20 brent@mbari.org
 
 source target.gdb
-cd ~/ltib/rpm/BUILD/u-boot-2009.11
+#cd ~/ltib/rpm/BUILD/u-boot-2009.11
 
 define bootload
   #load bootloader into SRAM
@@ -9,7 +9,7 @@ define bootload
   #this load offset puts it at 0x1102900 -- see jump below
   monitor reset halt
   file
-  file u-boot
+#  file u-boot
   load u-boot 0xdda29000
 end
 
@@ -23,7 +23,7 @@ end
 define reload
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
-  file u-boot
+#  file u-boot
   load
   thbreak start.S:135
 end
@@ -32,11 +32,11 @@ define reset
   #we load the code where it needs to run, but, as a result...
   #we must skip the code that normally copies the loader into DRAM
   monitor reset halt
-  reload
 end
 
 define reinit
   reset
+  reload
   continue
   set $pc = stack_setup
   thbreak lpc313x_init
@@ -46,6 +46,7 @@ end
 
 define restart
   reset
+  reload
   continue
   set $pc = stack_setup
 #  thbreak lpc313x_init
@@ -55,6 +56,7 @@ define restart
   finish
   set $pc = start_armboot
   step
+  b do_bootm_linux
   echo Stopped at top of start_armboot()\n
 end
 

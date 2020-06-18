@@ -3,11 +3,11 @@
 #***  unplug/replug USB to JTAG dongle before running ***
 cd `dirname $0`
 export CROSS_COMPILE=arm-none-linux-gnueabi-
-: ${targetLog:=lpc313x.log}
+: ${targetLog:=jlink.log}
 : ${GDBstart:=jlink.gdb}
 : ${GDB:=${CROSS_COMPILE}gdb}
 
-JLinkGDBServer > $targetLog &
+setsid JLinkGDBServer -speed 50 -singlerun -silent -device LPC3141 > $targetLog &
 ocdpid=$!
 trap "exec 2>/dev/null; kill $ocdpid && wait $!" EXIT INT QUIT HUP PIPE
 
