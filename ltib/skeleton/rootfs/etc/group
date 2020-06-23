@@ -43,7 +43,7 @@ nscd:x:28:
 ident:x:98:
 radvd:x:75:
 postgres:x:26:
-apache:x:48:seh
+apache:x:48:
 squid:x:23:
 named:x:70:
 pcap:x:77:
