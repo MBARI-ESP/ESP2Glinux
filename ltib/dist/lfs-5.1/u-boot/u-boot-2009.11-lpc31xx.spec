@@ -24,6 +24,7 @@ Patch11         : u-boot-2009.11-baudrate.patch
 Patch12         : u-boot-2009.11-mbariA.patch
 Patch13         : u-boot-2009.11-ea3152.patch
 Patch14         : u-boot-2009.11-nfsv3.patch
+Patch15         : u-boot-2009.11-fasterSPIboot.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -50,6 +51,7 @@ needed for boards using u-boot and the LPC31XX.
 %patch12 -p1
 %patch13 -p1
 %patch14 -p1
+%patch15 -p1
 
 %Build
 : ${PKG_U_BOOT_CONFIG_TYPE:?must be set, e.g. MPC8548CDS_config}

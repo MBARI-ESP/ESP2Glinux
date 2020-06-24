@@ -1,0 +1,57 @@
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
+--- u-boot-2009.11/Makefile	2020-06-24 16:12:48.693119229 -0700
++++ u-boot-2009.11.modified/Makefile	2020-06-24 12:47:52.385467883 -0700
+@@ -24,7 +24,10 @@
+ VERSION = 2009
+ PATCHLEVEL = 11
+ SUBLEVEL =
+-EXTRAVERSION = -mbariC
++EXTRAVERSION = -mbariD
++HOSTCC = gcc
++CROSS_COMPILE = arm-none-linux-gnueabi-
++
+ ifneq "$(SUBLEVEL)" ""
+ U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ else
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2020-06-24 16:12:48.689785913 -0700
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2020-06-24 12:52:24.437345312 -0700
+@@ -1,5 +1,5 @@
+ /*
+-* revised:  12/6/17 brent@mbari.org for ESP3G host boards
++* revised:  6/24/20 brent@mbari.org for ESP3G host boards
+ *
+ * (C) Copyright 2007-2008
+ * Stelian Pop <stelian.pop@leadtechdesign.com>
+@@ -103,7 +103,7 @@
+ 	.cs_high = 0,
+ 	.pp_delay =0 ,
+ 	.inter_delay = 0,
+-	.clk = 1000000
++	.clk = CONFIG_SPI_HZ
+ };
+ 
+ extern int is_nand_init_done;
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/mtd/spi/atmel.c u-boot-2009.11.modified/drivers/mtd/spi/atmel.c
+--- u-boot-2009.11/drivers/mtd/spi/atmel.c	2009-12-15 14:20:54.000000000 -0800
++++ u-boot-2009.11.modified/drivers/mtd/spi/atmel.c	2020-06-24 15:00:38.349601503 -0700
+@@ -97,7 +97,7 @@
+ 		.idcode1		= 0x27,
+ 		.l2_page_size		= 9,
+ 		.pages_per_block	= 8,
+-		.blocks_per_sector	= 64,
++		.blocks_per_sector	= 16,
+ 		.nr_sectors		= 64,
+ 		.name			= "AT45DB321D",
+ 	},
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
+--- u-boot-2009.11/include/configs/ea31xx.h	2020-06-24 16:12:48.693119229 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2020-06-24 14:58:17.077024103 -0700
+@@ -46,6 +46,7 @@
+ #define XTAL_IN			12000000	/* Crystal clk freq */
+ #define CONFIG_SYS_HZ		(XTAL_IN / 256)	/* decrementer freq in Hz */
+ #define CONFIG_SYS_NO_FLASH			/* No NOR flash */
++#define CONFIG_SPI_HZ  (33*1000*1000)  //33Mhz SPI clk for faster booting
+ 
+ /* LPC313x U-boot bootmode support.
+  * The following defines effect which low-level boot mode
