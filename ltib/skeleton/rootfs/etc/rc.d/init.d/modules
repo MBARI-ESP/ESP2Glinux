@@ -2,12 +2,12 @@
 PATH=$PATH:/sbin:/bin
 
 modlist=/etc/modules
-RTC=ds3234  #ensure this required SPI RTC module loaded
 
 case "$1" in
     start)
        echo "Loading kernel modules"
-       [ "$RTC" -a ! -e "/sys/bus/spi/drivers/$RTC" ] && modprobe rtc_$RTC
+       spiDrivers=`cat /sys/bus/spi/devices/*/modalias 2>/dev/null` &&
+      	 for mod in $spiDrivers; do modprobe $mod; done
        #load built-in ethernet first to ensure it gets named eth0
        for module in ks8851_mll dm9000; do
          [ -e /sys/bus/platform/devices/$module.* ] &&
