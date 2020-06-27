@@ -16,12 +16,15 @@ hostname
 mount -n -t proc proc /proc
 mount -n -t sysfs sys /sys
 
-#initialize dev filesystem
-devtgz=/dev/.dev.tgz
-mount -n -t tmpfs dev /mnt &&
-if [ -e "$devtgz" ]; then
-  tar -C /mnt -xmzf "$devtgz"
-else
-  cp -a /dev/* /mnt
-fi &&
-exec mount --move /mnt /dev
+#initialize dev filesystem if not yet mounted
+mountpoint -q /dev || { 
+  devtgz=/dev/.dev.tgz
+  mount -n -t tmpfs dev /mnt &&
+  if [ -e "$devtgz" ]; then
+    tar -C /mnt -xmzf "$devtgz"
+  else
+    cp -a /dev/* /mnt
+  fi && exec mount --move /mnt /dev
+}
+mkdir -p /dev/pts /dev/shm
+

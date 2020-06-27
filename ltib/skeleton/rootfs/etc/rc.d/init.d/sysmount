@@ -93,7 +93,7 @@ case "$1" in
       swapoff -a 2>/dev/null
       while read mntdev mntpt fs opts extra; do
         case "$fs" in
-          proc|rootfs|sysfs|tmpfs|devpts|usbfs)
+          proc|rootfs|sysfs|tmpfs|devpts|usbfs|devtmpfs)
            ;;  #leave volatile filesystems mounted
           *) umount -r "$mntpt"
         esac

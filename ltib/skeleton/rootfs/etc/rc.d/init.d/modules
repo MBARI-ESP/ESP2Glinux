@@ -2,13 +2,16 @@
 PATH=$PATH:/sbin:/bin
 
 modlist=/etc/modules
+RTC=ds3234  #ensure this required SPI RTC module loaded
 
 case "$1" in
     start)
        echo "Loading kernel modules"
+       [ "$RTC" -a ! -e "/sys/bus/spi/drivers/$RTC" ] && modprobe rtc_$RTC
        #load built-in ethernet first to ensure it gets named eth0
        for module in ks8851_mll dm9000; do
-         [ -e /sys/bus/platform/devices/$module.* ] && modprobe $module
+         [ -e /sys/bus/platform/devices/$module.* ] &&
+         [ ! -e /sys/module/$module ] && modprobe $module
        done
        [ -r $modlist ] || {
          echo "Cannot read $modlist" >&2
@@ -18,7 +21,7 @@ case "$1" in
          unset IFS
          [ -n "$args" ] && {
            set $args
-           modprobe "$@"
+           [ ! -e /sys/module/$1 ] && modprobe "$@"
          }
        done < $modlist
        :
