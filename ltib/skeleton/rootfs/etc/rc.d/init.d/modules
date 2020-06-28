@@ -1,8 +1,6 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/bin
-
 modlist=/etc/modules
-
 case "$1" in
     start)
        echo "Loading kernel modules"
@@ -13,7 +11,15 @@ case "$1" in
        #load built-in ethernet first to ensure it gets named eth0
        for module in ks8851_mll dm9000; do
          [ -e /sys/bus/platform/devices/$module.* ] &&
-         [ ! -e /sys/module/$module ] && modprobe $module
+         modparm=/sys/module/$module/parameters &&
+         if [ -e $modparm ]; then  #built-in
+           [ -e $modparm/p1cr ] && { #tweak ks8851 options
+             echo 2 >$modparm/power
+             echo 0x8093 >$modparm/p1cr
+           }
+         else #let modprobe handle module options
+           modprobe $module
+         fi
        done
        [ -r $modlist ] || {
          echo "Cannot read $modlist" >&2
