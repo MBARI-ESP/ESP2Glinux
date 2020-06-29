@@ -1,7 +1,7 @@
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.modified/Makefile
---- u-boot-2009.11/Makefile	2020-06-24 16:12:48.693119229 -0700
-+++ u-boot-2009.11.modified/Makefile	2020-06-24 12:47:52.385467883 -0700
-@@ -24,7 +24,10 @@
+--- u-boot-2009.11/Makefile	2020-06-28 17:39:40.784544197 -0700
++++ u-boot-2009.11.modified/Makefile	2020-06-28 14:09:48.412170420 -0700
+@@ -24,7 +24,12 @@
  VERSION = 2009
  PATCHLEVEL = 11
  SUBLEVEL =
@@ -9,13 +9,15 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/Makefile u-boot-2009.11.mo
 +EXTRAVERSION = -mbariD
 +HOSTCC = gcc
 +CROSS_COMPILE = arm-none-linux-gnueabi-
++#build with:
++#  ltibMake CROSS_COMPILE=arm-none-linux-gnueabi- HOSTCC=gcc u-boot.bin
 +
  ifneq "$(SUBLEVEL)" ""
  U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
  else
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-boot-2009.11.modified/board/ea31xx/ea31xx.c
---- u-boot-2009.11/board/ea31xx/ea31xx.c	2020-06-24 16:12:48.689785913 -0700
-+++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2020-06-24 12:52:24.437345312 -0700
+--- u-boot-2009.11/board/ea31xx/ea31xx.c	2020-06-28 17:39:40.781210881 -0700
++++ u-boot-2009.11.modified/board/ea31xx/ea31xx.c	2020-06-24 16:18:34.281279925 -0700
 @@ -1,5 +1,5 @@
  /*
 -* revised:  12/6/17 brent@mbari.org for ESP3G host boards
@@ -34,7 +36,7 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/board/ea31xx/ea31xx.c u-bo
  extern int is_nand_init_done;
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/mtd/spi/atmel.c u-boot-2009.11.modified/drivers/mtd/spi/atmel.c
 --- u-boot-2009.11/drivers/mtd/spi/atmel.c	2009-12-15 14:20:54.000000000 -0800
-+++ u-boot-2009.11.modified/drivers/mtd/spi/atmel.c	2020-06-24 15:00:38.349601503 -0700
++++ u-boot-2009.11.modified/drivers/mtd/spi/atmel.c	2020-06-24 16:18:34.281279925 -0700
 @@ -97,7 +97,7 @@
  		.idcode1		= 0x27,
  		.l2_page_size		= 9,
@@ -45,13 +47,71 @@ diff --exclude CVS --exclude .git -uNr u-boot-2009.11/drivers/mtd/spi/atmel.c u-
  		.name			= "AT45DB321D",
  	},
 diff --exclude CVS --exclude .git -uNr u-boot-2009.11/include/configs/ea31xx.h u-boot-2009.11.modified/include/configs/ea31xx.h
---- u-boot-2009.11/include/configs/ea31xx.h	2020-06-24 16:12:48.693119229 -0700
-+++ u-boot-2009.11.modified/include/configs/ea31xx.h	2020-06-24 14:58:17.077024103 -0700
+--- u-boot-2009.11/include/configs/ea31xx.h	2020-06-28 17:39:40.784544197 -0700
++++ u-boot-2009.11.modified/include/configs/ea31xx.h	2020-06-28 17:29:31.961081107 -0700
 @@ -46,6 +46,7 @@
  #define XTAL_IN			12000000	/* Crystal clk freq */
  #define CONFIG_SYS_HZ		(XTAL_IN / 256)	/* decrementer freq in Hz */
  #define CONFIG_SYS_NO_FLASH			/* No NOR flash */
-+#define CONFIG_SPI_HZ  (33*1000*1000)  //33Mhz SPI clk for faster booting
++#define CONFIG_SPI_HZ  (12*1000*1000)  //12Mhz SPI clk for faster booting
  
  /* LPC313x U-boot bootmode support.
   * The following defines effect which low-level boot mode
+@@ -131,7 +132,7 @@
+ "bootfile=uImage\0" \
+ "ramfile=rootfs.ext2.gz.uboot\0" \
+ "kernBase=50000\0" \
+-"maxKernSize=200000\0" \
++"maxKernSize=3b0000\0" \
+ "kernSize=200000\0" \
+ "usbtty=cdc_acm\0" \
+ "console=console=ttyS0,115200n8 loglevel=5\0" \
+@@ -157,7 +158,7 @@
+ "flashBoot=sf probe 0 0 0; echo \\\\cLoading kernel from SPI flash...; sf read $(loadaddr) $(kernBase) $(kernSize); echo done; run flashArgs; bootm $(loadaddr)\0" \
+ "sdBoot=mmc init; fatload mmc 0 $(loadaddr) $(kernel); run sdArgs; bootm $(loadaddr)\0" \
+ "sdArgs=run args; set bootargs $(root)$(sdRoot)\0" \
+-"sdRoot=/dev/mmcblk0p2 ro rootdelay=1\0" \
++"sdRoot=/dev/mmcblk0p2 ro rootwait\0" \
+ "netSDboot=dhcp $(kernel); run sdArgs; bootm $(loadaddr)\0" \
+ "netFlashBoot=dhcp $(kernel); run flashArgs; bootm $(loadaddr)\0" \
+ "flashNewKernel=sf probe 0 0 0; echo \\\\cWriting Kernel to SPI flash...; sf erase $(kernBase) $(maxKernSize); sf write $(loadaddr) $(kernBase) $(maxKernSize); set kernSize $(filesize); saveenv\0" \
+diff --exclude CVS --exclude .git -uNr u-boot-2009.11/uboot.geany u-boot-2009.11.modified/uboot.geany
+--- u-boot-2009.11/uboot.geany	1969-12-31 16:00:00.000000000 -0800
++++ u-boot-2009.11.modified/uboot.geany	2020-06-24 16:22:58.979871572 -0700
+@@ -0,0 +1,36 @@
++[editor]
++line_wrapping=false
++line_break_column=72
++auto_continue_multiline=true
++
++[file_prefs]
++final_new_line=false
++ensure_convert_new_lines=false
++strip_trailing_spaces=true
++replace_tabs=false
++
++[indentation]
++indent_width=2
++indent_type=2
++indent_hard_tab_width=4
++detect_indent=true
++detect_indent_width=true
++indent_mode=2
++
++[project]
++name=uboot
++base_path=./
++description=U-Boot for NXP LPC31xx
++file_patterns=*.c;*.h;
++
++[long line marker]
++long_line_behaviour=1
++long_line_column=80
++
++[prjorg]
++source_patterns=*.c;*.C;*.cpp;*.cxx;*.c++;*.cc;*.m;
++header_patterns=*.h;*.H;*.hpp;*.hxx;*.h++;*.hh;
++ignored_dirs_patterns=.*;
++ignored_file_patterns=*.o;*.obj;*.a;*.lib;*.so;*.png;*.eps;*.py;*.pdf;*.svg;*.zip;*.7z*;*.tar*;.*;*.dll;*.lo;*.la;*.class;*.jar;*.pyc;*.mo;*.gmo;
++generate_tag_prefs=1
++external_dirs=
