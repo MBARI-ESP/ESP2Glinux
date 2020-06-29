@@ -1,0 +1,12 @@
+#!/bin/sh
+#reconfigure ks8851_mll -- see ../ether.conf
+#Switch to energy saver mode with rate limted to 10Mb/sec
+#This will cause our interface to shutdown completely a few seconds after being
+#disconnected from its peer.
+#Only plugging the port into an *active* peer will reactivate the interface.
+#Energy saving ethernet switches shut down ports after being disconnected.
+#If both peers are shut down, neither will awaken when reconnected.
+
+cd /sys/module/ks8851_mll/parameters &&
+echo 2 >power
+echo 0x8093 >p1cr

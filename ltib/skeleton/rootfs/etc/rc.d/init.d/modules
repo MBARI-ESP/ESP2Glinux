@@ -1,44 +1,52 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/bin
 modlist=/etc/modules
-case "$1" in
-    start)
-       echo "Loading kernel modules"
-       spiDrivers=`cat /sys/bus/spi/devices/*/modalias 2>/dev/null` &&
-      	 for mod in $spiDrivers; do  #don't reload those already loaded
-      	   [ -e /sys/bus/spi/drivers/${mod/spi:} ] || modprobe $mod
-      	 done
-       #load built-in ethernet first to ensure it gets named eth0
-       for module in ks8851_mll dm9000; do
-         [ -e /sys/bus/platform/devices/$module.* ] &&
-         modparm=/sys/module/$module/parameters &&
-         if [ -e $modparm ]; then  #built-in
-           [ -e $modparm/p1cr ] && { #tweak ks8851 options
-             echo 2 >$modparm/power
-             echo 0x8093 >$modparm/p1cr
-           }
-         else #let modprobe handle module options
-           modprobe $module
-         fi
-       done
-       [ -r $modlist ] || {
-         echo "Cannot read $modlist" >&2
-         exit 2
-       }
-       while IFS='#'; read args comment; do
-         unset IFS
-         [ -n "$args" ] && {
-           set $args
-           [ ! -e /sys/module/$1 ] && modprobe "$@"
-         }
-       done < $modlist
-       :
-       ;;
-    stop)
-       :
-       ;;
+builtin=/etc/modconfig.d
 
-     *)
-       echo "usage: modules {start|stop}"
-       ;;
+#Scripts named after modules located in builtin directory are executed
+#instead of modprobe when the module is already loaded,
+#either because the module was builtin to the base kernel image,
+#or because this init.d script was restarted
+
+modConfig()
+{
+  module=$1
+  if [ -e /sys/module/$module ]; then  #configure already loaded module
+    [ -x $builtin/$module ] && $builtin/$module  #if we find a script to do so
+  else #let modprobe load the module and handle passing it options
+    modprobe $module
+  fi
+}
+
+case "$1" in
+  start)
+    echo "Loading kernel modules"
+    spiDrivers=`cat /sys/bus/spi/devices/*/modalias 2>/dev/null` &&
+    	for mod in $spiDrivers; do  #don't reload those already loaded
+      	[ -e /sys/bus/spi/drivers/${mod/spi:} ] || modConfig $mod
+    	done
+    #load built-in ethernet first to ensure it gets named eth0
+    for module in ks8851_mll dm9000; do
+      [ -e /sys/bus/platform/devices/$module.* ] && modConfig $module
+    done
+    [ -r $modlist ] || {
+      echo "Cannot read $modlist" >&2
+      exit 2
+    }
+    while IFS='#'; read args comment; do
+      unset IFS
+      [ -n "$args" ] && {
+        set $args
+        modConfig "$@"
+      }
+    done < $modlist
+    :
+    ;;
+  stop)
+     :
+     ;;
+
+   *)
+     echo "usage: modules {start|stop}"
+     ;;
 esac

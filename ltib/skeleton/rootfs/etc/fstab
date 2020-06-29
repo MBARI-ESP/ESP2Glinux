@@ -7,7 +7,6 @@
 # file sys	mount		type	options
 proc		/proc		proc	defaults
 devpts		/dev/pts	devpts	gid=5,mode=620
-usbfs		/proc/bus/usb	usbfs	defaults
 shm		/dev/shm	tmpfs	defaults
 
 #change rw to ro for a read/only root filesystem
