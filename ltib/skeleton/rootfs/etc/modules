@@ -3,3 +3,5 @@
 # This file contains the names of kernel modules that should be loaded
 # at boot time, one per line. Text on each line after # is ignored.
 # Parameters may be specified after each module's name.
+
+#i2c-pnx  #uncomment for Embedded Artists development board
