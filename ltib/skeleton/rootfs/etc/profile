@@ -24,12 +24,14 @@ fi
   alias du='du -h'
   alias df='df -h'
 
-  keyFn=~/.ssh/id_rsa
-  [ -e $keyFn ] || {
-    logger -st dropbear -p warn "Generating rsa key for $USER"
-    rm -f ${keyFn}.pub
-    mkdir -p ~/.ssh
-    dropbearkey -t rsa -f $keyFn >${keyFn}.pub
-  }
-  unset keyFn
+  sshdir=~/.ssh
+  mkdir -p $sshdir
+  for key in rsa ecdsa; do
+    keyfn=id_${key}
+    if [ ! -e "$sshdir/$keyfn" ]; then
+      echo "Generating dropbear $key ssh key for $USER@`hostname` ... "
+      dropbearkey -t $key -f $sshdir/$keyfn >$sshdir/$keyfn.pub
+    fi
+  done
+  unset keyFn sshdir
 }

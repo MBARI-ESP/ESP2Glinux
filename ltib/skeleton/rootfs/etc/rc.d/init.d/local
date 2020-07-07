@@ -12,11 +12,11 @@ case "$1" in
       echo $coredir/%e-SIG%s.%p >/proc/sys/kernel/core_pattern
       rm -f /var/crash && ln -s tmp/crash /var/crash
 
-      # ensure we have a valid ssh server key
+      # ensure we have valid ssh server keys
       mkdir -p $dropdir
-      for key in rsa dss; do
+      for key in rsa ecdsa; do
         keyfn=dropbear_${key}_host_key
-        if [ ! -r $dropdir/$keyfn ]; then
+        if [ ! -e $dropdir/$keyfn ]; then
           echo "Generating $key key for the dropbear ssh server... "
           dropbearkey -t $key -f $dropdir/$keyfn >$dropdir/$keyfn.pub
         fi
