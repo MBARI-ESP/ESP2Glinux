@@ -1,7 +1,7 @@
 #!/bin/bash
 #  Make startlight xpress kernel driver for ltib (arm) linux
-# revised: 6/13/18 brent@mbari.org
-: ${KERNEL_DIR:=~/ltib/rpm/BUILD/linux}
+# revised: 7/6/20 brent@mbari.org
+: ${KERNEL_DIR:=`readlink ../kernel`} #link to the appropriate kernel source dir
 : ${objs:="ccd.o sx_usb.o"}
 : ${KERNEL_VER:=`cd $KERNEL_DIR; make kernelversion`} &&
 : ${HOSTTOP:=`echo ~/ltib/rootfs.tmp`} &&
