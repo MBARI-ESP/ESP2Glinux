@@ -1,5 +1,9 @@
 #!/bin/sh
-me=~/.ssh/id_rsa
-unset myId
-[ -r $me ] && myId="-i $me "
-exec /usr/bin/dbclient ${myId}"$@"
+#use all available keys
+#DB defaults to dbclient
+me=$HOME/.ssh/id*[^.]???
+unset ids
+for id in $me; do
+  [ -r "$id" ] && ids="${ids}-i$id "
+done
+exec ${DB-/usr/bin/dbclient} ${ids}"$@"
