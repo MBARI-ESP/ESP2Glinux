@@ -18,11 +18,12 @@ for hdr in chardefs history keymaps readline rlconf rlstdc rltypedefs tilde; do
 done
 make && cd shlib || exit
 for lib in libreadline libhistory; do
-  rm -f $top/$lib.so* &&
-  cp $lib.so.5.2 $top &&
-  ln -sf $lib.so.5.2 $top/$lib.so.5 &&
-  ln -sf $lib.so.5 $top/$lib.so &&
-  ln -sf $lib.so.5 $top/$lib.so.4 &&
-  ln -sf $lib.so.5 $top/$lib.so.4.3 && exit
+  rm -f $TOP/$lib.so* &&
+  $ARMSTRIP --strip-unneeded -o $TOP/$lib.so.5.2 $lib.so.5.2 &&
+  chmod +x $TOP/$lib.so.5.2 &&
+  ln -sf $lib.so.5.2 $TOP/$lib.so.5 &&
+  ln -sf $lib.so.5 $TOP/$lib.so &&
+  ln -sf $lib.so.5 $TOP/$lib.so.4 &&
+  ln -sf $lib.so.5 $TOP/$lib.so.4.3 || exit
 done
 echo "Done."
