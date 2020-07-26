@@ -1,0 +1,28 @@
+#!/bin/sh
+# build & install rsync daemon for arm-linux -- 7/26/20 brent@mbari.org
+
+: ${ARMGCC:=/ltibarm}
+: ${CC:=$ARMGCC/bin/gcc}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${TARGETTOP:=${2-usr/lib}}
+: ${HOSTTOP:=${1-$HOME/ltib/rootfs.tmp}}
+: ${INC:=$HOME/ltib/rootfs/usr/include/readline}
+echo "Installing in $HOSTTOP"
+echo "  for execution at $TARGETTOP on the ARM target"
+TOP=$HOSTTOP/$TARGETTOP
+cd readline-5.2-mbari &&
+mkdir -p $INC || exit
+for hdr in chardefs history keymaps readline rlconf rlstdc rltypedefs tilde; do
+  cp $hdr.h $INC || exit
+done
+make && cd shlib || exit
+for lib in libreadline libhistory; do
+  rm -f $top/$lib.so* &&
+  cp $lib.so.5.2 $top &&
+  ln -sf $lib.so.5.2 $top/$lib.so.5 &&
+  ln -sf $lib.so.5 $top/$lib.so &&
+  ln -sf $lib.so.5 $top/$lib.so.4 &&
+  ln -sf $lib.so.5 $top/$lib.so.4.3 && exit
+done
+echo "Done."

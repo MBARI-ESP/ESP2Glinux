@@ -1,0 +1,9 @@
+#!/bin/sh
+# unpack & patch readline for arm-linux -- 7/26/20 brent@mbari.org
+
+: ${readline:=readline-5.2-mbari}
+cd $readline || exit
+bash_cv_must_reinstall_sighandlers=no bash_cv_func_sigsetjmp=present \
+bash_cv_func_strcoll_broken=no bash_cv_func_ctype_nonascii=no \
+configure --host=arm-none-linux-gnueabi --disable-multibyte --disable-static &&
+echo Done.
