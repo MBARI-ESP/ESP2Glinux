@@ -60,7 +60,8 @@ make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
-for package in libnl dyndns wpa_supplicant esp/dropbear usbmode dnsmasq \
+for package in readline libnl \
+      dyndns wpa_supplicant esp/dropbear usbmode dnsmasq \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync tar; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
