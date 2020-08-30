@@ -4,7 +4,7 @@
 #returns 1 if could not read geo location
 #returns 99 if serial port was locked
 
-. lockIridium || return
+. lockModem iridium || return
 {
   tcflush
   echo -ne "AT-MSGEO\r"

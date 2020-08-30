@@ -50,8 +50,8 @@ net:12345:respawn:/usr/sbin/inetd -f
 # call back if modem RINGs
 #ring:3:respawn:/usr/sbin/ringBack
 
-#every hour, cycle USB and modem power if Iridium modem unresponsive
-#mind:3:respawn:/bin/sh -c "sleep 1h && /usr/sbin/detachIridium 2>/dev/null"
+#every hour, cycle USB and modem power if modem unresponsive
+#mind:3:respawn:/bin/sh -c "sleep 1h && detachModem iridium 2>/dev/null"
 
 # start ESP server running yourMission script
 #ESP:3:once:/bin/su - esp -c "sleep 5 && ESPcmdPort=9999 start esp yourMission"

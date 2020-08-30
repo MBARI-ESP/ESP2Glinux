@@ -5,7 +5,7 @@
 #returns 2 if time formatted incorrectly
 #returns 99 if serial port was locked
 
-. lockIridium || return
+. lockModem iridium || return
 
 #output Iridium system time in a format suitable for date utility
 #this also selects simple RING reports to ensure we're in the right mode

@@ -1,8 +1,8 @@
-#lock Iridium serial port
+#lock specified modem's serial port
 #return 99 if it cannot be locked
 
-ATport=/dev/AT/iridium
-ATlock=/var/lock/LCK..AT_iridium
+ATport=/dev/AT/$1
+ATlock=/var/lock/LCK..AT_$1
 
 [ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "${owner// }" && {
   echo "$ATport is locked by pid $owner" >&2

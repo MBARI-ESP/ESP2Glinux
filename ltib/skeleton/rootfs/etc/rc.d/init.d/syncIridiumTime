@@ -6,7 +6,7 @@ PATH=/usr/sbin:/sbin:/usr/bin:/bin
 case "$1" in
   start|"")
     echo "Syncing time with Iridium network"
-    detachIridium && sysTime=`iridiumTime` && {
+    detachModem iridium && sysTime=`iridiumTime` && {
       date -us "$sysTime"
       geo=`iridiumLocation` &&
       logger -t IridiumLocation -p warning -- "$geo"

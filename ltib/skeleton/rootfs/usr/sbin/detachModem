@@ -1,0 +1,12 @@
+#!/bin/sh
+#Disconnect/Detatch specified modem
+
+. lockModem $1 || return
+
+#terminate any data call in progress and
+#[to ensure iridium modem will report RING on incoming calls]
+/usr/sbin/chat -f /etc/ppp/$1-detach.chat <$ATport >$ATport && return
+
+#power cycle modem if above chat fails
+/etc/ppp/reset-modem
+return 1
