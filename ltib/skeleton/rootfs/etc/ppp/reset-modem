@@ -12,7 +12,8 @@ tag=`basename $0`
 [ "$noUSBreset" ] ||
   resetUSBunlessBusy >/dev/null &  #in case modem is on a USB serial port
 
-fuser -u $gateway 2>&1 | tr \(\) " " | (
+users=`fuser -u $gateway 2>&1` || return  #in case gateway port does not exist
+echo $users | tr \(\) " " | (
   while read dev espPid espUser ignored; do
     if [ -n "$espPid" -a -n "$espUser" ]; then
       logger -t$tag -pwarn "Cycling power via $espUser's espclient"
