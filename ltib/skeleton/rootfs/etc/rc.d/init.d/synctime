@@ -13,12 +13,12 @@ case "$1" in
       if grep -qv '^[[:space:]]*#' /etc/resolv.conf; then
         if [ -n $ntpserver ] &&
            timelimit -t8 -T3 ntpclient -s -h $ntpserver >/dev/null; then
-          echo -ne "NTP sycn'd with $ntpserver | \c"
-          exec /etc/init.d/rtc stop
+          echo -n "NTP sycn'd with $ntpserver at "
+          quiet=1 exec /etc/init.d/rtc stop
         fi
         if [ -n $rdateserver ] && timelimit -t5 -T3 rdate $rdateserver; then
-          echo -ne "rdate sycn'd with $rdateserver | \c"
-          exec /etc/init.d/rtc stop
+          echo -n "rdate sycn'd with $rdateserver at "
+          quiet=1 exec /etc/init.d/rtc stop
         fi
       fi
       echo "Network unavailable:  Local time is `date`"
