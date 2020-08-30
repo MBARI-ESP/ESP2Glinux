@@ -2,7 +2,7 @@
 self=`basename $0`
 run=/var/run
 : ${HOME:=/root} #in case invoked from inittab
-: ${noGateDelay:=600}  #retry delay if no gateway
+: ${noGateDelay:=300}  #retry delay if no gateway
 : ${pidFn:=$run/$self.pid}
 : ${portFn:=/var/etc/$self.port}  #stores last TCP port # assigned us
 #portFn=/dev/null   #uncomment to query for our remote port # on each connect
@@ -11,7 +11,7 @@ run=/var/run
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 5/30/20 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 8/28/20 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -62,37 +62,43 @@ topIf() {
 
 sleep 5  #wait for net config to stabilize
 tag="`basename $0`[$$]"
-while [ ! "$(topIf)" ]; do
+[ "$(topIf)" ] || {
 #  logger -t $tag -p warning "No Gateway -- reopening $shore tunnel in $noGateDelay seconds"
   sleep $noGateDelay
-done
-
-#ensure shore and mail resolve to localhost
-#(done this way in case netutils updates /etc/hosts first)
-tunHosts='127.0.0.1 shore mail'
-echo $tunHosts >$tunHostsFn
-grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
-
-tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded last
-tunArgs="-oExitOnForwardFailure=yes -ygN $shoreSSH"
-local=localhost
-export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
-
-SSH() {  #start TCP keepalives after idle 3 minutes
-  : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
 }
-openTunnel() {
-#open tunnel from shore's $1 port to our local ssh port
-#tunnel from shore's 1$1 port ($1 prefixed by 1) to our optional espclient port
-  SSH -R$1:$local:22 -R1$1:$local:9999 $tunnels $tunArgs
-}
+[ "$(topIf)" ] && {
+  #ensure shore and mail resolve to localhost
+  #(done this way in case netutils updates /etc/hosts first)
+  tunHosts='127.0.0.1 shore mail'
+  echo $tunHosts >$tunHostsFn
+  grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
 
-#first, try the port previously assigned us
-logger -t $tag "Opening tunnel to $shore"
-[ -s $portFn ] && sshPort=`cat $portFn` &&
-    openTunnel $sshPort || {
-  sshPort=`SSH -y $shoreSSH tunnel close` && {  #request far side close tunnel
-    echo $sshPort >$portFn     #remember the port assigned us
-    openTunnel $sshPort
+  tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded last
+  tunArgs="-oExitOnForwardFailure=yes -ygN $shoreSSH"
+  local=localhost
+  export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
+
+  SSH() {  #start TCP keepalives after idle 3 minutes
+    : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
   }
-}
+  openTunnel() {
+  #open tunnel from shore's $1 port to our local ssh port
+  #tunnel from shore's 1$1 port ($1 prefixed by 1) to our espclient port
+    SSH -R$1:$local:22 -R1$1:$local:9999 $tunnels $tunArgs
+  }
+
+  #first, try the port previously assigned us
+  logger -t $tag "Opening tunnel to $shore"
+  [ -s $portFn ] && sshPort=`cat $portFn` &&
+      openTunnel $sshPort || {
+    sshPort=`SSH -y $shoreSSH tunnel close` && {  #request far side close tunnel
+      echo $sshPort >$portFn     #remember the port assigned us
+      openTunnel $sshPort
+    }
+  }
+} #if $(topIf)
+
+#This will run when the tunnel collapses or cannot be built
+#ifdown cellularIface
+#ifup celluarIface
+ 
