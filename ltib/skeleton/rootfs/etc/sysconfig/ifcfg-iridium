@@ -2,7 +2,7 @@
 IFALIAS=iridium  #USB Iridium modem
 IFNAME=ppp5
 AUTOSTART=no
-modemTTY=/dev/AT/iridium
+modemTTY=/dev/AT/$IFALIAS
 
 ifPrep() {
   pppd call iridium unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"} updetach
@@ -11,5 +11,5 @@ ifPrep() {
 KILLSECS=30   #allow longer for pppd to terminate
 KILLSIGS=KILL #don't allow retries after term request
 ifDetach() {
-  noUSBreset=1 detachIridium
+  noUSBreset=1 detachModem $IFALIAS
 }
