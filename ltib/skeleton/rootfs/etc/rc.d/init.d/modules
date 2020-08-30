@@ -21,6 +21,7 @@ modConfig()
 case "$1" in
   start)
     echo "Loading kernel modules"
+#mount -oremount,rw / && depmod -a
     spiDrivers=`cat /sys/bus/spi/devices/*/modalias 2>/dev/null` &&
     	for mod in $spiDrivers; do  #don't reload those already loaded
       	[ -e /sys/bus/spi/drivers/${mod/spi:} ] || modConfig $mod

@@ -1,7 +1,7 @@
 #!/bin/sh
 # save and restore RTC, or fake it if no hardware available
 
-if [ -f /proc/driver/rtc -a -x /sbin/hwclock ]; then
+if [ -c /dev/rtc0 -a -x /sbin/hwclock ]; then
   RTCmode=-u  #RTC keeps time in:  -u for UTC, -l for local time
 
   case "$1" in
@@ -10,23 +10,23 @@ if [ -f /proc/driver/rtc -a -x /sbin/hwclock ]; then
       /sbin/hwclock -s $RTCmode
       date
        ;;
-                         
+
     stop)
       echo -n "Set Real-Time clock to:  "
       date
       /sbin/hwclock -w $RTCmode
        ;;
-       
+
     *)
        echo "usage: start|stop"
        echo "on start:  set the system clock from the hardware clock"
        echo "on stop:   set the hardware clock from the system clock"
        ;;
   esac
-  
+
 else
 
-  birth=var/log/birth
+  birth=/var/log/birth
   case "$1" in
     start)
       if [ -r $birth ]; then
@@ -36,12 +36,12 @@ else
       fi
       date
        ;;
-                         
+
     stop)
       date  -uIseconds >$birth &&
-      echo "Saved system clock at  `date`"
+      echo "Saved system clock at `date`"
        ;;
-       
+
     *)
        echo "usage: start|stop"
        echo "on start:  restore the system clock"
