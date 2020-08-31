@@ -5,7 +5,8 @@
  *
  * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
  * Revised:  4/23/20 brent@mbari.org -- NULL ptr deref on missing previous regex
- * Revised:	 5/21/20 brent@mbari.org -- extensive rework
+ * Revised:  5/21/20 brent@mbari.org -- extensive rework
+ * Revised:  8/30/20 brent@mbari.org -- handle createScreen() on slow links  
  */
 
 /*
@@ -671,7 +672,7 @@ static ssize_t
 {
 	size_t cursor = 0;
 	while (cursor < bufSize) {
-		if (!awaitInput(ticsPerChar+9))
+		if (!awaitInput(ticsPerChar+100))  //wait extra 1 sec for net latency
 			return -ETIME;
 		int r = safe_read(STDIN_FILENO, buf + cursor, bufSize - cursor);
 		if (r <= 0)
@@ -1537,7 +1538,7 @@ vc4:
 			}
 		}
 #if ENABLE_FEATURE_VI_READONLY
- vc3:;
+vc3:;
 #endif
 #if ENABLE_FEATURE_VI_YANKMARK
 	} else if (strncasecmp(cmd, "yank", i) == 0) {	// yank lines
@@ -1554,7 +1555,7 @@ vc4:
 		// cmd unknown
 		not_implemented(cmd);
 	}
- vc1:
+vc1:
 	dot = bound_dot(dot);	// make sure "dot" is valid
 	return;
 #if ENABLE_FEATURE_VI_SEARCH
@@ -1598,7 +1599,7 @@ static void sync_cursor(char *d, int *row, int *col)
 		// "d" is before top line on screen
 		// how many lines do we have to move
 		cnt = count_lines(beg_cur, screenbegin);
- sc1:
+sc1:
 		screenbegin = beg_cur;
 		if (cnt > (rows - 1) / 2) {
 			// we moved too many lines. put "dot" in middle of screen
@@ -2806,7 +2807,7 @@ static int file_insert(const char *fn, char *p
 	if (cnt >= size)
 		file_modified++;
 	close(fd);
- fi0:
+fi0:
 #if ENABLE_FEATURE_VI_READONLY
 	if (update_ro_status
 	 && ((access(fn, W_OK) < 0) ||
@@ -2917,7 +2918,7 @@ static void place_cursor(int row, int col, int optimize)
 		if (strlen(cm2) < strlen(cm)) {
 			cm = cm2;
 		}
- skip: ;
+skip: ;
 	}
 	last_row = row;
 #endif /* FEATURE_VI_OPTIMIZE_CURSOR */
@@ -3375,7 +3376,7 @@ again:
 		goto dc1;
 	}
 
- key_cmd_mode:
+key_cmd_mode:
 	switch (c) {
 		//case 0x01:	// soh
 		//case 0x09:	// ht
