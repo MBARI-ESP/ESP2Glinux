@@ -36,8 +36,7 @@ ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
 ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
 
-#cycle USB power whenever the SARA-R4 modem fireware crashes
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2",\
-  ATTRS{product}=="*USB__BULK", RUN+="/usr/sbin/resetUSB"
+#cycle USB power whenever Qualcomm USB modem fireware crashes
+ATTRS{product}=="QHSUSB__BULK", RUN+="/usr/sbin/resetUSB"
 
 LABEL="updownEND"
