@@ -1,6 +1,6 @@
 #common ppp modem configuraton
 
-isp=attm2m #specify something in /etc/ppp/peers
+isp=lte #default to generic LTE peer
 modemTTY=/dev/modem  #should be overridden for each specific modem
 
 #VPN=$ESPshore/shore   #server IP / VPN interface
