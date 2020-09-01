@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/25/20 brent@mbari.org
+# -- revised: 8/31/20 brent@mbari.org
 
 syscfg=/etc/sysconfig
 
@@ -352,7 +352,7 @@ gateChange() {
 #$1 is the new gateway interface
 :
 }
-. $syscfg/sitecfg.sh
+[ -r $syscfg/sitecfg.sh ] && . $syscfg/sitecfg.sh
 
 ifDown() {
 #shutdown given interface

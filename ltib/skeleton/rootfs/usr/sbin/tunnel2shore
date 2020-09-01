@@ -3,6 +3,7 @@ self=`basename $0`
 run=/var/run
 : ${HOME:=/root} #in case invoked from inittab
 : ${noGateDelay:=300}  #retry delay if no gateway
+: ${newGateDelay:=30}  #retry delay if gateway changed
 : ${pidFn:=$run/$self.pid}
 : ${portFn:=/var/etc/$self.port}  #stores last TCP port # assigned us
 #portFn=/dev/null   #uncomment to query for our remote port # on each connect
@@ -46,9 +47,8 @@ if [ -s "$pidFn" ];then
   fuser -sk 25/tcp  #in case previous tunnel did not close
 elif [ -e "$pidFn" ]; then  #empty .pid file
   echo $$ >$pidFn
-#  sleep 20
-#  echo "Reopening $shore tunnel in $noGateDelay seconds"
-  sleep $noGateDelay
+#  echo "Reopening $shore tunnel in $newGateDelay seconds"
+  sleep $newGateDelay
 else  #missing .pid file
   echo $$ >$pidFn
 fi
