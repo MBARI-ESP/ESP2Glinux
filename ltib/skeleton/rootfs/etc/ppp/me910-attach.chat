@@ -1,0 +1,12 @@
+# pppd attach for Telit ME900
+"" \pAT&F&D1E0
+OK\r AT#SKIPESC=1;#E2ESC=1
+
+#define PDP context (otherwise, use context in profile)
+OK AT+CGDCONT=1,"IP","$APN"
+
+TIMEOUT 150
+OK\r AT+CGATT=1
+OK\r d\d\dATD*99***1#
+CONNECT \c
+
