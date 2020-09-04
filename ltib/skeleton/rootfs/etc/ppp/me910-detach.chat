@@ -1,5 +1,5 @@
 #pppd disconnect for Telit ME900
 #return to command mode, detach any call
-"" \d\d\p+++\d\d\pATH0
+TIMEOUT 5
+"" \d\p\p+++\d\p\pATH
 OK \c
-

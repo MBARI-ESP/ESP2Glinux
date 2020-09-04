@@ -1,7 +1,8 @@
 #common ppp modem configuraton
 
-isp=lte #default to generic LTE peer
-modemTTY=/dev/modem  #should be overridden for each specific modem
+export isp=lte #default to generic LTE peer
+export APN=internet
+modemTTY=/dev/AT/$IFALIAS
 
 #VPN=$ESPshore/shore   #server IP / VPN interface
 

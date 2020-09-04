@@ -1,8 +1,7 @@
-. $syscfg/inetppp.sh
 IFALIAS=saraR4  #uBlox sara-R4xx USB Cat M1 modem
 IFNAME=ppp88
-modemTTY=/dev/AT/$IFALIAS
-export APN=m2m64.com.attz
+. $syscfg/inetppp.sh
+APN=m2m64.com.attz
 
 # uncomment if you want to detect broken links
 #modemTTY="$modemTTY lcp-echo-interval=180"

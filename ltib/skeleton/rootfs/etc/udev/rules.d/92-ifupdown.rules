@@ -14,24 +14,29 @@ ACTION=="remove", RUN+="ifTTYdown"
 ACTION!="add", GOTO="updownEND"
 
 #Telit ME900
+ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", GROUP="root"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
-  SYMLINK+="AT/me910", GROUP="root", RUN+="ifup me910 15"
+  SYMLINK+="AT/me910", RUN+="ifup me910 15"
 
 #Quectel BG96
+ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", GROUP="root"
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
-  SYMLINK+="AT/bg96", GROUP="root", RUN+="ifup bg96 10"
+  SYMLINK+="AT/bg96", RUN+="ifup bg96 10"
 
 #delay SARA-R4 ifup by a few seconds
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", GROUP="root"
 ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
-  SYMLINK+="AT/saraR4", GROUP="root", RUN+="ifup saraR4 14"
+  SYMLINK+="AT/saraR4", RUN+="ifup saraR4 14"
 
 #Iridium Satphone Handset
+ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset", group="root"
 ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
-  SYMLINK+="AT/iridium", GROUP="root", RUN+="ifup iridium"
+  SYMLINK+="AT/iridium", RUN+="ifup iridium"
 
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
+ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", group="root"
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
-  GROUP="root", RUN+="stickup $env{DEVNAME} 2"
+  RUN+="stickup $env{DEVNAME} 2"
 
 ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"

@@ -1,12 +1,18 @@
 # pppd attach for Telit ME900
-"" \pAT&F&D1E0
-OK\r AT#SKIPESC=1;#E2ESC=1
+TIMEOUT 5
+#Assert Carrier Detect only while connected
+#Deasserting DTR closes connection
+#Echo Off
+"" AT&F&D2&C1E0
+
+#Do not pass +++ through
+OK AT#SKIPESC=1;#E2ESC=1
 
 #define PDP context (otherwise, use context in profile)
 OK AT+CGDCONT=1,"IP","$APN"
 
 TIMEOUT 150
-OK\r AT+CGATT=1
-OK\r d\d\dATD*99***1#
+#Wait for network & display signal quality
+OK AT+CGATT=1;+CSQ
+OK ATD*99***1#
 CONNECT \c
-
