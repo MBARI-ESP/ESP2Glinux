@@ -4,4 +4,5 @@
 # at boot time, one per line. Text on each line after # is ignored.
 # Parameters may be specified after each module's name.
 
-#i2c-pnx  #uncomment for Embedded Artists development board
+#rtc_ds3234 #for real-time clock
+#i2c-pnx  #for Embedded Artists development board
