@@ -4,6 +4,7 @@ file /etc/ppp/options.pptp
 init "route del ESPshore 2>/dev/null;
       . /etc/sysconfig/mbari.net && pppPrep || :"
 
+#On some networks, --idle-wait may need to be reduced to 30 seconds
 pty  "exec pptp ESPshore --nolaunchpppd --idle-wait 180 --logstring ESPshore --loglevel 0"
 #--debug
 
@@ -18,7 +19,3 @@ usepeerdns
 persist
 holdoff 15
 maxfail 5
-
-lcp-echo-failure 3
-lcp-echo-interval 90
-
