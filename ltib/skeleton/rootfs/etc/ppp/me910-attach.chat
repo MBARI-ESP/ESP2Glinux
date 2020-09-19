@@ -3,7 +3,7 @@ TIMEOUT 5
 #Assert Carrier Detect only while connected
 #Deasserting DTR closes connection
 #Echo Off
-"" AT&F&D2&C1E0
+"" ATE0&F&D2&C1
 
 #Do not pass +++ through
 OK AT#SKIPESC=1;#E2ESC=1
@@ -16,3 +16,4 @@ TIMEOUT 150
 OK AT+CGATT=1;+CSQ
 OK ATD*99***1#
 CONNECT \c
+
