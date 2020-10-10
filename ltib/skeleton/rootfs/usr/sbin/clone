@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create bootable image -- 2/5/20 brent@mbari.org
+Clone ESP linux to create bootable image -- 10/9/20 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -16,6 +16,7 @@ Flags:
       -       outputs tar archive to stdout
   --overlay  #copy system image over existing files without formatting first
   --noimage  #do NOT include a copy of the recovery image in destination
+  --yes      #skip all confirmation prompts (useful if source is stdin)
   --help  #display this
 Source argument:
   Read the root filesystem image from the specified directory or
@@ -57,9 +58,9 @@ cmdErr() {
 export progName=`basename $0`
 export pristine=/boot/rootfs.tgz
 parsed=`getopt -n \
-  "$progName" -al factory,to:,help,noimage,overlay -o '' -- "$@"` || exit $?
+  "$progName" -al factory,to:,help,noimage,overlay,yes -o '' -- "$@"` || exit $?
 eval set -- $parsed
-unset dest factory noimage overay
+unset dest factory noimage overay yes
 overlay=FORMAT
 while [ "$1" ]; do
   opt=$1
@@ -81,6 +82,9 @@ while [ "$1" ]; do
   ;;
     --overlay)
       overlay=OVERLAY
+  ;;
+    --yes)
+      yes=1
   ;;
     --help)
       showHelp
@@ -214,13 +218,14 @@ END
 >>>    reset
 END
   esac
-  read -p "$overlay system image onto SDcard? [yes/No] " yn
-  case $yn in
-    yes) ;;
-    [y/Y]*) cmdErr "Answer 'yes' to $overlay SDcard";;
-    * ) exit 2
-  esac
-
+  [ "$yes" ] || {
+    read -p "$overlay system image onto SDcard? [yes/No] " yn
+    case $yn in
+      yes) ;;
+      [y/Y]*) cmdErr "Answer 'yes' to $overlay SDcard";;
+      * ) exit 2
+    esac
+  }
   swapLabel=
   [ "$overlay" = "FORMAT" ] && {
     set -e
@@ -301,13 +306,14 @@ mkFlash() {
     echo "Internal Flash is mounted or acting as swap space (per above)" 2>&1
     exit 3
   }
-  read -p "$overlay Internal Flash memory with new system image? [yes/No] " yn
-  case $yn in
-    yes) ;;
-    [y/Y]*) cmdErr "Answer 'yes' to $overlay internal flash";;
-    * ) exit 2
-  esac
-
+  [ "$yes" ] || {
+    read -p "$overlay Internal Flash memory with new system image? [yes/No] " yn
+    case $yn in
+      yes) ;;
+      [y/Y]*) cmdErr "Answer 'yes' to $overlay internal flash";;
+      * ) exit 2
+    esac
+  }
   [ "$overlay" = "FORMAT" ] && {
     set -e
     flash_eraseall  $rootDev    #erase internal linux root filesystem
