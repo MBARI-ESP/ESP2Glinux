@@ -39,7 +39,7 @@ case "$1" in  #ignore leasefail and renew
         done
       }
     fi
-    IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router ipUp && {
+IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router MTU=$mtu ipUp && {
       [ "$dns" ] && dnsMsg=" with DNS $dns"
       echo "DHCP $1 ${IFALIAS-$interface} to $ip$dnsMsg"
       echo -e "$newLeaseSpec\n$newDNSspec" >$leased
