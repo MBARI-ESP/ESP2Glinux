@@ -1,0 +1,16 @@
+#!/bin/bash
+# unpack & configure GNU screen for arm-linux -- 3/22/21 brent@mbari.org
+: ${gitTop:=~/git}
+: ${screenTop:=$gitTop/screen/src}
+: ${HOST:=$ARMHOST}
+
+top=$PWD
+[ -e "$screenTop" ] || {
+  cd $gitTop &&
+  git clone -b v.4.8.0 https://git.savannah.gnu.org/git/screen.git || exit
+}
+cd $screenTop &&
+configure --host=$HOST CC=$HOST-gcc \
+ --enable-socket-dir --enable-telnet --disable-pam \
+ CPPFLAGS=-I$ARMPREFIX/include LDFLAGS=-L$ARMPREFIX/lib &&
+echo "Now, run arminstall"

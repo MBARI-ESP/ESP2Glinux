@@ -2,6 +2,7 @@
 *.ko.cmd
 *.o.cmd
 *.ko
+*.so
 *.cache
 *.status
 *.deps
