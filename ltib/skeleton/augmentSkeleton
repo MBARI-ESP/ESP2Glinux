@@ -2,7 +2,11 @@
 #set -x
 here=`dirname $0`
 [ "$1" ] || { cat <<EOS >&2
-First argument must be HOSTTOP rootfs destination directory
+Augment root filesystem at $HOSTTOP for ESP application
+  -- 5/17/20 brent@mbari.org
+Usage:
+  `basename $0` {root.tmp dir}
+ltib root.tmp defaults to $HOSTTOP
 EOS
 exit 42
 }
@@ -10,19 +14,13 @@ exit 42
 : ${LOCALBIN=$HOSTTOP/usr/local/bin}
 : ${SYSBIN=$HOSTTOP/usr/sbin}
 : ${RUBYsiteLIB=$HOSTTOP/opt/mbari/lib/ruby/site_ruby/1.8}
-cat <<EOS >&2
-Augment root filesystem at $HOSTTOP for ESP application
-  -- 5/17/20 brent@mbari.org
-Usage:
-  `basename $0` {root.tmp dir}
-ltib root.tmp defaults to $HOSTTOP
-EOS
 
 mkdir -p $LOCALBIN
 
 echo "  ===>  Building vi  <==="
 cd ~/linux/vi && make CC=$ARMGCC/bin/gcc clean ltib/vi &&
-$STRIP -o $HOSTTOP/bin/vi ltib/vi || exit
+$STRIP -o $HOSTTOP/bin/vi ltib/vi && 
+cp view $HOSTTOP/bin || exit
 
 echo "  ===>  Building tcflush  <==="
 cd ~/linux/tcflush && make CC=$ARMGCC/bin/gcc clean tcflush &&
@@ -61,7 +59,7 @@ $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
 for package in readline libnl \
-      dyndns wpa_supplicant esp/dropbear usbmode dnsmasq \
+      dyndns wpa_supplicant esp/dropbear usbmode dnsmasq screen \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync tar; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
