@@ -1,11 +1,11 @@
 #!/bin/bash
-# unpack & configure dnsmasq for arm-linux -- 11/28/18 brent@mbari.org
+# unpack & configure dnsmasq for arm-linux -- 3/22/21 brent@mbari.org
 : ${gitTop:=~/git}
 : ${dnsmasqTop:=$gitTop/dnsmasq}
 
 top=$PWD
 [ -e "$dnsmasqTop" ] || {
   cd $gitTop &&
-  git clone git://thekelleys.org.uk/dnsmasq.git || exit $?
+  git clone -b v2.9 git://thekelleys.org.uk/dnsmasq.git || exit
 }
 echo "Now, run arminstall"
