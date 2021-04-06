@@ -1,11 +1,11 @@
 #!/bin/bash
-# unpack & configure dnsmasq for arm-linux -- 3/22/21 brent@mbari.org
-: ${gitTop:=~/git}
-: ${dnsmasqTop:=$gitTop/dnsmasq}
-
-top=$PWD
-[ -e "$dnsmasqTop" ] || {
+# unpack & configure dnsmasq for arm-linux -- 4/5/21 brent@mbari.org
+# note that dnsmasq v2.84 is last release with support for tftp-server
+: ${gitTop:=`realpath $(dirname $0)`}
+vers=v2.84
+: ${dnsmasqTop:=$gitTop/dnsmasq-$vers}
+[ -d "$dnsmasqTop" ] || {
   cd $gitTop &&
-  git clone -b v2.9 git://thekelleys.org.uk/dnsmasq.git || exit
+  git clone -b $vers git://thekelleys.org.uk/dnsmasq.git $dnsmasqTop || exit
 }
 echo "Now, run arminstall"

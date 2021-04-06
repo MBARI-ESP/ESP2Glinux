@@ -1,9 +1,10 @@
 #!/bin/sh
 # build & install dnsmasq from openwrt to arm-linux
-# -- 4/20/18 brent@mbari.org
+# -- 4/5/21 brent@mbari.org
 
-: ${gitTop:=~/git}
-: ${dnsmasqTop:=$gitTop/dnsmasq}
+: ${gitTop:=`dirname $0`}
+vers=v2.84
+: ${dnsmasqTop:=$gitTop/dnsmasq-$vers}
 : ${HOSTTOP:=${1-$HOME/armHost}}
 : ${HOST:=$ARMHOST}
 
