@@ -1,0 +1,18 @@
+#!/bin/sh
+# build & install GNU bash to arm-linux
+# -- 4/23/21 brent@mbari.org
+
+: ${gitTop:=`dirname $0`}
+: ${bashTop:=$gitTop/bash}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+
+here=$PWD
+echo "Installing GNU bash in $HOSTTOP"
+cd $bashTop || exit
+make clean && 
+make -j4 &&
+for bin in bash; do
+  $HOST-strip -o $HOSTTOP/bin/$(basename $bin) $bin || exit
+done
+echo "Done."
