@@ -1,7 +1,8 @@
 #Common networking utilities
-# -- revised: 8/31/20 brent@mbari.org
+# -- revised: 4/14/21 brent@mbari.org
 
 syscfg=/etc/sysconfig
+run=/var/run
 
 ifCfg() {
 #read configuration for specified interface
@@ -21,6 +22,9 @@ ifCfg() {
   }
   ifPost() {
     :  #invoked at end of ifUp
+  }
+  ifClose() {
+    :  #invoked at start of ifDown
   }
   ifDetach() {
     :  #invoked at end of ifDown
@@ -95,7 +99,7 @@ gatePriority() {
   local ifs
   read -r ifs <$syscfg/gateway.priority || return 6
   local oldPWD=$PWD
-  cd /var/run/resolv
+  cd $run/resolv
   for interface in $ifs; do  #consider only UP interfaces with gateways
     case "$interface" in
       "$1") cd $oldPWD; return 0
@@ -140,7 +144,7 @@ gateUp() {
 # then activate the appropriate gateway with its associated resolv.conf
 # if called without args, restore the highest priority gateway
   local oldPWD=$PWD
-  local resolv=/var/run/resolv
+  local resolv=$run/resolv
   cd $resolv 2>/dev/null || {
     mkdir $resolv && cd $resolv || return
   }
@@ -204,19 +208,19 @@ gateUp() {
 hostsUp() {
 #update iface specific hosts file and merge with those of other ifaces
 #first adds interface specific hosts file if current iface specified
-  [ "$1" ] && hosts >/var/run/$1.hosts
+  [ "$1" ] && hosts >$run/$1.hosts
   {
     echo "$(netIfIP $(topIf)) $(hostname)"
-    cat /var/run/*.hosts
+    cat $run/*.hosts
   } >/etc/hosts 2>/dev/null
   #signal main dnsmasq instance to reread /etc/hosts
-  local masqPID=`cat /var/run/dnsmasq.pid 2>/dev/null` && [ "$masqPID" ] &&
+  local masqPID=`cat $run/dnsmasq.pid 2>/dev/null` && [ "$masqPID" ] &&
     kill -HUP "$masqPID"
   :
 }
 
 gateDown() {
-  rm -f /var/run/$1.hosts /var/run/resolv/$1
+  rm -f $run/$1.hosts $run/resolv/$1
 }
 
 
@@ -225,7 +229,13 @@ setGateway() {
 #if $2 specified, set device $1's gw route to that IP address
   local topIface=$1 gateway=$2
   gateChange $topIface
-  cat /var/run/resolv/$topIface >/etc/resolv.conf 2>/dev/null
+  set -- $run/dns/*
+  if [ -r "$1" ]; then  #override default gateway's DNS
+    head -1
+    cat "$1"
+  else
+    cat
+  fi 2>/dev/null <$run/resolv/$topIface >/etc/resolv.conf
   if [ "$gateway" ]; then  #replace default routes if changed
     route -n | grep "^0\.0\.0\.0 " | {
       del=
@@ -329,9 +339,9 @@ topIf() {
   read -r iface gateway 2>/dev/null </etc/resolv.conf && echo ${iface###}
 }
 
-gateIP() {
+gateIPadr() {
 #output the IP address of the gateway for the given interface
-  resolvIF="/var/run/resolv/$1"
+  resolvIF="$run/resolv/$1"
   read -r resolvDev gateway 2>/dev/null <$resolvIF &&
   [ "$resolvDev" = "#$1" ] && {
     [ "$gateway" ] || return 1
@@ -362,13 +372,14 @@ ifDown() {
     echo "Network interface to stop was not specified" >&2
     return 103
   }
-  local fn=/var/run/*$IFNAME.pid
+  local fn=$run/*$IFNAME.pid
   local pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] && {
     isUp $IFNAME || return
   }
   echo "Shutting down ${IFALIAS-$IFNAME} ..."
   [ "$(topIf)" == "$IFNAME" ] && gateChange
+  ifClose $IFNAME
   local pidfn
   for pidfn in $pidfns; do
     local daemon=`head -n1 $pidfn 2>/dev/null`
@@ -419,7 +430,7 @@ ifUp()
   autostart $1 || return
   [ "$2" ] && sleep $2
   hasIP $IFNAME && return
-  local fn=/var/run/*$IFNAME.pid
+  local fn=$run/*$IFNAME.pid
   local pidfns=`echo $fn`
   [ "$pidfns" = "$fn" ] || {  #check for active locks...
     local owners= owner
@@ -442,7 +453,7 @@ ifUp()
         ipUp && {
           daemon=/sbin/udhcpc  #only use this dhcp client
           if test -x $daemon  ; then
-            pidfn=/var/run/udhcpc-$IFNAME.pid
+            pidfn=$run/udhcpc-$IFNAME.pid
             if [ -r $pidfn ]; then
               kill `head -n1 $pidfn` 2>/dev/null
             else
@@ -476,7 +487,7 @@ ifUp()
 }
 
 #append to trace file if it is writable
-: ${traceFn:=/var/run/trace/`basename $0`}
+: ${traceFn:=$run/trace/`basename $0`}
 [ -w $traceFn ] && {
   { date; echo $0 "$@"; env; } >>$traceFn
   exec 2>>$traceFn
