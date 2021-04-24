@@ -1,0 +1,20 @@
+#!/bin/sh
+# build & install GNU wireguard-tools to arm-linux
+# -- 4/23/21 brent@mbari.org
+
+: ${gitTop:=$(realpath `dirname $0`)}
+: ${wgTop:=$gitTop/wireguard-tools/src}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+
+echo "Installing wireguard-tools in $HOSTTOP"
+cd $wgTop || exit
+make clean && 
+make -j4 CC=${ARMHOST}-gcc LDFLAGS=-L$ARMPREFIX/lib \
+  CPPFLAGS="-I$ARMPREFIX/include -DNLM_F_DUMP_INTR=0x10" wg &&
+for bin in wg; do
+  $HOST-strip -o $HOSTTOP/usr/sbin/$(basename $bin) $bin || exit
+done
+cd $gitTop &&
+cp wg-quick $HOSTTOP/usr/sbin &&
+echo "Done."

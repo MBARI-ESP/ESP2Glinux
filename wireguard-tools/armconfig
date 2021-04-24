@@ -1,0 +1,12 @@
+#!/bin/bash
+# unpack & configure GNU wireguard-tools for arm-linux -- 4/23/21 brent@mbari.org
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${wgTop:=$gitTop/wireguard-tools}
+: ${HOST:=$ARMHOST}
+
+[ -d "$wgTop" ] || {
+  cd $gitTop &&
+  git clone -b v1.0.20210315 git://git.zx2c4.com/wireguard-tools $wgTop ||
+    exit
+}
+echo "Now, run arminstall"
