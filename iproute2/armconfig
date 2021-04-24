@@ -1,0 +1,14 @@
+#!/bin/bash
+# unpack & configure GNU screen for arm-linux -- 4/23/21 brent@mbari.org
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${iproute2Top:=$gitTop/iproute2}
+: ${HOST:=$ARMHOST}
+
+[ -d "$iproute2Top" ] || {
+  cd $gitTop &&
+  git clone -b v3.18.0 https://github.com/shemminger/iproute2.git $iproute2Top &&
+  cd "$iproute2Top" &&
+  cp $gitTop/Config-lpc Config &&
+  patch -p1 <../iproute2-lpc.diff || exit
+}
+echo "Now, run arminstall"
