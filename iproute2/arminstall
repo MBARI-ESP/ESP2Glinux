@@ -2,12 +2,11 @@
 # build & install GNU iproute2 to arm-linux
 # -- 4/23/21 brent@mbari.org
 
-: ${gitTop:=`dirname $0`}
+: ${gitTop:=$(realpath `dirname $0`)}
 : ${iproute2Top:=$gitTop/iproute2}
 : ${HOSTTOP:=${1-$HOME/armHost}}
 : ${HOST:=$ARMHOST}
 
-here=$PWD
 echo "Installing GNU screen in $HOSTTOP"
 cd $iproute2Top || exit
 make clean && 
