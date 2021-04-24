@@ -1,0 +1,27 @@
+IFNAME=wg2shore
+username=`hostname`
+WGshore=192.168.5.1		#see /etc/wireguard/$IFNAME.conf
+
+. /etc/sysconfig/mbari.net
+
+resolv_conf() { cat<<EOS
+search lan shore.mbari.org
+nameserver $WGshore
+EOS
+}
+hosts() { cat <<EOS    #add lines before EOS
+$(netIfIP $IFNAME $(hostname)-$IFNAME)
+$WGshore shore mail
+EOS
+}
+ifPrep() {
+  wg-quick up $IFNAME
+}
+ifPost() {
+  mkdir -p $run/dns && resolv_conf >$run/dns/$IFNAME
+  gateUp && hostsUp $IFNAME
+}
+ifClose() {
+  rm -f $run/dns/$IFNAME
+  wg-quick down $IFNAME
+}
