@@ -15,4 +15,5 @@ make -j4 &&
 for bin in ip/ip ip/rtmon misc/nstat misc/rtacct misc/ss misc/ifstat misc/lnstat; do
   $HOST-strip -o $HOSTTOP/sbin/$(basename $bin) $bin || exit
 done
+cp -a etc/iproute2 $HOSTTOP/etc &&
 echo "Done."
