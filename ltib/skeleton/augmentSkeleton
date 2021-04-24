@@ -19,7 +19,7 @@ mkdir -p $LOCALBIN
 
 echo "  ===>  Building vi  <==="
 cd ~/linux/vi && make CC=$ARMGCC/bin/gcc clean ltib/vi &&
-$STRIP -o $HOSTTOP/bin/vi ltib/vi && 
+$STRIP -o $HOSTTOP/bin/vi ltib/vi &&
 cp view $HOSTTOP/bin || exit
 
 echo "  ===>  Building tcflush  <==="
@@ -58,7 +58,7 @@ make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
-for package in readline libnl \
+for package in bash readline libnl \
       dyndns wpa_supplicant esp/dropbear usbmode dnsmasq screen \
       esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync tar; do
   echo "  ===>  Building $package  <==="
@@ -76,3 +76,8 @@ for package in bindata rbelftools; do
   cd ~/ruby/$package/lib && cp -a * $RUBYsiteLIB || exit
 done
 
+#packages required only for v3.18 kernel wireguard support
+for package in iproute2 wireguard-tools
+  echo "  ===>  Building $package  <==="
+  cd ~/linux/$package && armconfig && arminstall || exit
+done
