@@ -28,4 +28,6 @@ else
     cp -a /dev/* /mnt
   fi && exec mount --move /mnt /dev
 fi
+ln -s /proc/self/fd /dev
 mkdir -p /dev/pts /dev/shm
+
