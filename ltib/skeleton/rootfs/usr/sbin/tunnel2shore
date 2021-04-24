@@ -1,6 +1,6 @@
 #!/bin/sh
 self=`basename $0`
-run=/var/run
+. /usr/share/netutils.sh
 : ${HOME:=/root} #in case invoked from inittab
 : ${noGateDelay:=300}  #retry delay if no gateway
 : ${newGateDelay:=30}  #retry delay if gateway changed
@@ -12,7 +12,7 @@ run=/var/run
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 8/28/20 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 4/19/21 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -30,7 +30,8 @@ trap "pkill -P $$; wait; rm -f $tunHostsFn; exec $0" HUP
 #Empty .pid file to delay restart after waiting until tunnel is closed.
 trap "pkill -P $$; rm -f $tunHostsFn; wait; >$pidFn; exec $0" USR1
 #clean up on request to exit
-trap "pkill -P $$; wait; rm -f $tunHostsFn $pidFn; exit 129" TERM INT QUIT
+trap "rm -f $tunHostsFn; hostsUp; rm -f $pidFn" EXIT
+trap "pkill -P $$; wait; exit 129" TERM INT QUIT
 
 if [ -s "$pidFn" ];then
   #terminate any other instances
@@ -53,13 +54,6 @@ else  #missing .pid file
   echo $$ >$pidFn
 fi
 
-topIf() {
-  #output the name of the top priority network interface
-  local iface
-  read -r iface gateway 2>/dev/null </etc/resolv.conf &&
-  echo ${iface###}
-}
-
 sleep 5  #wait for net config to stabilize
 tag="`basename $0`[$$]"
 [ "$(topIf)" ] || {
@@ -73,18 +67,19 @@ tag="`basename $0`[$$]"
   echo $tunHosts >$tunHostsFn
   grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
 
-  tunnels="-L873:$shore:873 -L25:$shore:25"  #smtp should forwarded last
-  tunArgs="-oExitOnForwardFailure=yes -ygN $shoreSSH"
   local=localhost
+  tunnels="-L873:$local:873 -L25:$local:25"  #smtp should forwarded last
+  tunArgs="-oExitOnForwardFailure=yes -yN $shoreSSH"
   export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
 
   SSH() {  #start TCP keepalives after idle 3 minutes
     : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
+#    ssh -oBatchMode=yes -oServerAliveInterval=20 "$@"
   }
   openTunnel() {
   #open tunnel from shore's $1 port to our local ssh port
   #tunnel from shore's 1$1 port ($1 prefixed by 1) to our espclient port
-    SSH -R$1:$local:22 -R1$1:$local:9999 $tunnels $tunArgs
+    SSH -R:$1:$local:22 -R:1$1:$local:9999 $tunnels $tunArgs
   }
 
   #first, try the port previously assigned us
@@ -101,4 +96,4 @@ tag="`basename $0`[$$]"
 #This will run when the tunnel collapses or cannot be built
 #ifdown cellularIface
 #ifup celluarIface
- 
+
