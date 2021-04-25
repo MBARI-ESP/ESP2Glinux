@@ -77,7 +77,7 @@ for package in bindata rbelftools; do
 done
 
 #packages required only for v3.18 kernel wireguard support
-for package in iproute2 wireguard-tools
+for package in iproute2 wireguard-tools; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
 done

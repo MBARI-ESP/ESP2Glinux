@@ -17,4 +17,5 @@ for bin in wg; do
 done
 cd $gitTop &&
 cp wg-quick $HOSTTOP/usr/sbin &&
+cp -r etc $HOSTTOP &&
 echo "Done."
