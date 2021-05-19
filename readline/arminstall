@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install rsync daemon for arm-linux -- 7/26/20 brent@mbari.org
+# build & install rsync daemon for arm-linux -- 5/19/21 brent@mbari.org
 
 : ${ARMGCC:=/ltibarm}
 : ${CC:=$ARMGCC/bin/gcc}
@@ -18,7 +18,7 @@ mkdir -p $INC || exit
 for hdr in chardefs history keymaps readline rlconf rlstdc rltypedefs tilde; do
   cp $hdr.h $INC || exit
 done
-make && cd shlib || exit
+make clean all && cd shlib || exit
 for lib in libreadline libhistory; do
   rm -f $TOP/$lib.so* $LTIBTOP/$lib.so* &&
   cp $lib.so.5.2 $LTIBTOP &&
