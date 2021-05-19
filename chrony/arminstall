@@ -1,0 +1,20 @@
+#!/bin/sh
+# build & install GNU wireguard-tools to arm-linux
+# -- 5/18/21 brent@mbari.org
+
+: ${gitTop:=$(realpath `dirname $0`)}
+: ${chronyTop:=$gitTop/chrony}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+
+echo "Installing chrony in $HOSTTOP"
+cd $chronyTop || exit
+make clean && 
+make -j4 CC=${ARMHOST}-gcc LDFLAGS=-L$ARMPREFIX/lib \
+  CPPFLAGS="-I$ARMPREFIX/include" chronyd chronyc &&
+for bin in chronyd chronyc; do
+  $HOST-strip -o $HOSTTOP/usr/sbin/$(basename $bin) $bin || exit
+done
+cd $gitTop &&
+cp -r overlay/. $HOSTTOP &&
+echo "Done."

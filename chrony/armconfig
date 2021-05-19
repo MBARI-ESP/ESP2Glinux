@@ -1,0 +1,18 @@
+#!/bin/bash
+# unpack & configure GNU chrony for arm-linux -- 5/18/21 brent@mbari.org
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${chronyTop:=$gitTop/chrony}
+: ${HOST:=$ARMHOST}
+
+[ -d "$chronyTop" ] || {
+  cd $gitTop &&
+  git clone -b 4.1 https://git.tuxfamily.org/chrony/chrony.git/ $chronyTop ||
+    exit
+}
+cd $chronyTop &&
+CC=${ARMHOST}-gcc LDFLAGS=-L$ARMPREFIX/lib CPPFLAGS="-I$ARMPREFIX/include" \
+configure --disable-phc --disable-pps --disable-ipv6 \
+  --with-hwclockfile=/etc/adjtime \
+  --prefix=/usr --sysconfdir=/etc/chrony \
+  --host-release=3.18.140-lpc31-mbari1 --host-machine=armv5tejl
+echo "Now, run arminstall"
