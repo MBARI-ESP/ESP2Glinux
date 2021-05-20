@@ -1,15 +1,15 @@
 #!/bin/sh
 # build & install GNU screen to arm-linux
-# -- 4/5/21 brent@mbari.org
+# -- 5/20/21 brent@mbari.org
 
 : ${gitTop:=`dirname $0`}
-: ${screenTop:=$gitTop/screen/src}
+: ${screenTop:=$gitTop/screen}
 : ${HOSTTOP:=${1-$HOME/armHost}}
 : ${HOST:=$ARMHOST}
 
 here=$PWD
 echo "Installing GNU screen in $HOSTTOP"
-cd $screenTop || exit
+cd $screenTop/src || exit
 make clean && 
 make -j4 CC=$HOST-gcc &&
 $HOST-strip -o $HOSTTOP/usr/bin/screen screen &&

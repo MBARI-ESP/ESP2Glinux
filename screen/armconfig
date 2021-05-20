@@ -1,7 +1,7 @@
 #!/bin/bash
-# unpack & configure GNU screen for arm-linux -- 4/5/21 brent@mbari.org
+# unpack & configure GNU screen for arm-linux -- 5/20/21 brent@mbari.org
 : ${gitTop:=`realpath $(dirname $0)`}
-: ${screenTop:=$gitTop/screen/src}
+: ${screenTop:=$gitTop/screen}
 : ${HOST:=$ARMHOST}
 
 [ -d "$screenTop" ] || {
@@ -9,8 +9,8 @@
   git clone -b v.4.8.0 https://git.savannah.gnu.org/git/screen.git $screenTop ||
     exit
 }
-cd "$screenTop" || exit
-[ -d configure ] || autogen.sh
+cd "$screenTop/src" || exit
+[ -r configure ] || autogen.sh
 configure --host=$HOST CC=$HOST-gcc \
  --enable-socket-dir --enable-telnet --disable-pam \
  CPPFLAGS=-I$ARMPREFIX/include LDFLAGS=-L$ARMPREFIX/lib &&
