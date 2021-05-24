@@ -1,0 +1,68 @@
+#!/bin/sh
+prog=`basename $0`
+delay=600
+
+case "$1" in -[0-9][0-9]*)
+  delay=${1#-}
+  shift
+esac
+
+case "$1" in
+  '' | -*) cat >&2 <<END
+Monitor specified wiregard interface -- 5/23/21 brent@mbari.org
+Runs specified command whenever wiregard handshake delayed too long
+Usage:
+  $prog {-max seconds between handshakes} [wgNetIface] {command plus arguments}
+Example:
+  $prog -900 wg2shore  #allow up to 15 minutes between handshakes
+If max seconds omitted, allow up to $delay seconds between handshakes
+END
+  exit 2
+esac
+iface="$1"
+shift
+
+: ${traceFn:=/var/run/trace/$prog}
+[ -w $traceFn ] && {
+  { date; echo "$@"; env; } >>$traceFn
+  exec 2>>$traceFn
+  set -x
+}
+
+#first, kill any running watch on this interface
+pidFn=/var/run/$iface-$prog.pid
+[ -s "$pidFn" ] && oldWatch=`cat $pidFn` &&
+  kill $oldWatch 2>/dev/null && sleep 1
+echo $$ >$pidFn
+
+trap "rm $pidFn" EXIT
+trap "exit 130" TERM INT QUIT HUP PIPE
+
+timeOfLastHandshake() {
+# 1st arg is a wiregard network interface
+  lastHandshake=`wg show $1 latest-handshakes` || return
+  echo "$lastHandshake" | {
+    read pubKey time junk
+    echo $time
+  }
+}
+
+timeNow() {
+  date +%s
+}
+
+now=`timeNow`
+handshakeTime=$now
+
+while sleep $((handshakeTime + delay - now)); do
+  now=`timeNow`
+  handshakeTime=`timeOfLastHandshake $iface` && {
+    [ "$handshakeTime" -a $((now - handshakeTime)) -lt $delay ] &&
+      continue
+  }
+  logger -t $prog -p daemon.warning "restarting $iface + $@"
+  ifdown $iface
+  eval "$@"
+  ifup $iface
+  handshakeTime=$now
+done

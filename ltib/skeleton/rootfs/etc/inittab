@@ -41,6 +41,9 @@ net:12345:respawn:/usr/sbin/inetd -f
 # Keep up VPN link to MBARI (after allowing time for network to start)
 #vpn:12345:respawn:/bin/sh -c "sleep 300; exec /usr/sbin/inadyn"
 
+# reset modem when Wireguard session fails
+#wg:12345:respawn:/usr/sbin/wgwatch wg2shore noUSBreset=1 /etc/ppp/reset-modem
+
 # Keep ssh tunnel to MBARI up
 #tun:12345:respawn:/usr/sbin/tunnel2shore
 

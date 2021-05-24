@@ -16,6 +16,5 @@ for bin in wg; do
   $HOST-strip -o $HOSTTOP/usr/sbin/$(basename $bin) $bin || exit
 done
 cd $gitTop &&
-cp wg-quick $HOSTTOP/usr/sbin &&
-cp -r etc $HOSTTOP &&
+cp -r overlay/* $HOSTTOP &&
 echo "Done."
