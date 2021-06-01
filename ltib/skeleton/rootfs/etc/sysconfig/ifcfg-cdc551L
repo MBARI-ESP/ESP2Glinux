@@ -6,12 +6,9 @@ ifPrep() {  #chat with modem to establish ethernet-like connection
   modem=`echo \
 /dev/serial/by-id/usb-Novatel_Wireless__Inc._Novatel_Wireless_4G_*-if00-port0`
   while [ -w $modem ]; do
-    /usr/sbin/chat -v '' ATE0 OK 'AT$NWQMIDISCONNECT' \
+    /usr/sbin/chat -vt90 '' ATE0 OK 'AT$NWQMIDISCONNECT' \
         OK AT+CFUN=0 OK '\d\d\d\d\dAT+CFUN=1' \
-        OK '\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\dAT\$NWQMICONNECT=,' OK '' \
-          <$modem >$modem && {
-      sleep 30
-      return
-    }
+        OK '\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\d\dAT$NWQMICONNECT=,' OK \
+          <$modem >$modem && return
   done
 }
