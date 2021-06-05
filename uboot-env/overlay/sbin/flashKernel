@@ -1,0 +1,31 @@
+#!/bin/sh -e
+self=`basename $0`
+flash=/dev/mtd7
+[ "$1" ] || { cat <<END >&2
+Flash Linux kernel uImage -- brent@mbari.org -- 6/5/21 brent@mbari
+Usage:
+  $self [uImage]
+Write Linux kernel uImage file to SPI flash and
+  update uboot 'kernSize' environment variable
+END
+  exit 2
+}
+/sbin/modprobe spiflash
+uboot=/sbin/uboot-env
+bootcmd=`$uboot get bootcmd` && [ "$bootcmd" ] || {
+  echo "Missing or corrupt uboot environment" >&2
+  exit 3
+}
+echo $bootcmd
+echo -n "Preparing to flash new kernel to $flash"
+sleep 5
+kernSize=`ls -ln $1 | (read stat links user owner size junk; echo $size)`
+[ "$kernSize" ] || {
+  echo " -- cannot read $1"
+  exit 2
+}
+kernHex=`printf "%X" $kernSize`
+echo " ... "
+$uboot del kernSize
+flashcp -v $1 $flash
+$uboot set kernSize $kernHex

@@ -1,0 +1,18 @@
+#!/bin/sh
+# build & install uboot enviroment tools to arm-linux
+# -- 6/4/21 brent@mbari.org
+
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${ubootEnvTop:=$gitTop/uboot-env.git}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+
+echo "Installing uboot-env in $HOSTTOP"
+cd $ubootEnvTop || exit
+${HOST}-gcc -Os -o uboot-env uboot-env.c
+for bin in uboot-env; do
+  $HOST-strip -o $HOSTTOP/sbin/$(basename $bin) $bin || exit
+done
+cd $gitTop &&
+cp -r overlay/* $HOSTTOP &&
+echo "Done."
