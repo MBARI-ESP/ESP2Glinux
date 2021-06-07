@@ -3,7 +3,10 @@ SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
 ENV{INTERFACE}=="mon.*", GOTO="updownEND"
 
-ACTION=="add", RUN+="ifup %E{INTERFACE}"
+#delay Mult-Tech Telit DE900
+ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
+
+ACTION=="add", RUN+="ifup %E{INTERFACE} %E{ifDelay}"
 ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
 
 LABEL="notNetIf"
@@ -13,10 +16,13 @@ SUBSYSTEM!="tty", GOTO="notTTYif"
 ACTION=="remove", RUN+="ifTTYdown"
 ACTION!="add", GOTO="updownEND"
 
-#Telit ME900
-ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", GROUP="root"
+#Telit ME900 (prod 1102 is a USB CDCether device)
+ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101|1102", GROUP="root"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
   SYMLINK+="AT/me910", RUN+="ifup me910 15"
+#auto-attach does not work reliably, so force it here
+ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
+  SYMLINK+="AT/me910", RUN+="stickup $env{DEVNAME} 'AT+CGATT=0;+CGATT=1' 20"
 
 #Quectel BG96
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", GROUP="root"
@@ -36,7 +42,7 @@ ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", group="root"
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
-  RUN+="stickup $env{DEVNAME} 2"
+  RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2"
 
 ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
