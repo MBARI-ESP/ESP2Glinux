@@ -1,20 +1,23 @@
 #!/bin/sh
 # save and restore RTC, or fake it if no hardware available
 
+birth=/var/log/birth  #birthdate timestamp
+
 if [ -c /dev/rtc0 -a -x /sbin/hwclock ]; then
   RTCmode=-u  #RTC keeps time in:  -u for UTC, -l for local time
 
   case "$1" in
     start)
       [ "$quiet" ] || echo -n "Set system clock to:  "
-      /sbin/hwclock -s $RTCmode
+      /sbin/hwclock -s $RTCmode &&
       date
        ;;
 
     stop)
       [ "$quiet" ] || echo -n "Set Real-Time clock to:  "
-      date
-      /sbin/hwclock -w $RTCmode
+      date &&
+      /sbin/hwclock -w $RTCmode &&
+      date  -uIseconds >$birth  #store in case RTC fails
        ;;
 
     *)
@@ -26,7 +29,6 @@ if [ -c /dev/rtc0 -a -x /sbin/hwclock ]; then
 
 else
 
-  birth=/var/log/birth
   case "$1" in
     start)
       if [ -r $birth ]; then
