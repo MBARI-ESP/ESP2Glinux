@@ -3,7 +3,7 @@
 showHelp() {
   p=$progName
   cat 2>&1 <<END
-Clone ESP linux to create bootable image -- 10/9/20 brent@mbari.org
+Clone ESP linux to create bootable image -- 6/6/21 brent@mbari.org
 Usage:  [with optional elements in {}]
   $p {--factory} {--to destination} {source}
 Flags:
@@ -314,13 +314,11 @@ mkFlash() {
       * ) exit 2
     esac
   }
-  [ "$overlay" = "FORMAT" ] && {
-    set -e
-    flash_eraseall  $rootDev    #erase internal linux root filesystem
-    mount $rootPart $dst
-    set +e
-    echo
-  }
+  set -e
+  [ "$overlay" = "FORMAT" ] &&
+    flash_eraseall  $rootDev  #erase internal linux root filesystem
+  mount $rootPart $dst
+  set +e
   writeRootFS $dst            #populate rootfs
 
   var=$dst/card/var
