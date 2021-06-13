@@ -18,6 +18,7 @@ Patch6          : busybox-1.11.2-makefile-implicit-rules.patch
 Patch7          : busybox-1.11.2-mbari-1.patch
 Patch8          : busybox-1.11.2-dhcpc-maxlease.patch
 Patch9          : busybox-1.11.2-mbari-2.patch
+Patch10         : busybox-1.11.2-leasefail.patch
 BuildRoot       : %{_tmppath}/%{name}
 Prefix          : %{pfx}
 
@@ -34,6 +35,7 @@ Prefix          : %{pfx}
 %patch7 -p1
 %patch8 -p1
 %patch9 -p1
+%patch10 -p1
 
 %Build
 PKG_BUSYBOX_PRECONFIG=${PKG_BUSYBOX_PRECONFIG:-busybox.config}
