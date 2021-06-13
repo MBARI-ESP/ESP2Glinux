@@ -1,0 +1,39 @@
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/libbb/messages.c busybox-1.11.2.modified/libbb/messages.c
+--- busybox-1.11.2/libbb/messages.c	2021-06-12 17:52:24.013633328 -0700
++++ busybox-1.11.2.modified/libbb/messages.c	2021-06-09 00:35:00.467494901 -0700
+@@ -7,7 +7,7 @@
+ 
+ #include "libbb.h"
+ 
+-#define BB_EXTRA_VERSION "mbari-2"  //brent@mbari.org  4/23/20
++#define BB_EXTRA_VERSION "mbari-3"  //brent@mbari.org  6/8/21
+ 
+ /* allow default system PATH to be extended via CFLAGS */
+ #ifndef BB_ADDITIONAL_PATH
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/dhcpc.c busybox-1.11.2.modified/networking/udhcp/dhcpc.c
+--- busybox-1.11.2/networking/udhcp/dhcpc.c	2021-06-12 17:52:24.013633328 -0700
++++ busybox-1.11.2.modified/networking/udhcp/dhcpc.c	2021-06-09 00:52:31.372190379 -0700
+@@ -368,10 +368,10 @@
+ 					packet_num++;
+ 					continue;
+ 				}
+-				udhcp_run_script(NULL, "leasefail");
+ #if BB_MMU /* -b is not supported on NOMMU */
+ 				if (opt & OPT_b) { /* background if no lease */
+ 					bb_info_msg("No lease, forking to background");
++				    udhcp_run_script(NULL, "leasefail");  //don't invoke repeatedly!
+ 					client_background();
+ 					/* do not background again! */
+ 					opt = ((opt & ~OPT_b) | OPT_f);
+diff --exclude CVS --exclude .git -uNr busybox-1.11.2/networking/udhcp/script.c busybox-1.11.2.modified/networking/udhcp/script.c
+--- busybox-1.11.2/networking/udhcp/script.c	2008-06-25 05:51:14.000000000 -0700
++++ busybox-1.11.2.modified/networking/udhcp/script.c	2021-06-09 01:11:26.343053303 -0700
+@@ -217,7 +217,7 @@
+ 	if (client_config.script == NULL)
+ 		return;
+ 
+-	DEBUG("vfork'ing and execle'ing %s", client_config.script);
++	DEBUG("executing %s", client_config.script);
+ 
+ 	envp = fill_envp(packet);
+ 
