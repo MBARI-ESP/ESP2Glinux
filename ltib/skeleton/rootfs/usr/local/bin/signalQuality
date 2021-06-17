@@ -1,0 +1,20 @@
+#!/bin/sh
+defPort=/dev/serial/by-id/usb-Telit_Telit_ME910_4a0fda36-if02-port0
+case "$1" in
+  -*) cat <<END >&2
+Display the signal quality of the link to indicated cellular modem
+Default AT command port is:
+  $defPort
+END
+  exit 2
+esac
+modem=${1-$defPort}
+[ -c "$modem" ] || { cat <<END >&2
+Not a valid serial port:  $modem
+END
+  exit 1
+}
+/usr/sbin/chat -vt15 REPORT +CSQ: '' AT OK AT+CSQ +CSQ: 2>&1 <$modem >$modem || {
+  echo "Failed!" >&2
+  exit 8
+}
