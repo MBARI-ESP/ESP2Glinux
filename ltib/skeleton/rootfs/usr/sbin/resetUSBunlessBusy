@@ -1,3 +1,3 @@
 #!/bin/sh
 #reset USB bus only if snap binary is not running
-killall -0 snap 2>/dev/null || resetUSB
+killall -0 snap 2>/dev/null || exec resetUSB "$@"
