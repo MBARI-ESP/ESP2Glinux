@@ -1,14 +1,25 @@
 #!/bin/sh
-defPort=/dev/serial/by-id/usb-Telit_Telit_ME910_4a0fda36-if02-port0
+modem=$1
 case "$1" in
-  -*) cat <<END >&2
-Display the signal quality of the link to indicated cellular modem
-Default AT command port is:
-  $defPort
+  -*) self=`basename $0`
+      cat <<END >&2
+Display signal quality of indicated cellular modem -- 6/21/21 brent@mbari.org
+by returning results from the AT+CSQ command
+Usage:
+  $self {path to modem's AT command port}
+Example:
+  $self /dev/ttyUSB2  #assuming modem's "AT" command port is ttyUSB2
+Note:
+  Modem AT port may be ommitted for Telit DE900 or Pantech UML295
 END
   exit 2
+;;
+  '')
+    by=/dev/serial/by-id
+    modem=$by/usb-Telit_Telit_ME910_4a0fda36-if02-port0
+    [ -c "$defPort" ] ||
+      modem=`echo $by/usb-Pantech__Incorporated_PANTECH_UML295_UML295*-if06`
 esac
-modem=${1-$defPort}
 [ -c "$modem" ] || { cat <<END >&2
 Not a valid serial port:  $modem
 END
