@@ -10,9 +10,13 @@ mRstCmd="/usr/sbin/sleepyCmd --device=$gateway resetModem $offSecs"
 tag=`basename $0`
 
 [ "$noUSBreset" ] ||
-  resetUSBunlessBusy >/dev/null &  #in case modem is on a USB serial port
+  resetUSBunlessBusy $offSecs >/dev/null &  #for USB powered modems
 
-users=`fuser -u $gateway 2>&1` || return  #in case gateway port does not exist
+[ -c "$gateway" ] || {
+  logger -st$tag -perr "Missing $gateway!"
+  return 9
+}
+users=`fuser $gateway 2>&1`
 echo $users | tr \(\) " " | (
   while read dev espPid espUser ignored; do
     if [ -n "$espPid" -a -n "$espUser" ]; then
