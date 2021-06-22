@@ -1,7 +1,7 @@
 #!/bin/sh
 # reset modem via whatever means we can
-#  if an esp server is running, reset modem via an espclient
-#  otherwise, try writing commands directly to the sleepy boards microcontroller
+#  if an esp server is running, reset modem via an espclient, otherwise,
+#    try writing commands directly to the sleepy board's microcontroller
 
 offSecs=${1-5}           #default to 5 seconds w/pwr off
 gateway=${2-/dev/I2Cgate}
@@ -14,10 +14,10 @@ tag=`basename $0`
 
 [ -c "$gateway" ] || {
   logger -st$tag -perr "Missing $gateway!"
-  return 9
+  exit 9
 }
-users=`fuser $gateway 2>&1`
-echo $users | tr \(\) " " | (
+
+users=`fuser -u $gateway 2>&1` && echo $users | tr \(\) " " | {
   while read dev espPid espUser ignored; do
     if [ -n "$espPid" -a -n "$espUser" ]; then
       logger -t$tag -pwarn "Cycling power via $espUser's espclient"
@@ -29,19 +29,18 @@ EOS
       ) && {
         set -- $result
         [ "$1" = "=>" ] && shift  #arrow prefix is now optional
-        [ -z "$2" -a "$1" -eq "$offSecs" ] && return
+        [ -z "$2" -a "$1" -eq "$offSecs" ] && exit
       }
     fi
   done
-  # reset modem directly first as user esp
-  #   failing that, output warning in log and try resetting as root
-  logger -t$tag "No espclient -- resetting via $gateway"
-  errmsg=`su $esp -c "$mRstCmd" 2>&1 >&-` && return
-  logger -t$tag -pwarn "Retrying as root after $esp failed with $errmsg"
-  errmsg=`$mRstCmd 2>&1 >&-` && return
-  logger -t$tag -perr "also failed as root -- $errmsg"
-  return 5
-)
-result=$?
-wait
-return $result
+  exit 6 #failed to cycle modem's power via an espclient
+} && exit
+
+# reset modem directly first as user esp
+#   failing that, output warning in log and try resetting as root
+logger -t$tag "No espclient -- resetting via $gateway"
+errmsg=`su $esp -c "$mRstCmd" 2>&1 >&-` && exit
+logger -t$tag -pwarn "Retrying as root after $esp failed with $errmsg"
+errmsg=`$mRstCmd 2>&1 >&-` && exit
+logger -t$tag -perr "also failed as root -- $errmsg"
+exit 5
