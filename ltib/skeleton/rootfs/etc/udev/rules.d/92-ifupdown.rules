@@ -39,6 +39,10 @@ ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset", group="root"
 ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
   SYMLINK+="AT/iridium", RUN+="ifup iridium"
 
+#Pantech UML295 has a NMEA GPS port
+ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
+  SYMLINK+="gps"
+
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", group="root"
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
