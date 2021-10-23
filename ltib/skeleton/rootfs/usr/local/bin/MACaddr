@@ -1,0 +1,25 @@
+#!/bin/sh
+host=$1
+[ "$host" ] || {
+  self=`basename $0`
+  cat <<EOS >&2
+Output MAC (ethernet) address of specified host -- 10/22/21 brent@mbari.org
+Uses ssh to retrieve MAC address in case host has been removed from LAN
+Usage:
+  $self {ssh user}@<hostname> {remote host's network interface}
+  Optional remote host's net interface defaults to first ethernet interface
+Examples:
+$ $self mv3.vpn
+00:1a:f1:01:97:6c
+
+$ $self esp@ESPbruce
+password:  #enter the usual
+00:D0:69:40:4D:9D
+EOS
+exit 9
+}
+
+exec ssh $host "iface=$2;
+: \${iface:=\`basename /proc/sys/net/ipv4/conf/e*\`};
+cat /sys/class/net/\${iface}/address 2>/dev/null ||
+/sbin/ifconfig \$iface | (read i l e hw mac junk && echo \$mac)"

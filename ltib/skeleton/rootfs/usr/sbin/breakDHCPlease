@@ -1,0 +1,29 @@
+#!/bin/sh
+host=$1
+localIface=`basename /proc/sys/net/ipv4/conf/e*` || exit
+[ "$host" ] || {
+  self=`basename $0`
+  cat <<EOS >&2
+Release leased IP address of specified host -- 10/22/21 brent@mbari.org
+Uses ssh to retrieve host's MAC address in case it has been removed from LAN
+Usage:
+  $self {ssh user}@<hostname> {remote net interface} {local net interface}
+  Optional remote host's network interface defaults to first ethernet interface
+  Optional local host's network interface defaults to $localIface
+Examples:
+$ $self esp@mv3.vpn
+or
+$ $self esp@ESPbruce.wifi
+password:  #enter the usual
+EOS
+exit 9
+}
+
+ip neigh flush all &&
+mac=`MACaddr $host $2` || exit
+ip neigh show | grep -i $mac && {
+#or arp-scan --localnet | grep -i $mac && {
+  echo "Refusing to release ${host#*@} because it is online on this LAN!"
+  exit 1
+}
+exec releaseDHCPlease $localIface $mac

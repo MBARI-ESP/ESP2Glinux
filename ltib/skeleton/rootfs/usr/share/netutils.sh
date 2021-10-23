@@ -129,6 +129,16 @@ isUp() {
   flags=`cat /sys/class/net/$1/flags 2>/dev/null` && [ $(( $flags & 1 )) = 1 ]
 }
 
+isDown() {
+#return 0 only if interface exists and is DOWN
+  flags=`cat /sys/class/net/$1/flags 2>/dev/null` || return 2  #unknown iface
+  [ $(( $flags & 1 )) = 0 ]
+}
+
+hwaddr() {
+  cat /sys/class/net/$1/address
+}
+
 hasIP() {
 #return 0 if specified interface is assigned an IP address
   case "$1" in
