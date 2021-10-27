@@ -1,0 +1,43 @@
+#!/bin/sh
+# Special Busybox udhcpc dispatcher for releaseDHCPlease utility
+#  revised 10/26/21 brent@mbari.org 
+#
+# Copyright (C) 2009 by Axel Beckert.
+# Copyright (C) 2014 by Michael Tokarev.
+
+# Based on the busybox example scripts and the old udhcp source
+# package default.* scripts.
+
+[ "$1" -a "$interface" ] || {
+  echo "Error: should be called from udhcpc" >&2
+  exit 1
+}
+
+log() {
+    logger -t "udhcpc[$PPID]" -p daemon.$1 "$interface: $2"
+}
+
+case $1 in
+    bound|renew)
+	# Configure new IP address.
+        ip addr add $ip dev $interface &&
+        ip route add $serverid dev $interface &&
+	log info "$1: Leased $ip from $serverid for $lease seconds"
+	;;
+
+    deconfig)
+	ip link set $interface up
+	ip -4 addr flush dev $interface &&
+	ip -4 route flush dev $interface &&
+	log info "deconfigured"
+	;;
+
+    leasefail | nak)
+	log err "configuration failed: $1: $message"
+	;;
+
+    *)
+	echo "$0: Unknown udhcpc command: $1" >&2
+	exit 1
+	;;
+esac

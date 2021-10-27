@@ -4,7 +4,7 @@ localIface=`basename /proc/sys/net/ipv4/conf/e*` || exit
 [ "$host" ] || {
   self=`basename $0`
   cat <<EOS >&2
-Release leased IP address of specified host -- 10/22/21 brent@mbari.org
+Release leased IP address of specified host -- 10/23/21 brent@mbari.org
 Uses ssh to retrieve host's MAC address in case it has been removed from LAN
 Usage:
   $self {ssh user}@<hostname> {remote net interface} {local net interface}
@@ -19,10 +19,14 @@ EOS
 exit 9
 }
 
-ip neigh flush all &&
+scanLAN() {
+#fall back on our local arp cache if arp-scan not available
+  arp-scan --localnet 2>/dev/null || ip neigh show || exit
+}
+
 mac=`MACaddr $host $2` || exit
-ip neigh show | grep -i $mac && {
-#or arp-scan --localnet | grep -i $mac && {
+[ "$mac" ] || exit
+scanLAN | grep -i $mac && {
   echo "Refusing to release ${host#*@} because it is online on this LAN!"
   exit 1
 }

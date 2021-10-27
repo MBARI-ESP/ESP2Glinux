@@ -5,7 +5,7 @@ iface=$1
   iface=`basename /proc/sys/net/ipv4/conf/e*`
   : ${iface:=ether}
   cat <<EOS >&2
-Release DHCP lease on specified network interface -- 10/22/21 brent@mbari.org
+Release DHCP lease on specified network interface -- 10/26/21 brent@mbari.org
 optional 2nd argument is the (spoofed) MAC address whose lease is to be released
 Usage:
   $self <network interface> {MAC (ethernet) address}
@@ -44,8 +44,10 @@ mac=$2
 }
 ifconfig $IFNAME 0 || exit
 #get a lease, release it and quit
-udhcpc -fCRqni $IFNAME || {
+rc=0
+udhcpc -fCRqni $IFNAME -s /usr/share/udhcpc/release.script || {
+  rc=$?
   echo "Failed to release lease!" >&2
-  exit 5
 }
 ifconfig $IFNAME down
+exit $rc
