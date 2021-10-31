@@ -8,7 +8,7 @@ ifCfg() {
 #read configuration for specified interface
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-  unset GATEWAY MTU AUTOSTART IFALIAS KILLSECS KILLSIGS
+  unset GATEWAY MTU NOAUTOSTART IFALIAS KILLSECS KILLSIGS
   IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -418,23 +418,13 @@ ifDown() {
   :
 }
 
-autostart() {
-  #default to yes, no, or missing
-  eval "case \"$AUTOSTART\" in ${1-''|n|no|y|yes|1|0|true|false}) return;esac"
-  return 1
-}
-
 ifUp()
 #returns true iff interface $IFNAME successfully brought up
-#$1 is optional regex of allowed $AUTOSTART values
-#$2 is optional # of seconds to delay beforehand
 {
   [ "$IFNAME" ] || {
     echo "Network interface to start was not specified" >&2
     return 102
   }
-  autostart $1 || return
-  [ "$2" ] && sleep $2
   hasIP $IFNAME && return
   local fn=$run/*$IFNAME.pid
   local pidfns=`echo $fn`
@@ -489,6 +479,15 @@ ifUp()
       ;;
     esac
     ifPost
+  }
+}
+
+ifUpAuto() {
+#bring up $IFNAME after optional delay
+#$1 is optional # of seconds to delay beforehand
+  [ "$NOAUTOSTART" ] || {
+    [ "$1" ] && sleep $1
+    ifUp
   }
 }
 

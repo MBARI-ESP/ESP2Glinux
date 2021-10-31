@@ -17,6 +17,8 @@ lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
   }
   exec 7<&-       #release lock.  Did not need to defer ifup.  ifup now!
 }
-ifup "$1" "''|y|yes|1|true" $2 &  #if AUTOSTART missing,yes, or true
+. /usr/share/netutils.sh
+ifCfg $1
+ifUpAuto $2 &
 
 #catchup command starts interfaces listed in ifup.pending

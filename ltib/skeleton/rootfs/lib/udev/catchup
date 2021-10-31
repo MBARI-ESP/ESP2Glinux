@@ -24,7 +24,7 @@ for iface in $ifNames; do
             let "iface>now" && let "delay=iface-now"
   ;;
     *) ifCfg $iface
-       ifUp "''|y|yes|1|true" $delay &  #only if AUTOSTART missing,yes, or true
+       ifUpAuto $delay &
        delay=
   esac
 done
