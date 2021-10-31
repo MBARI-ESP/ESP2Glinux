@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  10/21/21 by brent@mbari.org
+# revised:  10/31/21 by brent@mbari.org
 
 [ "$1" -a "$interface" ] || {
   echo "Error: should be called from udhcpc"
@@ -14,33 +14,48 @@ ifCfg $interface && {
 
 leased=/var/run/$interface.lease
 
-case "$1" in  #ignore leasefail and renew
+log() {
+    logger -t "udhcpc[$PPID]" -p daemon.$1 "$interface: $2"
+}
+
+case "$1" in
   deconfig)
     rm -f /var/run/resolv/$interface
     if [ "$validIFconfig" ] && ipUp; then
-      [ -f $leased -a "$IPADDR" ] && echo "$interface reverted to $IPADDR"
+      [ -f $leased -a "$IPADDR" ] && log notice "reverted to $IPADDR"
     else
       ifconfig $interface 0
     fi
     rm -f $leased
   ;;
-  bound)
-    newLeaseSpec="$ip M:$subnet B:$broadcast G:$router"
+  bound|renew)
+    leaseSpec="$ip M:$subnet B:$broadcast G:$router U:$mtu"
     if [ "$ignoreDNS" ]; then
-      echo "Ignoring offered DNS config"
       unset dns
     else
-      newDNSspec="$domain DNS:$dns"
+      LN=$'\n'
+      leaseSpec="$leaseSpec$LN$domain DNS:$dns"
+    fi
+    #don't disturb running interface if lease renewed with no changes
+    [ "$1" = "renew" -a "`cat $leased 2>/dev/null`" = "$leaseSpec" ] && exit
+    [ "$dns" ] && {
       resolv_conf() {
         echo "search `searchDomains $domain`"
         for dnsip in $dns ; do
           echo "nameserver $dnsip"
         done
       }
-    fi
-IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router MTU=$mtu ipUp && {
-      [ "$dns" ] && dnsMsg=" with DNS $dns"
-      echo "DHCP $1 ${IFALIAS-$interface} to $ip$dnsMsg"
-      echo -e "$newLeaseSpec\n$newDNSspec" >$leased
+      dnsMsg=" with DNS $dns"
     }
+IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router MTU=$mtu ipUp&&{
+      log info "DHCP $1 ${IFALIAS-$interface} to $ip$dnsMsg"
+      echo "$leaseSpec" >$leased
+    }
+  ;;
+  leasefail | nak)
+    log err "configuration failed: $1: $message"
+	;;
+  *)
+    log err "Unknown udhcpc command: $1"
+    exit 1
 esac

@@ -1,33 +1,50 @@
 #!/bin/sh
-host=$1
-localIface=`basename /proc/sys/net/ipv4/conf/e*` || exit
-[ "$host" ] || {
+MAC=$1
+LAN=${2-`basename /proc/sys/net/ipv4/conf/e*`} || exit
+[ "$MAC" ] || {
   self=`basename $0`
   cat <<EOS >&2
-Release leased IP address of specified host -- 10/23/21 brent@mbari.org
-Uses ssh to retrieve host's MAC address in case it has been removed from LAN
+Release leased IP address of specified MAC address -- 10/29/21 brent@mbari.org
 Usage:
-  $self {ssh user}@<hostname> {remote net interface} {local net interface}
-  Optional remote host's network interface defaults to first ethernet interface
-  Optional local host's network interface defaults to $localIface
+  $self <Ethernet MAC address> {unused network interface}
+  Network interface defaults to $LAN
+Environment Variables:
+  FORCEdown  #if non-null, network interface is forced down
 Examples:
-$ $self esp@mv3.vpn
+$ $self 01:02:03:80:81:83
 or
-$ $self esp@ESPbruce.wifi
+$ $self \`MACaddr esp@ESPbruce.wifi\`  #ssh esp@ESPbruce for its MAC address
 password:  #enter the usual
 EOS
 exit 9
 }
 
-scanLAN() {
-#fall back on our local arp cache if arp-scan not available
-  arp-scan --localnet 2>/dev/null || ip neigh show || exit
+flags=`cat /sys/class/net/$LAN/flags 2>/dev/null` || {
+  echo "Unknown network interface: $LAN" >&2
+  exit 2
 }
 
-mac=`MACaddr $host $2` || exit
-[ "$mac" ] || exit
-scanLAN | grep -i $mac && {
-  echo "Refusing to release ${host#*@} because it is online on this LAN!"
+scanLAN() {
+#fall back on our local arp cache if arp-scan not available
+  arp-scan --localnet 2>/dev/null || ip neigh show dev $LAN
+}
+
+{
+  scanLAN || exit
+} | grep -i $MAC && {
+  echo "Refusing to release $MAC because it is online on this LAN!"
   exit 1
 }
-exec releaseDHCPlease $localIface $mac
+
+[ -z "$FORCEdown" -a $(( $flags & 1 )) = 1 ] && {
+  cat <<EOS >&2
+$LAN is UP !!  If you really want to continue, by retry with:
+# FORCEdown=1 $0 $*
+EOS
+  exit 1
+}
+
+trap "ip netns del $LAN" EXIT HUP TERM INT QUIT PIPE &&
+ip netns add $LAN &&           #release lease in a LAN network namespace
+ip link set $LAN netns $LAN && #[avoids creating a transient duplicate route]
+ip netns exec $LAN releaseDHCPlease $LAN $MAC

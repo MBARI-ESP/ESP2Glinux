@@ -5,49 +5,39 @@ iface=$1
   iface=`basename /proc/sys/net/ipv4/conf/e*`
   : ${iface:=ether}
   cat <<EOS >&2
-Release DHCP lease on specified network interface -- 10/26/21 brent@mbari.org
+Release DHCP lease on specified network interface -- 10/29/21 brent@mbari.org
 optional 2nd argument is the (spoofed) MAC address whose lease is to be released
 Usage:
-  $self <network interface> {MAC (ethernet) address}
+  $self <network interface> {Ethernet MAC address}
 Examples:
   $self $iface   #release lease held by this host
   $self $iface  01:02:03:80:81:83  #release lease of host with this MAC
 Important Note:
   The specified network interface must not be in use.
   DO NOT disable the interface you are using to access this machine!
+  Use breakDHCPlease instead of this script
 EOS
 exit 9
 }
-. /usr/share/netutils.sh
-ifCfg $iface
 
-isDown $IFNAME || {
-  case $? in
-    1) cat <<EOS >&2
-$iface is UP !!  If you really want to continue, disable it with
-  # ifconfig $iface down  #only if you are not using $iface !!
-before retrying:
-  # $0 $*
-EOS
-       exit 1
-  ;;
-    *) echo "Unknown network interface: $iface" >&2
-       exit 2
-  esac
-}
+if [ -r /usr/share/netutils.sh ]; then
+  . /usr/share/netutils.sh
+  ifCfg $iface
+  scriptDir=/usr/share/udhcpc
+else
+  IFNAME=$iface
+  scriptDir=/etc/udhcpc
+  hwaddr() {
+    cat /sys/class/net/$1/address
+  }
+fi
 
 mac=$2
 [ "$mac" ] && {
   oldmac=`hwaddr $IFNAME` &&
-  trap "ifconfig $IFNAME hw ether $oldmac" EXIT HUP TERM INT QUIT PIPE &&
-  ifconfig $IFNAME hw ether $mac || exit 5
+  trap "ifconfig $IFNAME down hw ether $oldmac" EXIT HUP TERM INT QUIT PIPE &&
+  ifconfig $IFNAME hw ether $mac || exit
 }
-ifconfig $IFNAME 0 || exit
 #get a lease, release it and quit
-rc=0
-udhcpc -fCRqni $IFNAME -s /usr/share/udhcpc/release.script || {
-  rc=$?
-  echo "Failed to release lease!" >&2
-}
-ifconfig $IFNAME down
-exit $rc
+ifconfig $IFNAME 0 &&
+udhcpc -t 20 -fCRqni $IFNAME -s $scriptDir/release.script
