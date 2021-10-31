@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 4/14/21 brent@mbari.org
+# -- revised: 10/29/21 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -8,8 +8,7 @@ ifCfg() {
 #read configuration for specified interface
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-  unset NETWORK GATEWAY MTU AUTOSTART IFALIAS
-  unset KILLSECS KILLSIGS
+  unset GATEWAY MTU AUTOSTART IFALIAS KILLSECS KILLSIGS
   IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -40,7 +39,6 @@ ipUp() {
 #  IPADDR = internet address
 #  BROADCAST = broadcast IP address
 #  NETMASK = subnetwork mask
-#  NETWORK = IP subnet (to add explicit route)
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
 #  VPN = associated VPN server / interface
@@ -55,9 +53,6 @@ ipUp() {
   ifconfig $IFNAME $ipopts || {
     echo "FAILED:  ifconfig $IFNAME $ipopts"
     return 2
-  }
-  [ "$NETWORK" ] && {
-    route add -net $NETWORK$mask dev $IFNAME || return 3
   }
   gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
   #also bring up associated VPN interface if this one provides gateway
@@ -220,7 +215,8 @@ hostsUp() {
 #first adds interface specific hosts file if current iface specified
   [ "$1" ] && hosts >$run/$1.hosts
   {
-    echo "$(netIfIP $(topIf)) $(hostname)"
+    local topIP=$(netIfIP $(topIf))
+    echo "${topIP:-127.0.0.1} $(hostname)"
     cat $run/*.hosts
   } >/etc/hosts 2>/dev/null
   #signal main dnsmasq instance to reread /etc/hosts
