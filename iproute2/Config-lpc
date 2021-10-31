@@ -3,5 +3,5 @@ PKG_CONFIG:=false
 AR:=arm-none-linux-gnueabi-ar
 CC:=arm-none-linux-gnueabi-gcc
 LIBDIR:=~/ltib/rootfs/usr/lib
-IP_CONFIG_SETNS:=n
 HAVE_SELINUX:=n
+

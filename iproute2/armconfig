@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack & configure GNU screen for arm-linux -- 4/23/21 brent@mbari.org
+# unpack & configure GNU iproute2 for arm-linux -- 10/29/21 brent@mbari.org
 : ${gitTop:=`realpath $(dirname $0)`}
 : ${iproute2Top:=$gitTop/iproute2}
 : ${HOST:=$ARMHOST}
