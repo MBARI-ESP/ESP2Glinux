@@ -1,6 +1,6 @@
 #!/bin/sh
 # netplugd 'policy script'
-#  revised 10/30/21 brent@mbari.org
+#  revised 10/31/21 brent@mbari.org
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
@@ -9,6 +9,9 @@ export PATH=/bin:/sbin:/usr/bin:/usr/sbin
   exit 1
 }
 
+exec >/dev/console 2>&1
+. /usr/share/netutils.sh
+
 log() {
     logger -t "netplugd[$PPID]" -p daemon.$1 "$interface: $2"
 }
@@ -16,13 +19,14 @@ log() {
 dev="$1"
 act="$2"
 case "$act" in
-  in)     /usr/sbin/ifup $dev
+  in)     ifCfg $dev && ifUpAuto
 ;;
 
-  out)    /usr/sbin/ifdown $dev
+  out)    ifCfg $dev && ifDown
+          exec /sbin/ifconfig $dev 0  #clear IP adr to force reconfig
 ;;
 
-  probe)  exec /sbin/ip link set $dev up >/dev/null
+  probe)  exec /sbin/ifconfig $dev down >/dev/null 2>&1
 ;;
 
 *)  log err "Unknown netplugd command: $act on $dev"
