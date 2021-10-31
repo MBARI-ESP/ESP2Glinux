@@ -5,7 +5,7 @@ WGshore=192.168.5.1		#see /etc/wireguard/$IFNAME.conf
 . /etc/sysconfig/mbari.net
 
 resolv_conf() { cat<<EOS
-search lan shore.mbari.org
+search esp
 nameserver $WGshore
 EOS
 }
