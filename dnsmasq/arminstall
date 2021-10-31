@@ -12,7 +12,7 @@ here=$PWD
 echo "Installing dnsmasq in $HOSTTOP"
 cd $dnsmasqTop || exit $?
 make clean && 
-make CC=$HOST-gcc COPTS=-DNO_INOTIFY &&
+make CC=$HOST-gcc COPTS="-DNO_INOTIFY -DNO_IPV6 -DNO_DHCP6" &&
 $HOST-strip -o $HOSTTOP/usr/sbin/dnsmasq src/dnsmasq &&
 cd $here &&
 [ -e $HOSTTOP/etc/dnsmasq.conf ] || cp dnsmasq.conf $HOSTTOP/etc &&
