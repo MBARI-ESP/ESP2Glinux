@@ -1,7 +1,7 @@
 . $syscfg/if-default
 IFALIAS=wired
 IFNAME=eth0
-BOOTPROTO="dhcp-b -m600"  #dhcp in background, renew every 10 min
+BOOTPROTO="dhcp-b -m1800"  #dhcp in background, renew every 30 min
 IPADDR=192.168.0.50    #use this (static) configuration if dhcp fails
 
 ifPost() {
