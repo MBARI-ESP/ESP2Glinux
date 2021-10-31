@@ -1,0 +1,31 @@
+#!/bin/sh
+# netplugd 'policy script'
+#  revised 10/30/21 brent@mbari.org
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+[ "$#" != 2 ] && {
+  echo "Error: should be called from netplugd" >&2
+  exit 1
+}
+
+log() {
+    logger -t "netplugd[$PPID]" -p daemon.$1 "$interface: $2"
+}
+
+dev="$1"
+act="$2"
+case "$act" in
+  in)     /usr/sbin/ifup $dev
+;;
+
+  out)    /usr/sbin/ifdown $dev
+;;
+
+  probe)  exec /sbin/ip link set $dev up >/dev/null
+;;
+
+*)  log err "Unknown netplugd command: $act on $dev"
+    exit 1
+esac
+:

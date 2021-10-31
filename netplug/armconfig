@@ -1,0 +1,12 @@
+#!/bin/sh
+# unpack & configure GNU netplug for arm-linux -- 10/30/21 brent@mbari.org
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${netplugTop:=$gitTop/netplug}
+: ${HOST:=$ARMHOST}
+
+[ -d "$netplugTop" ] || {
+  cd $gitTop &&
+  git clone git@github.com:brentr/netplug.git $netplugTop &&
+  cd "$netplugTop" || exit
+}
+echo "Now, run arminstall"

@@ -1,0 +1,19 @@
+#!/bin/sh
+# build & install GNU netplug to arm-linux
+# -- 10/29/21 brent@mbari.org
+
+: ${gitTop:=$(realpath `dirname $0`)}
+: ${netplugTop:=$gitTop/netplug}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+
+echo "Installing netplug daemon in $HOSTTOP"
+cd $netplugTop || exit
+make clean && 
+make -j4 CC=$HOST-gcc netplugd &&
+for bin in netplugd; do
+  $HOST-strip -o $HOSTTOP/sbin/$(basename $bin) $bin || exit
+done
+cd $gitTop &&
+cp -a overlay/* $HOSTTOP &&
+echo "Done."
