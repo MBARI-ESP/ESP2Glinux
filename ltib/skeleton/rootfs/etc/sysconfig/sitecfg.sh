@@ -1,7 +1,7 @@
 #Site specific networking utilities & definitions
-# -- revised: 8/31/20 brent@mbari.org
+# -- revised: 10/31/21 brent@mbari.org
 
-ESPshore=134.89.2.91  #ESP shore server
+ESPshore=134.89.2.90  #ESPshore2 server
 
 closeTunnels() {
   #signal tunnel deamons that interface will close soon
