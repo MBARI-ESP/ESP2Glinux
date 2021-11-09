@@ -1,4 +1,4 @@
-# /etc/profile: 5/26/17 Brent@mbari.org
+# /etc/profile: 11/8/21 Brent@mbari.org
 #echo /etc/profile: $0 "$@" >&2
 
 umask 022
@@ -26,7 +26,7 @@ fi
 
   sshdir=~/.ssh
   mkdir -p $sshdir
-  for key in rsa ecdsa; do
+  for key in rsa ecdsa ed25519; do
     keyfn=id_${key}
     if [ ! -e "$sshdir/$keyfn" ]; then
       echo "Generating dropbear $key ssh key for $USER@`hostname` ... "

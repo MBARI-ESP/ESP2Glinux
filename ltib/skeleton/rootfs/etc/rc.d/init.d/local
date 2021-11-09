@@ -14,7 +14,7 @@ case "$1" in
 
       # ensure we have valid ssh server keys
       mkdir -p $dropdir
-      for key in rsa ecdsa; do
+      for key in rsa ecdsa ed25519; do
         keyfn=dropbear_${key}_host_key
         if [ ! -e $dropdir/$keyfn ]; then
           echo "Generating $key key for the dropbear ssh server... "
