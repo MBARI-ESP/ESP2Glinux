@@ -2,11 +2,14 @@
 #define DROPBEAR_LOCALOPTIONS_H_
 /*
   Local options override those in default_options.h for ESP Linux
-  revised 5/29/20 by Brent Roman, brent@mbari.org
+  revised 11/8/21 by Brent Roman, brent@mbari.org
 */
-#define DROPBEAR_VERSION "2019.78-mbari3"
+#define DROPBEAR_VERSION "2020.81-mbari4"
 
-//do not disallow core dumps!
+//verbose debugging
+#define DEBUG_TRACE 1
+
+//allow core dumps!
 #define ALLOW_COREDUMPS 1
 
 /* Set this if you want to use the DROPBEAR_SMALL_CODE option. This can save
