@@ -1,7 +1,8 @@
 # set up environment for ltib linux and u-boot builds
 # 1st arg should be HOSTTOP dest directory or ltib template dir will be used
 
-: ${LTIB:=$HOME/ltib}
+home=`eval echo ~${SUDO_USER:-$USER}`
+: ${LTIB:=$home/ltib}
 HOSTTOP=${1-${HOSTTOP-$LTIB/rootfs.tmp}}
 : ${ARMGCC:=/ltibarm}
 : ${ARMHOST:=arm-none-linux-gnueabi}
@@ -9,8 +10,7 @@ HOSTTOP=${1-${HOSTTOP-$LTIB/rootfs.tmp}}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${STRIP:=$ARMSTRIP}
 : ${CROSS_COMPILE:=${ARMHOST}-}
-: ${KLIB_BUILD:=~/ltibLinux}
+: ${KLIB_BUILD:=$home/git/linux-lpc31}
 : ${KLIB=$HOSTTOP}
-export ARMGCC HOSTTOP ARMHOST ARMPREFIX ARMSTRIP STRIP CROSS_COMPILE
-export KLIB KLIB_BUILD LTIB
-
+export HOSTTOP LTIB ARMGCC ARMHOST ARMPREFIX ARMSTRIP STRIP CROSS_COMPILE
+export KLIB_BUILD KLIB
