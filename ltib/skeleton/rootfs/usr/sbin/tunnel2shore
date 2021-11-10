@@ -12,13 +12,25 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 4/19/21 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/9/21 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
 }
 tunHostsFn=$run/$self.hosts
 export HOME
+
+killJobs() {
+#send all jobs specified signal
+  local kids=$(jobs -p)
+  [ "$kids" ] && kill $kids
+}
+
+SSH() {  #start TCP keepalives after idle 3 minutes
+  : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
+#    ssh -oBatchMode=yes -oServerAliveInterval=20 "$@"
+}
+
 [ -w $traceFn ] && {
   { date; echo $0 "$@"; env; } >>$traceFn
   exec 2>>$traceFn
@@ -26,12 +38,12 @@ export HOME
 }
 
 #restart if network changed  (pid does not change!)
-trap "pkill -P $$; wait; rm -f $tunHostsFn; exec $0" HUP
+trap "killJobs; wait; rm -f $tunHostsFn; exec $0" HUP
 #Empty .pid file to delay restart after waiting until tunnel is closed.
-trap "pkill -P $$; rm -f $tunHostsFn; wait; >$pidFn; exec $0" USR1
+trap "killJobs; rm -f $tunHostsFn; wait; >$pidFn; exec $0" USR1
 #clean up on request to exit
 trap "rm -f $tunHostsFn; hostsUp; rm -f $pidFn" EXIT
-trap "pkill -P $$; wait; exit 129" TERM INT QUIT
+trap "killJobs; wait; exit 129" TERM INT QUIT
 
 if [ -s "$pidFn" ];then
   #terminate any other instances
@@ -72,10 +84,6 @@ tag="`basename $0`[$$]"
   tunArgs="-oExitOnForwardFailure=yes -yN $shoreSSH"
   export DROPBEAR_PASSWORD=  #fail instead of prompting for a password
 
-  SSH() {  #start TCP keepalives after idle 3 minutes
-    : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
-#    ssh -oBatchMode=yes -oServerAliveInterval=20 "$@"
-  }
   openTunnel() {
   #open tunnel from shore's $1 port to our local ssh port
   #tunnel from shore's 1$1 port ($1 prefixed by 1) to our espclient port
@@ -96,4 +104,3 @@ tag="`basename $0`[$$]"
 #This will run when the tunnel collapses or cannot be built
 #ifdown cellularIface
 #ifup celluarIface
-
