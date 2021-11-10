@@ -1,8 +1,7 @@
 #!/bin/sh
-# build & install rsync daemon for arm-linux -- 4/24/21 brent@mbari.org
+# build & install rsync daemon for arm-linux -- 11/9/21 brent@mbari.org
 
 : ${ARMGCC:=/ltibarm}
-: ${CC:=$ARMGCC/bin/gcc}
 : ${CFLAGS:=-O2 -fomit-frame-pointer}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${TARGETTOP:=${2-usr/bin}}
@@ -11,7 +10,7 @@ echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
 cd rsync-3.1.3 &&
-make CC=$CC CPPFLAGS="-DHAVE_CONFIG_H -Ipopt -Izlib" CFLAGS="$CFLAGS" || exit 1
+make CPPFLAGS="-DHAVE_CONFIG_H -Ipopt -Izlib" CFLAGS="$CFLAGS" || exit 1
 mkdir -p $TOP || exit 4
 for prog in rsync; do
   $ARMSTRIP $prog -o $TOP/$prog || exit 3
