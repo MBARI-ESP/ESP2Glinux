@@ -12,23 +12,25 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/9/21 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 11/19/21 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
 }
 tunHostsFn=$run/$self.hosts
+kids=$run/$self.kids-$$
+err=$run/$self.err
 export HOME
 
 killJobs() {
 #send all jobs specified signal
-  local kids=$(jobs -p)
-  [ "$kids" ] && kill $kids
+  jobs -p > $kids  #must run jobs built-in in the current shell!!
+  local pids=`cat $kids` && rm -f $kids && [ "$pids" ] && kill $* $pids
 }
 
 SSH() {  #start TCP keepalives after idle 3 minutes
-  : | setsid dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$run/$self.err
-#    ssh -oBatchMode=yes -oServerAliveInterval=20 "$@"
+  dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$err </dev/null
+# ssh -oBatchMode=yes -oServerAliveInterval=20 "$@" 2>$err </dev/null
 }
 
 [ -w $traceFn ] && {
