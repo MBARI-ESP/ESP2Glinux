@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #close all open files except for stdin, stdout and stderr
 #then exec the given binary with args
 for fd in $(ls /proc/self/fd); do
