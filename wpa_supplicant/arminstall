@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install wpa_supplicant daemon for arm-linux -- 4/23/20 brent@mbari.org
+# build & install wpa_supplicant daemon for arm-linux -- 4/15/22 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -9,7 +9,7 @@
 echo "Installing in $HOSTTOP"
 echo "  for execution at $TARGETTOP on the ARM target"
 TOP=$HOSTTOP/$TARGETTOP
-cd wpa_supplicant-2.5/wpa_supplicant &&
+cd wpa_supplicant-2.7/wpa_supplicant &&
 make -j4 CC=$CC || exit 1
 mkdir -p $TOP || exit 4
 for prog in wpa_supplicant wpa_cli wpa_passphrase; do
