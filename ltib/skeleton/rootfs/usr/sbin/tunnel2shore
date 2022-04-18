@@ -12,7 +12,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 11/19/21 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 4/18/22 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -29,7 +29,7 @@ killJobs() {
 }
 
 SSH() {  #start TCP keepalives after idle 3 minutes
-  dbclient -i $HOME/.ssh/id_rsa -SK180 "$@" 2>$err </dev/null
+  ssh -SK180 "$@" 2>$err </dev/null
 # ssh -oBatchMode=yes -oServerAliveInterval=20 "$@" 2>$err </dev/null
 }
 
