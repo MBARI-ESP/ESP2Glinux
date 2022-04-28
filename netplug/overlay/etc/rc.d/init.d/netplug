@@ -1,18 +1,23 @@
 daemon=netplugd
 pidFile=/var/run/$daemon.pid
+set -f  #turn off globbing
 OPTIONS="-Pc /dev/null -p $pidFile -i eth*"
 
 case "$1" in
     start)
-       echo "Starting $daemon..."
-       $daemon $OPTIONS
+      if [ -s $pidFile ] && kill -0 `cat $pidFile`; then
+        echo "Already running $daemon..."
+      else
+        echo "Starting $daemon..."
+        $daemon $OPTIONS
+      fi
        ;;
-                         
+
     restart)
-      $0 stop 
+      $0 stop
       $0 start
        ;;
-       
+
     stop)
        echo "Stopping $daemon"
        if [ -s $pidFile ]; then
@@ -22,7 +27,7 @@ case "$1" in
          killall $daemon
        fi
        ;;
-       
+
     *)
        echo "usage: start|restart|stop"
        ;;
