@@ -12,7 +12,7 @@ self=`basename $0`
 : ${shoreUser:=`hostname`}
 : ${shoreSSH:="-p2323 $shoreUser@$shore"}
 [ "$1" ] && { cat >&2 <<END
-Bring up ssh tunnel to $shore for ssh and smtp -- 4/18/22 brent@mbari.org
+Bring up ssh tunnel to $shore for ssh and smtp -- 4/30/22 brent@mbari.org
 Retries every $noGateDelay seconds until internet is available
 END
   exit 9
@@ -77,9 +77,10 @@ tag="`basename $0`[$$]"
 [ "$(topIf)" ] && {
   #ensure shore and mail resolve to localhost
   #(done this way in case netutils updates /etc/hosts first)
-  tunHosts='127.0.0.1 shore mail'
-  echo $tunHosts >$tunHostsFn
-  grep -q "$tunHosts" /etc/hosts || echo $tunHosts >>/etc/hosts
+  tunHosts='shore mail'
+  tHosts="127.0.0.1 $tunHosts"
+  echo $tHosts >$tunHostsFn
+  grep -q " $tunHosts" /etc/hosts || echo $tHosts >>/etc/hosts
 
   local=localhost
   tunnels="-L873:$local:873 -L25:$local:25"  #smtp should forwarded last
