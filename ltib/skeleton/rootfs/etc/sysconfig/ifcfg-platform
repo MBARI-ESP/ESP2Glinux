@@ -10,7 +10,7 @@ hosts() {    #add lines before EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
 $IPREMOTE makai-ppp makai platform
 EOS
-rdate $IPREMOTE
+rdate $IPREMOTE >/dev/null
 ESPclient=$IPREMOTE /etc/init.d/espserver start >/dev/null
 }
 
