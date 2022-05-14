@@ -2,8 +2,22 @@
 IFALIAS=wired
 IFNAME=eth0
 BOOTPROTO="dhcp-b -m1800"  #dhcp in background, renew every 30 min
-IPADDR=192.168.0.50    #use this (static) configuration if dhcp fails
+#BOOTPROTO=static	  #uncomment for static addresses
+IPADDR=192.168.0.50	#assign this IP address if DHCP fails
+#NETMASK=255.255.255.0
+#GATEWAY=192.168.0.1
+#ignoreDNS=yes		#uncomment to ignore DNS servers from DHCP
 
-ifPost() {
+if $ignoreDNS; then
+resolv_conf() {
+  cat <<END
+search shore.mbari.org
+nameserver  8.8.8.8   #Google's public DNS
+nameserver  8.8.4.4
+END
+}
+fi
+
+ifPost() {  #function called after main interface is UP
   ifup direct  #bring up static alias
 }
