@@ -2,7 +2,7 @@
 self=`basename $0`
 flash=/dev/mtd7
 [ "$1" ] || { cat <<END >&2
-Flash Linux kernel uImage -- brent@mbari.org -- 6/5/21 brent@mbari
+Flash Linux kernel uImage -- brent@mbari.org -- 6/3/22 brent@mbari.org
 Usage:
   $self [uImage]
 Write Linux kernel uImage file to SPI flash and
@@ -24,8 +24,7 @@ kernSize=`ls -ln $1 | (read stat links user owner size junk; echo $size)`
   echo " -- cannot read $1"
   exit 2
 }
-kernHex=`printf "%X" $kernSize`
-echo " ... "
-$uboot del kernSize
-flashcp -v $1 $flash
+kernHex=`printf "%X" $kernSize` &&
+echo " ... " &&
+flashcp -v $1 $flash &&
 $uboot set kernSize $kernHex
