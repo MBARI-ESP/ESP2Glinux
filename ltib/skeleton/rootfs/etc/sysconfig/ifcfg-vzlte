@@ -1,0 +1,6 @@
+IFALIAS=vzlte  #Multitech 100 series on verizon lte
+IFNAME=ppp84
+. $syscfg/inetppp.sh
+modemTTY=/dev/modem
+isp=vzlte
+APN=vzwinternet
