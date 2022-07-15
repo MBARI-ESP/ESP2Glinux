@@ -12,7 +12,7 @@ shm		/dev/shm	tmpfs	defaults
 #change rw to ro for a read/only root filesystem
 /dev/root	/		auto	rw
 
-/dev/mmcblk0p2	/card		auto	defaults
+/dev/mmcblk0p2	/card		auto	data=journal
 /dev/mtdblock2	/flash		auto	ro,noauto
 /dev/mmcblk0p1  /boot		vfat	ro,noauto
 
