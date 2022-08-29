@@ -1,7 +1,8 @@
 #!/bin/sh
 #sychronize real-time with network
 
-ntpserver=us.pool.ntp.org
+#sync with shore (in case DNS not working)
+ntpserver=ESPshore  #was us.pool.ntp.org
 rdateserver=bufflehead
 
 PATH=/usr/sbin:/sbin:/bin
