@@ -1,4 +1,4 @@
-# ESP specific udev rules -- 2/12/20 brent@mbari.org
+# ESP specific udev rules -- 8/30/22 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
@@ -20,6 +20,10 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 #KERNEL=="ttyS3", SYMLINK+="AM1"
 #KERNEL=="ttyS4", SYMLINK+="AM2"
 #KERNEL=="ttyS5", SYMLINK+="AM3"
+
+#Digital thermometers for testing
+#KERNEL=="ttyS4", SYMLINK+="HH506RA"
+#KERNEL=="ttyUSB0", SYMLINK+="TMD56"
 
 #Radio modem serial port (in order of preference)
 #ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem"
