@@ -1,0 +1,6 @@
+#!/bin/sh
+#truncate kernel logs
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+> /var/log/messages
+> /var/log/wtmp
+
