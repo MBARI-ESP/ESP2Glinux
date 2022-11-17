@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install dropbear-git for arm-linux -- 7/6/20 brent@mbari.org
+# build & install dropbear-git for arm-linux -- 11/17/22 brent@mbari.org
 
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
@@ -10,16 +10,16 @@ echo "  for execution at $TARGETTOP on the ARM target"
 top=`pwd`
 cd ${DBVERS-dropbear-git} || exit 2
 applets="dbclient dropbearkey dropbearconvert"
-make -j4 PROGRAMS="dropbear $applets scp" MULTI=1 clean all || exit 1
+make -j4 PROGRAMS="dropbear $applets scp" MULTI=1 clean all || exit
 set -x
 BASE=$HOSTTOP/$TARGETTOP
 install -d -m 755 $BASE/bin $BASE/sbin &&
-install -m 755 dropbearmulti $top/ssh $top/scp $BASE/bin &&
+install -m 755 dropbearmulti $top/ssh $top/scp $BASE/bin || exit
 cd $BASE &&
 $ARMSTRIP bin/dropbearmulti &&
 rm -f sbin/dropbear* bin/dbclient &&
-ln -sf ../bin/dropbearmulti sbin/dropbear &&
+ln -sf ../bin/dropbearmulti sbin/dropbear || exit
 for applet in $applets; do
-  ln -sf dropbearmulti bin/$applet || exit $?
+  ln -sf dropbearmulti bin/$applet || exit
 done
 echo "Done."
