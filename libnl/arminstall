@@ -1,6 +1,6 @@
 #!/bin/sh
 # build & install libnl for arm-linux
-# -- 4/24/20 brent@mbari.org
+# -- 11/16/22 brent@mbari.org
 
 : ${libnl:=libnl3_2_21}
 : ${ARMGCC:=/arm}
@@ -15,7 +15,8 @@ cd ${libnl} || exit
 make -j4 &&
 cd lib/.libs/ &&
 cp -a *.so* *.a $LTIB/rootfs/usr/lib &&
-for so in libnl-3.so* libnl-genl-3.so*; do
+#   libnl-3.so* libnl-genl-3.so*  #for minimal libs on target
+for so in *.so*; do
   if [ -h $so ]; then
     cp -a $so $TARGETTOP
   else
