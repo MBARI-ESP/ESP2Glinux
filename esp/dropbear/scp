@@ -1,0 +1,2 @@
+#!/bin/sh
+DB="/usr/bin/dropbearmulti scp" exec /usr/bin/ssh "$@"
