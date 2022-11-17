@@ -1,4 +1,4 @@
 #!/bin/sh
 [ -z "$DEV_IMAGE" ] && . `dirname $(readlink -mn $0)`/ltibenv
 exec make-3.81 INSTALL_MOD_PATH=${INSTALL_MOD_PATH:-$DEV_IMAGE.tmp} \
-     ARCH=arm  HOSTCC="/usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR "$@"
+     ARCH=arm  HOSTCC="/usr/bin/gcc -B/usr/bin/" KDIR=$KERNELDIR KSRC=$KSRC "$@"
