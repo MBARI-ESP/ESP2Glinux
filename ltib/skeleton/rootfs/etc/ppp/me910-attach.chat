@@ -13,7 +13,8 @@ OK AT+CGDCONT=1,"IP","$APN"
 
 TIMEOUT 150
 #Wait for network & display signal quality
-OK AT+CGATT=1;+CSQ
+OK AT+CGATT=1
+OK \d\d\d\d\dAT+CSQ
 OK ATD*99***1#
 CONNECT \c
 

@@ -13,8 +13,10 @@ OK ATQ0&S0&D2
 #define PDP context (otherwise, use context in profile)
 OK AT+CGDCONT=1,"IP","$APN"
 
+TIMEOUT 10
 #get out of airplane mode and log signal strength
-OK AT+CFUN=1;+CSQ
+OK AT+CFUN=1
+OK \d\d\d\d\dAT+CSQ
 
 ABORT "NO CARRIER"
 ABORT "NO DIALTONE"
@@ -25,6 +27,6 @@ ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
 # Connect with the PDP Context definition above
-TIMEOUT 30
+TIMEOUT 150
 OK ATD*99***1#
 CONNECT \c
