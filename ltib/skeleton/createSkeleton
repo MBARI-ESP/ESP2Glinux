@@ -58,6 +58,7 @@ echo Changing ownership of $1 to root and finalizing image
 sudo sh <<END
   rm -rf $1/dev && mkdir $1/dev && cp $here/dev.tgz $1/dev/.dev.tgz &&
   rm -f $1/usr/lib/*{.bak,_orig} &&
+  rm -f $1/usr/sbin/lighttpd* &&
   chown -Rh root:root $1 &&
   #seed with (just) needed dev entries
   tar -xzf $here/dev.tgz --numeric-owner -C $1/dev && (cd $1/etc &&

@@ -3,7 +3,7 @@
 here=`dirname $0`
 [ "$1" ] || { cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 6/4/21 brent@mbari.org
+  -- 1/8/23 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -60,7 +60,7 @@ chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
 for package in bash readline libnl uboot-env \
       dyndns wpa_supplicant esp/dropbear usbmode dnsmasq screen chrony netplug \
-      esp/netdev esp/ser2net esp/ppp esp/thttpd esp/net-tools rsync tar; do
+      esp/netdev esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
 done

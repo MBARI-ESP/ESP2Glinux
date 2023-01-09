@@ -1,0 +1,14 @@
+#!/bin/sh
+# unpack & configure darkhttpd web server for arm-linux
+# -- 1/8/23 brent@mbari.org
+: ${gitTop:=`realpath $(dirname $0)`}
+: ${darkTop:=$gitTop/darkhttpd}
+: ${HOST:=$ARMHOST}
+
+[ -d "$darkTop" ] || {
+  cd $gitTop &&
+  git clone -b v1.14 https://github.com/emikulic/darkhttpd ||
+    exit
+}
+cd $darkTop &&
+echo "Now, run arminstall"

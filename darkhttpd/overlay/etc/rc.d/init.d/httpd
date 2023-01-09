@@ -1,13 +1,13 @@
 daemon=darkhttpd
-exePath=/usr/local/sbin
 pidFile=/var/run/$daemon.pid
-OPTIONS="/var/log --daemon --pidfile $pidFile --uid www --gid mbari"
-OPTIONS="$OPTIONS --mimetypes /usr/local/share/mime.types"  
+BASE=/var/log
+MIME="--default-mimetype text/plain" #--mimetypes /etc/darkhttpd.mimes
+OPTIONS="$BASE $MIME -pidfile $pidFile --uid nobody --gid nobody"
 
 case "$1" in
     start)
        echo "Starting $daemon..."
-       $exePath/$daemon $OPTIONS
+       $daemon $OPTIONS
        ;;
                          
     restart)

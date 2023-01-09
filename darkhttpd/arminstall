@@ -1,0 +1,19 @@
+#!/bin/sh
+# build & install darkhttpd static web server to arm-linux
+# -- 1/8/23 brent@mbari.org
+
+: ${gitTop:=$(realpath `dirname $0`)}
+: ${darkTop:=$gitTop/darkhttpd}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+: ${CFLAGS:=-Os -fomit-frame-pointer}
+
+echo "Installing darkhttpd in $HOSTTOP"
+cd $darkTop || exit
+${ARMHOST}-gcc $CFLAGS -DNO_IPV6 -o darkhttpd darkhttpd.c
+for bin in darkhttpd; do
+  $HOST-strip -o $HOSTTOP/usr/sbin/$(basename $bin) $bin || exit
+done
+cd $gitTop &&
+cp -r overlay/. $HOSTTOP &&
+echo "Done."
