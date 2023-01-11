@@ -85,11 +85,10 @@ case "$1" in
              }"
         }
       }
-      birth=var/log/birth
       initial=/etc/var
       card=`realPath /card` &&
-         [ ! -r $card/$birth -a -r $initial/$birth -a -d $card ] &&
-         redoIfRO $card "cp -af $initial/. $card"
+         [ -d $card -a ! -d $card/var -a -d $initial ] &&
+         redoIfRO $card "cp -af $initial $card"
       ;;
 
     stop)
