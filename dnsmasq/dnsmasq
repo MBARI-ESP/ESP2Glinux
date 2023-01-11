@@ -2,7 +2,7 @@
 PATH=/usr/sbin:/sbin:/bin
 daemon=dnsmasq
 pidfn=/var/run/$daemon.pid
-OPTIONS=""
+OPTIONS="--group=daemon"
 
 stop() {
   pid=`cat $pidfn` 2>/dev/null && [ "$pid" ] && {

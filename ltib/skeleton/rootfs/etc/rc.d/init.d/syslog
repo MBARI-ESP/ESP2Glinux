@@ -41,6 +41,7 @@ case "$cmd" in
          syslogOptions="-C 16 -m 0" #fall back to circular buffer
          bootlogOptions=$syslogOptions
        fi
+       touch /var/run/syslogd.pid  #prevents .pid file from being world writable
        actions -K >/dev/null 2>&1
        #start syslogd with bootlog options to suppress initial bootup messages
        action syslogd -b -S -- $bootlogOptions
@@ -67,5 +68,4 @@ case "$cmd" in
 
     *)
        echo "usage: start|restart|stop"
-       ;;
 esac

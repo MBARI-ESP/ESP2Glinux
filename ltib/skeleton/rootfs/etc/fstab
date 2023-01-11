@@ -6,7 +6,7 @@
 #
 # file sys	mount		type	options
 proc		/proc		proc	defaults
-devpts		/dev/pts	devpts	gid=5,mode=620
+devpts		/dev/pts	devpts	mode=620,gid=5
 shm		/dev/shm	tmpfs	defaults
 
 #change rw to ro for a read/only root filesystem
@@ -15,9 +15,6 @@ shm		/dev/shm	tmpfs	defaults
 /dev/mmcblk0p2	/card		auto	data=journal
 /dev/mtdblock2	/flash		auto	ro,noauto
 /dev/mmcblk0p1  /boot		vfat	ro,noauto
-
-tmpfs 		/card/var/run	tmpfs	defaults
-tmpfs		/card/var/lock	tmpfs	defaults
 
 none		/debug		debugfs noauto
 

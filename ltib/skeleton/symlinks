@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 9/19/22 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 1/9/23 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -26,7 +26,6 @@ raven/home ->
 
 card/var/log ->
 card/var/run ->
-card/var/lock ->
 flash ->
 
 engineering ->
@@ -84,6 +83,8 @@ etc/rc.d/rcPowerDown.d/K70syslog -> ../init.d/syslog
 
 tmp -> /card/tmp
 var -> /card/var
+run -> /var/run
+etc/var/lock -> /run/lock
 
 etc/issue.net -> issue
 etc/hosts -> /var/run/hosts

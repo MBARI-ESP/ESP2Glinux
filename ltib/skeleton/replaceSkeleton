@@ -23,38 +23,6 @@ EOS
 rm -rf $dst/home/* $dst/lost+found $dst/mnt/*  #remove ltib's users & mount pts
 
 
-mksymlinks() {
-  [ -z "$1" -o "$1" = "--help" ] && {
-cat <<EOS >&2
-    Usage: mksymlinks base_directory {precmd}
-Make symbolic links specified on stdin relative to specified base directory
-Each line of stdin is of the form:
-"symlink Name" -> "symlink Target"
-Lines that lack the " -> " are ignored.  They may function as comments.
-If the "symlink Target" is omitted, a directory called "symlink Name is created"
-precmd is an optional preparation command.
-Commonly, it is "rm -f" to remove any existing link beforehand
-EOS
-  exit 1
-  }
-
-  mkdir -p $1 && cd $1 || exit 4
-
-  while read linkName arrow linkTarget; do
-    [ "$arrow" = '->' ] && {
-      if [ "$linkTarget" ]; then
-        dir=`dirname $linkName`
-        [ "$2" ] && eval $2 $linkName
-        [ -d $dir ] || mkdir -p $dir || exit 2
-        rm -rf $linkName &&
-        ln -s $linkTarget $linkName || exit 3
-      else
-        mkdir -p $linkName || exit 4
-      fi
-    }
-  done
-}
-
 rm $dst/sbin/{halt,reboot,poweroff} `find $dst -name "*ip6t*"`
 rm $dst/usr/bin/{ubi*,*jffs2*}  #remove support for ubi and jffs2 filesystems
 rm $dst/usr/lib/{*.so.bak,*.so_orig,e2initrd*}
@@ -67,14 +35,16 @@ rm $dst/etc/devfsd.conf
 rm $dst/etc/udhcpd.conf
 rm $dst/etc/sysctl.conf
 rm $dst/etc/modprobe.conf.dist
-rm -f $dst/bin/bashbug $dst/usr/bin/pstree.x11
+rm -f $dst/bin/bashbug $dst/usr/bin/pstree.x11 $dst/etc/{issue.net,hosts}
 chmod a-x $dst/etc/ltib-release
 
-# remove all hotplug scripts
-rm $dst/sbin/hotplug && rm -rf $dst/etc/hotplug*
+# remove all hotplug scripts and web server support
+rm -f $dst/{sbin/hotplug,etc/resolv.conf} &&
+rm -rf $dst/etc/hotplug* $dst/var/run/usb &&
+rm -rf $dst/var/www $dst/var/{www,spool,mail,lib/locate,log/hotplug}
 
-# preserve the initial state of the /var dir so new sd cards can be initialized
-initial=etc/initial
+# record the initial state of the /var dir so new sd cards can be initialized
+initial=etc/var
 log=$initial/var/log
 mkdir $dst/$initial &&
 mv $dst/var $dst/$initial &&

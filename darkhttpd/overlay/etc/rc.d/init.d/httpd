@@ -2,19 +2,19 @@ daemon=darkhttpd
 pidFile=/var/run/$daemon.pid
 BASE=/var/log
 MIME="--default-mimetype text/plain" #--mimetypes /etc/darkhttpd.mimes
-OPTIONS="$BASE $MIME -pidfile $pidFile --uid nobody --gid nobody"
+OPTIONS="$BASE $MIME --pidfile $pidFile --daemon --uid nobody --gid daemon"
 
 case "$1" in
     start)
        echo "Starting $daemon..."
        $daemon $OPTIONS
        ;;
-                         
+
     restart)
-      $0 stop 
+      $0 stop
       $0 start
        ;;
-       
+
     stop)
        echo "Stopping $daemon"
        if [ -s $pidFile ]; then
@@ -24,8 +24,7 @@ case "$1" in
          killall $daemon
        fi
        ;;
-       
+
     *)
        echo "usage: start|restart|stop"
-       ;;
 esac

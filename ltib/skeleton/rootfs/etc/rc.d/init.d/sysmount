@@ -1,7 +1,7 @@
 #!/bin/sh
 #mount all filesystems in /etc/fstab not marked "noauto"
 #create /var and /tmp directories and ensure that they are on
-#writable filesystems.
+#writable filesystems -- 1/10/23 brent@mbari.org
 
 prunePath() {
 #prune non-existant components from the specified filesystem path
@@ -58,17 +58,21 @@ case "$1" in
       mount -o remount,rw /dev
       mount -o remount /
       mount -a
+      run=/card/var/run
+      mkdir -p $run
+      mount -t tmpfs -o mode=775,gid=1 RUN $run  #daemon group
       swapon -a 2>/dev/null
       [ "$recovering" ] && exit
+
       #Set up temporary directories, preserves existing symlinks
       tmp=`realPath /tmp` &&
-        redoIfRO "$tmp" "rm -rf $tmp && mkdir -p $tmp && chmod 1777 $tmp"
+        redoIfRO "$tmp" "rm -rf $tmp && mkdir -m 1777 $tmp"
       var=`realPath /var` && {
         cd $var 2>/dev/null || {
           redoIfRO "$var" "mkdir -p $var && touch $var" && cd $var
         } && {
           log=`realPath $var/log` &&
-            redoIfRO $log "mkdir -p $log && chgrp log $log && chmod g+w $log"
+            redoIfRO $log "mkdir -p $log && chgrp log $log"
           etc=`realPath $var/etc/ppp` &&
             redoIfRO $etc "mkdir -p $etc && touch $etc"
           #preserve utmp to retain initial runlevel event
@@ -77,12 +81,12 @@ case "$1" in
           lock=`realPath $var/lock` &&
             redoIfRO $lock \
              "rm -rf $lock/* $lock/.[^.]* && {
-               mkdir -p $lock && chgrp uucp $lock && chmod g+rwx $lock
+               mkdir -m 775 -p $lock && chgrp lock $lock
              }"
         }
       }
       birth=var/log/birth
-      initial=/etc/initial
+      initial=/etc/var
       card=`realPath /card` &&
          [ ! -r $card/$birth -a -r $initial/$birth -a -d $card ] &&
          redoIfRO $card "cp -af $initial/. $card"
