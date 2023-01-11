@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 1/9/23 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 1/11/23 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -24,9 +24,8 @@ bufflehead/home ->
 raven/etc ->
 raven/home ->
 
-card/var/log ->
-card/var/run ->
 flash ->
+card ->
 
 engineering ->
 # ESP -> replaced with .4tar.bug to deal with bug in old tar versions
