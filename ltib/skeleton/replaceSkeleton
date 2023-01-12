@@ -46,9 +46,12 @@ rm -rf $dst/var/www $dst/var/{lock,www,spool,mail,lib/locate,log/hotplug}
 # record the initial state of the /var dir so new sd cards can be initialized
 mv $dst/var $dst/etc &&
 cp -a --no-preserve=ownership $here/rootfs/.  $dst &&
-mksymlinks $dst < $here/symlinks &&
-cd $dst/etc/var &&
-mkdir -p log && chmod g-w log && cd log && {
+
+mksymlinks $dst < $here/symlinks &&  # install symlinks
+
+#set /var/log's sticky bit now, but we cannot set its group to 'log'
+#  because dev system's /etc/group is different from target's
+cd $dst/etc/var/log && chmod 1775 . && {
       d=`date  -uIseconds` &&
       echo ${d%+*}UTC > birth &&
       echo "Image Built at  `date`"
