@@ -1,11 +1,10 @@
 IFALIAS=ipmodem
 IFNAME=ppp8
-serialPort=/dev/modem
-VPN=$ESPshore/shore   #server IP / VPN interface
-
-isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 . $syscfg/inetppp.sh
+serialPort=/dev/modem
+
+isp=verizon  #specify verizon, usmobile, ting, or att (for t-mobile or at&t)
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
   [ "$serialPort" ] && {
