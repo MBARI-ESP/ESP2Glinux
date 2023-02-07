@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/29/21 brent@mbari.org
+# -- revised: 2/6/23 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -58,7 +58,7 @@ ipUp() {
   #also bring up associated VPN interface if this one provides gateway
   [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
   gateUpdated
-  return 0
+  :
 }
 
 ipDown() {
@@ -459,8 +459,7 @@ ifUp()
             insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
-            [ "$DHCPNAME" ] && DHCPNAME="-H $DHCPNAME"
-            $daemon -p $pidfn $DHCPNAME -$mode -i $IFNAME || {
+            $daemon -p $pidfn ${DHCPNAME:+"-H $DHCPNAME "}-$mode -i $IFNAME || {
               echo "DHCP failed:  $interface IP=$IPADDR" >&2
               return 1
             }
