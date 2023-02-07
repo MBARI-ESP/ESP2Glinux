@@ -16,6 +16,5 @@ ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
 TIMEOUT 60
-# Log signal strength, connect 
 "" ATD#777
 CONNECT \c

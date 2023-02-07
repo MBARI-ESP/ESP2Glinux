@@ -20,6 +20,6 @@ ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
 TIMEOUT 60
-# Log signal strength, connect using PDP context #7
+# connect using PDP context #7
 "" ATD*99***7#
 CONNECT \c
