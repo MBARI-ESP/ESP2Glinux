@@ -4,4 +4,4 @@
 #  Interfaces in START are stopped last in reverse order
 
 START='lo wired'
-STOP='shore'
+STOP='shore wg2shore'
