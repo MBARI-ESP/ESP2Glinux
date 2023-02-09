@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 2/6/23 brent@mbari.org
+# -- revised: 2/8/23 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -459,7 +459,7 @@ ifUp()
             insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
-            $daemon -p $pidfn ${DHCPNAME:+"-H $DHCPNAME "}-$mode -i $IFNAME || {
+            $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
               echo "DHCP failed:  $interface IP=$IPADDR" >&2
               return 1
             }
