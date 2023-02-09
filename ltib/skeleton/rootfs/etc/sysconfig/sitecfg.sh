@@ -24,17 +24,6 @@ closeTunnels() {
   >/var/run/tunGate  #next gateUpdated must reopen tunnels
 }
 
-gateChange() {
-#invoked just before gateway interface may be updated
-#$1 is the new gateway interface or "" if topIf is going down
-  local tunGate
-  read -r tunGate 2>/dev/null </var/run/tunGate
-  [ "$tunGate" ] && {
-    read -r newGate 2>/dev/null </var/run/resolv/$1
-#    [ "$tunGate" != "$newGate" ] && closeTunnels
-  }
-}
-
 gateUpdated() {
 #invoked just after gateway interface may have been updated
   local gate tunGate tunFn tunPID
@@ -49,3 +38,15 @@ gateUpdated() {
   return 0
 }
 
+if false; then  #do *not* close tunnels when gateway iface changes
+gateChange() {
+#invoked just before gateway interface may be updated
+#$1 is the new gateway interface or "" if topIf is going down
+  local tunGate
+  read -r tunGate 2>/dev/null </var/run/tunGate
+  [ "$tunGate" ] && {
+    read -r newGate 2>/dev/null </var/run/resolv/$1
+    [ "$tunGate" != "$newGate" ] && closeTunnels
+  }
+}
+fi
