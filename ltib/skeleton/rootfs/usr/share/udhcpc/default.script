@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  10/31/21 by brent@mbari.org
+# revised:  2/8/23 by brent@mbari.org
 
 [ "$1" -a "$interface" ] || {
   echo "Error: should be called from udhcpc"
@@ -12,7 +12,7 @@ ifCfg $interface && {
   validIFconfig=1
 }
 
-leased=/var/run/$interface.lease
+leased=$run/$interface.lease
 
 log() {
     logger -t "udhcpc[$PPID]" -p daemon.$1 "$interface: $2"
