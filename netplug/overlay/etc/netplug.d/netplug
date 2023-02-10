@@ -1,6 +1,6 @@
 #!/bin/sh
 # netplugd 'policy script'
-#  revised 2/8/23 brent@mbari.org
+#  revised 2/9/23 brent@mbari.org
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
@@ -20,10 +20,9 @@ act="$2"
 case "$act" in
   in)     ifCfg $dev && ifUpAuto
 ;;
-  out)    ifCfg $dev && ifDown
-          exec /sbin/ifconfig $dev 0  #clear IP adr to force reconfig
+  out)    ifCfg $dev && ifDown 0  #don't DOWN iface, just clear its IP address
 ;;
-  probe)  #exec /sbin/ifconfig $dev up >/dev/null 2>&1
+  probe)  #ignore or ifconfig $dev up 0 >/dev/null 2>&1
 ;;
   *)      log err "Unknown netplugd command: $act on $dev"
           exit 1
