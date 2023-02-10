@@ -42,7 +42,7 @@ case "$1" in
     [ "${IFNAME}" ] || usage
     [ "$2" = "force" ] && eachAlias ifDown
     #leave main interface UP if any aliases remain
-    isAliasUp "$1:[[:digit:]][[:digit:]]*" && op=0
+    isAliasUp "$IFNAME:[[:digit:]][[:digit:]]*" && op=0
 esac
 
 ifCfg $1
