@@ -21,3 +21,12 @@ fi
 ifPost() {  #function called after main interface is UP
   ifup direct  #bring up static alias
 }
+
+ifPrep() {  #don't start dhcp if cable is unplugged
+  #built-in ethernet needs 2 seconds to determine cable state
+  isDown $IFNAME && ifconfig $IFNAME up 0 && sleep 2
+  notUnplugged $IFNAME || {
+    echo -n "Unplugged "
+    BOOTPROTO=static
+  }
+}
