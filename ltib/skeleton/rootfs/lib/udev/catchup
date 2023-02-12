@@ -23,8 +23,7 @@ for iface in $ifNames; do
     [0-9]*) IFS=. read now idle </proc/uptime  #uptime in secs
             let "iface>now" && let "delay=iface-now"
   ;;
-    *) ifCfg $iface
-       ifUpAuto $delay &
+    *) ifCfg $iface && notUnplugged && ifUpAuto $delay &
        delay=
   esac
 done

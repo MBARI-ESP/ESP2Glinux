@@ -1,4 +1,5 @@
-IFALIAS=bg96  #Quectel BG96 USB LTE-Cat M1 / 2G modem
-IFNAME=ppp89
+ #Quectel BG96 USB LTE-Cat M1 / 2G modem
+IFALIAS=bg96 IFNAME=ppp89
+
 . $syscfg/inetppp.sh
 APN=m2m64.com.attz

@@ -1,5 +1,6 @@
-IFALIAS=vzlte  #Multitech 100 series on verizon lte
-IFNAME=ppp84
+#Multitech 100 series verizon lte modem on ESP
+IFALIAS=vzlte IFNAME=ppp84
+
 . $syscfg/inetppp.sh
 modemTTY=/dev/modem
 isp=vzlte

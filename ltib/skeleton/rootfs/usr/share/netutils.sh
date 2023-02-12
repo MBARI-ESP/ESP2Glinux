@@ -1,14 +1,64 @@
 #Common networking utilities
-# -- revised: 2/8/23 brent@mbari.org
+# -- revised: 2/11/23 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
+
+wired() {
+#return 0 if interface is wired Ethernet
+#return 1 #uncomment this line if NOT running the netplug daemon!
+  expr ${1:-$IFNAME} : "eth[0-9]" >/dev/null
+}
+
+pluggedIn() {
+#return 0 if either interface named $1 defines no carrier or it is up
+  [ "`cat /sys/class/net/${1:-$IFNAME}/carrier 2>/dev/null`" != 0 ]
+}
+
+notUnplugged() {
+  ! wired $1 || pluggedIn $1
+}
+
+isAliasUp() {
+#return 0 if any matching interfaces or aliases are configured (UP)
+  ifconfig | grep -q "^${1:-$IFNAME}[[:space:]]"
+}
+
+isUp() {
+#return 0 if specified interface or pattern of interface aliases is UP
+  local i=${1:-$IFNAME}
+  case "$i" in
+    *:*) isAliasUp $i; return
+  esac
+  flags=`cat /sys/class/net/$i/flags 2>/dev/null` && [ $(( $flags & 1 )) = 1 ]
+}
+
+isDown() {
+#return 0 only if interface exists and is DOWN
+  flags=`cat /sys/class/net/${1:-$IFNAME}/flags 2>/dev/null`||return 2 #unknown
+  [ $(( $flags & 1 )) = 0 ]
+}
+
+hwaddr() {
+  cat /sys/class/net/${1:-$IFNAME}/address
+}
+
+hasIP() {
+#return 0 if specified interface is assigned an IP address
+  local i=${1:-$IFNAME}
+  case "$i" in
+    *:*) isAliasUp $1; return
+  esac
+  flags=`cat /sys/class/net/$i/flags 2>/dev/null` &&
+    [ $(( $flags & 1 )) = 1 ] && netIfIP $i >/dev/null
+  #ifdown may leave main iface up w/o IP address if aliases active
+}
 
 ifCfg() {
 #read configuration for specified interface
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-  unset GATEWAY MTU NOAUTOSTART IFALIAS KILLSECS KILLSIGS
+  unset GATEWAY MTU AUTOSTART NOAUTOSTART IFALIAS KILLSECS KILLSIGS
   IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -49,7 +99,7 @@ ipUp() {
   }
   [ "$BROADCAST" ] && cast=" broadcast $BROADCAST"
   [ "$MTU" ] && mtu=" mtu $MTU"
-  ipopts="${IPADDR-0}$mask$cast$mtu"
+  ipopts="${IPADDR:-0}$mask$cast$mtu"
   ifconfig $IFNAME $ipopts || {
     echo "FAILED:  ifconfig $IFNAME $ipopts"
     return 2
@@ -104,44 +154,6 @@ gatePriority() {
   done
   cd $oldPWD
   return 2
-}
-
-notUnplugged() {
-#return 0 if either interface named $1 defines no carrier or it is up
-  [ "`cat /sys/class/net/$1/carrier 2>/dev/null`" != 0 ]
-}
-
-isAliasUp() {
-#return 0 if any matching interfaces or aliases are configured (UP)
-  ifconfig | grep -q "^$1[[:space:]]"
-}
-
-isUp() {
-#return 0 if specified interface or pattern of interface aliases is UP
-  case "$1" in
-    *:*) isAliasUp $1; return
-  esac
-  flags=`cat /sys/class/net/$1/flags 2>/dev/null` && [ $(( $flags & 1 )) = 1 ]
-}
-
-isDown() {
-#return 0 only if interface exists and is DOWN
-  flags=`cat /sys/class/net/$1/flags 2>/dev/null` || return 2  #unknown iface
-  [ $(( $flags & 1 )) = 0 ]
-}
-
-hwaddr() {
-  cat /sys/class/net/$1/address
-}
-
-hasIP() {
-#return 0 if specified interface is assigned an IP address
-  case "$1" in
-    *:*) isAliasUp $1; return
-  esac
-  flags=`cat /sys/class/net/$1/flags 2>/dev/null` &&
-    [ $(( $flags & 1 )) = 1 ] && netIfIP $1 >/dev/null
-  #ifdown may leave main iface up w/o IP address if aliases active
 }
 
 gateUp() {
@@ -318,7 +330,7 @@ searchDomains() {
 netIfIP() {
 #output the IP address of the specified network interface
 #if there's a valid IP, any additional args are also output
-  ifconfig $1 2>/dev/null | tr : " " | {
+  ifconfig ${1:-$IFNAME} 2>/dev/null | tr : " " | {
     local ignore inet addr ip
     read -r ignore
     read -r inet addr ip ignore
@@ -330,7 +342,7 @@ netIfIP() {
 netIfPtp() {
 #output the IP address of the PtP peer for specified PPP interface
 #if there's a valid peer, any additional args are also output
-  ifconfig $1 2>/dev/null | tr : " " | {
+  ifconfig ${1:-$IFNAME} 2>/dev/null | tr : " " | {
     local ignore inet addr ip ptp peer ignore
     read -r ignore
     read -r inet addr ip ptp peer ignore
@@ -347,9 +359,10 @@ topIf() {
 
 gateIPadr() {
 #output the IP address of the gateway for the given interface
-  resolvIF="$run/resolv/$1"
+  local i=${1:-$IFNAME}
+  resolvIF="$run/resolv/$i"
   read -r resolvDev gateway 2>/dev/null <$resolvIF &&
-  [ "$resolvDev" = "#$1" ] && {
+  [ "$resolvDev" = "#$i" ] && {
     [ "$gateway" ] || return 1
     echo $gateway
     return 0
@@ -383,7 +396,7 @@ ifDown() {
   [ "$pidfns" = "$fn" ] && {
     isUp $IFNAME || return
   }
-  echo "Shutting down ${IFALIAS-$IFNAME} ..."
+  echo "Shutting down ${IFALIAS:-$IFNAME} ..."
   [ "$(topIf)" == "$IFNAME" ] && gateChange
   ifClose $IFNAME
   local pidfn
@@ -402,7 +415,7 @@ ifDown() {
           kill -0 $daemon 2>/dev/null || break 2
         done
         [ "$try" = KILL ] && {
-          echo "Forcing ${IFALIAS-$IFNAME} (PID $daemon) to terminate" >&2
+          echo "Forcing ${IFALIAS:-$IFNAME} (PID $daemon) to terminate" >&2
           kill -KILL $daemon
           rm -f $pidfn
         }
@@ -440,8 +453,16 @@ ifUp()
     done
     [ "$owners" ] && return
   }
-  echo "Bringing up ${IFALIAS-$IFNAME} ..."
   ifPrep && {
+    wired && { #give wired interface 2 seconds to determine carrier state
+      isDown && ifconfig $IFNAME up 0 && sleep 2
+      pluggedIn || {
+        echo "${IFALIAS:-$IFNAME} is unplugged"
+        IPADDR= ipUp
+        return 2
+      }
+    }
+    echo "Bringing up ${IFALIAS:-$IFNAME} ..."
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
       ;;
@@ -455,13 +476,13 @@ ifUp()
             else
               mkdir -p `dirname $pidfn`
             fi
-            echo -n "Determining IP configuration for ${IFALIAS-$IFNAME} ..."
+            echo -n "Determining IP configuration for ${IFALIAS:-$IFNAME} ..."
             insmod af_packet >/dev/null 2>&1
             mode=${BOOTPROTO#dhcp-}
             [ "$mode" = "$BOOTPROTO" ] && mode=n
             $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
               echo "DHCP failed:  $interface IP=$IPADDR" >&2
-              return 1
+              return 5
             }
           else
             echo "No $daemon client daemon installed!" >&2
@@ -470,7 +491,7 @@ ifUp()
         }
       ;;
       static)
-        ipUp && echo "${IFALIAS-$IFNAME} IP=$IPADDR"
+        ipUp && [ "$IPADDR" ] && echo "${IFALIAS:-$IFNAME} IP=$IPADDR"
       ;;
       *)
         echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2

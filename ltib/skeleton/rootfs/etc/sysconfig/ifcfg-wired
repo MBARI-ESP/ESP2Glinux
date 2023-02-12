@@ -1,6 +1,8 @@
+#Built-in wired Ethernet
+IFALIAS=wired IFNAME=eth0
+
 . $syscfg/if-default
-IFALIAS=wired
-IFNAME=eth0
+
 BOOTPROTO="dhcp-b -t10 -m3600"  #dhcp in background, renew every hour
 #BOOTPROTO=static	  #uncomment for static addresses
 IPADDR=192.168.0.50	#assign this IP address if DHCP fails
@@ -20,13 +22,4 @@ fi
 
 ifPost() {  #function called after main interface is UP
   ifup direct  #bring up static alias
-}
-
-ifPrep() {  #don't start dhcp if cable is unplugged
-  #built-in ethernet needs 2 seconds to determine cable state
-  isDown $IFNAME && ifconfig $IFNAME up 0 && sleep 2
-  notUnplugged $IFNAME || {
-    echo -n "Unplugged "
-    BOOTPROTO=static
-  }
 }

@@ -1,6 +1,6 @@
 #!/bin/sh
 # netplugd 'policy script'
-#  revised 2/10/23 brent@mbari.org
+#  revised 2/11/23 brent@mbari.org
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
@@ -19,7 +19,7 @@ dev="$1"
 act="$2"
 #echo $dev: $act >/dev/console
 case "$act" in
-  in)     ifCfg $dev && ifconfig $IFNAME 0 && ifUpAuto
+  in)     ifCfg $dev && ifUpAuto
 ;;
   out)    ifCfg $dev && ifDown 0  #don't DOWN iface, just clear its IP address
 ;;

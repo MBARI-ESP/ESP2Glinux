@@ -1,5 +1,5 @@
-IFALIAS=instrument
-IFNAME=ppp1
+#Opposite end of "platform" (for emulating LRAUV)
+IFALIAS=instrument IFNAME=ppp1
 ifPrep() {
   pppd call instrument unit ${IFNAME#ppp}
 }

@@ -3,11 +3,10 @@
 #with the address 10.10.10.11
 #Then, from that host,
 #  telnet to the IPADDR configured below.
-#NOTE:  You must ensure no other hosts on the LAN share these IPADDReses!
+#NOTE:  You must ensure no other hosts on the LAN use these IPADDReses!
 
-IFALIAS=direct
-IFNAME=eth0:10
+IFALIAS=direct IFNAME=eth0:10
+
 BOOTPROTO=static
-
 IPADDR=10.10.10.10
 NETMASK=255.255.255.0

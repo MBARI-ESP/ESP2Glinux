@@ -1,7 +1,8 @@
 #Act as an WiFi access point
+IFALIAS=AP/WiFi IFNAME=wlan0
+
 . $syscfg/if-default
-IFALIAS=AP/WiFi
-IFNAME=wlan0
+
 BOOTPROTO=static
 IPADDR=192.168.234.1
 NETMASK=255.255.255.0
@@ -25,9 +26,8 @@ ifPost() {
   runIF=/var/run/wpa-$IFNAME
   >$runIF.conf
   chmod og-rw $runIF.conf
-  sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf 
+  sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf
   $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
   outIf=`topIf` && extIP=`netIfIP $outIf` &&
   iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
 }
-

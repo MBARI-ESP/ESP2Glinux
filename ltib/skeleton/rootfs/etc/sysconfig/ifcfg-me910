@@ -1,4 +1,5 @@
-IFALIAS=me910  #Telit ME910 modem
-IFNAME=ppp87
+#Telit ME910 modem
+IFALIAS=me910 IFNAME=ppp87
+
 . $syscfg/inetppp.sh
 APN=vzwinternet

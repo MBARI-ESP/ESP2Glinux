@@ -1,6 +1,8 @@
+#Generic WiFi dongle
+IFALIAS=WiFi IFNAME=wlan0
+
 . $syscfg/if-default
-IFALIAS=WiFi
-IFNAME=wlan0
+
 BOOTPROTO="dhcp-b -t15" #background after 15s
 
 ifPrep() {

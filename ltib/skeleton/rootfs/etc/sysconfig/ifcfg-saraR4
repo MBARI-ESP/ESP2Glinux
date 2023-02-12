@@ -1,5 +1,6 @@
-IFALIAS=saraR4  #uBlox sara-R4xx USB Cat M1 modem
-IFNAME=ppp88
+#uBlox sara-R4xx USB Cat M1 modem
+IFALIAS=saraR4 IFNAME=ppp88
+
 . $syscfg/inetppp.sh
 APN=m2m64.com.attz
 

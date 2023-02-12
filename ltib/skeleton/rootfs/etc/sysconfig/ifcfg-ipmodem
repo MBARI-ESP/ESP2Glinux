@@ -1,5 +1,5 @@
-IFALIAS=ipmodem
-IFNAME=ppp8
+#generic IP modem
+IFALIAS=ipmodem IFNAME=ppp8
 
 . $syscfg/inetppp.sh
 serialPort=/dev/modem

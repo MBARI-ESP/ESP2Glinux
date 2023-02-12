@@ -1,8 +1,9 @@
+#USB Iridium modem
 . $syscfg/inetppp.sh
-IFALIAS=iridium  #USB Iridium modem
-IFNAME=ppp5
+IFALIAS=iridium IFNAME=ppp5
+
 AUTOSTART=no
-modemTTY=/dev/AT/$IFALIAS
+modemTTY=/dev/AT/${IFALIAS:-$IFNAME}
 
 ifPrep() {
   pppd call iridium unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"} updetach

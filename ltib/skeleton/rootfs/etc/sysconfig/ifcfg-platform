@@ -1,5 +1,6 @@
-IFALIAS=platform
-IFNAME=ppp2
+#ESP on LRAUV
+IFALIAS=platform IFNAME=ppp2
+
 ifPrep() {
   pppd call platform unit ${IFNAME#ppp}
 }
@@ -8,7 +9,7 @@ hosts() {    #add lines before EOS
 #use this hook to bring up our ESPserver
   cat <<EOS
 $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
-$IPREMOTE makai-ppp makai platform
+$IPREMOTE lrauv-ppp makai platform
 EOS
 rdate $IPREMOTE >/dev/null
 ESPclient=$IPREMOTE /etc/init.d/espserver start >/dev/null
