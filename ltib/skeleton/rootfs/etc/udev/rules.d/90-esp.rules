@@ -23,7 +23,7 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 
 #Digital thermometers for testing
 #KERNEL=="ttyS4", SYMLINK+="HH506RA"
-#KERNEL=="ttyUSB0", SYMLINK+="TMD56"
+ENV{PRODUCT}="403/6001/600", SYMLINK+="TMD56"
 
 #Radio modem serial port (in order of preference)
 #ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem"
