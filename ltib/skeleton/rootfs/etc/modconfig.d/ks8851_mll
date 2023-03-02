@@ -7,11 +7,10 @@
 #Energy saving ethernet switches shut down ports after being disconnected.
 #If both ends are shut down, neither will awaken when reconnected.
 
-ifconfig eth0 up 0  #start determining whether cable is connected
+cd /sys/module/ks8851_mll/parameters && (
+  echo 2 >power &&   #shutdown Ethernet if nothing connected
+  echo 0x8093 >p1cr  #limit to 10Mbit/s and disable LEDs
+)
 
-#exit  #uncomment this to run Ethernet at 100Mb/sec and disable energy saver
-
-cd /sys/module/ks8851_mll/parameters &&
-echo 2 >power &&
-echo 0x8093 >p1cr
+exec ifconfig eth0 up 0  #start determining whether cable is connected
 
