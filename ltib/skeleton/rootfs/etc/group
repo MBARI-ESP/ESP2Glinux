@@ -1,5 +1,6 @@
 mbari::20:esp,brent,preston,methane,sjensen,nadia,chloe,kyamahara
 lock::31:esp,brent,preston,methane,sjensen,nadia,chloe,kyamahara
+camera::54:esp,brent,preston,methane,sjensen,nadia,chloe,kyamahara
 log::96:esp,brent,preston,methane,sjensen,nadia,chloe,kyamahara
 labjack::492:esp,brent
 guest::666:
@@ -45,7 +46,6 @@ slipusers::46:
 mailnull::47:
 apache::48:
 ftp::50:
-lock::54:
 ldap::55:
 named::70:
 junkbust::73:

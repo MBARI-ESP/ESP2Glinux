@@ -1,5 +1,5 @@
 #!/bin/sh
-trace=/tmp/starlightXpress.trace
+trace=/var/run/trace/starlightXpress.trace
 [ -w $trace ] && {
   exec 2>>$trace
   date  >&2
@@ -15,11 +15,11 @@ cd ${DESTDIR}/dev || {
 
 cnod()
 {
-  mknod -m 0660 $1 c 127 $2 && chgrp esp $1
+  mknod -m 0660 $1 c 127 $2 && chgrp camera $1
 }
 
 case "$1" in
-  'add'|'create')
+  add|create)
      cnod ccda  0
      cnod ccda1 16
      cnod ccda2 32
@@ -33,7 +33,7 @@ case "$1" in
      cnod ccdB1 145
      cnod ccdB2 161
 ;;
-  'remove')
+  remove)
      for cam in ccda ccdA ccdb ccdB; do 
        rm -f ${cam} ${cam}1 ${cam}2
      done
@@ -41,7 +41,7 @@ case "$1" in
   *)
     self=$(basename $0)
     cat <<END
-create or remove /dev nodes for Starlight Xpress camera -- brent@mbari.org 1/5/15
+create or remove /dev nodes for Starlight Xpress camera -- brent@mbari.org 3/3/23
 Usage:  $self add     #creates device nodes
 Usage:  $self remove  #removes device nodes
 END
