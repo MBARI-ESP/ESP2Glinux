@@ -4,18 +4,18 @@ IFNAME=wwan0
 #me910 on AT&T OneRate drops service every few hours
 #detaching and reattaching when this happens reestablishes the connection
 
-cgatt() {
-#$1 is 1 to attach or 0 to detech service
+me910Cmd() {
+#$1 is command string 
 #$2 are options passed thru to chat (timeout in secs)
   local me910=/dev/AT/me910
   [ -c "$me910" ] || return 0  #return success if not an me910 modem
-  /usr/sbin/chat -v$2 '' AT+CGATT=$1 OK <$me910 >$me910
+  /usr/sbin/chat -v$2 '' "$1" OK <$me910 >$me910
 }
 
 ifPrep() {
-  cgatt 1 t30
+  me910Cmd "AT+CGATT=0;+CGATT=1" t30
 }
 ifDetach() {
-  cgatt 0 t20
+  me910Cmd "AT+CGATT=0" t20
 }
 

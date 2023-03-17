@@ -3,18 +3,18 @@ TIMEOUT 5
 #Assert Carrier Detect only while connected
 #Deasserting DTR closes connection
 #Echo Off
-"" ATE0&F&D2&C1
+"" AT&F;E0&D2&C1
 
 #Do not pass +++ through
 OK AT#SKIPESC=1;#E2ESC=1
 
 #define PDP context (otherwise, use context in profile)
-OK AT+CGDCONT=1,"IP","$APN"
+OK AT+CGDCONT=5,"IP","$APN"
 
 TIMEOUT 150
 #Wait for network & display signal quality
 OK AT+CGATT=1
 OK \d\d\d\d\dAT+CSQ
-OK ATD*99***1#
+OK ATD*99***5#
 CONNECT \c
 

@@ -5,11 +5,11 @@ TIMEOUT 10
 ABORT "ERROR"
 
 #return to factory defaults, echo off, show signal strength
-"" AT&FE0+CSQ
+"" AT&F;E0+CSQ
 OK\r \c
 
-#define PDP context #7
-"" AT+CGDCONT=7,"IP","vzwinternet",""
+#define PDP context #1
+"" AT+CGDCONT=1,"IP","$APN",""
 OK\r \c
 
 ABORT "NO CARRIER"
@@ -19,7 +19,7 @@ ABORT "BUSY"
 ABORT "Username/Password Incorrect"
 ABORT "\nRINGING\r\n\r\nRINGING\r"
 
-TIMEOUT 60
-# connect using PDP context #7
-"" ATD*99***7#
+TIMEOUT 120
+# connect using PDP context #1
+"" ATD*99***1#
 CONNECT \c

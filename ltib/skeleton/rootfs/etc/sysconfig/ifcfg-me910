@@ -2,4 +2,4 @@
 IFALIAS=me910 IFNAME=ppp87
 
 . $syscfg/inetppp.sh
-APN=vzwinternet
+isp=vzlte APN=vzwinternet
