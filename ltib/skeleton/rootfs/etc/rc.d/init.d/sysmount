@@ -63,7 +63,7 @@ case "$1" in
       run=$var/run
       mkdir -p $run
       mount -t tmpfs -o mode=1775,gid=1 RUN $run  #daemon group
-      mkdir -m 775 $run/lock && chgrp lock $run/lock
+      mkdir -m 1775 $run/lock && chgrp lock $run/lock
       swapon -a 2>/dev/null
       [ "$recovering" ] && exit
 

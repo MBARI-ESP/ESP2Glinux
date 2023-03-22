@@ -44,8 +44,9 @@ rm -rf $dst/etc/hotplug* $dst/var/run
 rm -rf $dst/var/www $dst/var/{lock,www,spool,mail,lib/locate,log/hotplug}
 
 # record the initial state of the /var dir so new sd cards can be initialized
+chmod +t $dst/var/tmp &&
 mv $dst/var $dst/etc &&
-cp -a --no-preserve=ownership $here/rootfs/.  $dst &&
+cp -a --no-preserve=ownership $here/rootfs/. $dst &&
 
 mksymlinks $dst < $here/symlinks &&  # install symlinks
 
