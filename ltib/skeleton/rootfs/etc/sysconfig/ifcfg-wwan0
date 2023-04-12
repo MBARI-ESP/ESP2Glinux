@@ -9,7 +9,7 @@ me910Cmd() {
 #$2 are options passed thru to chat (timeout in secs)
   local me910=/dev/AT/me910
   [ -c "$me910" ] || return 0  #return success if not an me910 modem
-  /usr/sbin/chat -v$2 '' "$1" OK <$me910 >$me910
+  /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$me910 >$me910
 }
 
 ifDetach() {
