@@ -12,10 +12,11 @@ me910Cmd() {
   /usr/sbin/chat -v$2 '' "$1" OK <$me910 >$me910
 }
 
-ifPrep() {
-  me910Cmd "AT+CGATT=0;+CGATT=1" t30
-}
 ifDetach() {
   me910Cmd "AT+CGATT=0" t20
+}
+ifPrep() {
+  ifDetach
+  me910Cmd "AT+CGATT=1" t30
 }
 
