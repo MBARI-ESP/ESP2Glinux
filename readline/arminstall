@@ -1,5 +1,5 @@
 #!/bin/sh
-# build & install rsync daemon for arm-linux -- 5/19/21 brent@mbari.org
+# build & install readline library for arm-linux -- 5/19/21 brent@mbari.org
 
 : ${ARMGCC:=/ltibarm}
 : ${CC:=$ARMGCC/bin/gcc}
