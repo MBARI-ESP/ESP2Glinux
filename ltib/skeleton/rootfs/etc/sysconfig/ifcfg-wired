@@ -13,7 +13,7 @@ IPADDR=192.168.0.50	#assign this IP address if DHCP fails
 if $ignoreDNS; then
 resolv_conf() {
   cat <<END
-search shore.mbari.org
+search `searchDomains`
 nameserver  8.8.8.8   #Google's public DNS
 nameserver  8.8.4.4
 END
