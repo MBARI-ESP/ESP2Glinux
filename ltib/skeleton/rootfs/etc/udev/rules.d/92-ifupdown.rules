@@ -1,4 +1,4 @@
-#12/19/22 brent@mbari.org
+#12/11/23 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -22,6 +22,26 @@ ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
   GROUP+="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
   GROUP+="root", SYMLINK+="AT/me910"
+
+#SIMCom A7080 modem
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
+  GROUP+="root", SYMLINK+="AT/diag"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="02",\
+  GROUP+="root", SYMLINK+="AT/a76xx"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="03",\
+  GROUP+="root", SYMLINK+="AT/ppp"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
+  GROUP+="root", SYMLINK+="gps"
+
+#SIMCom A76XX modem
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
+  GROUP+="root", SYMLINK+="AT/diag"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
+  GROUP+="root", SYMLINK+="AT/a76xx"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
+  GROUP+="root", SYMLINK+="AT/ppp"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
+  GROUP+="root", SYMLINK+="gps"
 
 #Quectel BG96
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", GROUP="root"
