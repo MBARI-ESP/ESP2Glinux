@@ -1,4 +1,4 @@
-#12/11/23 brent@mbari.org
+#1/4/24 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -27,7 +27,7 @@ ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
   GROUP+="root", SYMLINK+="AT/diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="02",\
-  GROUP+="root", SYMLINK+="AT/a76xx"
+  GROUP+="root", SYMLINK+="AT/a7080"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="03",\
   GROUP+="root", SYMLINK+="AT/ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
@@ -37,7 +37,7 @@ ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
   GROUP+="root", SYMLINK+="AT/diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
-  GROUP+="root", SYMLINK+="AT/a76xx"
+  GROUP+="root", SYMLINK+="AT/a76xx", RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1' 2"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
   GROUP+="root", SYMLINK+="AT/ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
