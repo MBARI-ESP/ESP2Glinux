@@ -1,10 +1,11 @@
 #!/bin/bash
-# unpack & configure libnl build for arm-linux -- 4/24/20 brent@mbari.org
+# unpack & configure libnl build for arm-linux -- 1/19/24 brent@mbari.org
 
 : ${libnl:=libnl3_2_21}
 : ${tag:=$libnl}
 : ${HOST:=arm-none-linux-gnueabi}
-: ${KINC=/home/brent/ltibLinux/include}
+: ${KINC=../kernel/include}
+ematch=`readlink -f $KINC/uapi/linux/tc_ematch` &&
 if [ -d $libnl ]; then
   cd $libnl
   git clean -dfxe configure -e build-aux -e m4 -e "**/*.in" -e "**/*.m4"
@@ -13,7 +14,8 @@ else
  cd $libnl
 fi || exit
 [ -x configure ] || autogen.sh &&
-[ -e $KINC/asm ] || ln -s asm-generic $KINC/asm &&
-configure --host=$HOST YACC="bison -yWnone" CFLAGS=-Os CPPFLAGS=-I$KINC &&
+
+configure --host=$HOST YACC="bison -yWnone" CFLAGS=-Os &&
 cp -a include/netlink $LTIB/rootfs/usr/include &&
+cp -ns $ematch/*.h include/linux/tc_ematch &&
 echo "Now, run arminstall"
