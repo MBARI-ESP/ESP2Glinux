@@ -3,7 +3,7 @@
 here=`dirname $0`
 [ "$1" ] || { cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 1/8/23 brent@mbari.org
+  -- 1/19/23 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -69,11 +69,11 @@ echo "  ===>  Building sftp-server  <==="
 cd ~/linux/openssh && ltibconfig && ltibinstall || exit
 
 echo "  ===>  Building Ruby  <==="
-cd ~/ruby/mbariRuby && armconfig && arminstall || exit
+cd ~/git/mbariRuby && armconfig && arminstall || exit
 
 for package in bindata rbelftools; do
   echo "  ===>  Installing Ruby $package package in $RUBYsiteLIB  <==="
-  cd ~/ruby/$package/lib && cp -a * $RUBYsiteLIB || exit
+  cd ~/git/$package/lib && cp -a * $RUBYsiteLIB || exit
 done
 
 #packages required only for v3.18 kernel wireguard support
