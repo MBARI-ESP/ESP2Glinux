@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 2/11/23 brent@mbari.org
+# -- revised: 1/31/24 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -92,6 +92,10 @@ ipUp() {
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
 #  VPN = associated VPN server / interface
+  [ "$IPADDR" ] || {
+    ifconfig $IFNAME 0
+    return 8
+  }
   local mask= cast=
   [ "$NETMASK" ] && {
     mask=" netmask $NETMASK"
@@ -99,7 +103,7 @@ ipUp() {
   }
   [ "$BROADCAST" ] && cast=" broadcast $BROADCAST"
   [ "$MTU" ] && mtu=" mtu $MTU"
-  ipopts="${IPADDR:-0}$mask$cast$mtu"
+  ipopts="$IPADDR$mask$cast$mtu"
   ifconfig $IFNAME $ipopts || {
     echo "FAILED:  ifconfig $IFNAME $ipopts"
     return 2
