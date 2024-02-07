@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 1/31/24 brent@mbari.org
+# -- revised: 2/7/24 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -94,7 +94,7 @@ ipUp() {
 #  VPN = associated VPN server / interface
   [ "$IPADDR" ] || {
     ifconfig $IFNAME 0
-    return 8
+    return
   }
   local mask= cast=
   [ "$NETMASK" ] && {
