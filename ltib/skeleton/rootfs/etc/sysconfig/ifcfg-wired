@@ -10,7 +10,7 @@ IPADDR=192.168.0.50	#assign this IP address if DHCP fails
 #GATEWAY=192.168.0.1
 #ignoreDNS=yes		#uncomment to ignore DNS servers from DHCP
 
-if $ignoreDNS; then
+if [ "$ignoreDNS" ]; then
 resolv_conf() {
   cat <<END
 search `searchDomains`
