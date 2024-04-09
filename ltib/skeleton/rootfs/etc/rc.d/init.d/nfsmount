@@ -7,20 +7,67 @@
 #one can also select mounts of the specified type:
 ##  mount="#mbari" service nfsmount start
 #mounts all (nfs) entries containing the string #mbari
-#lines in /etc/fstab after any starting with #END are ignored
+#lines in /etc/fstab after any starting with #SUBNET <CIDR> ... are ignored
+#if none of the specified subnets match that of our top priority IP address.
 
 
 op=$1;shift
 : ${fstype:=nfs}
 : ${mount:="$@"}
 
+. /usr/share/netutils.sh
+
+# converts IPv4 as "A.B.C.D" to integer
+# ip4int 192.168.0.1 => 3232235521
+ip4int() {
+  IFS=. read -r i j k l extra <<EOF
+$1
+EOF
+  : ${i:=0} ${j:=0} ${k:=0} ${l:=0}
+  echo $(( (i << 24) + (j << 16) + (k << 8) + l ))
+}
+
+unset topIPint  #our IP address on the top priority Iface
+topIface=`topIf` && topIP=`netIfIP $topIface` && myIP=`ip4int $topIP`
+let "set32=(1<<32)-1"
+
+subnetMatch() {
+#return 0 if ip integer in first arg matches at least one of 
+#CIDRs given in subsequent arg pairs
+  ip=$1; shift
+  unset mask
+  for cidr do
+    if [ "$mask" ]; then
+      let "(ip ^ cidr) & mask" || return 0
+      unset mask
+    else
+      mask=$cidr
+    fi
+  done
+  return 1
+}
+
 allFsAuto() {
-#outputs all mounts in /etc/fstab before the #END mark of specified type
-    grep "$2" /etc/fstab | 
+#outputs all $1 type mounts in /etc/fstab
+# except those after a #SUBNET clause which excludes them
+# optional $2 can be used to filter further
+  fstype=$1
+  grep "$2" /etc/fstab | {
+    set --  #clear argv
     while read device mntpt fs rest; do
-      [ "$device" = "#END" ] && break
-      [ "$fs" = "$1" ] && echo $mntpt
+      if [ "$device" = "#SUBNET" ]; then
+        set -- 
+        for cidr in $mntpt $fs $rest; do
+          ip=${cidr%/*}
+          bits=${cidr#*/}
+          : ${bits:=32}
+          set -- "$@" $(( (~set32>>bits) & set32 )) `ip4int $ip`
+        done
+      elif [ "$fs" = "$fstype" -a "$myIP" ] && subnetMatch "$myIP" "$@"; then
+        echo $mntpt
+      fi
     done
+  }
 }
     
 mounted() {
@@ -42,7 +89,7 @@ allFsMounts() {
 }
 
 chklog() {
-#stop logging monentarily of mntpt is /var or /var/log
+#stop logging monentarily if mntpt is /var or /var/log
   act=$1
   mntpt=$2
   echo "  ${act}ing $mntpt " 
@@ -61,7 +108,7 @@ mnt() {
   echo "Mounting $fstype filesystems ..."
   [ "$mntpts" ] && {
     set $mntpts
-    for mntpt; do
+    for mntpt do
       mounted $mntpt
       [ $? = 1 ] && chklog mount $mntpt
     done
@@ -72,7 +119,7 @@ umnt() {
   echo "Unmounting $fstype filesystems ..."
   [ "$mntpts" ] && {
     set $mntpts
-    for mntpt; do
+    for mntpt do
       mounted $mntpt && chklog umount $mntpt
     done
   }
@@ -100,15 +147,15 @@ case "$op" in
        ;;
        
     stop)
-      if [ -z "$mount" ]; then
+      if [ "$mount" ]; then
+        mntpts=`allFsAuto $fstype $mount`
+        umnt
+      else
         nonRootNFS=`allFsMounts $fstype /`
         if [ -n "$nonRootNFS" ]; then
           echo "Unmounting all $fstype filesystems"
           umount -l $nonRootNFS 2>&1 | grep -v ": not mounted$"
         fi
-      else
-        mntpts=`allFsAuto $fstype $mount`
-        umnt
       fi
        ;;
        

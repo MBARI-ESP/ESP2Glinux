@@ -21,7 +21,8 @@ none		/debug		debugfs noauto
 #optional swapfile on (sd) card
 /card/.SWAP	swap            swap
 
-#END nfsmount service ignores entries below this line END#
+#SUBNET 134.89.10/23 134.89.112/21
+#Mount the following only on either MBARI's wired or staff wireless networks
 
 atlasnfs:/ifs/mbari/Tempbox /tempbox nfs nosuid,nodev,noauto
 atlasnfs:/ifs/mbari/Engineering /engineering nfs nosuid,nodev,noauto
