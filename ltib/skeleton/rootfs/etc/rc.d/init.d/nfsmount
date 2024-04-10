@@ -53,9 +53,9 @@ allFsAuto() {
 # optional $2 can be used to filter further
   fstype=$1
   grep "$2" /etc/fstab | {
-    set --  #clear argv
+    set --  #clear argv to mark subnet match
     while read device mntpt fs rest; do
-      if [ "$device" = "#SUBNET" ]; then
+      if [ "$myIP" -a "$device" = "#SUBNET" ]; then
         set -- 
         for cidr in $mntpt $fs $rest; do
           ip=${cidr%/*}
@@ -63,7 +63,8 @@ allFsAuto() {
           : ${bits:=32}
           set -- "$@" $(( (~set32>>bits) & set32 )) `ip4int $ip`
         done
-      elif [ "$fs" = "$fstype" -a "$myIP" ] && subnetMatch "$myIP" "$@"; then
+        subnetMatch "$myIP" "$@" && set --
+      elif [ "$fs" = "$fstype" -a -z "$1" ]; then
         echo $mntpt
       fi
     done
