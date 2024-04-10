@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  4/9/24 by brent@mbari.org
+# revised:  2/8/23 by brent@mbari.org
 
 [ "$1" -a "$interface" ] || {
   echo "Error: should be called from udhcpc"
@@ -50,7 +50,6 @@ case "$1" in
 IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router MTU=$mtu ipUp&&{
       log info "DHCP $1 ${IFALIAS-$interface} to $ip$dnsMsg"
       echo "$leaseSpec" >$leased
-      (sleep 1; /etc/init.d/nfsmount start) &
     }
   ;;
   leasefail | nak)

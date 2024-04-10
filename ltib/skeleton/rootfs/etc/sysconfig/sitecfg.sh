@@ -34,6 +34,7 @@ gateUpdated() {
     tunFn=/var/run/tunnel2shore.pid
     #cause inittab to restart tunnel2shore
     tunPID=`cat $tunFn 2>/dev/null` && [ "$tunPID" ] && kill -HUP $tunPID
+    (sleep 1; /etc/init.d/nfsmount start) &
   }
   return 0
 }
