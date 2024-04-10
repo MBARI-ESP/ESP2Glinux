@@ -10,7 +10,6 @@
 #lines in /etc/fstab after any starting with #SUBNET <CIDR> ... are ignored
 #if none of the specified subnets match that of our top priority IP address.
 
-
 op=$1;shift
 : ${fstype:=nfs}
 : ${mount:="$@"}
@@ -27,7 +26,6 @@ EOF
   echo $(( (i << 24) + (j << 16) + (k << 8) + l ))
 }
 
-unset topIPint  #our IP address on the top priority Iface
 topIface=`topIf` && topIP=`netIfIP $topIface` && myIP=`ip4int $topIP`
 let "set32=(1<<32)-1"
 
