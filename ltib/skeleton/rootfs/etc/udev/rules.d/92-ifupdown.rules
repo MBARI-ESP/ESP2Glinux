@@ -1,8 +1,11 @@
-#1/4/24 brent@mbari.org
+#4/10/24 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
 ENV{INTERFACE}=="mon.*", GOTO="updownEND"
+
+#allow time for RealTek RTL8723BU to boot
+ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="b720", ENV{ifDelay}="4"
 
 #allow time for MultiTech Telit DE900 to boot
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
