@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 4/9/24 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 4/24/24 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -109,6 +109,8 @@ suscript/reboot -> /sbin/reboot
 suscript/esp/reboot -> /usr/sbin/suscript
 suscript/esp/powerdown -> /usr/sbin/suscript
 suscript/esp/powerup -> /usr/sbin/suscript
-suscript/esp/connectNetwork -> /usr/sbin/suscript
-suscript/esp/disconnectNetwork -> /usr/sbin/suscript
 suscript/esp/truncateKernelLog -> /usr/sbin/suscript
+
+#these are missing unless ESP directly controls satcomm link
+#suscript/esp/connectNetwork -> /usr/sbin/suscript
+#suscript/esp/disconnectNetwork -> /usr/sbin/suscript
