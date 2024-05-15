@@ -1,0 +1,15 @@
+#!/bin/sh
+[ "$1" ] || { cat >&2 <<END
+Allow $USER@`hostname` ssh to access specified user@hostname without a password
+Optional 2nd argument is the ssh key type.  If no 2nd arg specified,
+appends ed25519 or rsa public key to remote host's .ssh/authorized_keys file
+END
+  exit 2
+}
+key=${2-ed25519}
+keyFile=~/.ssh/id_$key
+[ -r "$keyFile.pub" ] || {
+  echo "Missing key type \"$key\" -- generating new one..."
+  dropbearkey -t $key -f $keyFile >$keyFile.pub || exit
+} 
+grep $key $keyFile.pub | ssh $1 "cat >>.ssh/authorized_keys"
