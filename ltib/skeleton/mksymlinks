@@ -28,3 +28,4 @@ while read linkName arrow linkTarget; do
     fi
   }
 done
+:
