@@ -1,0 +1,18 @@
+#!/bin/bash
+# unpack & configure libpng build for arm-linux -- 11/11/24 brent@mbari.org
+
+: ${libpng:=v1.6.43}  #last version with ARM NEON asm support 
+: ${tag:=$libpng}
+: ${HOST:=arm-none-linux-gnueabi}
+if [ -d $libpng ]; then
+  cd $libpng
+  git clean -dfxe configure -e build-aux -e m4 -e "**/*.in" -e "**/*.m4"
+else
+ git clone --branch $tag --single-branch https://github.com/pnggroup/libpng $libpng&&
+ cd $libpng
+fi || exit
+[ -x configure ] || autogen.sh &&
+
+LDFLAGS="-L$ARMPREFIX/lib -lrt" CPPFLAGS=-I$ARMPREFIX/include \
+  configure --host=$HOST &&
+echo "Now, run arminstall"

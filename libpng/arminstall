@@ -1,0 +1,24 @@
+#!/bin/sh
+# build & install libpng for arm-linux
+# -- 11/11/24 brent@mbari.org
+
+: ${libpng:=v1.6.43}
+: ${ARMGCC:=/arm}
+: ${ARMSTRIP:=$ARMGCC/bin/strip}
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${TARGETTOP:=${2-$HOSTTOP/usr/lib}}
+: ${LTIB:=${3-~/ltib}}
+: ${CC:=$ARMGCC/bin/gcc}
+
+echo "Installing libpng $libpng in $HOSTTOP"
+cd ${libpng} || exit
+make -j4 &&
+cd .libs &&
+cp -a *.so* *.a $LTIB/rootfs/usr/lib &&
+for so in *.so*; do
+  if [ -h $so ]; then
+    cp -a $so $TARGETTOP
+  else
+    $ARMSTRIP --strip-unneeded -o $TARGETTOP/$so $so
+  fi || exit
+done && echo "Done."
