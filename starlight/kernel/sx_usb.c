@@ -1,6 +1,15 @@
 /***************************************************************************\
 
+    This driver (still) does not handle user space<->kernel space copying
+    correctly.  However, it is tested with kernels as late as 6.8.9
+    on x86, ARM and x86_64.
+
     Copyright (c) 2001, 2002, 2003 David Schmenk
+    Revised:  12/7/24 brent@mbari.org
+    * Disabled serial ports by default
+    * adopted new timer API for kernels > 4.14
+    * replaced memcpy() to copy_to/from_user()
+    * do not attempt DMA to stack area
 
     All rights reserved.
 
@@ -72,6 +81,10 @@
 # define TTYport
 #else
 # define TTYport  ->port
+#endif
+
+#if !defined(set_current_state)
+#define set_current_state(state_value) current->state = (state_value)
 #endif
 
 /*
@@ -250,15 +263,15 @@ static struct sx_device_t   *sx_devices;
  */
 static int model[NR_SX] = { [0 ... NR_SX-1] = MX5 };
 static int color[NR_SX] = { [0 ... NR_SX-1] = 0 };
-static int serial[NR_SX] = { [0 ... NR_SX-1] = 1 };
-static int poll[NR_SX] = { [0 ... NR_SX-1] = 1 };
+static int serial[NR_SX] = { [0 ... NR_SX-1] = 0 };
+static int poll[NR_SX] = { [0 ... NR_SX-1] = 0 };
 static int force[NR_SX] = { [0 ... NR_SX-1] = 0 };
 static int busnum[NR_SX] = { [0 ... NR_SX-1] = -1 };
 static int devnum[NR_SX] = { [0 ... NR_SX-1] = -1 };
 static int force_load[NR_SX] = { [0 ... NR_SX-1] = 0 };
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 MODULE_AUTHOR("David Schmenk, dschmenk@earthlink.net");
-MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari2");
+MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari3");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(model, "SX camera model");
 MODULE_PARM_DESC(color, "SX camera one-shot color flag");
@@ -318,10 +331,10 @@ static struct sx_device_t *sx_new_struct(void)
         {
             memset(&sx_devices[i], 0, sizeof(struct sx_device_t));
             sx_devices[i].in_use = 1;
-            return (&sx_devices[i]);
+            return &sx_devices[i];
         }
     }
-    return (NULL);
+    return NULL;
 }
 static void sx_free_struct(struct sx_device_t *sx)
 {
@@ -343,7 +356,7 @@ static unsigned int sx_open_acquire(struct sx_device_t *sx, unsigned int new_fla
         && timeout--)
     {
         spin_unlock_irqrestore(&sx->lock, cpu_flags);
-        current->state = TASK_INTERRUPTIBLE;
+        set_current_state(TASK_INTERRUPTIBLE);
         schedule_timeout(1);
         spin_lock_irqsave(&sx->lock, cpu_flags);
     }
@@ -353,7 +366,7 @@ static unsigned int sx_open_acquire(struct sx_device_t *sx, unsigned int new_fla
         acquired         = 1;
     }
     spin_unlock_irqrestore(&sx->lock, cpu_flags);
-    return (acquired);
+    return acquired;
 }
 static unsigned int sx_acquire(struct sx_device_t *sx, unsigned int new_flags, int timeout)
 {
@@ -365,7 +378,7 @@ static unsigned int sx_acquire(struct sx_device_t *sx, unsigned int new_flags, i
         && timeout--)
     {
         spin_unlock_irqrestore(&sx->lock, cpu_flags);
-        current->state = TASK_INTERRUPTIBLE;
+        set_current_state(TASK_INTERRUPTIBLE);
         schedule_timeout(1);
         spin_lock_irqsave(&sx->lock, cpu_flags);
     }
@@ -375,7 +388,7 @@ static unsigned int sx_acquire(struct sx_device_t *sx, unsigned int new_flags, i
         acquired         = 1;
     }
     spin_unlock_irqrestore(&sx->lock, cpu_flags);
-    return (acquired);
+    return acquired;
 }
 static void sx_release(struct sx_device_t *sx, unsigned int mask_flags)
 {
@@ -390,48 +403,6 @@ static void sx_release(struct sx_device_t *sx, unsigned int mask_flags)
  */
 static void sx_reset(struct sx_device_t *sx)
 {
-#if 0
-    unsigned long       cpu_flags;
-    unsigned char       setup_data[8];
-    int                 len;
-    if (sx->state_flags & SX_STATE_CONNECTED)
-    {
-        setup_data[0] = USB_TYPE_VENDOR | USB_DIR_OUT;
-        setup_data[1] = SX_USB_RESET;
-        setup_data[2] = 0x00;
-        setup_data[3] = 0x00;
-        setup_data[4] = 0x00;
-        setup_data[5] = 0x00;
-        setup_data[6] = 0x00;
-        setup_data[7] = 0x00;
-        usb_bulk_msg(sx->usbdev, usb_sndbulkpipe(sx->usbdev, sx->snd_endpoint), setup_data, 8, &len, 1*HZ);
-    }
-    if (sx->state_flags & SX_STATE_RCV)
-    {
-        /*
-         * Abort current transfer.
-         */
-        spin_lock_irqsave(&sx->lock, cpu_flags);
-        sx->bytes_rcved    += sx->bytes_remaining;
-        sx->bytes_remaining = 0;
-        sx->state_flags    &= ~SX_STATE_RCV;
-        spin_unlock_irqrestore(&sx->lock, cpu_flags);
-//        usb_unlink_urb(sx->rcv_urb);
-        wake_up_interruptible(&sx->read_wait);
-        printk(KERN_ERR "%s: aborting RCV during reset!\n", sx->id_string);
-    }
-    if (sx->state_flags & SX_STATE_SND)
-    {
-        /*
-         * Abort current send request.
-         */
-        spin_lock_irqsave(&sx->lock, cpu_flags);
-        sx->state_flags &= ~SX_STATE_SND;
-        spin_unlock_irqrestore(&sx->lock, cpu_flags);
-//        usb_unlink_urb(sx->snd_urb);
-        printk(KERN_ERR "%s: aborting SND during reset!\n", sx->id_string);
-    }
-#else
     if (sx->state_flags & SX_STATE_RCV)
     {
         //
@@ -439,7 +410,7 @@ static void sx_reset(struct sx_device_t *sx)
         //
         while ((sx->state_flags & SX_STATE_RCV) && (sx->state_flags & SX_STATE_CONNECTED))
         {
-            current->state = TASK_INTERRUPTIBLE;
+            set_current_state(TASK_INTERRUPTIBLE);
             schedule_timeout(HZ/4);
         }
     }
@@ -450,11 +421,10 @@ static void sx_reset(struct sx_device_t *sx)
         //
         while ((sx->state_flags & SX_STATE_SND) && (sx->state_flags & SX_STATE_CONNECTED))
         {
-            current->state = TASK_INTERRUPTIBLE;
+            set_current_state(TASK_INTERRUPTIBLE);
             schedule_timeout(HZ/4);
         }
     }
-#endif
 }
 /***************************************************************************\
 *                                                                           *
@@ -492,7 +462,7 @@ static unsigned char *sx_read_pixels(struct sx_device_t *sx, unsigned int bytes)
     if (sx->read_offset + bytes > sx->bytes_rcved + sx->bytes_remaining)
     {
         printk(KERN_ERR "%s: requesting pixels beyond end of buffer\n", sx->id_string);
-        return (sx->pixel_buf);
+        return sx->pixel_buf;
     }
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     while ((sx->read_offset + bytes > sx->bytes_rcved) && (sx->state_flags & SX_STATE_CONNECTED))
@@ -508,8 +478,12 @@ static unsigned char *sx_read_pixels(struct sx_device_t *sx, unsigned int bytes)
            * Attempt a camera reset.
            */
           unsigned long   cpu_flags;
-          unsigned char   setup_data[8];
           int             len;
+          unsigned char *setup_data;
+          setup_data = kmalloc(8, GFP_KERNEL);
+	      if (!setup_data)
+		      return NULL;
+
           setup_data[0] = USB_TYPE_VENDOR | USB_DIR_OUT;
           setup_data[1] = SX_USB_RESET;
           setup_data[2] = 0x00;
@@ -522,17 +496,21 @@ static unsigned char *sx_read_pixels(struct sx_device_t *sx, unsigned int bytes)
           spin_lock_irqsave(&sx->lock, cpu_flags);
           sx->state_flags &= ~SX_STATE_RCV_ERR;
           spin_unlock_irqrestore(&sx->lock, cpu_flags);
+          kfree(setup_data);
       }
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     }
 #endif
     sx->read_offset += bytes;
-    return (sx->pixel_buf + sx->read_offset - bytes);
+    return sx->pixel_buf + sx->read_offset - bytes;
 }
 /*
  * Does windowing and binning.
  */
-static int sx_read_row(void *vp, unsigned int offset, unsigned int row, unsigned int width, unsigned int xbin, unsigned int ybin, unsigned int dac_bits, unsigned int flags, unsigned char *buf)
+static int sx_read_row(void *vp, unsigned int offset,
+    unsigned int row, unsigned int width,
+    unsigned int xbin, unsigned int ybin, unsigned int dac_bits,
+    unsigned int flags, unsigned char *buf)
 {
     struct sx_device_t *sx        = (struct sx_device_t *)vp;
     int                 row_size = (width / xbin) * sx->pixel_size;
@@ -543,8 +521,8 @@ static int sx_read_row(void *vp, unsigned int offset, unsigned int row, unsigned
     /*
      * Move the raw pixels over.
      */
-    buf[row_size-1] = 0; // I think (know) there is a bug in the 3dnow memcpy that doesn't always copy the last few words unless they are touched first.
-    memcpy(buf, sx_read_pixels(sx, row_size), row_size);
+    if (copy_to_user(buf, sx_read_pixels(sx, row_size), row_size))
+      return -EFAULT;
 #endif
 #ifdef __BIG_ENDIAN
     if (sx->pixel_size > 1)
@@ -559,11 +537,10 @@ static int sx_read_row(void *vp, unsigned int offset, unsigned int row, unsigned
         }
     }
     else
-    {
-        memcpy(buf, sx_read_pixels(sx, row_size), row_size);
-    }
+        if (copy_to_user(buf, sx_read_pixels(sx, row_size), row_size))
+            return -EFAULT;
 #endif
-    return (row_size);
+    return row_size;
 }
 /*
  * Begin reading frame.
@@ -647,7 +624,6 @@ static void sx_latch_frame(void *vp, unsigned int flags)
  */
 static void sx_new_frame(void *vp, unsigned int xoffset, unsigned int yoffset, unsigned int width, unsigned int height, unsigned int xbin, unsigned int ybin, unsigned int dac_bits, unsigned int msec, unsigned int flags)
 {
-    unsigned char       setup_data[8];
     int                 len;
     struct sx_device_t *sx = (struct sx_device_t *)vp;
 
@@ -724,6 +700,10 @@ static void sx_new_frame(void *vp, unsigned int xoffset, unsigned int yoffset, u
         {
             if (sx_open_acquire(sx, SX_STATE_SND, HZ/2))
             {
+                unsigned char *setup_data;
+                setup_data = kmalloc(64, GFP_KERNEL);
+	            if (!setup_data)
+                    return;
                 setup_data[0] = USB_TYPE_VENDOR | USB_DIR_OUT;
                 setup_data[1] = SX_USB_CLEAR_PIXELS;
                 setup_data[2] = flags;
@@ -762,6 +742,7 @@ static void sx_new_frame(void *vp, unsigned int xoffset, unsigned int yoffset, u
                     printk(KERN_ERR "%s: read timer receive failed\n", sx->id_string);
                     sx_usb_dbg(sx->usbdev);
                 }
+                kfree(setup_data);
                 sx_release(sx, SX_STATE_SND);
             }
             else
@@ -799,7 +780,7 @@ static int sx_open(void *vp)
         MOD_INC_USE_COUNT;
 #endif
     }
-    return (err);
+    return err;
 }
 /*
  * Control CCD device. This is device specific, stuff like temperature control, serial port IO, etc.
@@ -858,7 +839,7 @@ static int sx_control(void *vp, unsigned short cmd, unsigned long param)
         }
         sx_release(sx, SX_STATE_CTRL);
     }
-    return (retval);
+    return retval;
 }
 /*
  * Release CCD device.
@@ -903,7 +884,7 @@ static int sx_close(void *vp)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     MOD_DEC_USE_COUNT;
 #endif
-    return (0);
+    return 0;
 }
 
 /***************************************************************************\
@@ -935,7 +916,14 @@ static struct work_struct do_sx_tty_poll;
 static struct ktermios    *sx_tty_termios_locked[NR_SX*4];
 #endif
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
+# define TIMER_ARG    ulong
+#else
+# define TIMER_ARG    struct timer_list *
+#endif
+
 static struct timer_list  do_sx_tty_timer;
+static void sx_tty_timer(TIMER_ARG param);
 /*
  * Check for available input.
  */
@@ -1001,12 +989,16 @@ static void sx_tty_check_input(void *param)
         /*
          * Start the read characters timer.
          */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
         init_timer(&do_sx_tty_timer);
+#else
+        timer_setup(&do_sx_tty_timer, sx_tty_timer, 0);
+#endif
         do_sx_tty_timer.expires = jiffies + next_poll;
         add_timer(&do_sx_tty_timer);
     }
 }
-static void sx_tty_timer(unsigned long param)
+static void sx_tty_timer(TIMER_ARG param)
 {
     if (sx_tty_ser_opened)
     {
@@ -1033,18 +1025,26 @@ static void sx_tty_timer(unsigned long param)
 /*
  * Write characters to serial port.
  */
-static int sx_tty_write_room(struct tty_struct *tty)
-{
-    return (64);
-}
-static int sx_tty_chars_in_buffer(struct tty_struct *tty)
-{
-    return (0);
-}
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define ROOM_t int
+#define SIZE_t int
+#define SSIZE_t int
 static int sx_tty_write(struct tty_struct *tty, int from_user, const unsigned char *buf, int count)
 #else
-static int sx_tty_write(struct tty_struct *tty, const unsigned char *buf, int count)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(6,2,0)
+#  if LINUX_VERSION_CODE > KERNEL_VERSION(5,0,0)
+#   define ROOM_t unsigned int
+#  else
+#   define ROOM_t int
+#  endif
+#  define SIZE_t int
+#  define SSIZE_t int
+# else
+#  define ROOM_t unsigned int
+#  define SIZE_t size_t
+#  define SSIZE_t ssize_t
+# endif
+static SSIZE_t sx_tty_write(struct tty_struct *tty, const u8 *buf, SIZE_t count)
 #endif
 {
     int                 written;
@@ -1116,7 +1116,15 @@ static int sx_tty_write(struct tty_struct *tty, const unsigned char *buf, int co
 #endif
         wake_up_interruptible(&tty->write_wait);
     }
-    return (written);
+    return written;
+}
+static ROOM_t sx_tty_write_room(struct tty_struct *tty)
+{
+    return 64;
+}
+static ROOM_t sx_tty_chars_in_buffer(struct tty_struct *tty)
+{
+    return 0;
 }
 /*
  * TTY open and close and control.
@@ -1131,21 +1139,21 @@ static int sx_tty_open(struct tty_struct *tty, struct file *filp)
     int dev  = line >> 2;
     int port = line & 3;
         if ((line < 0) || (dev >= NR_SX))
-                return (-ENODEV);
+                return -ENODEV;
     if ((port == SX_TTY_S2K_PORT) && (sx_devices[dev].caps & SX_USB_CAPS_STAR2K))
     {
         if (sx_devices[dev].tty_s2k)
-            return (-EBUSY);
+            return -EBUSY;
         sx_devices[dev].tty_s2k = tty;
     }
     else if (port > sx_devices[dev].ser_ports)
     {
-        return (-ENODEV); // Only serial ports 0 & 1 allowed.
+        return -ENODEV; // Only serial ports 0 & 1 allowed.
     }
     else
     {
         if (sx_devices[dev].tty_ser[port])
-            return (-EBUSY);
+            return -EBUSY;
         sx_devices[dev].tty_ser[port] = tty;
         /*
          * Trigger serial port polling.
@@ -1155,19 +1163,25 @@ static int sx_tty_open(struct tty_struct *tty, struct file *filp)
             /*
              * Start the read characters timer.
              */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
             init_timer(&do_sx_tty_timer);
             do_sx_tty_timer.function = sx_tty_timer;
             do_sx_tty_timer.data     = 0;
+#else
+            timer_setup(&do_sx_tty_timer, sx_tty_timer, 0);
+#endif
             do_sx_tty_timer.expires  = jiffies + sx_devices[dev].poll;
             add_timer(&do_sx_tty_timer);
         }
     }
-    tty TTYport->low_latency = 1;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,12,0))
+     tty TTYport->low_latency = 1;
+#endif
     tty->driver_data = &sx_devices[dev];
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     MOD_INC_USE_COUNT;
 #endif
-    return (0);
+    return 0;
 }
 static int sx_tty_ioctl(struct tty_struct *tty,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0)
@@ -1175,7 +1189,7 @@ static int sx_tty_ioctl(struct tty_struct *tty,
 #endif
 						 unsigned int cmd, unsigned long arg)
 {
-    return (-ENOIOCTLCMD);
+    return -ENOIOCTLCMD;
 }
 static void sx_tty_close(struct tty_struct *tty, struct file *filp)
 {
@@ -1311,7 +1325,6 @@ static void sx_ezusb_download(void *param)
 #endif
 {
     unsigned int                     i, j, ezusb_cpucs_reg, code_rec_count;
-    unsigned char                    setup_data[20];
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20))
     struct ezusb_device_t           *ezusbdev = container_of(work, struct ezusb_device_t, do_ezusb_download);
 #else
@@ -1319,6 +1332,11 @@ static void sx_ezusb_download(void *param)
 #endif
     struct usb_device               *usbdev = ezusbdev->usbdev;
     struct sx_ezusb_download_record *code_rec;
+
+    unsigned char *setup_data;
+    setup_data = kmalloc(20, GFP_KERNEL);
+	if (!setup_data)
+		return;
 
     if ((usbdev->descriptor.idVendor  == EZUSB_VENDOR_ID  && usbdev->descriptor.idProduct == EZUSB_PRODUCT_ID) || ezusbdev->force_load == 1)
     {
@@ -1343,7 +1361,7 @@ static void sx_ezusb_download(void *param)
         {
            printk(KERN_ERR "starlight-xpress: could not put 8051 into RESET\n");
            ezusbdev->state_flags &= ~EZUSB_STATE_DOWNLOADING;
-           return;
+           goto exit;
         }
         printk(KERN_INFO "starlight-xpress: RESET 8051\n");
     }
@@ -1359,7 +1377,7 @@ static void sx_ezusb_download(void *param)
         {
             printk(KERN_ERR "starlight-xpress: could not download code into 8051\n");
             ezusbdev->state_flags &= ~EZUSB_STATE_DOWNLOADING;
-            return;
+            goto exit;
         }
     }
     if (ezusbdev->state_flags & EZUSB_STATE_DOWNLOADING)
@@ -1372,17 +1390,19 @@ static void sx_ezusb_download(void *param)
         {
            printk(KERN_ERR "Could not take 8051 out of RESET\n");
            ezusbdev->state_flags &= ~EZUSB_STATE_DOWNLOADING;
-           return;
+           goto exit;
         }
         printk(KERN_INFO "starlight-xpress: un-RESET 8051\n");
         ezusbdev->state_flags &= ~EZUSB_STATE_DOWNLOADING;
     }
+exit:
+    kfree(setup_data);
 }
 /*
  * Probe for device.
  */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
-int sx_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
+static int sx_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 #elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface, const struct usb_device_id *id)
 #else
@@ -1390,7 +1410,6 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
 #endif
 {
     int param_index;
-    unsigned char setup_data[64];
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
     struct usb_device *usbdev = interface_to_usbdev(intf);
 #endif
@@ -1403,11 +1422,10 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
 	     devnum[param_index] == -1)  // busnum default
 	  ||
 	    (busnum[param_index] == usbdev->bus->busnum &&
-	     devnum[param_index] == usbdev->devnum))
-	{
+	     devnum[param_index] == usbdev->devnum)) {
 	    printk (KERN_INFO "starlight-xpress: match bus or default bus - param_index: %i busnum: %i\n", param_index, busnum[param_index]);
 	    break;
-	}
+	  }
     }
     if (id) printk(KERN_INFO "starlight-xpress: probing device_id  0x%04x:0x%04x\n", id->idVendor, id->idProduct);
     if ((usbdev->descriptor.idVendor  == EZUSB_VENDOR_ID  && usbdev->descriptor.idProduct == EZUSB_PRODUCT_ID)
@@ -1420,7 +1438,7 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
         if (usb_set_configuration(usbdev, usbdev->config[0].bConfigurationValue) < 0)
         {
             printk(KERN_ERR "starlight-xpress: set_configuration failed\n");
-            return(NULL);
+            return NULL;
         }
 #endif
         /*
@@ -1456,10 +1474,10 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
         ezusb_devnum++;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0))
         dev_set_drvdata(&intf->dev, &ezusb_device[ezusb_devnum]);
-        return (0);
+        return 0;
 #else
         MOD_INC_USE_COUNT;
-        return (&ezusb_device[ezusb_devnum - 1]);
+        return &ezusb_device[ezusb_devnum - 1];
 #endif
     }
     else if((usbdev->descriptor.idVendor  == ECHO2_VENDOR_ID &&
@@ -1478,6 +1496,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
          */
         if (sx)
         {
+            unsigned char *setup_data;
+            setup_data = kmalloc(64, GFP_KERNEL);
+	        if (!setup_data)
+		        return -ENOMEM;
+
             /*
              * Register with CCD class driver.
              */
@@ -1485,7 +1508,7 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
             if (usb_set_configuration(usbdev, usbdev->config[0].bConfigurationValue) < 0)
             {
                 printk(KERN_ERR "starlight-xpress: set_configuration failed\n");
-                return (NULL);
+                return NULL;
             }
 #endif
             sx->rcv_buf       = NULL;
@@ -1554,10 +1577,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
             if (usb_control_msg(usbdev, usb_rcvctrlpipe(usbdev, 0), SX_USB_CAMERA_MODEL, USB_TYPE_VENDOR | USB_DIR_IN, 0, 0, setup_data, 2, 1*HZ) != 2)
             {
                 printk(KERN_ERR "starlight-xpress: could not get camera model\n");
+                kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                return (NULL);
+                return NULL;
 #else
-                return (-ENODEV);
+                return -ENODEV;
 #endif
             }
             sx_model = model[param_index];
@@ -1627,10 +1651,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                 if (usb_control_msg(usbdev, usb_sndctrlpipe(usbdev, 0), SX_USB_CAMERA_MODEL, USB_TYPE_VENDOR | USB_DIR_OUT, setup_data[0], 0, NULL, 0, 1*HZ) != 0)
                 {
                     printk(KERN_ERR "starlight-xpress: could not download camera model\n");
+                    kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                    return (NULL);
+                    return NULL;
 #else
-                    return (-EIO);
+                    return -EIO;
 #endif
                 }
             }
@@ -1640,10 +1665,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
             if (usb_control_msg(usbdev, usb_rcvctrlpipe(usbdev, 0), SX_USB_GET_CCD, USB_TYPE_VENDOR | USB_DIR_IN, 0, 0, setup_data, 17, 1*HZ) != 17)
             {
                 printk(KERN_ERR "starlight-xpress: could not upload CCD parameters\n");
+                kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                return (NULL);
+                return NULL;
 #else
-                return (-EIO);
+                return -EIO;
 #endif
             }
             /*
@@ -1679,19 +1705,21 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
             if (!sx->rcv_buf)
              {
                 printk(KERN_INFO "starlight-xpress: unable to alloc rcv_buf\n");
+                kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                return (NULL);
+                return NULL;
 #else
-                return (-ENOMEM);
+                return -ENOMEM;
 #endif
             }
             if (!sx->pixel_buf)
             {
                 printk(KERN_INFO "starlight-xpress: unable to alloc pixel_buf\n");
+                kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                return (NULL);
+                return NULL;
 #else
-                return (-ENOMEM);
+                return -ENOMEM;
 #endif
             }
             memset(&mini_device,  0, sizeof(mini_device));
@@ -1720,10 +1748,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
             if (ccd_register_device(&mini_device, (void *)sx) < 0)
             {
                 printk(KERN_ERR "starlight-xpress: unable to register\n");
+                kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                return (NULL);
+                return NULL;
 #else
-                return (-ENODEV);
+                return -ENODEV;
 #endif
             }
             printk(KERN_INFO "starlight-xpress: camera has %d serial ports\n", sx->ser_ports);
@@ -1752,10 +1781,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                     if (usb_control_msg(usbdev, usb_rcvctrlpipe(usbdev, 0), SX_USB_GET_CCD, USB_TYPE_VENDOR | USB_DIR_IN, 0, 1, setup_data, 17, 1*HZ) != 17)
                     {
                         printk(KERN_ERR "starlight-xpress: could not upload guider parameters\n");
+                        kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                        return (NULL);
+                        return NULL;
 #else
-                        return (-EIO);
+                        return -EIO;
 #endif
                     }
                     sxg->num           = 1;
@@ -1786,11 +1816,11 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                     sxg->state_flags   = SX_STATE_CONNECTED;
                     spin_lock_init(&sxg->lock);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-		    sxg->snd_urb       = usb_alloc_urb(0);
-	            sxg->rcv_urb       = usb_alloc_urb(0);
+                    sxg->snd_urb       = usb_alloc_urb(0);
+                    sxg->rcv_urb       = usb_alloc_urb(0);
 #else
-		    sxg->snd_urb       = usb_alloc_urb(0, GFP_KERNEL);
-	            sxg->rcv_urb       = usb_alloc_urb(0, GFP_KERNEL);
+                    sxg->snd_urb       = usb_alloc_urb(0, GFP_KERNEL);
+                    sxg->rcv_urb       = usb_alloc_urb(0, GFP_KERNEL);
 #endif
                     init_waitqueue_head(&(sxg->read_wait));
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
@@ -1829,19 +1859,21 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                     if (!sxg->rcv_buf)
                     {
                         printk(KERN_INFO "starlight-xpress: unable to alloc rcv_buf\n");
+                        kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                        return (NULL);
+                        return NULL;
 #else
-                        return (-ENOMEM);
+                        return -ENOMEM;
 #endif
                     }
                     if (!sxg->pixel_buf)
                     {
                         printk(KERN_INFO "starlight-xpress: unable to alloc pixel_buf\n");
+                        kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                        return (NULL);
+                        return NULL;
 #else
-                        return (-ENOMEM);
+                        return -ENOMEM;
 #endif
                     }
                     memset(&mini_device,  0, sizeof(mini_device));
@@ -1867,27 +1899,29 @@ static void *sx_usb_probe(struct usb_device *usbdev, unsigned int interface)
                     if (ccd_register_device(&mini_device, (void *)sxg) < 0)
                     {
                         printk(KERN_ERR "starlight-xpress: unable to register\n");
+                        kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-                        return (NULL);
+                        return NULL;
 #else
-                        return (-ENODEV);
+                        return -ENODEV;
 #endif
                     }
                 }
             }
+            kfree(setup_data);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
             MOD_INC_USE_COUNT;
-            return (sx);
+            return sx;
 #else
             dev_set_drvdata(&intf->dev, sx);
-            return (0);
+            return 0;
 #endif
         }
     }
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
-    return (NULL);
+    return NULL;
 #else
-    return (-ENODEV);
+    return -ENODEV;
 #endif
 }
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
@@ -1988,7 +2022,9 @@ static struct tty_operations sx_tty_ops;
 #endif
 static struct tty_driver sx_tty_driver =
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0))
     magic:          TTY_DRIVER_MAGIC,
+#endif
     driver_name:    "starlight-xpress",
     name:           "ttysx",
     major:          TTY_MAJOR,
@@ -2051,20 +2087,14 @@ int init_module(void)
 			break;
 		}
 	}
-    return (0);
+    return 0;
 }
 void cleanup_module(void)
 {
     int i;
     usb_deregister(&sx_usb_driver);
     for (i = 0; i < NR_SX; i++)
-	{
     	if (serial[i])
-		{
-			if (tty_unregister_driver(&sx_tty_driver))
-	        	printk(KERN_ERR "starlight-xpress: failed to unregister serial driver\n");
-			break;
-		}
-	}
+            tty_unregister_driver(&sx_tty_driver);
     kfree(sx_devices);
 }

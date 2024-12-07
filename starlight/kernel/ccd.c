@@ -1,6 +1,14 @@
 /***************************************************************************\
 
+    This driver (still) does not handle user space<->kernel space copying
+    correctly.  However, it is tested with kernels as late as 6.8.9
+    on x86, ARM and x86_64.
+
     Copyright (c) 2001, 2002 David Schmenk
+    Revised:  12/7/24 brent@mbari.org
+    * Disabled serial ports by default
+    * adopted new timer API for kernels > 4.14
+    * replaced memcpy() to copy_to/from_user()
 
     All rights reserved.
 
@@ -99,6 +107,14 @@ EXPORT_SYMBOL (ccd_unregister_device);
 #define CCD_IMAGE_HEIGHT_TOKEN      (CCD_IMAGE_TOKEN+2)
 #define CCD_NUM_TOKEN               0xFE01
 #define CCD_UNKNOWN_TOKEN           0xFFFF
+
+//timer list lost data field in kernel 4.14
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
+# define setDevExposure(dev, exp) (dev)->exposure_timer.data = (ulong)(exp)
+#else
+# define setDevExposure(dev, exp) (dev)->exposure = (exp)
+#endif
+
 /*
  * Predeclaration.
  */
@@ -173,6 +189,9 @@ struct ccd_device
      */
     struct ccd_exposure *exposure_list;
     struct timer_list    exposure_timer;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+    struct ccd_exposure *exposure;
+#endif
     /*
      * Function pointers.
      */
@@ -180,11 +199,15 @@ struct ccd_device
     int          (*open)(void *);
     int          (*control)(void *, unsigned short, unsigned long);
     int          (*close)(void *);
-    int          (*read_row)(void *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned char *);
+    int          (*read_row)(void *, unsigned int, unsigned int, unsigned int,
+                            unsigned int, unsigned int, unsigned int,
+                            unsigned int, unsigned char *);
     void         (*begin_read)(void *, unsigned int, unsigned int);
     void         (*end_read)(void *, unsigned int);
     void         (*latch_frame)(void *, unsigned int);
-    void         (*new_frame)(void *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int);
+    void         (*new_frame)(void *, unsigned int, unsigned int, unsigned int,
+                    unsigned int, unsigned int, unsigned int, unsigned int,
+                    unsigned int, unsigned int);
     void         (*temp_control)(void *, unsigned short *, int *);
 };
 /*
@@ -204,26 +227,27 @@ char              ccd_string[] = "ccd";
 /*
  * Write string representation of value into buffer.
  */
-int put_int(char *buf, unsigned int value)
+static int put_int(char *buf, unsigned int value)
 {
     char s[10];
     int  l, i = 0;
     do {s[i++] = value % 10 + '0';} while (value /= 10);
     l = i;
     while (i--) *buf++ = s[i];
-    return (l);
+    return 1;
 }
 /*
  * Write string representation of attribute/value pair into buffer.
  */
-int put_attrib(char *buf, char *attrib, unsigned int value)
+static int put_attrib(char *buf, char *attrib, unsigned int value)
 {
     int slen = strlen(attrib);
     buf[0] = ' ';
     memcpy(buf + 1, attrib, slen++);
     buf[slen++] = '=';
-    return (slen + put_int(buf + slen, value));
+    return slen + put_int(buf + slen, value);
 }
+
 
 /***************************************************************************\
 *                                                                           *
@@ -234,41 +258,42 @@ int put_attrib(char *buf, char *attrib, unsigned int value)
 /*
  * Start a new exposure.
  */
-void start_exposure(struct ccd_exposure *exposure)
+static void start_exposure(struct ccd_exposure *exposure)
 {
+    struct ccd_device *ccdDev = exposure->device;
     /*
      * Do any processing and set exposure times.
      */
-    exposure->device->new_frame(exposure->device->param,
+    ccdDev->new_frame(ccdDev->param,
       exposure->xoffset, exposure->yoffset, exposure->width, exposure->height,
       exposure->xbin, exposure->ybin,
       exposure->dac_bits, exposure->msec, exposure->flags);
     exposure->begin = jiffies;
     exposure->end   = exposure->begin + MSEC2JIFFY(exposure->msec);
-    exposure->device->exposure_timer.expires  = exposure->end;
-    exposure->device->exposure_timer.data     = (unsigned long)exposure;
+    ccdDev->exposure_timer.expires  = exposure->end;
+    setDevExposure(ccdDev, exposure);
     {
-      struct timer_list *expTimer = &exposure->device->exposure_timer;
+      struct timer_list *expTimer = &ccdDev->exposure_timer;
       del_timer(expTimer);  //in case previous exposure is still active!
       add_timer(expTimer);
     }
 }
+
 /*
  * Complete exposure and prepare for reading.
  */
-void complete_exposure(unsigned long ptr)
+static void finish_exposure(struct ccd_exposure *exposure)
 {
-    struct ccd_exposure *exposure = (struct ccd_exposure *)ptr;
-
-    if (exposure && !exposure->complete && exposure->device &&
-        exposure->device->exposure_list &&
-        (exposure->device->exposure_list == exposure))
+    struct ccd_device *dev = exposure->device;
+    if (exposure && !exposure->complete && dev &&
+        dev->exposure_list &&
+        (dev->exposure_list == exposure))
     {
         /*
          * Latch the integrated frame.
          */
-        exposure->device->latch_frame(exposure->device->param, exposure->flags);
-        exposure->device->current_read_row = CCD_START_FRAME_LOAD;
+        dev->latch_frame(exposure->device->param, exposure->flags);
+        dev->current_read_row = CCD_START_FRAME_LOAD;
         /*
          * Wake up any waiting process.
          */
@@ -276,10 +301,23 @@ void complete_exposure(unsigned long ptr)
         wake_up_interruptible(&(exposure->client->read_wait));
     }
 }
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
+static void complete_exposure(unsigned long ptr)
+{
+    finish_exposure((struct ccd_exposure *)ptr);
+#else
+static void complete_exposure(struct timer_list *expired)
+{
+    struct ccd_device *dev = from_timer(dev, expired, exposure_timer);
+    finish_exposure(dev->exposure);
+#endif
+}
+
 /*
  * Update exposure times following passed in exposure.
  */
-void update_exposures(struct ccd_exposure *exposure)
+static void update_exposures(struct ccd_exposure *exposure)
 {
     while (exposure->next)
     {
@@ -291,7 +329,7 @@ void update_exposures(struct ccd_exposure *exposure)
 /*
  * Delete exposure.
  */
-void del_exposure(struct ccd_exposure *exposure)
+static void del_exposure(struct ccd_exposure *exposure)
 {
     struct ccd_exposure *prev_exposure,
                         **exposure_list = &(exposure->device->exposure_list);
@@ -323,11 +361,11 @@ void del_exposure(struct ccd_exposure *exposure)
                  * of previous frame.
                  */
                 if ((*exposure_list)->end <= jiffies)
-                    complete_exposure((unsigned long)*exposure_list);
+                    finish_exposure(*exposure_list);
                 else
                 {
                     (*exposure_list)->device->exposure_timer.expires = (*exposure_list)->end;
-                    (*exposure_list)->device->exposure_timer.data    = (unsigned long)*exposure_list;
+                    setDevExposure((*exposure_list)->device, *exposure_list);
                     add_timer(&((*exposure_list)->device->exposure_timer));
                 }
             }
@@ -349,7 +387,7 @@ void del_exposure(struct ccd_exposure *exposure)
 /*
  * Read exposed pixels from CCD.
  */
-int read_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
+static int read_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
 {
     struct ccd_exposure *prev_exposure;
     struct ccd_device   *dev       = exposure->device;
@@ -368,9 +406,13 @@ int read_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
     /*
      * Read out as many scanlines as there is room in the buffer.
      */
-    while ((count >= row_bytes) && (dev->current_read_row <= (exposure->height - exposure->ybin)))
+    while ((count >= row_bytes) &&
+            (dev->current_read_row <= (exposure->height - exposure->ybin)))
     {
-        dev->read_row(dev->param, exposure->xoffset, dev->current_read_row + exposure->yoffset, exposure->width, exposure->xbin, exposure->ybin, exposure->dac_bits, exposure->flags, buf);
+        dev->read_row(dev->param, exposure->xoffset,
+            dev->current_read_row + exposure->yoffset,
+            exposure->width, exposure->xbin, exposure->ybin, exposure->dac_bits,
+            exposure->flags, buf);
         dev->current_read_row += exposure->ybin;
         buf                   += row_bytes;
         rcount                += row_bytes;
@@ -400,12 +442,12 @@ int read_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
         }
         kfree(exposure);
     }
-    return (rcount);
+    return rcount;
 }
 /*
  * Put binary exposure image into buffer.
  */
-int read_binary_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
+static int read_binary_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
 {
     CCD_ELEM_TYPE       *image_buf;
     size_t               image_count;
@@ -456,16 +498,17 @@ int read_binary_exposure(struct ccd_exposure *exposure, char *buf, unsigned int 
          * Copy as much into user buffer as will fit.
          */
         client->out_buf_len = rcount - count;
-        memcpy(buf, client->out_buf, count);
+        if (copy_to_user(buf, client->out_buf, count))
+          return -EFAULT;
         memcpy(client->out_buf, client->out_buf + count, client->out_buf_len);
         rcount = count;
     }
-    return (rcount);
+    return rcount;
 }
 /*
  * Put text exposure image into buffer.
  */
-int read_text_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
+static int read_text_exposure(struct ccd_exposure *exposure, char *buf, unsigned int count)
 {
     int                  rcount;
     char                *image_buf;
@@ -534,15 +577,16 @@ int read_text_exposure(struct ccd_exposure *exposure, char *buf, unsigned int co
      * Copy as much into user buffer as will fit.
      */
     rcount = min_ccd(count, client->out_buf_len);
-    memcpy(buf, client->out_buf, rcount);
+    if (copy_to_user(buf, client->out_buf, rcount))
+      return -EFAULT;
     if ((client->out_buf_len -= rcount))
         memcpy(client->out_buf, client->out_buf + rcount, client->out_buf_len);
-    return (rcount);
+    return rcount;
 }
 /*
  * Create a new exposure request from a message block.
  */
-void new_exposure(struct ccd_client *client, CCD_ELEM_TYPE *msg)
+static void new_exposure(struct ccd_client *client, CCD_ELEM_TYPE *msg)
 {
     struct ccd_exposure *prev_exposure,
                        **exposure_list = &(client->device->exposure_list),
@@ -604,7 +648,7 @@ void new_exposure(struct ccd_client *client, CCD_ELEM_TYPE *msg)
                  */
                 del_timer(&(exposure->device->exposure_timer));
                 exposure->device->exposure_timer.expires = exposure->end;
-                exposure->device->exposure_timer.data    = (unsigned long)exposure;
+                setDevExposure(exposure->device, exposure);
                 add_timer(&(exposure->device->exposure_timer));
             }
             else
@@ -643,7 +687,7 @@ void new_exposure(struct ccd_client *client, CCD_ELEM_TYPE *msg)
 /*
  * Abort all current CCD I/O.
  */
-void abort_exposures(struct ccd_client *client)
+static void abort_exposures(struct ccd_client *client)
 {
     struct ccd_exposure *exposure;
 
@@ -687,7 +731,7 @@ void abort_exposures(struct ccd_client *client)
 /*
  * Parse binary message.
  */
-int parse_binary_msg(struct ccd_client *client)
+static int parse_binary_msg(struct ccd_client *client)
 {
     int            msg_len;
     CCD_ELEM_TYPE *reply;
@@ -725,7 +769,7 @@ int parse_binary_msg(struct ccd_client *client)
                     client->out_buf_len               += CCD_MSG_CCD_LEN;
                 }
                 else
-                    return (-ENOBUFS);
+                    return -ENOBUFS;
             }
             else if (client->in_buf_len >= CCD_MSG_EXP_LEN && msg[CCD_MSG_INDEX] == CCD_MSG_EXP)
                 /*
@@ -762,7 +806,7 @@ int parse_binary_msg(struct ccd_client *client)
                     client->out_buf_len               += CCD_MSG_TEMP_LEN;
 		}
                 else
-                    return (-ENOBUFS);
+                    return -ENOBUFS;
   	    }
             /*
              * Shift out last command buffer.
@@ -779,12 +823,12 @@ int parse_binary_msg(struct ccd_client *client)
              */
             client->in_buf_len = 0;
     }
-    return (0);
+    return 0;
 }
 /*
  * Very simple lexical analyzer.
  */
-int get_token(unsigned char **buf, int len, int *tokens, char **strings, unsigned int *value)
+static int get_token(unsigned char **buf, int len, int *tokens, char **strings, unsigned int *value)
 {
     int i, j;
 
@@ -798,8 +842,8 @@ int get_token(unsigned char **buf, int len, int *tokens, char **strings, unsigne
             {
                 for (j = 0; strings[j][0] != '\0'; j++)
                     if (!strncmp(strings[j], *buf, i))
-                        return (*buf += i, tokens[j]); /* Match   */
-                return (*buf += i, CCD_UNKNOWN_TOKEN); /* Unknown */
+                        return *buf += i, tokens[j]; /* Match   */
+                return *buf += i, CCD_UNKNOWN_TOKEN; /* Unknown */
             }
         }
         else if (**buf >= '0' && **buf <= '9')
@@ -807,12 +851,12 @@ int get_token(unsigned char **buf, int len, int *tokens, char **strings, unsigne
             for (i = *value = 0; len && (*buf)[i] >= '0' && (*buf)[i] <= '9'; i++, len--)
                 *value = *value * 10 + (*buf)[i] - '0';
             if (len)
-                return (*buf += i, CCD_NUM_TOKEN); /* Number */
+                return *buf += i, CCD_NUM_TOKEN; /* Number */
         }
         else
-            return (*((*buf)++)); /* Punctuation token */
+            return *((*buf)++); /* Punctuation token */
     }
-    return (-1); /* Exhausted buffer */
+    return -1; /* Exhausted buffer */
 }
 /*
  * Token arrays.
@@ -832,7 +876,7 @@ int   errorno_tokens[]  = { 0 };
 /*
  * Text message parser state machine. Syntax errors are just dis-regarded.
  */
-int parse_text_msg(struct ccd_client *client)
+static int parse_text_msg(struct ccd_client *client)
 {
     static int     last_errorno = 0;
     unsigned char *scan_buf;
@@ -895,7 +939,7 @@ int parse_text_msg(struct ccd_client *client)
                      * Ran out of buffer space.
                      */
                     last_errorno = -ENOMEM;
-                    return (0);
+                    return 0;
                 }
                 break;
             case CCD_ERRORNO_TOKEN:
@@ -927,7 +971,7 @@ int parse_text_msg(struct ccd_client *client)
                     /*
                         * Ran out of buffer space.
                         */
-                    return (0);
+                    return 0;
                 }
                 break;
             case CCD_EXP_TOKEN:
@@ -938,7 +982,7 @@ int parse_text_msg(struct ccd_client *client)
                      */
                     case -1:
                         last_errorno = -ENOMEM;
-                        return (0);
+                        return 0;
                     /*
                      * Known image request attributes.
                      */
@@ -993,7 +1037,7 @@ int parse_text_msg(struct ccd_client *client)
                      */
                     case -1:
                         last_errorno = -ENOMEM;
-                        return (0);
+                        return 0;
                     /*
                      * Known control attributes.
                      */
@@ -1054,7 +1098,7 @@ int parse_text_msg(struct ccd_client *client)
                      * Ran out of buffer space.
                      */
                     last_errorno = -ENOMEM;
-                    return (0);
+                    return 0;
                 }
                 break;
             default:
@@ -1068,7 +1112,7 @@ int parse_text_msg(struct ccd_client *client)
                      */
                     case -1:
                         last_errorno = -ENOMEM;
-                        return (0);
+                        return 0;
                     /*
                      * Known message tokens.
                      */
@@ -1086,6 +1130,9 @@ int parse_text_msg(struct ccd_client *client)
                         client->parse_msg[CCD_EXP_FLAGS_INDEX]   = 0;
                         client->parse_msg[CCD_EXP_MSEC_LO_INDEX] = 1000;
                         client->parse_msg[CCD_EXP_MSEC_HI_INDEX] = 0;
+#if defined fallthrough
+    fallthrough;
+#endif
                     case CCD_MSG_QUERY:
                     case CCD_MSG_ABORT:
                     case CCD_MSG_CTRL:
@@ -1098,7 +1145,7 @@ int parse_text_msg(struct ccd_client *client)
         if (scan_buf > client->in_buf)
             memcpy(client->in_buf, scan_buf, client->in_buf_len -= (unsigned int)(scan_buf - client->in_buf));
     }
-    return (0);
+    return 0;
 }
 
 /***************************************************************************\
@@ -1113,25 +1160,25 @@ int parse_text_msg(struct ccd_client *client)
 static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offset)
 {
     struct ccd_device   *dev;
-    unsigned int         num    = NUM(file->f_dentry->d_inode->i_rdev);
-    unsigned int         field  = FIELD(file->f_dentry->d_inode->i_rdev);
-    unsigned int         mode   = MODE(file->f_dentry->d_inode->i_rdev);
+    struct inode *inode = file_inode(file);
+    unsigned int         num    = NUM(inode->i_rdev);
+    unsigned int         field  = FIELD(inode->i_rdev);
+    unsigned int         mode   = MODE(inode->i_rdev);
     struct ccd_client   *client = (struct ccd_client *)file->private_data;
     ssize_t              rcount = 0;
 
     if ((num >= MAX_CCDS) || (field > MAX_FIELDS) || !client || !(dev = client->device) || !dev->registered)
-        return (-ENODEV);
+        return -ENODEV;
     if (!count)
-        return (0);
-    if (buf == 0 || !access_ok(VERIFY_READ, (void *)buf, count))
-        return (-EFAULT);
+        return 0;
     if (client->out_buf_len > 0)
     {
         /*
          * Something in the output buffer.
          */
         rcount = min_ccd(count, client->out_buf_len);
-        memcpy(buf, client->out_buf, rcount);
+        if (copy_to_user(buf, client->out_buf, rcount))
+            return -EFAULT;
         if ((client->out_buf_len -= rcount))
             memcpy(client->out_buf, client->out_buf + rcount, client->out_buf_len);
     }
@@ -1143,7 +1190,7 @@ static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offs
                 /*
                  * Don't block.
                  */
-                return (-EAGAIN);
+                return -EAGAIN;
             /*
              * Exposure not ready for reading so block.
              */
@@ -1154,7 +1201,7 @@ static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offs
                   dev->exposure_list->client == client && dev->exposure_list->complete);
 #endif
             if (signal_pending(current))
-                return (-EINTR);
+                return -EINTR;
         }
         if (dev->exposure_list && (dev->exposure_list->client == client) && dev->exposure_list->complete == 1)
         {
@@ -1164,7 +1211,7 @@ static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offs
                 rcount = read_text_exposure(dev->exposure_list, buf, count);
         }
     }
-    return (rcount);
+    return rcount;
 }
 /*
  * Write.
@@ -1173,29 +1220,29 @@ static ssize_t ccd_write(struct file *file, const char *buf, size_t count, loff_
 {
     struct ccd_device *dev;
     struct ccd_client *client = (struct ccd_client *)file->private_data;
-    unsigned int       num    = NUM(file->f_dentry->d_inode->i_rdev);
-    unsigned int       field  = FIELD(file->f_dentry->d_inode->i_rdev);
-    unsigned int       mode   = MODE(file->f_dentry->d_inode->i_rdev);
+    struct inode *inode = file_inode(file);
+    unsigned int         num    = NUM(inode->i_rdev);
+    unsigned int         field  = FIELD(inode->i_rdev);
+    unsigned int         mode   = MODE(inode->i_rdev);
     ssize_t            wcount = 0;
     int                err    = 0;
 
     if ((num >= MAX_CCDS) || (field > MAX_FIELDS) || !client || !(dev = client->device) || !dev->registered)
-        return (-ENODEV);
+        return -ENODEV;
     if (!count)
-        return (0);
-    if (buf == 0 || !access_ok(VERIFY_WRITE, (void *)buf, count))
-        return (-EFAULT);
+        return 0;
     /*
      * Copy buffer into in_buf until there is enough to parse the command.
      */
     wcount = min_ccd(count, (MAX_IN_BUF_SIZE - client->in_buf_len));
-    memcpy(client->in_buf + client->in_buf_len, buf, wcount);
+    if (copy_from_user(client->in_buf + client->in_buf_len, buf, wcount))
+        return -EFAULT;
     client->in_buf_len += wcount;
     if (mode == MODE_BINARY)
         err = parse_binary_msg(client);
     else /* if (mode == MODE_TEXT) */
         err = parse_text_msg(client);
-    return (err ? err : wcount);
+    return err ? err : wcount;
 }
 /*
  * Poll.
@@ -1219,7 +1266,7 @@ static unsigned int ccd_poll(struct file *file, poll_table *wait)
         if ((client->out_buf_len > 0) || (client->exposure_list && (dev->exposure_list->client == client) && dev->exposure_list->complete))
             mask |= POLLIN | POLLRDNORM;	/* Readable */
     }
-    return (mask);
+    return mask;
 }
 /*
  * Open.
@@ -1227,25 +1274,25 @@ static unsigned int ccd_poll(struct file *file, poll_table *wait)
 static int ccd_open(struct inode *inode, struct file *file)
 {
     int          err   = 0;
-    unsigned int num   = NUM(inode->i_rdev);
-    unsigned int field = FIELD(inode->i_rdev);
-    unsigned int mode  = MODE(inode->i_rdev);
+    unsigned int         num    = NUM(inode->i_rdev);
+    unsigned int         field  = FIELD(inode->i_rdev);
+    unsigned int         mode   = MODE(inode->i_rdev);
 
     if ((num >= MAX_CCDS) || (field > MAX_FIELDS) || !ccd_devices[num].registered)
-        return (-ENODEV);
+        return -ENODEV;
     /*
      * Check for interline capable device.
      */
     if ((field > 0) && ccd_devices[num].image_fields <= 1)
-        return (-ENODEV);
+        return -ENODEV;
     /*
      * Only allow one open per psuedo-device.
      */
     if (ccd_clients[num][field].opened)
-        return (-EBUSY);
+        return -EBUSY;
     if (ccd_devices[num].opened == 0)
         if ((err = ccd_devices[num].open(ccd_devices[num].param)))
-            return (err);
+            return err;
     /*
      * Init client data structure.
      */
@@ -1266,7 +1313,7 @@ static int ccd_open(struct inode *inode, struct file *file)
                                              + ccd_clients[num][field].device->width    /* Roughly 3 chars per byte of pixel data plus '\n' */
                                              + 32 /* Slop */;
     else
-        return (-ENODEV);
+        return -ENODEV;
     ccd_clients[num][field].opened                   = 1;
     ccd_clients[num][field].in_buf_len               = 0;
     ccd_clients[num][field].out_buf_len              = 0;
@@ -1281,14 +1328,14 @@ static int ccd_open(struct inode *inode, struct file *file)
         ccd_clients[num][field].opened = 0;
         if (ccd_clients[num][field].in_buf)  vfree(ccd_clients[num][field].in_buf);
         if (ccd_clients[num][field].out_buf) vfree(ccd_clients[num][field].out_buf);
-        return (-ENOMEM);
+        return -ENOMEM;
     }
     ccd_devices[num].opened++;
     file->private_data = (void *)&(ccd_clients[num][field]);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     MOD_INC_USE_COUNT;
 #endif
-    return (0);
+    return 0;
 }
 /*
  * Close.
@@ -1303,12 +1350,12 @@ static int ccd_close(struct inode *inode, struct file *file)
      * Note commented out test: device may have been unplugged during use.
      */
     if ((num >= MAX_CCDS) || (field > MAX_FIELDS)/* || !ccd_devices[num].registered*/)
-        return (-ENODEV);
+        return -ENODEV;
     /*
      * If not opened, return.
      */
     if (!ccd_clients[num][field].opened)
-        return (0);
+        return 0;
     /*
      * Clear out any pending exposures.
      */
@@ -1329,32 +1376,17 @@ static int ccd_close(struct inode *inode, struct file *file)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
     MOD_DEC_USE_COUNT;
 #endif
-    return (0);
+    return 0;
 }
 /*
  * File operations structure.
  */
-static struct file_operations ccd_fops =
-{
-#if 1
+static struct file_operations ccd_fops = {
      read:      ccd_read,
      write:     ccd_write,
      poll:      ccd_poll,
      open:      ccd_open,
      release:   ccd_close
-#else
-    NULL,       /* lseek   */
-    ccd_read,
-    ccd_write,
-    NULL,       /* readdir */
-    ccd_poll,
-    NULL,       /* ioctl   */
-    NULL,       /* mmap    */
-    ccd_open,
-    NULL,       /* flush   */
-    ccd_close,
-    /* Fill rest with NULL */
-#endif
 };
 
 /***************************************************************************\
@@ -1366,10 +1398,10 @@ static struct file_operations ccd_fops =
 /*
  * Failure entrypoints for unregistered devices.
  */
-static int  fail_open(void *vp) {return (-ENODEV);}
-static int  fail_control(void *vp, unsigned short c, unsigned long p) {return (-ENODEV);}
-static int  fail_close(void *vp) {return (-ENODEV);}
-static int  fail_read_row(void *vp, unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int xb, unsigned int yb, unsigned int f, unsigned char *b) {return (-ENODEV);}
+static int  fail_open(void *vp) {return -ENODEV;}
+static int  fail_control(void *vp, unsigned short c, unsigned long p) {return -ENODEV;}
+static int  fail_close(void *vp) {return -ENODEV;}
+static int  fail_read_row(void *vp, unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int xb, unsigned int yb, unsigned int f, unsigned char *b) {return -ENODEV;}
 static void fail_begin_read(void *vp, unsigned int r, unsigned int f) {}
 static void fail_end_read(void *vp, unsigned int f) {}
 static void fail_latch_frame(void *vp, unsigned int f) {}
@@ -1385,7 +1417,7 @@ int ccd_register_device(struct ccd_mini *mini, void *param)
     if (mini->version != CCD_VERSION)
     {
         printk(KERN_INFO "CCD mini-driver version mismatch\n");
-        return (-1);
+        return -1;
     }
     for (i = 0; i < MAX_CCDS; i++)
         if (!ccd_devices[i].registered)
@@ -1415,14 +1447,14 @@ int ccd_register_device(struct ccd_mini *mini, void *param)
              * Functions.
              */
             ccd_devices[i].param = param;
-            if (!(ccd_devices[i].open        = mini->open))        return (0);
-            if (!(ccd_devices[i].control     = mini->control))     return (0);
-            if (!(ccd_devices[i].close       = mini->close))       return (0);
-            if (!(ccd_devices[i].read_row    = mini->read_row))    return (0);
-            if (!(ccd_devices[i].begin_read  = mini->begin_read))  return (0);
-            if (!(ccd_devices[i].end_read    = mini->end_read))    return (0);
-            if (!(ccd_devices[i].latch_frame = mini->latch_frame)) return (0);
-            if (!(ccd_devices[i].new_frame   = mini->new_frame))   return (0);
+            if (!(ccd_devices[i].open        = mini->open))        return 0;
+            if (!(ccd_devices[i].control     = mini->control))     return 0;
+            if (!(ccd_devices[i].close       = mini->close))       return 0;
+            if (!(ccd_devices[i].read_row    = mini->read_row))    return 0;
+            if (!(ccd_devices[i].begin_read  = mini->begin_read))  return 0;
+            if (!(ccd_devices[i].end_read    = mini->end_read))    return 0;
+            if (!(ccd_devices[i].latch_frame = mini->latch_frame)) return 0;
+            if (!(ccd_devices[i].new_frame   = mini->new_frame))   return 0;
             ccd_devices[i].temp_control   = mini->temp_control;
             /*
              * OK, its done.
@@ -1430,9 +1462,9 @@ int ccd_register_device(struct ccd_mini *mini, void *param)
             ccd_devices[i].registered    = 1;
             ccd_devices[i].exposure_list = NULL;
             printk(KERN_INFO "Registered CCD mini-driver: %s @ minor #%d and #%d\n", mini->id_string, i | MODE_BINARY, i | MODE_TEXT);
-            return (0);
+            return 0;
         }
-    return (-1);
+    return -1;
 }
 /*
  * Unregister the device.  Take care if it is currently open.
@@ -1444,7 +1476,7 @@ int ccd_unregister_device(void *param)
 
     for (dev = 0; (dev < MAX_CCDS) &&  (ccd_devices[dev].param != param); dev++);
     if (dev >= MAX_CCDS)
-        return (-1);
+        return -1;
     if (ccd_devices[dev].registered)
     {
         if (ccd_devices[dev].opened)
@@ -1490,9 +1522,9 @@ int ccd_unregister_device(void *param)
             }
             ccd_clients[dev][field].exposure_list = NULL;
         }
-        return (0);
+        return 0;
     }
-    return (-1);
+    return -1;
 }
 
 /***************************************************************************\
@@ -1518,7 +1550,7 @@ int init_module(void)
      * Register device.
      */
     if ((i = register_chrdev(ccd_major, ccd_string, &ccd_fops)) < 0)
-        return (i);
+        return i;
     /*
      * If dynamic major #'s, use the one returned.
      */
@@ -1538,8 +1570,12 @@ int init_module(void)
         ccd_devices[i].exposure_list    = NULL;
         ccd_devices[i].param            = NULL;
         ccd_devices[i].current_read_row = CCD_END_FRAME_LOAD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
         init_timer(&(ccd_devices[i].exposure_timer));
         ccd_devices[i].exposure_timer.function = complete_exposure;
+#else
+        timer_setup(&(ccd_devices[i].exposure_timer), complete_exposure, 0);
+#endif
         /*
          * Init clients.
          */
@@ -1565,7 +1601,7 @@ int init_module(void)
         init_waitqueue_head(&(ccd_clients[i][1].read_wait));
         init_waitqueue_head(&(ccd_clients[i][2].read_wait));
     }
-    return (0);
+    return 0;
 }
 /*
  * Remove module:
