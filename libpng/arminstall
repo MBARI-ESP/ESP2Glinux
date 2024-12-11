@@ -1,6 +1,6 @@
 #!/bin/sh
 # build & install libpng for arm-linux
-# -- 11/11/24 brent@mbari.org
+# -- 12/10/24 brent@mbari.org
 
 : ${libpng:=v1.6.43}
 : ${ARMGCC:=/arm}
@@ -21,4 +21,8 @@ for so in *.so*; do
   else
     $ARMSTRIP --strip-unneeded -o $TARGETTOP/$so $so
   fi || exit
-done && echo "Done."
+done &&
+cd .. &&
+$CC -o pnginfo -I. ../pnginfo.c -L$LTIB/rootfs/usr/lib -lpng16 -lz &&
+cp -a pnginfo $TARGETTOP/../bin &&
+echo "Done."

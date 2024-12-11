@@ -30,15 +30,6 @@ echo "  ===>  Building picocom <==="
 cd ~/linux/picocom && make CC=$ARMGCC/bin/gcc clean picocom &&
 $STRIP -o $LOCALBIN/picocom picocom || exit
 
-echo "  ===>  Building starlightXpress  <==="
-cd ~/linux/starlight &&
-ltibBuild || exit
-
-echo "  ===>  Building snap  <==="
-cd ~/misc/camera/starlight &&
-make CC=$ARMGCC/bin/gcc clean ltib/snap &&
-$STRIP -o $LOCALBIN/snap ltib/snap || exit
-
 echo "  ===>  Building timelimit  <==="
 cd ~/misc/timelimit && armconfig && arminstall || exit
 
@@ -58,9 +49,9 @@ make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
-for package in bash readline libnl uboot-env \
-      dyndns wpa_supplicant esp/dropbear usbmode dnsmasq screen chrony netplug \
-      esp/netdev esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar; do
+for package in bash readline libnl uboot-env dydns wpa_supplicant \
+      esp/dropbear usbmode dnsmasq screen chrony netplug esp/netdev \
+      esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar libpng; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
 done
@@ -81,3 +72,12 @@ for package in iproute2 wireguard-tools; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
 done
+
+echo "  ===>  Building starlightXpress  <==="
+cd ~/linux/starlight &&
+ltibBuild || exit
+
+echo "  ===>  Building snap  <==="
+cd ~/misc/camera/starlight &&
+make CC=$ARMGCC/bin/gcc clean ltib/snap &&
+$STRIP -o $LOCALBIN/snap ltib/snap || exit
