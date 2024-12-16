@@ -1,6 +1,6 @@
 #!/bin/sh
 # build & install libpng for arm-linux
-# -- 12/10/24 brent@mbari.org
+# -- 12/16/24 brent@mbari.org
 
 : ${libpng:=v1.6.43}
 : ${ARMGCC:=/arm}
@@ -13,6 +13,7 @@
 echo "Installing libpng $libpng in $HOSTTOP"
 cd ${libpng} || exit
 make -j4 &&
+cp pnglibconf.h $ARMPREFIX/include &&
 cd .libs &&
 cp -a *.so* *.a $LTIB/rootfs/usr/lib &&
 for so in *.so*; do

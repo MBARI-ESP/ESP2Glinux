@@ -1,5 +1,5 @@
 #!/bin/bash
-# unpack & configure libpng build for arm-linux -- 12/10/24 brent@mbari.org
+# unpack & configure libpng build for arm-linux -- 12/16/24 brent@mbari.org
 
 : ${libpng:=v1.6.43}  #last version with ARM NEON asm support 
 : ${tag:=$libpng}
@@ -15,5 +15,5 @@ fi || exit
 
 LDFLAGS="-L$ARMPREFIX/lib -lrt" CPPFLAGS=-I$ARMPREFIX/include \
   configure --host=$HOST &&
-cp pngconf.h png.h $ARMPREFIX/include &&
+cp png{,conf}.h $ARMPREFIX/include &&
 echo "Now, run arminstall"
