@@ -3,7 +3,7 @@
 here=`dirname $0`
 [ "$1" ] || { cat <<EOS >&2
 Augment root filesystem at $HOSTTOP for ESP application
-  -- 1/19/23 brent@mbari.org
+  -- 12/16/24 brent@mbari.org
 Usage:
   `basename $0` {root.tmp dir}
 ltib root.tmp defaults to $HOSTTOP
@@ -49,7 +49,7 @@ make CC=$ARMGCC/bin/gcc clean ltib/suscript &&
 $STRIP -o $HOSTTOP/usr/sbin/suscript ltib/suscript &&
 chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
-for package in bash readline libnl uboot-env dydns wpa_supplicant \
+for package in bash readline libnl uboot-env dyndns wpa_supplicant \
       esp/dropbear usbmode dnsmasq screen chrony netplug esp/netdev \
       esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar libpng; do
   echo "  ===>  Building $package  <==="
