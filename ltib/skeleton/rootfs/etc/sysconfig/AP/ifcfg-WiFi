@@ -7,11 +7,6 @@ BOOTPROTO=static
 IPADDR=192.168.234.1
 NETMASK=255.255.255.0
 
-ifPrep() {
-  iwconfig $IFNAME power off  #turn off power saving mode for reduced latency
-  : ignore errors from iwconfig
-}
-
 ifDetach() {
   iptables -t nat -F
   rm -f /var/run/wpa-$IFNAME.conf
@@ -27,7 +22,6 @@ ifPost() {
   >$runIF.conf
   chmod og-rw $runIF.conf
   sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf
-  $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
-  outIf=`topIf` && extIP=`netIfIP $outIf` &&
-  iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
+  $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand &&
+  outIf=`topIf` && extIP=`netIfIP $outIf`
 }
