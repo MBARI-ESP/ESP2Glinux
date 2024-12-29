@@ -1,6 +1,4 @@
-#Configure first WiFi interface as Access Point
-IFALIAS=AP/WiFi IFNAME=wlan0
-
+#Configure WiFi interface as Access Point
 . $syscfg/if-default
 
 BOOTPROTO=static

@@ -1,4 +1,16 @@
-#Configure second WiFi interface as Access Point
-# . $syscfg/AP/ifcfg-WiFi  #uncomment to enable Access Point
-IFALIAS=AP IFNAME=wlan1
+#Configure WiFi interface as Access Point
+IFALIAS=AP IFNAME=wlan1  #second interface
+# . $syscfg/AP/ifcfgAP  #uncomment to enable Access Point
 
+#edit psk= line in AP/wpa_supplicant.conf to set pasword
+
+#to change wlan0 from WiFi client to Acesss Point (with no WiFi client):
+#  change 'IFNAME=wlan1' to 'IFNAME=wlan0' above
+#  ln -sf ifcfg-AP ifcfg-wlan0
+#  rm ifcfg-wlan1
+#  echo 'IFNAME=wlan1' >ifcfg-wlan1
+
+#to change back to configuring wlan1 as Access Point and wlan0 as client:
+#  change 'IFNAME=wlan0' to 'IFNAME=wlan1' above
+#  ln -sf ifcfg-WiFi ifcfg-wlan0
+#  ln -sf ifcfg-AP ifcfg-wlan1
