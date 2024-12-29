@@ -1,4 +1,4 @@
-#Act as an WiFi access point
+#Configure first WiFi interface as Access Point
 IFALIAS=AP/WiFi IFNAME=wlan0
 
 . $syscfg/if-default
@@ -7,8 +7,13 @@ BOOTPROTO=static
 IPADDR=192.168.234.1
 NETMASK=255.255.255.0
 
+ifPrep() {
+  #disable power saving to reduce latency
+  iwconfig $IFNAME power off 2>/dev/null
+  : ignore errors from iwconfig
+}
+
 ifDetach() {
-  iptables -t nat -F
   rm -f /var/run/wpa-$IFNAME.conf
 }
 
@@ -22,6 +27,6 @@ ifPost() {
   >$runIF.conf
   chmod og-rw $runIF.conf
   sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf
-  $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand &&
-  outIf=`topIf` && extIP=`netIfIP $outIf`
+  $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
 }
+

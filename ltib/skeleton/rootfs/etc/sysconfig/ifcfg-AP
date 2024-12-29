@@ -1,0 +1,4 @@
+#Configure second WiFi interface as Access Point
+# . $syscfg/AP/ifcfg-WiFi  #uncomment to enable Access Point
+IFALIAS=AP IFNAME=wlan1
+

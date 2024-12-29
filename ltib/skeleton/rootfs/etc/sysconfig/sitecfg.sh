@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 3/21/22 brent@mbari.org
+# -- revised: 12/28/24 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 
@@ -34,6 +34,11 @@ gateUpdated() {
     tunFn=/var/run/tunnel2shore.pid
     #cause inittab to restart tunnel2shore
     tunPID=`cat $tunFn 2>/dev/null` && [ "$tunPID" ] && kill -HUP $tunPID
+    
+    iptables -t nat -F &&
+    outIf=`topIf` && extIP=`netIfIP $outIf` &&
+    iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
+   
     (sleep 1; /etc/init.d/nfsmount start) &
   }
   return 0
