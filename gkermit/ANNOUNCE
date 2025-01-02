@@ -1,0 +1,70 @@
+The Original G-Kermit 1.00 announcement follows.  Version 2.00 of 26 May 2021
+and 2.01 0f 15 November 2021 are functionally identical but have been adjusted
+to compile and link successfully on modern Unix platforms such as Ubuntu 20.04,
+Red Hat EL6, NetBSD 9.2, and macOS 10.15.7 with Xcode 12.4.
+
+---------------------------------
+
+From fdc@watsun.cc.columbia.edu Mon Jan  3 17:09:14 EST 2000
+Article: 40 of comp.protocols.kermit.announce
+Path: newsmaster.cc.columbia.edu!watsun.cc.columbia.edu!fdc
+From: fdc@watsun.cc.columbia.edu (Frank da Cruz)
+Newsgroups: comp.protocols.kermit.announce
+Subject: Announcing G-Kermit 1.00
+Date: 3 Jan 2000 21:57:59 GMT
+Organization: Columbia University
+Lines: 44
+Approved: fdc@columbia.edu
+Message-ID: <84r617$pqb$1@newsmaster.cc.columbia.edu>
+NNTP-Posting-Host: watsun.cc.columbia.edu
+X-Trace: newsmaster.cc.columbia.edu 946936679 26443 128.59.39.2 (3 Jan 2000 21:57:59 GMT)
+X-Complaints-To: postmaster@columbia.edu
+NNTP-Posting-Date: 3 Jan 2000 21:57:59 GMT
+Keywords: Kermit G-Kermit
+Xref: newsmaster.cc.columbia.edu comp.protocols.kermit.announce:40
+
+This to announce a new, compact, and GPL'd Kermit program for UNIX.  The
+new program is called G-Kermit (GNU Kermit).  It is intended to meet the
+need for a Kermit protocol implementation that is:
+
+ . Stable and low-maintenance
+ . Compact and fast with no frills
+ . Under the GNU Public License
+
+G-Kermit is command-line only (no interactive commands or scripting) and
+remote-mode only (no making connections).  It has an extremely simple user
+interface, and implements a large subset of the Kermit protocol in a small
+amount of highly portable code.
+
+It has been built and tested on a wide variety of UNIX platforms, ranging
+from early-1980s to up-to-the-minute, using both traditional C and ANSI C.
+It is designed to be as independent as possible of platform-specific
+features, and therefore to be stable for many years if we resist the
+temptation to add features to it.  The size of the binary ranges from 33K
+(on HP-UX 8.00) to 104K on Ultrix/MIPS, with an average size of 53K over 64
+builds, and a typical size of 37K on PC-based UNIXes.
+
+It's easy to build, install, and uninstall.  It requires no privileges.
+Documentation is included as a plain-text README file and a man page.
+
+You can find G-Kermit 1.00 on the Web at:
+
+  http://www.columbia.edu/kermit/gkermit.html
+
+and by FTP at:
+
+  ftp://kermit.columbia.edu/kermit/archives/gkermit.tar.Z  (88K)
+  ftp://kermit.columbia.edu/kermit/archives/gkermit.tar.gz (62K)
+  ftp://kermit.columbia.edu/kermit/bin/gku100.* (individual binaries)
+
+Uncompress, untar, read the README file, and take it from there (in most
+cases you just type "make" to build it).
+
+Send test reports to kermit-support@columbia.edu.
+
+Frank da Cruz
+The Kermit Project
+Columbia University
+New York City
+Web: http://www.columbia.edu/kermit/
+

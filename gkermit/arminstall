@@ -1,0 +1,15 @@
+#!/bin/sh
+# build & install gkermit to arm-linux
+# -- 1/1/25 brent@mbari.org
+
+: ${HOSTTOP:=${1-$HOME/armHost}}
+: ${HOST:=$ARMHOST}
+: ${out:=$HOSTTOP/usr/local/bin/gkermit}
+
+echo "Installing gkermit in $HOSTTOP"
+make clean &&
+make gwart && 
+make -j4 gkermit CC=$HOST-gcc CFLAGS=-Os  &&
+$HOST-strip -o $out gkermit &&
+echo wrote $out &&
+echo "Done."

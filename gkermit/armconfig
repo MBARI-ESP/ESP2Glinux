@@ -1,0 +1,3 @@
+#!/bin/sh
+# unpack & configure GNU gkermit arm-linux -- 1/1/25 brent@mbari.org
+echo "Now, run arminstall"

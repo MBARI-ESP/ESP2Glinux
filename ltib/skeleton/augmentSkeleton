@@ -51,7 +51,7 @@ chmod u+s $HOSTTOP/usr/sbin/suscript || exit
 
 for package in bash readline libnl uboot-env dyndns wpa_supplicant \
       esp/dropbear usbmode dnsmasq screen chrony netplug esp/netdev \
-      esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar libpng; do
+      esp/ser2net esp/ppp darkhttpd esp/net-tools rsync tar libpng gkermit; do
   echo "  ===>  Building $package  <==="
   cd ~/linux/$package && armconfig && arminstall || exit
 done
