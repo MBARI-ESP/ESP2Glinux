@@ -1,0 +1,59 @@
+# pppd configuration for internet via Iridium handset on USB port
+#  - 1/1/25 brent@mbari.org
+
+#connection
+linkname certus
+remotename certus
+
+noauth       #require no password authorization
+
+#debugging options
+debug
+#record /tmp/ppptrace.out
+#kdebug
+
+#logging options
+logfile /var/log/certus.pppdlog
+dump
+
+#RS-232 port configuration
+certus
+230400
+local
+xonxoff	     #software handshaking
+asyncmap 80a0000  #emit no ESC or XON/XOFF
+lock         #request exclusive access to the port
+
+#
+# Certus requires endpoint to choose IP addresses
+192.168.251.2:192.168.251.1
+defaultroute
+
+#
+# Advises PPPD to use the DNS provided by DHCP.
+# usepeerdns
+
+# disable lcp echo (wireguard will detect link failure)
+lcp-echo-interval 0
+lcp-echo-failure 0
+
+# Bring up link on attempt to connect to shore
+#:ESPshore
+#demand
+
+# Certus does not seem to support these compression protocols
+nobsdcomp
+nodeflate
+novj
+
+connect "noUSBreset=1 exec /etc/ppp/connect certus"
+disconnect "exec /usr/sbin/chat -vf /etc/ppp/certus-detach.chat"
+
+#Drop the expensive link after specified number of seconds
+maxconnect 600 #7200  #2 hours
+idle 1200        #20 minutes
+
+#Internet gate sometimes requires authentication.  Any user or password will do.
+#When authentication required, compression is rejected :-(
+user .
+password .

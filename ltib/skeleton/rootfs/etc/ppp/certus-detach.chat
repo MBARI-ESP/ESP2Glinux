@@ -1,0 +1,2 @@
+# Try to get STREAM+ modem out of ppp passthru mode
+"" \p\d\033\033\033\p\d

@@ -1,13 +1,14 @@
-# ESP specific udev rules -- 8/30/22 brent@mbari.org
+# ESP specific udev rules -- 1/1/25 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
 
-#ESP 2G application serial ports (uncomment those in use)
-#KERNEL=="ttyS1", SYMLINK+="ctd"
 #for APL mooring:
 #ENV{ID_VENDOR}=="FTDI", ENV{ID_MODEL}=="Chipi-X", ENV{ID_IFACE}=="00",\
 #  SYMLINK+="buoyConsole"
+
+#ESP 2G application serial ports (uncomment those in use)
+#KERNEL=="ttyS1", SYMLINK+="ctd"
 #KERNEL=="ttyS2", SYMLINK+="isus"
 #KERNEL=="ttyS4", SYMLINK+="I2Cgate"
 #KERNEL=="ttyS5", SYMLINK+="pcr"
@@ -23,12 +24,16 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 
 #Digital thermometers for testing
 #KERNEL=="ttyS4", SYMLINK+="HH506RA"
-ENV{PRODUCT}="403/6001/600", SYMLINK+="TMD56"
+#ENV{PRODUCT}="403/6001/600", SYMLINK+="TMD56"
 
 #Radio modem serial port (in order of preference)
 #ENV{ID_MODEL}=="USB_MODEM", SYMLINK+="modem"
 #ENV{ID_MODEL}=="Chipi-X", SYMLINK+="modem"
 #ENV{ID_MODEL}=="FT232R_USB_UART", SYMLINK+="modem"
 KERNEL=="ttyS8", SYMLINK+="modem", GROUP="root"
+
+#for Certus modem in telebuoy: (keyed to specific serial<->USB adapter)
+#ENV{ID_SERIAL}="FTDI_UC232R_FT6CVZM2", ENV{ID_IFACE}=="00",\
+#  SYMLINK+="certus", GROUP="root"
 
 LABEL="esp_end"

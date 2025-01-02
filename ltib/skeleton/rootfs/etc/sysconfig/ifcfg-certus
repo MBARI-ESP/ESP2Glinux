@@ -1,0 +1,19 @@
+#3-wire RS-232 "Stream+" Iridium Certus modem
+. $syscfg/inetppp.sh
+IFALIAS=certus IFNAME=ppp7
+
+AUTOSTART=no
+modemTTY=/dev/$IFALIAS
+
+ifPrep() {
+  pppd call certus unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"} updetach
+}
+
+resolv_conf() { cat<<EOS
+search mbari.org
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+EOS
+}
+
+KILLSECS=20   #allow longer for pppd to terminate
