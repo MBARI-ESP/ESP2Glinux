@@ -4,4 +4,5 @@
 . /usr/share/netutils.sh
 
 ifCfg $1
-ipUp && echo $IFNAME IP=$IPADDR
+upping SLIP ${IPADDR:+"at $IPADDR"}
+ipUp

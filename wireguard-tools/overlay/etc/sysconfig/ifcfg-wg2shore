@@ -15,6 +15,7 @@ $WGshore shore mail
 EOS
 }
 ifPrep() {
+  upping Wireguard
   wg-quick up $IFNAME
 }
 ifPost() {

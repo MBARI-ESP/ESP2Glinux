@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 2/7/24 brent@mbari.org
+# -- revised: 1/2/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -466,11 +466,11 @@ ifUp()
         return 2
       }
     }
-    echo "Bringing up ${IFALIAS:-$IFNAME} ..."
     case "$BOOTPROTO" in
       "")  #unspecified BOOTPROTO defers ipUp
-      ;;
+    ;;
       dhcp*)
+        upping DHCP
         ipUp && {
           daemon=/sbin/udhcpc  #only use this dhcp client
           if test -x $daemon  ; then
@@ -493,17 +493,34 @@ ifUp()
             return 3
           fi
         }
-      ;;
+    ;;
       static)
-        ipUp && [ "$IPADDR" ] && echo "${IFALIAS:-$IFNAME} IP=$IPADDR"
-      ;;
+        upping static ${IPADDR:+"at $IPADDR"}
+        ipUp
+    ;;
       *)
-        echo "Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
+        echo "${IFALIAS:-$IFNAME}:  Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
         return 4
       ;;
     esac
     ifPost
   }
+}
+
+upping() {
+#display message when bringing up new interface
+# optional $1 indicates protocol, $2 is optional suffix
+  if [ "$IFALIAS" -a "$IFALIAS" != "$IFNAME" ]; then
+    echo "Bringing up ${1:+$1 }$IFALIAS on $IFNAME ${2:+$2 }..."
+  else
+    echo "Bringing up ${1:+$1 }$IFNAME ${2:+$2 }..."
+  fi
+}
+
+pppd() {
+#display upping message just before invoking pppd
+  upping PPP
+  /usr/sbin/pppd "$@"
 }
 
 ifUpAuto() {
