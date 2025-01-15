@@ -21,7 +21,7 @@ none		/debug		debugfs noauto
 #optional swapfile on (sd) card
 /card/.SWAP	swap            swap
 
-#SUBNET 134.89.10/22 134.89.112/21
+#SUBNET 134.89.10/22 134.89.28/22 134.89.112/21
 #Mount the following only on either MBARI's wired or staff wireless networks
 
 atlasnfs:/ifs/mbari/Tempbox /tempbox nfs nosuid,nodev,noauto
