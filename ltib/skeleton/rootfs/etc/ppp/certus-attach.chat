@@ -1,14 +1,15 @@
-#Connect to Certus (MetOcean STREAM+ modem) via PPP
+#Connect to Certus (MetOcean STREAM+ modem) via PPP -- 2/6/25 brent@mbari.org
 ABORT 'NO CARRIER'
 ECHO OFF
-TIMEOUT 10
+TIMEOUT 12
 #SAY "Enabling PPP pass-through on STREAM+...\n"
 '' '\d\d\d\d\rput ppp{"enabled":true}'
 ppp-\rput\sppp{"enabled":true}-ppp \c
 #SAY "Waiting for Iridium connection ...\n"
-'' \d\d\d\d\d\d\d\d\d
-TIMEOUT 3
-ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR 'ATDT *99#'
+'' \d\d\d\d\d\d\d\d\d\d
+#probe for connection every 5 seconds up to 20 times = 2 minutes
+TIMEOUT 5
+ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR--ERROR 'ATDT *99#'
 #SAY " Starting PPP session\n"
 TIMEOUT 10
 ABORT ERROR

@@ -50,7 +50,7 @@ connect "noUSBreset=1 exec /etc/ppp/connect certus"
 disconnect "exec /usr/sbin/chat -vf /etc/ppp/certus-detach.chat"
 
 #Drop the expensive link after specified number of seconds
-maxconnect 600 #7200  #2 hours
+maxconnect 7200  #2 hours
 idle 1200        #20 minutes
 
 #Internet gate sometimes requires authentication.  Any user or password will do.

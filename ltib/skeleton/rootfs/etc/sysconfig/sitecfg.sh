@@ -1,7 +1,8 @@
 #Site specific networking utilities & definitions
-# -- revised: 12/28/24 brent@mbari.org
+# -- revised: 2/6/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
+wg2shore=wg2shore     #name of wireguard interface to shore
 
 closeTunnels() {
   #signal tunnel deamons that interface will close soon
@@ -24,6 +25,21 @@ closeTunnels() {
   >/var/run/tunGate  #next gateUpdated must reopen tunnels
 }
 
+optimizeWg2shore() {
+#optimize the keepalive interval for the current network
+  [ -e "/sys/class/net/$wg2shore" ] || return   #wg2shore is not up
+  peerPubKey=`wg show $wg2shore peers`
+  ip route get $ESPshore | egrep -o '\s+dev\s+\w+' | {
+    read dev iface junk  #iface through which wg2shore traffic routed
+    aliveInterval=25
+    case "$iface" in
+      ppp7)  #certus
+      	aliveInterval=145
+    esac
+    wg set $wg2shore peer $peerPubKey persistent-keepalive $aliveInterval
+  }
+}
+
 gateUpdated() {
 #invoked just after gateway interface may have been updated
   local gate tunGate tunFn tunPID
@@ -41,6 +57,7 @@ gateUpdated() {
    
     (sleep 1; /etc/init.d/nfsmount start) &
   }
+  optimizeWg2shore
   return 0
 }
 
