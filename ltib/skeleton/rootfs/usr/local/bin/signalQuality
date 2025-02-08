@@ -17,8 +17,9 @@ END
   '')
     by=/dev/serial/by-id
     modem=/dev/AT/me910
-    [ -c "$modem" ] ||
-      modem=`echo $by/usb-Pantech__Incorporated_PANTECH_UML295_*-if06`
+    [ -c "$modem" ] || {
+      modem=/dev/AT/a76xx; [ -c "$modem" ]
+    } || modem=`echo $by/usb-Pantech__Incorporated_PANTECH_UML295_*-if06`
 esac
 [ -c "$modem" ] || { cat <<END >&2
 Not a valid serial port: $modem
