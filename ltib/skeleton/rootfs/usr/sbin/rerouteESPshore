@@ -5,7 +5,7 @@ case "$1" in
   )
 ;;
   *) cat >&2 <<END
-Reroute traffic to ESPshore -- 1/12/25 brent@mbari.org
+Reroute traffic to ESPshore -- 2/12/25 brent@mbari.org
 Select different route to ESPshore wireguard server
 Intended to be invoked from wgatch
 Usage:
@@ -17,14 +17,15 @@ esac
 . /usr/share/netutils.sh
 
 USBportOn() {
+  return 1
 }
 USBportOff() {
+  :
 }
 
 type ykushcmd 2>/dev/null && {
-  USBportOn() {  #$1=port#, $2=optional delay
+  USBportOn() {  #$1=port#
     ykushcmd -u $1
-    [ "$2" ] && sleep $2
   }
   USBportOff() {
     ykushcmd -d $1
@@ -39,20 +40,37 @@ bringDown() {
 
 bringUp() {
 #bring up specified $1=interface, $2=USB port #, $3=delay
-  [ "$2" ] && USBportOn "$2" $3
+  [ "$2" ] && {
+    USBportOn $2 && {
+      [ "$3" ] || return 0  #if no delay, assume udev rule will bring iface up
+    }
+    sleep $3
+  }
   ifup $1 ||
-    logger -t $prog "Failed to bring up $1"
+    logger -t $prog -p daemon.warning "Failed to bring up $1"
 }
 
 bringUpCell() {
-  bringUp "$cellIface" "$cellUSBport" "$cellDelay"
+#$1=optional delay before re-starting sat
+  if [ "$cellIface" ]; then
+    bringUp "$cellIface" "$cellUSBport" "$cellDelay"
+  else
+    [ "$1" ] && sleep $1
+    bringUp "$satIface" "$satUSBport" "$satDelay"
+  fi
 }
-bringDownCell() {
-  bringDown "$cellIface" "$cellUSBport"
+bringUpSat() {
+#$1=optional delay before re-starting cell
+  if [ "$satIface" ]; then
+    bringUp "$satIface" "$satUSBport" "$satDelay"
+  else
+    [ "$1" ] && sleep $1
+    bringup  "$cellIface" "$cellUSBport" "$cellDelay"
+  fi
 }
 
-bringUpSat() {
-  bringUp "$satIface" "$satUSBport" "$satDelay"
+bringDownCell() {
+  bringDown "$cellIface" "$cellUSBport"
 }
 bringDownSat() {
   bringDown "$satIface" "$satUSBport"
@@ -73,16 +91,16 @@ case "`routeTo $ESPshore 2>/dev/null`" in
 
   $cellIface)
     bringDownCell
-    bringUpSat
+    bringUpSat 9
 ;;
 
   $satIface)
     bringDownSat
-    bringUpCell
+    bringUpCell 30
 ;;
 
-  *) #if default route has higher priority, create a specific route to ESPshore
-    if isUp $cellIface
+  *) #if another route has higher priority, create a specific route to ESPshore
+    if isUp $cellIface; then
       ip route replace $ESPshore dev $cellIface
     elif isUp $satIface
       ip route replace $ESPshore dev $satIface

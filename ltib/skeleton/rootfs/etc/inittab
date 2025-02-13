@@ -48,7 +48,7 @@ net:12345:respawn:/usr/sbin/inetd -f
 # special case for dealing with AT&T's OneRate LTM1 service on wwan0
 #wg:12345:respawn:/usr/sbin/wgwatch wg2shore "ifdown wwan0; sleep 95; resetUSB"
 # try a different route to reach ESPshore when wireguard link to it fails
-#wg:12345:respawn:/usr/sbin/wgwatch wg2shore rerouteESPshore
+#wg:12345:respawn:/usr/sbin/wgwatch -90 -600 wg2shore rerouteESPshore
 
 # Keep ssh tunnel to MBARI up
 #tun:12345:respawn:/usr/sbin/tunnel2shore
