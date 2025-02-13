@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 1/2/25 brent@mbari.org
+# -- revised: 2/12/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -41,6 +41,10 @@ isDown() {
 
 hwaddr() {
   cat /sys/class/net/${1:-$IFNAME}/address
+}
+
+ifaceExists() {
+  [ -e "/sys/class/net/${1:-$IFNAME}" ]
 }
 
 hasIP() {
@@ -317,6 +321,11 @@ gateIface() {
   done
 }
 
+routeTo() {
+#output the iface name that will carry traffic to given IP address
+  ipRt=`ip route get "$1"` &&
+  echo "$ipRt" | egrep -o '\s+dev\s+\w+' | awk '{print $2}'
+}
 
 searchDomains() {
 #output list of search domains prefixed by any specified

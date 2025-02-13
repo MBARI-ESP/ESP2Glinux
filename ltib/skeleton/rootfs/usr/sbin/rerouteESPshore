@@ -1,0 +1,92 @@
+#!/bin/sh
+prog=`basename $0`
+
+case "$1" in
+  )
+;;
+  *) cat >&2 <<END
+Reroute traffic to ESPshore -- 1/12/25 brent@mbari.org
+Select different route to ESPshore wireguard server
+Intended to be invoked from wgatch
+Usage:
+  $prog
+END
+  exit 2
+esac
+
+. /usr/share/netutils.sh
+
+USBportOn() {
+}
+USBportOff() {
+}
+
+type ykushcmd 2>/dev/null && {
+  USBportOn() {  #$1=port#, $2=optional delay
+    ykushcmd -u $1
+    [ "$2" ] && sleep $2
+  }
+  USBportOff() {
+    ykushcmd -d $1
+  }
+}
+
+bringDown() {
+#bring down specified $1=interface, $2=USB port #
+  ifdown $1
+  [ "$2" ] && USBportOff $2
+}
+
+bringUp() {
+#bring up specified $1=interface, $2=USB port #, $3=delay
+  [ "$2" ] && USBportOn "$2" $3
+  ifup $1 ||
+    logger -t $prog "Failed to bring up $1"
+}
+
+bringUpCell() {
+  bringUp "$cellIface" "$cellUSBport" "$cellDelay"
+}
+bringDownCell() {
+  bringDown "$cellIface" "$cellUSBport"
+}
+
+bringUpSat() {
+  bringUp "$satIface" "$satUSBport" "$satDelay"
+}
+bringDownSat() {
+  bringDown "$satIface" "$satUSBport"
+}
+
+
+: ${traceFn:=/var/run/trace/$prog}
+[ -w $traceFn ] && {
+  { date; echo "$@"; env; } >>$traceFn
+  exec 2>>$traceFn
+  set -x
+}
+
+case "`routeTo $ESPshore 2>/dev/null`" in
+  )
+    bringUpCell
+;;
+
+  $cellIface)
+    bringDownCell
+    bringUpSat
+;;
+
+  $satIface)
+    bringDownSat
+    bringUpCell
+;;
+
+  *) #if default route has higher priority, create a specific route to ESPshore
+    if isUp $cellIface
+      ip route replace $ESPshore dev $cellIface
+    elif isUp $satIface
+      ip route replace $ESPshore dev $satIface
+    else
+      bringUpCell
+    fi
+esac

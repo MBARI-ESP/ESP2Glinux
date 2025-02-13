@@ -1,8 +1,18 @@
 #Site specific networking utilities & definitions
-# -- revised: 2/6/25 brent@mbari.org
+# -- revised: 2/12/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
+
+#configuration for rerouteESPshore script
+cellIface=cdc1   #cell modem
+cellUSBport=1    #port # on yepkit hub
+cellDelay=       #cell modem connects automatically when powered
+
+satIface=certus  #certus modem
+satUSBport=3     #port # on ypkit hub
+satDelay=45      #delay between applying power and ifup
+
 
 closeTunnels() {
   #signal tunnel deamons that interface will close soon
@@ -27,17 +37,14 @@ closeTunnels() {
 
 optimizeWg2shore() {
 #optimize the keepalive interval for the current network
-  [ -e "/sys/class/net/$wg2shore" ] || return   #wg2shore is not up
+  [ ifaceExists $wg2shore ] || return
+  shoreIf=`routeTo $ESPshore` || return
+  case "$shoreIf" in
+    ppp7)  #certus
+    	aliveInterval=145
+  esac
   peerPubKey=`wg show $wg2shore peers`
-  ip route get $ESPshore | egrep -o '\s+dev\s+\w+' | {
-    read dev iface junk  #iface through which wg2shore traffic routed
-    aliveInterval=25
-    case "$iface" in
-      ppp7)  #certus
-      	aliveInterval=145
-    esac
-    wg set $wg2shore peer $peerPubKey persistent-keepalive $aliveInterval
-  }
+  wg set $wg2shore peer $peerPubKey persistent-keepalive $aliveInterval
 }
 
 gateUpdated() {
@@ -50,11 +57,11 @@ gateUpdated() {
     tunFn=/var/run/tunnel2shore.pid
     #cause inittab to restart tunnel2shore
     tunPID=`cat $tunFn 2>/dev/null` && [ "$tunPID" ] && kill -HUP $tunPID
-    
+
     iptables -t nat -F &&
     outIf=`topIf` && extIP=`netIfIP $outIf` &&
     iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
-   
+
     (sleep 1; /etc/init.d/nfsmount start) &
   }
   optimizeWg2shore
