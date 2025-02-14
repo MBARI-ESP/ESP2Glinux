@@ -1,0 +1,127 @@
+#!/bin/sh
+prog=`basename $0`
+
+case "$1" in
+  -*) cat >&2 <<END
+Manage USB port power -- 2/13/25 brent@mbari.org
+
+Usage:
+  $prog on sat   #turn on satellite modem
+  $prog sat off  #turn off satellite modem
+  $prog off cell #turn off cellular modem
+  $prog WiFi On  #turn on WiFi
+  $prog all on   #turn on all ports
+  $prog all off  #turn off all ports
+  $prog          #display all ports power status
+  $prog cell     #display call modem's power status
+END
+  exit 2
+esac
+
+type ykushcmd >/dev/null 2>&1 || {
+  echo "Required \"ykushcmd\" binary not installed" >&2
+  exit 1
+}
+
+USBportOn() {  #$1=port# (a=all ports)
+  ykushcmd -u $1
+}
+USBportOff() { #$1=port# (a=all ports)
+  ykushcmd -d $1
+}
+USBportState() { #1=port# (a is invalid here)
+#display port status
+#other return values indicate error
+  report=`ykushcmd -g $1` || exit
+  echo $report | grep -q ON
+}
+
+parseUSBport() {
+  case "$1" in
+    c*|C*)  #cellular
+      portNum=1
+  ;;
+    W*|w*)  #WiFi
+      portNum=2
+  ;;
+    s*|S*)  #satelite
+      portNum=3
+  ;;
+    a*|A*)  #all
+      portNum=a
+  ;;
+    *)
+      portNum=
+  esac
+}
+
+parseOnOff() {
+#set state 0 (true) if ON, 1 (false) if off
+#null value indicates invalid input
+  case "$1" in
+    1|on|ON|On)
+      state=0
+  ;;
+    0|off|OFF|Off)
+      state=1
+  ;;
+    *)
+      state=
+  esac
+}
+
+portName() {
+  case "$1" in
+    1) port=Cellular
+;;
+    2) port=WiFi
+;;
+    3) port=Satellite
+;;
+    *) port=
+  esac
+}
+
+showPortState() {
+  USBportState $1
+  case $? in
+    0)  echo -e "$port\tON"
+  ;;
+    1)  echo -e "$port\tOFF"
+  ;;
+    *)  exit $port
+  esac
+}
+
+
+[ "$2" ] || { #2nd arg missing -- display power status
+  parseUSBport $1
+  [ "$portNum" -a "$portNum" != a ] && {
+    portName $portNum
+    showPortState $portNum
+    exit
+  }
+  for port in Cellular Satelite "WiFi    "; do
+    parseUSBport $port
+    showPortState $portNum
+  done
+  exit
+}
+
+parseOnOff $1
+if [ "$state" ]; then
+  parseUSBport $2
+else
+  parseUSBport $1
+  parseOnOff $2
+fi
+[ "$state" -a "$portNum" ] || {
+  echo "Invalid state and/or port name" >&2
+  exit 3
+}
+
+if [ "$state" = 1 ]; then
+  USBportOff $portNum
+else
+  USBportOn $portNum
+fi
