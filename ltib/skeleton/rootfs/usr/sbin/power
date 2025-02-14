@@ -23,12 +23,6 @@ type ykushcmd >/dev/null 2>&1 || {
   exit 1
 }
 
-USBportOn() {  #$1=port# (a=all ports)
-  ykushcmd -u $1
-}
-USBportOff() { #$1=port# (a=all ports)
-  ykushcmd -d $1
-}
 USBportState() { #1=port# (a is invalid here)
 #display port status
 #other return values indicate error
@@ -52,21 +46,6 @@ parseUSBport() {
   ;;
     *)
       portNum=
-  esac
-}
-
-parseOnOff() {
-#set state 0 (true) if ON, 1 (false) if off
-#null value indicates invalid input
-  case "$1" in
-    1|on|ON|On|up|Up|UP)
-      state=0
-  ;;
-    0|off|OFF|Off|down|Down|DOWN)
-      state=1
-  ;;
-    *)
-      state=
   esac
 }
 
@@ -109,6 +88,22 @@ showPortState() {
   exit
 }
 
+
+parseOnOff() {
+#set state 0 (true) if ON, 1 (false) if off
+#null value indicates invalid input
+  case "$1" in
+    1|on|ON|On|up|Up|UP)
+      state=0
+  ;;
+    0|off|OFF|Off|down|Down|DOWN)
+      state=1
+  ;;
+    *)
+      state=
+  esac
+}
+
 parseOnOff $1
 if [ "$state" ]; then
   parseUSBport $2
@@ -119,6 +114,13 @@ fi
 [ "$state" -a "$portNum" ] || {
   echo "Invalid state and/or port name" >&2
   exit 3
+}
+
+USBportOn() {  #$1=port# (a=all ports)
+  ykushcmd -u $1
+}
+USBportOff() { #$1=port# (a=all ports)
+  ykushcmd -d $1
 }
 
 if [ "$state" = 1 ]; then
