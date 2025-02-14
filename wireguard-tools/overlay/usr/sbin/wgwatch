@@ -1,13 +1,13 @@
 #!/bin/sh
 prog=`basename $0`
 delay=
-between=600
+interval=600
 
 case "$1" in -[0-9][0-9]*)
-  between=${1#-}
+  interval=${1#-}
   case "$2" in -[0-9][0-9]*)
-    delay=$between
-    between=${2#-}
+    delay=$interval
+    interval=${2#-}
     shift
   esac
   shift
@@ -18,15 +18,15 @@ case "$1" in
 Monitor specified wiregard interface -- 2/12/25 brent@mbari.org
 Runs specified command whenever wiregard handshake delayed too long
 Usage:
-  $prog {-maxBeforeFirst} {-maxBetween} [wgNetIface] {command plus arguments}
+  $prog {-maxBeforeFirst} {-maxInterval} [wgNetIface] {command plus arguments}
 where:
-  maxBetween = maximum number of seconds between handshakes
+  maxInterval = maximum number of seconds between handshakes
   maxBeforeFirst = maximum number of seconds allowed for initial handshake
-    (only if parameter appears immediately before -maxBetween)
+    (only if parameter appears immediately before -maxInterval)
 Examples:
   $prog -900 wg2shore       #allow up to 15 minutes between handshakes
   $prog -120 -600 wg2shore  #require 1st in 2 min, 10 min between subsequent
-If -maxBetween omitted, allow up to $between seconds between handshakes
+If -maxInterval omitted, allow up to $interval seconds between handshakes
 END
   exit 2
 esac
@@ -66,7 +66,7 @@ now=`timeNow`
 handshakeTime=$now
 
 while sleep $((handshakeTime + delay - now)); do
-  delay=$between
+  delay=$interval
   now=`timeNow`
   handshakeTime=`timeOfLastHandshake $iface` && {
     [ "$handshakeTime" -a $((now - handshakeTime)) -lt $delay ] &&

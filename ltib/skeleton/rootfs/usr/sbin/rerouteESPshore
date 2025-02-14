@@ -1,10 +1,7 @@
 #!/bin/sh
 prog=`basename $0`
 
-case "$1" in
-  )
-;;
-  *) cat >&2 <<END
+[ "$1" ] && { cat >&2 <<END
 Reroute traffic to ESPshore -- 2/12/25 brent@mbari.org
 Select different route to ESPshore wireguard server
 Intended to be invoked from wgatch
@@ -12,7 +9,7 @@ Usage:
   $prog
 END
   exit 2
-esac
+}
 
 . /usr/share/netutils.sh
 
@@ -23,7 +20,7 @@ USBportOff() {
   :
 }
 
-type ykushcmd 2>/dev/null && {
+type ykushcmd >/dev/null 2>&1 && {
   USBportOn() {  #$1=port#
     ykushcmd -u $1
   }
