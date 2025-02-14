@@ -103,6 +103,7 @@ showPortState() {
   }
   for port in Cellular Satelite "WiFi    "; do
     parseUSBport $port
+    echo -n "USB port #$portNum: "
     showPortState $portNum
   done
   exit
