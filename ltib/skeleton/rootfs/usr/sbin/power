@@ -59,10 +59,10 @@ parseOnOff() {
 #set state 0 (true) if ON, 1 (false) if off
 #null value indicates invalid input
   case "$1" in
-    1|on|ON|On)
+    1|on|ON|On|up|Up|UP)
       state=0
   ;;
-    0|off|OFF|Off)
+    0|off|OFF|Off|down|Down|DOWN)
       state=1
   ;;
     *)
