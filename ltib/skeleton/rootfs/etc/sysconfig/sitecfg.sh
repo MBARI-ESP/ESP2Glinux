@@ -11,7 +11,7 @@ cellDelay=       #cell modem connects automatically when powered
 
 satIface=ppp7    #certus modem
 satUSBport=3     #port # on ypkit hub
-satDelay=45      #delay between applying power and ifup
+satDelay=31      #delay between applying power and ifup
 
 
 closeTunnels() {
