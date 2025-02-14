@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 2/12/25 brent@mbari.org
+# -- revised: 2/13/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -9,7 +9,7 @@ cellIface=cdc1   #cell modem
 cellUSBport=1    #port # on yepkit hub
 cellDelay=       #cell modem connects automatically when powered
 
-satIface=certus  #certus modem
+satIface=ppp7    #certus modem
 satUSBport=3     #port # on ypkit hub
 satDelay=45      #delay between applying power and ifup
 
@@ -37,8 +37,9 @@ closeTunnels() {
 
 optimizeWg2shore() {
 #optimize the keepalive interval for the current network
-  [ ifaceExists $wg2shore ] || return
+  ifaceExists $wg2shore || return
   shoreIf=`routeTo $ESPshore` || return
+  aliveInterval=25
   case "$shoreIf" in
     ppp7)  #certus
     	aliveInterval=145
