@@ -3,6 +3,7 @@
 
 PATH=/usr/sbin:/sbin:/usr/bin:/bin
 dropdir=/etc/dropbear
+rcLocal=/etc/rc.local
 
 case "$1" in
     start)
@@ -23,6 +24,9 @@ case "$1" in
       done
 
       mkdir -m600 -p /usr/share/empty  #for vsftpd
+
+      rcLocal = /etc/rc.local
+      [ -x $rcLocal ] && $rcLocal&
        ;;
 
     stop)
