@@ -1,4 +1,4 @@
-#4/10/24 brent@mbari.org
+#2/18/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -74,6 +74,6 @@ ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
 
 #cycle USB power whenever Qualcomm USB modem fireware crashes
-ATTRS{product}=="QHSUSB__BULK", RUN+="/usr/sbin/resetUSB"
+#ATTRS{product}=="QHSUSB__BULK", RUN+="/usr/sbin/resetUSB"
 
 LABEL="updownEND"
