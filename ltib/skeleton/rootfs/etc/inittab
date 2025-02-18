@@ -45,8 +45,6 @@ net:12345:respawn:/usr/sbin/inetd -f
 #wg:12345:respawn:/usr/sbin/wgwatch wg2shore /etc/ppp/reset-modem
 # reset serial modem [vzlte] when Wireguard session fails
 #wg:12345:respawn:/usr/sbin/wgwatch wg2shore "ifdown vzlte; noUSBreset=1 /etc/ppp/reset-modem; sleep 30; ifup vzlte"
-# special case for dealing with AT&T's OneRate LTM1 service on wwan0
-#wg:12345:respawn:/usr/sbin/wgwatch wg2shore "ifdown wwan0; sleep 95; resetUSB"
 # try a different route to reach ESPshore when wireguard link to it fails
 #wg:12345:respawn:/usr/sbin/wgwatch -90 -600 wg2shore rerouteESPshore
 
