@@ -1,5 +1,5 @@
-#shared utilites for bring network links up and down
-# -- brent@mbari.org  2/20/25
+#shared utilites for bringing network links up and down
+# -- brent@mbari.org  2/22/25
 
 . /usr/share/netutils.sh
 
@@ -12,10 +12,20 @@ USBportOff() {
 
 type ykushcmd >/dev/null 2>&1 && {
   USBportOn() {  #$1=port#
-    ykushcmd -u $1
+    ykush -u $1
   }
   USBportOff() {
-    ykushcmd -d $1
+    ykush -d $1
+  }
+  ykush() {
+    txt=`ykushcmd "$@"` &&
+    case "$txt" in
+      *Unable*)
+        [ "$USBresetDelay" ] &&
+        resetUSBunlessBusy $USBresetDelay &&
+        sleep 5 &&
+        ykushcmd "$@"
+    esac
   }
 }
 

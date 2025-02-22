@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 2/18/25 brent@mbari.org
+# -- revised: 2/22/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -13,6 +13,7 @@ satIface=ppp7	#certus modem
 satUSBport=3	#port # on ypkit hub
 satDelay=45	#delay between applying power and ifup
 
+USBresetDelay=2 #number of seconds to power off USB when yepkit hub missing
 
 closeTunnels() {
   #signal tunnel deamons that interface will close soon

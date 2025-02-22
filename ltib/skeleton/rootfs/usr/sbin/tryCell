@@ -2,7 +2,7 @@
 prog=`basename $0`
 
 [ "$1" ] && { cat >&2 <<END
-Test cellular while maintining current satellite link -- 2/20/25 brent@mbari.org
+Test cellular while maintining current satellite link -- 2/22/25 brent@mbari.org
 Usage:
   $prog
 END

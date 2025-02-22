@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 2/12/25 brent@mbari.org
+# -- revised: 2/22/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/var/run
@@ -323,7 +323,7 @@ gateIface() {
 
 routeTo() {
 #output the iface name that will carry traffic to given IP address
-  ipRt=`ip route get "$1"` &&
+  ipRt=`ip route get "$1" 2>/dev/null` &&
   echo "$ipRt" | egrep -o '\s+dev\s+\w+' | awk '{print $2}'
 }
 

@@ -3,7 +3,7 @@ prog=`basename $0`
 
 case "$1" in
   -*) cat >&2 <<END
-Manage USB port power -- 2/20/25 brent@mbari.org
+Manage USB port power -- 2/22/25 brent@mbari.org
 
 Usage:
   $prog on sat   #turn on satellite modem
@@ -24,10 +24,18 @@ type ykushcmd >/dev/null 2>&1 || {
 }
 
 USBportState() { #1=port# (a is invalid here)
-#display port status
+#return port state 0=ON, 1=OFF
 #other return values indicate error
   report=`ykushcmd -g $1` || exit
-  echo $report | grep -q ON
+  case "$report" in
+    *Unable*) return 4
+  ;;
+    *ON*) return 0
+  ;;
+    *OFF*) return 1
+  esac
+  echo $report
+  return 9
 }
 
 parseUSBport() {
@@ -68,7 +76,8 @@ showPortState() {
   ;;
     1)  echo -e "$port\tOFF"
   ;;
-    *)  exit $port
+    *)  echo "FAILED!" >&2
+        exit 2
   esac
 }
 
