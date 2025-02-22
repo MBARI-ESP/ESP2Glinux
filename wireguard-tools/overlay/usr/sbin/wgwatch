@@ -1,21 +1,22 @@
 #!/bin/sh
 prog=`basename $0`
-delay=
+initial=
 interval=600
 
 case "$1" in -[0-9][0-9]*)
   interval=${1#-}
   case "$2" in -[0-9][0-9]*)
-    delay=$interval
+    initial=$interval
     interval=${2#-}
     shift
   esac
   shift
 esac
+: ${initial:=$interval}
 
 case "$1" in
   '' | -*) cat >&2 <<END
-Monitor specified wiregard interface -- 2/12/25 brent@mbari.org
+Monitor specified wiregard interface -- 2/19/25 brent@mbari.org
 Runs specified command whenever wiregard handshake delayed too long
 Usage:
   $prog {-maxBeforeFirst} {-maxInterval} [wgNetIface] {command plus arguments}
@@ -63,18 +64,19 @@ timeNow() {
 }
 
 now=`timeNow`
+delay=$initial
 handshakeTime=$now
-
 while sleep $((handshakeTime + delay - now)); do
   delay=$interval
   now=`timeNow`
   handshakeTime=`timeOfLastHandshake $iface` && {
-    [ "$handshakeTime" -a $((now - handshakeTime)) -lt $delay ] &&
+    [ "$handshakeTime" -a $((now - handshakeTime)) -lt $interval ] &&
       continue
   }
   logger -t $prog -p daemon.warning "restarting $iface + $@"
   ifdown $iface
   eval "$@"
   ifup $iface
+  delay=$initial
   handshakeTime=$now
 done

@@ -1,17 +1,17 @@
 #Site specific networking utilities & definitions
-# -- revised: 2/13/25 brent@mbari.org
+# -- revised: 2/18/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
 
 #configuration for rerouteESPshore script
-cellIface=cdc1   #cell modem
-cellUSBport=1    #port # on yepkit hub
-cellDelay=       #cell modem connects automatically when powered
+cellIface=cdc1	#cell modem
+cellUSBport=1	#port # on yepkit hub
+cellDelay=	#cell modem connects automatically when powered
 
-satIface=ppp7    #certus modem
-satUSBport=3     #port # on ypkit hub
-satDelay=31      #delay between applying power and ifup
+satIface=ppp7	#certus modem
+satUSBport=3	#port # on ypkit hub
+satDelay=45	#delay between applying power and ifup
 
 
 closeTunnels() {

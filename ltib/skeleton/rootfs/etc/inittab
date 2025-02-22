@@ -45,7 +45,7 @@ net:12345:respawn:/usr/sbin/inetd -f
 #wg:12345:respawn:/usr/sbin/wgwatch wg2shore /etc/ppp/reset-modem
 # reset serial modem [vzlte] when Wireguard session fails
 #wg:12345:respawn:/usr/sbin/wgwatch wg2shore "ifdown vzlte; noUSBreset=1 /etc/ppp/reset-modem; sleep 30; ifup vzlte"
-# try a different route to reach ESPshore when wireguard link to it fails
+# enable different route to ESPshore if wg link to it fails (see sitecfg.sh)
 #wg:12345:respawn:/usr/sbin/wgwatch -90 -600 wg2shore rerouteESPshore
 
 # Keep ssh tunnel to MBARI up
