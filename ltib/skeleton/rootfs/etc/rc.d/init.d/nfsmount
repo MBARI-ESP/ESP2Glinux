@@ -1,5 +1,5 @@
 #!/bin/sh
-#mount or umount filesystems of the specified type
+#mount or umount filesystems of the specified type -- 2/22/25 brent@mbari.org
 #and start logging to a file via nfs if /var/log is mounted
 #default is to mount all nfs entries
 #this can be overridden.  For example:
@@ -30,7 +30,7 @@ topIface=`topIf` && topIP=`netIfIP $topIface` && myIP=`ip4int $topIP`
 let "set32=(1<<32)-1"
 
 subnetMatch() {
-#return 0 if ip integer in first arg matches at least one of 
+#return 0 if ip integer in first arg matches at least one of
 #CIDRs given in subsequent arg pairs
   ip=$1; shift
   unset mask
@@ -54,10 +54,12 @@ allFsAuto() {
     set --  #clear argv to mark subnet match
     while read device mntpt fs rest; do
       if [ "$myIP" -a "$device" = "#SUBNET" ]; then
-        set -- 
+        : ${mntpt:=0/} #skip SUBNET mounts without CIDRs
+        set --
         for cidr in $mntpt $fs $rest; do
           ip=${cidr%/*}
           bits=${cidr#*/}
+          [ "$bits" = "$cidr" ] && unset bits
           : ${bits:=32}
           set -- "$@" $(( (~set32>>bits) & set32 )) `ip4int $ip`
         done
@@ -68,20 +70,20 @@ allFsAuto() {
     done
   }
 }
-    
+
 mounted() {
 #returns true if $1 is mounted, false if not, 2 if it does not exist
   realmnt=`realpath $1` || return 2
-  cat /proc/mounts | 
+  cat /proc/mounts |
     while read device mntpt rest; do
       [ "$realmnt" = "$mntpt" ] && return
     done
 }
 
 allFsMounts() {
-#outputs all mounts of specified file system type $1 except those mounted on 
+#outputs all mounts of specified file system type $1 except those mounted on
 #the specified path $2
-  cat /proc/mounts | 
+  cat /proc/mounts |
     while read device mntpt fs rest; do
       [ "$fs" = "$1" -a "$mntpt" != "$2" ] && echo "$mntpt "
     done
@@ -91,14 +93,14 @@ chklog() {
 #stop logging monentarily if mntpt is /var or /var/log
   act=$1
   mntpt=$2
-  echo "  ${act}ing $mntpt " 
+  echo "  ${act}ing $mntpt "
     case $mntpt in
       /var|/var/log)
         pidof syslogd >/dev/null && /etc/init.d/syslog stop >/dev/null
           $act $mntpt
         /etc/init.d/syslog start >/dev/null
       ;;
-      *)  
+      *)
         $act $mntpt
     esac
 }
@@ -138,13 +140,13 @@ case "$op" in
       }
       mnt
        ;;
-                         
+
     restart)
       mntpts=`allFsAuto $fstype $mount`
       umnt
       mnt
        ;;
-       
+
     stop)
       if [ "$mount" ]; then
         mntpts=`allFsAuto $fstype $mount`
@@ -157,7 +159,7 @@ case "$op" in
         fi
       fi
        ;;
-       
+
     *)
        echo "usage: start|restart|stop"
        ;;
