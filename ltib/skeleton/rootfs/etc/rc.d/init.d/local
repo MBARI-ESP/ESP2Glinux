@@ -25,8 +25,7 @@ case "$1" in
 
       mkdir -m600 -p /usr/share/empty  #for vsftpd
 
-      rcLocal = /etc/rc.local
-      [ -x $rcLocal ] && $rcLocal&
+      [ -x $rcLocal ] && $rcLocal &
        ;;
 
     stop)
@@ -35,6 +34,5 @@ case "$1" in
 
      *)
        echo "usage: local {start|stop}"
-       ;;
 esac
 

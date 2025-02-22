@@ -3,4 +3,4 @@
 #mkdir /run/trace && cd /run/trace && touch rerouteESPshore
 
 #bring up satellite link if it is already powered
-#power sat | grep "ON$" && ifup certus
+#power sat | grep -q "ON$" && ifup certus
