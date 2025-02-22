@@ -3,7 +3,7 @@ prog=`basename $0`
 
 case "$1" in
   -*) cat >&2 <<END
-Manage USB port power -- 2/13/25 brent@mbari.org
+Manage USB port power -- 2/20/25 brent@mbari.org
 
 Usage:
   $prog on sat   #turn on satellite modem
@@ -32,13 +32,13 @@ USBportState() { #1=port# (a is invalid here)
 
 parseUSBport() {
   case "$1" in
-    c*|C*)  #cellular
+    cel*|Cel*|CEL*)   #cellular
       portNum=1
   ;;
-    W*|w*)  #WiFi
+    Wi*|wi*|WI*)      #WiFi
       portNum=2
   ;;
-    s*|S*)  #satelite
+    sat*|Sat*|SAT*)   #satelite
       portNum=3
   ;;
     a*|A*)  #all

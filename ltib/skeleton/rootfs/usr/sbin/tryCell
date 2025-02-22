@@ -1,0 +1,42 @@
+#!/bin/sh
+prog=`basename $0`
+
+[ "$1" ] && { cat >&2 <<END
+Test cellular while maintining current satellite link -- 2/20/25 brent@mbari.org
+Usage:
+  $prog
+END
+  exit 2
+}
+
+. /usr/share/bringUpDown.sh
+
+[ "$cellIface" ] || {
+  echo "No cellular interface configured in sitecfg.sh" >&2
+  exit 99
+}
+
+currentRoute=`routeTo $ESPshore 2>/dev/null` || exit
+
+case "$currentRoute" in
+  "$cellIface")
+    echo "Already using cellular radio to reach ESPshore" >&2
+    exit 3
+;;
+
+  *) #create a specific route to ESPshore
+    bringDownCell && sleep 5  #wait for voltage to fall
+    ip route replace $ESPshore dev $currentRoute &&
+    echo "Bringing up cellular radio on $cellIface ..."
+    bringUpCell || exit
+    sleep 30  #wait for cell link to start
+    ping -c 3 -w 15 -I $cellIface $ESPshore || {
+      echo "Failed to reach ESPshore via cellular radio" >&2
+      bringDownCell
+      exit 1
+    }
+    echo "Switching link to ESPshore ..."
+    sleep 3
+    ip route del $ESPshore dev $currentRoute &&
+    bringDownSat
+esac
