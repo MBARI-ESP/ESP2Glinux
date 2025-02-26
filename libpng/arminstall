@@ -1,13 +1,12 @@
 #!/bin/sh
 # build & install libpng for arm-linux
-# -- 12/16/24 brent@mbari.org
+# -- 2/25/25 brent@mbari.org
 
 : ${libpng:=v1.6.43}
 : ${ARMGCC:=/arm}
 : ${ARMSTRIP:=$ARMGCC/bin/strip}
 : ${HOSTTOP:=${1-$HOME/armHost}}
 : ${TARGETTOP:=${2-$HOSTTOP/usr/lib}}
-: ${LTIB:=${3-~/ltib}}
 : ${CC:=$ARMGCC/bin/gcc}
 
 echo "Installing libpng $libpng in $HOSTTOP"
@@ -15,7 +14,7 @@ cd ${libpng} || exit
 make -j4 &&
 cp pnglibconf.h $ARMPREFIX/include &&
 cd .libs &&
-cp -a *.so* *.a $LTIB/rootfs/usr/lib &&
+cp -a *.so* *.a $ARMPREFIX/lib &&
 for so in *.so*; do
   if [ -h $so ]; then
     cp -a $so $TARGETTOP
@@ -24,6 +23,6 @@ for so in *.so*; do
   fi || exit
 done &&
 cd .. &&
-$CC -o pnginfo -I. ../pnginfo.c -L$LTIB/rootfs/usr/lib -lpng16 -lz &&
+$CC -o pnginfo -I. ../pnginfo.c -L$ARMPREFIX/lib -lpng16 -lz &&
 cp -a pnginfo $TARGETTOP/../bin &&
 echo "Done."
