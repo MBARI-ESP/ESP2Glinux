@@ -1,5 +1,5 @@
 #!/bin/sh
-#Start/Stop ESP server
+#Start/Stop ESP server writing ESP stdout log separate dated file
 PATH=/usr/sbin:/sbin:/bin
 user=esp
 #pass some environment vars through to the espserver
@@ -8,6 +8,6 @@ env=
 [ "${ESPclient+set}" ] && env="$env ESPclient=$ESPclient"
 [ "${ESPaxisPort+set}" ] && env="$env ESPaxisPort=$ESPaxisPort"
 [ "${ESPcheckpoints+set}" ] && env="$env ESPcheckpoints=$ESPcheckpoints"
-server="$env ~${user}/esp2/bin/espserver"
+server="$env out=/ ~${user}/esp2/bin/espserver"
 
 [ "$recovering" ] || exec su - $user -c "$server $@"
