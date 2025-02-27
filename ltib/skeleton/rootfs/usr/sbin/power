@@ -3,7 +3,7 @@ prog=`basename $0`
 
 case "$1" in
   -*) cat >&2 <<END
-Manage USB port power -- 2/22/25 brent@mbari.org
+Manage USB port power -- 2/26/25 brent@mbari.org
 
 Usage:
   $prog on sat   #turn on satellite modem
@@ -46,7 +46,7 @@ parseUSBport() {
     Wi*|wi*|WI*)      #WiFi
       portNum=2
   ;;
-    sat*|Sat*|SAT*)   #satelite
+    sat*|Sat*|SAT*)   #satellite
       portNum=3
   ;;
     a*|A*)  #all
@@ -74,7 +74,7 @@ showPortState() {
   case $? in
     0)  echo -e "$port\tON"
   ;;
-    1)  echo -e "$port\tOFF"
+    1)  echo -e "$port\toff"
   ;;
     *)  echo "FAILED!" >&2
         exit 2
@@ -89,7 +89,7 @@ showPortState() {
     showPortState $portNum
     exit
   }
-  for port in Cellular Satelite "WiFi    "; do
+  for port in Cellular Satellite "WiFi    "; do
     parseUSBport $port
     echo -n "USB port #$portNum: "
     showPortState $portNum
