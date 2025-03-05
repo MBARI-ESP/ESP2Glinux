@@ -19,6 +19,9 @@ exec >&2
 sync
 /etc/rc.d/rc $POWERDOWN || exit 1
 #coax modem into low power state where it will take calls
-sleepModem || exit 2
+sleepModem=/usr/sbin/sleepModem
+[ -x $sleepModem ] && {
+  $sleepModem || exit 2
+}
 echo
 exec /etc/init.d/sysmount stop
