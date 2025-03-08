@@ -1,5 +1,5 @@
 daemon=darkhttpd
-pidFile=/var/run/$daemon.pid
+pidFile=/run/$daemon.pid
 BASE=/var/log
 MIME="--default-mimetype text/plain" #--mimetypes /etc/darkhttpd.mimes
 OPTIONS="$BASE $MIME --pidfile $pidFile --daemon --uid nobody --gid daemon"
