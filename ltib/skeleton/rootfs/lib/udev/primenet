@@ -1,0 +1,5 @@
+#!/bin/sh
+#start netplug only after all coldplugged interfaces UP
+
+/lib/udev/catchup
+exec /etc/init.d/netplug start
