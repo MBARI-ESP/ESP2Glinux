@@ -9,5 +9,5 @@ export recovering=yes  #don't clear /tmp or restart espserver
 exec 2>/dev/console
 exec >&2
 #set -x
-mount -oremount,rw /card  #in case SD card was remounted read-only
+mount -oremount,rw /card 2>/dev/null  #in case SD card was remounted read-only
 exec /etc/rc.d/rc $RUN
