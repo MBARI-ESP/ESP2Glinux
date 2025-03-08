@@ -1,8 +1,13 @@
 #!/bin/sh
-#  first-time boot kernel module configuration
+#  first-time boot configuration
 
 echo "Making / writable for first-time boot configuration"
 mount -oremount,rw / && {
   depmod -a
+
+  initial=/etc/var  #fix file attributes in /var template
+  chgrp log $initial/log
+  chown nobody $initial/lib/nfs/sm*
+
   rm $0  #this script will self-destruct...
 }

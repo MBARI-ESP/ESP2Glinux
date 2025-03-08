@@ -2,6 +2,8 @@
 #Create required networking interface aliasing symlinks
 
 echo "Creating network interface aliases"
-updateNetAliases
+mount -oremount,rw / && {
+  updateNetAliases
 
-rm $0
+  rm $0
+}
