@@ -24,7 +24,7 @@ co:12345:respawn:/sbin/getty -L 115200 ttyS0
 #buoy:12345:respawn:/sbin/getty -L 115200 buoyConsole
 
 #bring up deferred net interfaces
-ifup:3:once:/lib/udev/catchup
+ifup:3:once:/lib/udev/primenet
 
 # Keep basic network services running
 net:12345:respawn:/usr/sbin/inetd -f

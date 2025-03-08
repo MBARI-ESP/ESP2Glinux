@@ -1,5 +1,5 @@
 #!/bin/sh
-#catch up all pending udev ifup operations
+#finish all pending udev ifup operations
 
 lockFn=/var/lock/ifup.pending
 [ -r $lockFn ] || exit
@@ -27,3 +27,4 @@ for iface in $ifNames; do
        delay=
   esac
 done
+wait

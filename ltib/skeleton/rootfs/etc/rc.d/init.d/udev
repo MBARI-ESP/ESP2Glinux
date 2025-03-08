@@ -23,5 +23,5 @@ case "$1" in
      ;;
 
    *)
-     echo "usage: coldplug {start}"
+     echo "usage: start"
 esac
