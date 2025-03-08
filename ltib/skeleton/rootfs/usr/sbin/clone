@@ -321,8 +321,7 @@ mkFlash() {
   set +e
   writeRootFS $dst            #populate rootfs
 
-  var=$dst/card/var
-  mkdir $dst/card $var $var/log $var/run $var/lock && {
+  mkdir $dst/card && {
     echo "Installing /card symlinks"
     ln -s /card/tmp $dst/tmp
     ln -s /card/var $dst/var
