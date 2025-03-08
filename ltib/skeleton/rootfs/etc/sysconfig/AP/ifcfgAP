@@ -12,16 +12,16 @@ ifPrep() {
 }
 
 ifDetach() {
-  rm -f /var/run/wpa-$IFNAME.conf
+  rm -f $run/wpa-$IFNAME.conf
 }
 
 ifPost() {
   ifDetach
   wpa=wpa_supplicant
-  mkdir -p /var/run/$wpa
+  mkdir -p $run/$wpa
   cd /etc/sysconfig/AP
   dnsmasq -C dnsmasq-$IFNAME.conf
-  runIF=/var/run/wpa-$IFNAME
+  runIF=$run/wpa-$IFNAME
   >$runIF.conf
   chmod og-rw $runIF.conf
   sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf

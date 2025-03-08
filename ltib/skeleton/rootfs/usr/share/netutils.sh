@@ -1,8 +1,8 @@
 #Common networking utilities
-# -- revised: 2/22/25 brent@mbari.org
+# -- revised: 3/7/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
-run=/var/run
+run=/run
 
 wired() {
 #return 0 if interface is wired Ethernet

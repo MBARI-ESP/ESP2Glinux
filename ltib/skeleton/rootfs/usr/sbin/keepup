@@ -9,10 +9,10 @@ export interface=$1
   logger -st keepup -perr "Missing interface name"
   exit 1
 }
-export ifaceFn=/var/run/$interface.pid
+export ifaceFn=/run/$interface.pid
 
 export port=$2
-export lockFn=/var/lock/LCK..$port
+export lockFn=/run/lock/LCK..$port
 export interval=${3-180}  #default to checking once every 3 minutes
 
 checkPPP ()

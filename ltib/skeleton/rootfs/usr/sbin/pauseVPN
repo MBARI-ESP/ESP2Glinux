@@ -1,7 +1,7 @@
 #!/bin/sh
-#Disable ESP's VPN health checking 
+#Disable ESP's VPN health checking
 #10/5/17 brent@mbari.org
-ckpid=`cat /var/run/inadyn.pid` 2>/dev/null &&
+ckpid=`cat /run/inadyn.pid` 2>/dev/null &&
 kill -0 "$ckpid" 2>/dev/null || {
   echo "shore VPN service is not running" >&2
   exit 2

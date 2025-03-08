@@ -19,6 +19,6 @@ EOS
 }
 
 pppDown() {
-  ckpid=`cat /var/run/inadyn.pid 2>/dev/null` &&
+  ckpid=`cat $run/inadyn.pid 2>/dev/null` &&
     kill -CONT $ckpid
 }

@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 5/29/24 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 3/7/25 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -19,13 +19,16 @@ on any root filesystem copied to an (sd) card !!
 
 First the mountpoints and empty directories:
 
+run ->
+flash ->
+card ->
+boot ->
+debug ->
+
 bufflehead/etc ->
 bufflehead/home ->
 raven/etc ->
 raven/home ->
-
-flash ->
-card ->
 
 engineering ->
 # ESP -> replaced with .4tar.bug to deal with bug in old tar versions
@@ -34,8 +37,6 @@ tempbox ->
 u ->
 ftp ->
 
-boot ->
-debug ->
 
 ============================================================
 
@@ -47,9 +48,10 @@ etc/init.d -> rc.d/init.d
 
 etc/rc.d/rc3.d/S05modules -> ../init.d/modules
 etc/rc.d/rc3.d/S10sysmount -> ../init.d/sysmount
-etc/rc.d/rc3.d/S12coldplug -> ../init.d/coldplug
+etc/rc.d/rc3.d/S12udev -> ../init.d/udev
 etc/rc.d/rc3.d/S20rtc -> ../init.d/rtc
 etc/rc.d/rc3.d/S30syslog -> ../init.d/syslog
+etc/rc.d/rc3.d/S35dnsmasq -> ../init.d/dnsmasq
 etc/rc.d/rc3.d/S40network -> ../init.d/network
 etc/rc.d/rc3.d/S42netplug -> ../init.d/netplug
 etc/rc.d/rc3.d/S50portmap -> ../init.d/portmap
@@ -59,7 +61,6 @@ etc/rc.d/rc3.d/S75chrony -> ../init.d/chrony
 etc/rc.d/rc3.d/S80local -> ../init.d/local
 etc/rc.d/rc3.d/disable/S85netdev -> ../init.d/netdev
 etc/rc.d/rc3.d/S90httpd -> ../init.d/httpd
-etc/rc.d/rc3.d/S95dnsmasq -> ../init.d/dnsmasq
 
 etc/rc.d/rc6.d/K20httpd -> ../init.d/httpd
 etc/rc.d/rc6.d/K25dnsmasq -> ../init.d/dnsmasq
@@ -74,15 +75,18 @@ etc/rc.d/rc6.d/K80sysmount -> ../init.d/sysmount
 etc/rc.d/rc6.d/S99reboot -> ../init.d/reboot
 
 etc/rc.d/rcPowerDown.d/K20httpd -> ../init.d/httpd
+etc/rc.d/rcPowerDown.d/K25dnsmasq -> ../init.d/dnsmasq
+etc/rc.d/rcPowerDown.d/K28chrony -> ../init.d/chrony
 etc/rc.d/rcPowerDown.d/K30nfsmount -> ../init.d/nfsmount
 etc/rc.d/rcPowerDown.d/K40portmap -> ../init.d/portmap
+etc/rc.d/rcPowerDown.d/K42netplug -> ../init.d/netplug
 etc/rc.d/rcPowerDown.d/K50network -> ../init.d/network
 etc/rc.d/rcPowerDown.d/K60rtc -> ../init.d/rtc
 etc/rc.d/rcPowerDown.d/K70syslog -> ../init.d/syslog
 
 tmp -> /card/tmp
 var -> /card/var
-run -> /var/run
+etc/var/run -> /run
 etc/var/lock -> /run/lock
 
 etc/issue.net -> issue

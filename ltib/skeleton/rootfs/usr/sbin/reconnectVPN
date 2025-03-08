@@ -4,7 +4,7 @@ vpn=ppp6
 
 if [ "$cell" ]; then
   #don't attempt to restore cell interface if modem failed < 5 minutes ago
-  lastReset=`head -n1 /var/run/I2Cgate.reset 2>/dev/null`
+  lastReset=`head -n1 /run/I2Cgate.reset 2>/dev/null`
   [ "$lastReset" ] && sinceReset=$(($(date +%s)-$lastReset))
   if [ $? != 0 -o "$sinceReset" -ge 300 -o "$sinceReset" -lt 0 ]; then
     ifdown $cell

@@ -8,6 +8,7 @@ env=
 [ "${ESPclient+set}" ] && env="$env ESPclient=$ESPclient"
 [ "${ESPaxisPort+set}" ] && env="$env ESPaxisPort=$ESPaxisPort"
 [ "${ESPcheckpoints+set}" ] && env="$env ESPcheckpoints=$ESPcheckpoints"
-server="$env out=/ ~${user}/esp2/bin/espserver"
+args="$env ${out:+out=$out} ~${user}/esp2/bin/espserver $@"
 
-[ "$recovering" ] || exec su - $user -c "$server $@"
+#-s /bin/sh below somehow suppresses shell's no job control warning
+[ "$recovering" ] || exec su - $user -s/bin/sh -c"$args"

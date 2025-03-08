@@ -1,5 +1,5 @@
 #!/bin/sh
-#mount or umount filesystems of the specified type -- 2/22/25 brent@mbari.org
+#mount or umount filesystems of the specified type -- 3/7/25 brent@mbari.org
 #and start logging to a file via nfs if /var/log is mounted
 #default is to mount all nfs entries
 #this can be overridden.  For example:
@@ -93,15 +93,16 @@ chklog() {
 #stop logging monentarily if mntpt is /var or /var/log
   act=$1
   mntpt=$2
+  shift 2
   echo "  ${act}ing $mntpt "
     case $mntpt in
       /var|/var/log)
         pidof syslogd >/dev/null && /etc/init.d/syslog stop >/dev/null
-          $act $mntpt
+          $act $* $mntpt
         /etc/init.d/syslog start >/dev/null
       ;;
       *)
-        $act $mntpt
+        $act $* $mntpt
     esac
 }
 
@@ -111,7 +112,7 @@ mnt() {
     set $mntpts
     for mntpt do
       mounted $mntpt
-      [ $? = 1 ] && chklog mount $mntpt
+      [ $? = 1 ] && chklog mount $mntpt -n
     done
   }
 }

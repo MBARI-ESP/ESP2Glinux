@@ -12,7 +12,7 @@ $(netIfIP $IFNAME $(hostname)-$IFNAME $(hostname)-ppp)
 $IPREMOTE lrauv-ppp platform
 EOS
 rdate $IPREMOTE >/dev/null
-ESPclient=$IPREMOTE /etc/init.d/espserver start >/dev/null
+ESPclient=$IPREMOTE out=/ /etc/init.d/espserver start >/dev/null
 }
 
 resolv_conf() {

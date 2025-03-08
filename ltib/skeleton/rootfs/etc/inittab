@@ -36,7 +36,7 @@ net:12345:respawn:/usr/sbin/inetd -f
 #ppp0:12345:respawn:/usr/sbin/pppd nodetach call shore unit 0 logfile /dev/null
 
 # Keep the freewave slip interface up
-#sl0:12345:respawn:/sbin/slattach -P /var/run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
+#sl0:12345:respawn:/sbin/slattach -P /run/sl0.pid -i "/usr/sbin/slinit sl0" -lp slip -s 115200 /dev/freewave
 
 # Keep up VPN link to MBARI (after allowing time for network to start)
 #vpn:12345:respawn:/bin/sh -c "sleep 300; exec /usr/sbin/inadyn"

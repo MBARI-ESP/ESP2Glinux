@@ -1,7 +1,7 @@
 #!/bin/sh
 #mount all filesystems in /etc/fstab not marked "noauto"
 #create /var and /tmp directories and ensure that they are on
-#writable filesystems -- 1/11/23 brent@mbari.org
+#writable filesystems -- 3/6/25 brent@mbari.org
 
 prunePath() {
 #prune non-existant components from the specified filesystem path
@@ -58,15 +58,14 @@ case "$1" in
       mount -o remount,rw /dev
       mount -o remount /
       mount -a
-      card=`realpath /card`
-      var=`realPath $card/var`
-      run=$var/run
-      mkdir -p $run
-      mount -t tmpfs -o mode=1775,gid=1 RUN $run  #daemon group
-      mkdir -m 1775 $run/lock && chgrp lock $run/lock
       swapon -a 2>/dev/null
       [ "$recovering" ] && exit
 
+      mount -t tmpfs -o mode=1775,gid=1 RUN /run  #daemon group
+      mkdir -m 1775 /run/lock && chgrp lock /run/lock
+
+      card=`realpath /card`
+      var=`realPath $card/var`
       initial=/etc/var  #initialize /var if missing
       [ -d "$card" -a ! -d $card/var/log -a -d $initial ] &&
       redoIfRO $card "cp -af $initial $card && chgrp log $card/var/log"

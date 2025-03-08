@@ -2,14 +2,14 @@
 # executed after connecting the ppp interface.
 
 resolv=/etc/resolv.conf
-oldHostname=/var/run/oldHostname.$IFNAME
-oldHosts=/var/run/oldHosts.$IFNAME
-peerName=/var/run/peername.$IFNAME
+oldHostname=/run/oldHostname.$IFNAME
+oldHosts=/run/oldHosts.$IFNAME
+peerName=/run/peername.$IFNAME
 
 if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
 
   unset domain
-  
+
   #if PEERNAME is prefixed with a dot, change our own hostname to it
   if [ -n "$PEERNAME" ]; then
 
@@ -41,7 +41,7 @@ if [ ! -s $resolv -o "`head -1 $resolv`" = "#$IFNAME" ]; then
     echo "127.0.0.1 localhost" >/etc/hosts #clear any ad hoc DNS
 
   fi
-  
+
 fi
 
 [ -f /etc/ppp/ip-up.local ] && . /etc/ppp/ip-up.local "$@"

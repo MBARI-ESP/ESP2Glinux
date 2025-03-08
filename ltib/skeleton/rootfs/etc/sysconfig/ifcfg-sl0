@@ -8,7 +8,7 @@ MTU=1500
 ifPrep() {
   export IFNAME
   modprobe slip &&
-  /sbin/slattach -P /var/run/$IFNAME.pid -lp slip -i slinit -c ipdown \
+  /sbin/slattach -P $run/$IFNAME.pid -lp slip -i slinit -c ipdown \
     -s 115200 /dev/freewave &
   sleep 1
 }
@@ -19,18 +19,18 @@ hosts() {
 $IPADDR $(hostname)-$IFNAME $(hostname)-slip
 EOS
   ftpget $GATEWAY - /etc/hosts &
-  echo $! >/var/run/ftpHosts-$IFNAME.pid
+  echo $! >$run/ftpHosts-$IFNAME.pid
   wait $!
   result=$?
-  rm -f /var/run/ftpHosts-$IFNAME.pid
+  rm -f $run/ftpHosts-$IFNAME.pid
   [ $result != 129 ]  #not terminated by signal
 }
 
 resolv_conf() {
   ftpget $GATEWAY - /etc/resolv.conf &
-  echo $! >/var/run/ftpResolv-$IFNAME.pid
+  echo $! >$run/ftpResolv-$IFNAME.pid
   wait $!
   result=$?
-  rm -f /var/run/ftpResolv-$IFNAME.pid
+  rm -f $run/ftpResolv-$IFNAME.pid
   [ $result != 129 ]
 }

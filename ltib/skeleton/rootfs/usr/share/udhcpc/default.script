@@ -1,6 +1,6 @@
 #!/bin/sh
 # udhcpc script edited by Tim Riker <Tim@Rikers.org>
-# revised:  2/8/23 by brent@mbari.org
+# revised:  3/7/25 by brent@mbari.org
 
 [ "$1" -a "$interface" ] || {
   echo "Error: should be called from udhcpc"
@@ -20,7 +20,7 @@ log() {
 
 case "$1" in
   deconfig)
-    rm -f /var/run/resolv/$interface
+    rm -f $run/resolv/$interface
     if [ "$validIFconfig" ] && ipUp; then
       [ -f $leased -a "$IPADDR" ] && log notice "reverted to $IPADDR"
     else

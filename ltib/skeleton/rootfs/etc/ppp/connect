@@ -2,7 +2,7 @@
 #  connect to specified cellular network
 
 tag=`basename $0`
-traceFn=/var/run/trace/$tag
+traceFn=/run/trace/$tag
 [ -w $traceFn ] && {
   (date; echo $0 "$@"; env) >>$traceFn
   exec 2>>$traceFn
@@ -13,7 +13,7 @@ cellular=$1
 resetHoldOff=${2-180}    #fail 3 minutes after resetting modem
 offSecs=${3-5}           #default to 5 seconds w/pwr off
 gateway=${4-/dev/I2Cgate}
-lastResetFn=/var/run/`basename $gateway`.reset
+lastResetFn=/run/`basename $gateway`.reset
 
 [ "$cellular" ] || {
 cat << EOS

@@ -1,7 +1,7 @@
 #!/bin/sh
 #prompt for login (once)
 #ignore during coldplugging
-[ -e "/var/run/coldplugged" ] || exit 0
+[ -e "/run/coldplugged" ] || exit 0
 tag="`basename $0`[$$]"
 dev=${1-$DEVNAME}
 baud=${2-115200}

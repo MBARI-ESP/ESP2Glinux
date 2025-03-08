@@ -4,4 +4,4 @@
 echo "" > /proc/sys/kernel/hotplug  #udevd takes over firmware loading
 /sbin/udevtrigger
 /sbin/udevsettle --timeout=60
-cat /proc/uptime >/var/run/coldplugged
+cat /proc/uptime >/run/coldplugged

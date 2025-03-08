@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 2/22/25 brent@mbari.org
+# -- revised: 3/7/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -18,7 +18,7 @@ USBresetDelay=2 #number of seconds to power off USB when yepkit hub missing
 closeTunnels() {
   #signal tunnel deamons that interface will close soon
   local tunFn tunPID smtpPID
-  for tunFn in /var/run/tunnel*.pid; do
+  for tunFn in $run/tunnel*.pid; do
     [ -s "$tunFn" ] && {
       tunPID=`cat $tunFn` && {
         smtpPID=`fuser 25/tcp 2>/dev/null` && kill -USR1 $tunPID && {
@@ -33,7 +33,7 @@ closeTunnels() {
       }
     }
   done
-  >/var/run/tunGate  #next gateUpdated must reopen tunnels
+  >$run/tunGate  #next gateUpdated must reopen tunnels
 }
 
 optimizeWg2shore() {
@@ -53,10 +53,10 @@ gateUpdated() {
 #invoked just after gateway interface may have been updated
   local gate tunGate tunFn tunPID
   read -r gate 2>/dev/null </etc/resolv.conf
-  read -r tunGate 2>/dev/null </var/run/tunGate
+  read -r tunGate 2>/dev/null <$run/tunGate
   [ "$tunGate" != "$gate" ] && { #tunnel gateway changed
-    echo "$gate" >/var/run/tunGate
-    tunFn=/var/run/tunnel2shore.pid
+    echo "$gate" >$run/tunGate
+    tunFn=$run/tunnel2shore.pid
     #cause inittab to restart tunnel2shore
     tunPID=`cat $tunFn 2>/dev/null` && [ "$tunPID" ] && kill -HUP $tunPID
 
@@ -75,9 +75,9 @@ gateChange() {
 #invoked just before gateway interface may be updated
 #$1 is the new gateway interface or "" if topIf is going down
   local tunGate
-  read -r tunGate 2>/dev/null </var/run/tunGate
+  read -r tunGate 2>/dev/null <$run/tunGate
   [ "$tunGate" ] && {
-    read -r newGate 2>/dev/null </var/run/resolv/$1
+    read -r newGate 2>/dev/null <$run/resolv/$1
     [ "$tunGate" != "$newGate" ] && closeTunnels
   }
 }

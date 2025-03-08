@@ -65,7 +65,7 @@ case "$op" in
     pppIfs() {
     #output list of interfaces with running ppp daemons
     #excluding those in $START list
-      pppSpec='/var/run/ppp[0-9]*.pid'
+      pppSpec='/run/ppp[0-9]*.pid'
       pidfns=`echo $pppSpec`
     set -f
       [ "$pidfns" != "$pppSpec" ] && {
