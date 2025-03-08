@@ -1,7 +1,7 @@
 #!/bin/sh
 #mount all filesystems in /etc/fstab not marked "noauto"
 #create /var and /tmp directories and ensure that they are on
-#writable filesystems -- 3/6/25 brent@mbari.org
+#writable filesystems -- 3/7/25 brent@mbari.org
 
 prunePath() {
 #prune non-existant components from the specified filesystem path
@@ -22,7 +22,7 @@ redoIfRO() {
     echo $err | grep -q Read-only && target=`prunePath $dir` && {
       df $target | {
         read header && read dev blks used avail use mntpt extra &&
-          echo "Making $mntpt writable because it will contain $dir" >&2 &&
+          echo "Making $mntpt writable because it contains $dir" >&2 &&
           mount -oremount,rw,noatime $dev $mntpt
       } && eval "$@"
     }
@@ -66,9 +66,9 @@ case "$1" in
 
       card=`realpath /card`
       var=`realPath $card/var`
-      initial=/etc/var  #initialize /var if missing
-      [ -d "$card" -a ! -d $card/var/log -a -d $initial ] &&
-      redoIfRO $card "cp -af $initial $card && chgrp log $card/var/log"
+      initial=/etc/var  #initialize /var if missing link to /run
+      [ ! -d $var/run -a -d $initial ] &&
+        redoIfRO $card "cp -af $initial $card"
 
       #Set up temporary directories while preserving existing symlinks
       tmp=`realPath /tmp` &&
