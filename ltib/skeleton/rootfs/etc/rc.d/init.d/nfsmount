@@ -1,5 +1,5 @@
 #!/bin/sh
-#mount or umount filesystems of the specified type -- 3/7/25 brent@mbari.org
+#mount or umount filesystems of the specified type -- 3/8/25 brent@mbari.org
 #and start logging to a file via nfs if /var/log is mounted
 #default is to mount all nfs entries
 #this can be overridden.  For example:
@@ -107,7 +107,6 @@ chklog() {
 }
 
 mnt() {
-  echo "Mounting $fstype filesystems ..."
   [ "$mntpts" ] && {
     set $mntpts
     for mntpt do
@@ -129,17 +128,24 @@ umnt() {
 
 case "$op" in
     start)
+      grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
+        echo "Missing Network -- skipping $fstype mounts"
+        exit 3
+      }
       mntpts=`allFsAuto $fstype $mount`
       [ -z "$mntpts" -a -n "$mount" ] && {
         echo "/etc/fstab contains no $fstype entries marked \"$mount\"!"
         exit 1
       }
-
-      grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
-        echo "Missing Network -- skipping $fstype mounts"
-        exit 1
-      }
+      echo "Mounting $fstype filesystems ..."
       mnt
+       ;;
+
+    quietly)  #like start, but faster and quieter
+      grep -qv '^[[:space:]]*#' /etc/resolv.conf && {
+        mntpts=`allFsAuto $fstype $mount`
+        mnt
+      }
        ;;
 
     restart)
@@ -162,6 +168,6 @@ case "$op" in
        ;;
 
     *)
-       echo "usage: start|restart|stop"
+       echo "usage: start|quietly|restart|stop"
        ;;
 esac

@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 3/7/25 brent@mbari.org
+# -- revised: 3/8/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -64,7 +64,7 @@ gateUpdated() {
     outIf=`topIf` && extIP=`netIfIP $outIf` &&
     iptables -t nat -A POSTROUTING -o $outIf -j SNAT --to $extIP
 
-    (sleep 1; /etc/init.d/nfsmount start) &
+    (sleep 1; /etc/init.d/nfsmount quietly) &
   }
   optimizeWg2shore
   return 0
