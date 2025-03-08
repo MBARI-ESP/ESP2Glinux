@@ -1,5 +1,5 @@
 daemon=netplugd
-pidFile=/var/run/$daemon.pid
+pidFile=/run/$daemon.pid
 set -f  #turn off globbing
 OPTIONS="-Pc /dev/null -p $pidFile -i eth*"
 

@@ -1,5 +1,5 @@
 daemon=chronyd
-pidFile=/var/run/chrony/$daemon.pid
+pidFile=/run/chrony/$daemon.pid
 OPTIONS=""
 
 case "$1" in
