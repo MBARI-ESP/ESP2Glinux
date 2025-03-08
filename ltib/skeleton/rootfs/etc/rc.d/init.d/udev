@@ -1,0 +1,27 @@
+# Start device event handling daemon
+PATH=/usr/sbin:/sbin:/bin
+
+case "$1" in
+  start)
+    if pidof udevd >/dev/null; then
+      echo Triggering device events
+    else
+      echo Starting udevd...
+      touch /run/lock/ifup.pending  #defer bringing up net interfaces
+      udevd --daemon || {
+        rm -f /run/lock/ifup.pending
+        exit 1
+      }
+      : > /proc/sys/kernel/hotplug  #udevd takes over firmware loading
+    fi
+    udevtrigger && (  #do not wait for events to be handled!
+      udevsettle --timeout=60 && cat /proc/uptime >/run/coldplugged) &
+     ;;
+
+  stop)
+     :
+     ;;
+
+   *)
+     echo "usage: coldplug {start}"
+esac
