@@ -54,6 +54,7 @@ allFsAuto() {
     set --  #clear argv to mark subnet match
     while read device mntpt fs rest; do
       if [ "$myIP" -a "$device" = "#SUBNET" ]; then
+        mntpt=${mntpt%#*}  #strip comments
         : ${mntpt:=0/} #skip SUBNET mounts without CIDRs
         set --
         for cidr in $mntpt $fs $rest; do
