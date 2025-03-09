@@ -1,0 +1,34 @@
+#!/bin/sh
+#configure ks8851_mll
+#Option to switch to energy saver mode with rate limted to 10Mb/sec
+#This will cause our interface to shutdown completely a few seconds after being
+#disconnected from its peer.
+#Only plugging the port into an *active* peer will reactivate the interface.
+#Energy saving ethernet switches shut down ports after being disconnected.
+#If both ends are shut down, neither will awaken when reconnected.
+
+#power=   (power saving modes for the KS8851 MLL ethernet transciever driver)
+# 0:  disable power saving
+# 1:  enable power saving
+# 2:  energy detect (shutdown when peer disconnected)
+
+#p1cr=   (register bits)
+#15: turn off LEDs
+#13: restart auto-negotiation
+# 7: enable auto negotiation
+# 6: force 100BT if auto negotiation is disabled, otherwise force 10BT
+# 5: force full duplex if auto neg. disabled
+# 4: advertise flow control
+# 3: advertise 100BT full-duplex
+# 2: advertise 100BT half-duplex
+# 1: advertise 10BT full-duplex
+# 0: advertise 10BT half-duplex
+#advertise only 10base-T to save power
+
+false &&  #comment out this line to ENABLE energy saver mode discribed above
+cd /sys/module/ks8851_mll/parameters && {
+  echo 2 >power &&   #shutdown Ethernet if nothing connected
+  echo 0x8093 >p1cr  #limit to 10Mbit/s and disable LEDs
+}
+
+exec ifconfig eth0 up 0  #start determining whether cable is connected
