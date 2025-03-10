@@ -1,5 +1,7 @@
 #!/bin/sh
 #Start/Stop ESP server writing ESP stdout log separate dated file
+[ "$recovering" ] && exit
+
 PATH=/usr/sbin:/sbin:/bin
 user=esp
 #pass some environment vars through to the espserver
@@ -11,4 +13,4 @@ env=
 args="$env ${out:+out=$out} ~${user}/esp2/bin/espserver $@"
 
 #-s /bin/sh below somehow suppresses shell's no job control warning
-[ "$recovering" ] || exec su - $user -s/bin/sh -c"$args"
+exec su - $user -s/bin/sh -c"$args"
