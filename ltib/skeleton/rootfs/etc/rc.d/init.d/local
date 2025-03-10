@@ -13,6 +13,10 @@ case "$1" in
       echo $coredir/%e-SIG%s.%p >/proc/sys/kernel/core_pattern
       rm -f /var/crash && ln -s tmp/crash /var/crash
 
+      mkdir -pm600 /usr/share/empty  #for vsftpd
+      mkdir -pm771 /run/ESPsocket    #for espserver
+      chgrp mbari /run/ESPsocket
+
       # ensure we have valid ssh server keys
       mkdir -p $dropdir
       for key in rsa ecdsa ed25519; do
@@ -22,8 +26,6 @@ case "$1" in
           dropbearkey -t $key -f $dropdir/$keyfn >$dropdir/$keyfn.pub
         fi
       done
-
-      mkdir -m600 -p /usr/share/empty  #for vsftpd
 
       [ -x $rcLocal ] && $rcLocal &
        ;;
