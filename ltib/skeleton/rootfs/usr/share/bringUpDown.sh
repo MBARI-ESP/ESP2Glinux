@@ -1,5 +1,5 @@
 #shared utilites for bringing network links up and down
-# -- brent@mbari.org  2/22/25
+# -- brent@mbari.org  3/9/25
 
 . /usr/share/netutils.sh
 
@@ -9,6 +9,9 @@ USBportOn() {
 USBportOff() {
   :
 }
+USBportState() {
+  return 99
+}
 
 type ykushcmd >/dev/null 2>&1 && {
   USBportOn() {  #$1=port#
@@ -16,6 +19,10 @@ type ykushcmd >/dev/null 2>&1 && {
   }
   USBportOff() {
     ykush -d $1
+  }
+  USBportState() {
+  #output contains ON, OFF, or neither if state unknown
+    ykushcmd -g $1
   }
   ykush() {
     txt=`ykushcmd "$@"` &&
@@ -78,4 +85,11 @@ bringDownSat() {
 startCell() {
   [ "$satUSBport" -a "$cellIface" ] && USBportOff "$satUSBport"
   bringUpCell
+}
+
+cellState() {
+  USBportState "$cellUSBport"
+}
+satState() {
+  USBportState "$satUSBport"
 }

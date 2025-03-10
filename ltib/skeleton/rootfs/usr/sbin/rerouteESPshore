@@ -2,7 +2,7 @@
 prog=`basename $0`
 
 [ "$1" ] && { cat >&2 <<END
-Reroute traffic to ESPshore -- 2/20/25 brent@mbari.org
+Reroute traffic to ESPshore -- 3/9/25 brent@mbari.org
 Select different route to ESPshore wireguard server
 Intended to be invoked from wgatch
 Usage:
@@ -14,18 +14,30 @@ END
 . /usr/share/bringUpDown.sh
 
 case "`routeTo $ESPshore 2>/dev/null`" in
-  "")
-    startCell
+  "")  #there is no route to ESPshore
+    case `cellState` in
+      *OFF*)
+        bringDownSat
+        bringUpCell 9  #keep sat off 9 sec if there is no cell
+     ;;
+      *ON*)
+        bringDownCell
+        bringUpSat 5   #keep cell off 5 sec if there is no sat
+     ;;
+      *)  #turn all on if USB power controlled ports not working
+        [ "$cellIface" ] && bringUpCell
+        [ "$satIface" ] && bringUpSat
+    esac
 ;;
 
   "$cellIface")
     bringDownCell
-    bringUpSat 9
+    bringUpSat 5
 ;;
 
   "$satIface")
     bringDownSat
-    bringUpCell 30
+    bringUpCell 9
 ;;
 
   *) #if another route has higher priority, create a specific route to ESPshore
