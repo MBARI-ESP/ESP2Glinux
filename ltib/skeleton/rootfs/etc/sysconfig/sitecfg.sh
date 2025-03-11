@@ -13,7 +13,7 @@ satIface=ppp7	#certus modem
 satUSBport=3	#port # on ypkit hub
 satDelay=45	#delay between applying power and ifup
 
-USBresetDelay=2 #number of seconds to power off USB when yepkit hub missing
+USBresetDelay=4 #number of seconds to power off USB when yepkit hub missing
 
 closeTunnels() {
   #signal tunnel deamons that interface will close soon

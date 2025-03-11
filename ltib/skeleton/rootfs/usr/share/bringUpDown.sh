@@ -1,5 +1,5 @@
 #shared utilites for bringing network links up and down
-# -- brent@mbari.org  3/9/25
+# -- brent@mbari.org  3/11/25
 
 . /usr/share/netutils.sh
 
@@ -22,17 +22,26 @@ type ykushcmd >/dev/null 2>&1 && {
   }
   USBportState() {
   #output contains ON, OFF, or neither if state unknown
-    ykushcmd -g $1
+    ykush -g $1
   }
   ykush() {
-    txt=`ykushcmd "$@"` &&
-    case "$txt" in
-      *Unable*)
-        [ "$USBresetDelay" ] &&
-        resetUSBunlessBusy $USBresetDelay &&
-        sleep 5 &&
-        ykushcmd "$@"
-    esac
+    tryReset=${USBresetDelay:+reset}
+    for try in 1 2 $tryReset $tryReset; do
+      txt=`ykushcmd "$@"` &&
+      case "$txt" in
+        *Unable*)  #try to hide ykushcmd transient errors
+          if [ "$try" = reset ]; then
+            resetUSBunlessBusy $USBresetDelay
+            sleep $USBresetDelay
+          else
+            sleep $try
+          fi
+       ;;
+        *)
+          break
+      esac
+    done
+    echo "$txt"
   }
 }
 
