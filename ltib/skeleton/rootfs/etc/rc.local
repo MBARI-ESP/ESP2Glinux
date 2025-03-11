@@ -1,11 +1,4 @@
 #!/bin/sh
+
 #enable tracing the specified scripts
 #mkdir /run/trace && cd /run/trace && touch rerouteESPshore wgwatch
-
-#power off sat if cell is powered
-#power cell | grep -q "ON$" && {
-#  power sat off
-#  exit
-#}
-#bring up satellite link if only it is powered
-#power sat | grep -q "ON$" && (sleep 30; ifup certus)&
