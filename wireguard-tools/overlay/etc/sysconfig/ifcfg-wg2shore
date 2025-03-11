@@ -21,6 +21,7 @@ ifPrep() {
 ifPost() {
   mkdir -p $run/dns && resolv_conf >$run/dns/$IFNAME
   gateUp && hostsUp $IFNAME
+  optimizeWg2shore
 }
 ifClose() {
   rm -f $run/dns/$IFNAME
