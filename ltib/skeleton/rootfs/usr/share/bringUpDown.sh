@@ -41,7 +41,7 @@ type ykushcmd >/dev/null 2>&1 && {
           break
       esac
     done
-    echo "$txt"
+    echo -n "$txt"
   }
 }
 
