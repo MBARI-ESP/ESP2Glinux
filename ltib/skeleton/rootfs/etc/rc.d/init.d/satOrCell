@@ -1,7 +1,7 @@
 #!/bin/sh
 #Choose between satellite and cell comms based upon which are powered
 #Yepkit hub powers up with all ports powered
-#So, this only chooses satellite only if it is powered and cell is not.
+#So, this chooses satellite only if it is powered and cell is not.
 
 case "$1" in
   start)
@@ -15,7 +15,7 @@ case "$1" in
     else #bring up satellite link if it is to only powered
       if [ $satOff != 0 ]; then
         echo Starting certus...
-        (sleep 30; ifup certus)&
+        (sleep 35; ifup certus)&
       else #start with cell if neither powered
         power cell on
       fi
