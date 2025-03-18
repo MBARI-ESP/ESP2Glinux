@@ -1,0 +1,24 @@
+diff -ru dnsmasq-v2.84-original/src/dnsmasq.c dnsmasq-v2.84/src/dnsmasq.c
+--- dnsmasq-v2.84-original/src/dnsmasq.c	2025-03-18 12:51:15.212441092 -0700
++++ dnsmasq-v2.84/src/dnsmasq.c	2025-03-18 12:54:04.468444145 -0700
+@@ -1634,7 +1634,7 @@
+ 	  latest->mtime = 0;
+ 	  if (!warned)
+ 	    {
+-	      my_syslog(LOG_WARNING, _("no servers found in %s, will retry"), latest->name);
++	      my_syslog(LOG_INFO, _("no servers found in %s, will retry"), latest->name);
+ 	      warned = 1;
+ 	    }
+ 	}
+diff -ru dnsmasq-v2.84-original/src/network.c dnsmasq-v2.84/src/network.c
+--- dnsmasq-v2.84-original/src/network.c	2025-03-18 12:51:15.216440998 -0700
++++ dnsmasq-v2.84/src/network.c	2025-03-18 12:52:27.666730094 -0700
+@@ -1121,7 +1121,7 @@
+ 
+   for (iface = daemon->interfaces; iface; iface = iface->next)
+     if (iface->found && iface->name && iface->label)
+-      my_syslog(LOG_WARNING, _("warning: using interface %s instead"), iface->name);
++      my_syslog(LOG_INFO, _("using interface %s instead"), iface->name);
+ }
+ 
+ void warn_int_names(void)
