@@ -1,0 +1,27 @@
+diff -ru chrony.original/chrony/main.c chrony/chrony/main.c
+--- chrony.original/chrony/main.c	2021-05-20 10:24:35.753461568 -0700
++++ chrony/chrony/main.c	2025-03-17 17:47:02.869497542 -0700
+@@ -630,7 +630,7 @@
+     SYS_DropRoot(pw->pw_uid, pw->pw_gid, SYS_MAIN_PROCESS);
+ 
+   if (!geteuid())
+-    LOG(LOGS_WARN, "Running with root privileges");
++    LOG(LOGS_DEBUG, "Running with root privileges");
+ 
+   REF_Initialise();
+   SST_Initialise();
+diff -ru chrony.original/chrony/reference.c chrony/chrony/reference.c
+--- chrony.original/chrony/reference.c	2021-05-20 10:24:35.757461471 -0700
++++ chrony/chrony/reference.c	2025-03-17 17:45:13.608039828 -0700
+@@ -262,9 +262,9 @@
+     /* Check that the timezone has good data for Jun 30 2012 and Dec 31 2012 */
+     if (get_tz_leap(1341014400, &tai_offset) == LEAP_InsertSecond && tai_offset == 34 &&
+         get_tz_leap(1356912000, &tai_offset) == LEAP_Normal && tai_offset == 35) {
+-      LOG(LOGS_INFO, "Using %s timezone to obtain leap second data", leap_tzname);
++      LOG(LOGS_DEBUG, "Using %s timezone to obtain leap second data", leap_tzname);
+     } else {
+-      LOG(LOGS_WARN, "Timezone %s failed leap second check, ignoring", leap_tzname);
++      LOG(LOGS_DEBUG, "Timezone %s failed leap second check, ignoring", leap_tzname);
+       leap_tzname = NULL;
+     }
+   }
