@@ -1,0 +1,13 @@
+Only in dnsmasq: dnsmasq.patch
+diff -ru dnsmasq.original/dnsmasq-v2.84/src/network.c dnsmasq/dnsmasq-v2.84/src/network.c
+--- dnsmasq.original/dnsmasq-v2.84/src/network.c	2021-05-20 10:09:19.003773514 -0700
++++ dnsmasq/dnsmasq-v2.84/src/network.c	2025-03-17 18:00:21.114972826 -0700
+@@ -1121,7 +1121,7 @@
+ 
+   for (iface = daemon->interfaces; iface; iface = iface->next)
+     if (iface->found && iface->name && iface->label)
+-      my_syslog(LOG_WARNING, _("warning: using interface %s instead"), iface->name);
++      my_syslog(LOG_INFO, _("using interface %s instead"), iface->name);
+ }
+ 
+ void warn_int_names(void)
