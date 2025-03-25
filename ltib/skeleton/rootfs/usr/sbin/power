@@ -3,7 +3,7 @@ prog=`basename $0`
 
 case "$1" in
   -*) cat >&2 <<END
-Manage USB port power -- 2/26/25 brent@mbari.org
+Manage USB port power -- 3/25/25 brent@mbari.org
 
 Usage:
   $prog on sat   #turn on satellite modem
@@ -12,8 +12,8 @@ Usage:
   $prog WiFi On  #turn on WiFi
   $prog all on   #turn on all ports
   $prog all off  #turn off all ports
-  $prog          #display all ports power status
-  $prog cell     #display call modem's power status
+  $prog          #display all ports' power status
+  $prog cell     #display cell modem's power status
 END
   exit 2
 esac
