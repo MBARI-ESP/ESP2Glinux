@@ -1,0 +1,185 @@
+#!/usr/bin/env ruby
+###################  certusQuality -- brent@mbari.org  #####################
+#    Copyright (C) 2025 MBARI
+#    MBARI Proprietary Information. All rights reserved.
+#
+# Extract Iridium signal quality from MetOcean's Certus Stream+ modem
+#############################################################################
+
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  ["--log", "-l", GetoptLong::OPTIONAL_ARGUMENT],
+  ["--debug", "-d", GetoptLong::NO_ARGUMENT],
+  ["--timeout", "-t", GetoptLong::REQUIRED_ARGUMENT],
+  ["--help", "-h",  "-?", GetoptLong::NO_ARGUMENT]
+)
+
+ProgName = File.basename $0
+DefaultPort = '/dev/certus'
+DefaultRate = rate = 230400
+
+$timeout = 5.0  #default inactivity timeout in seconds
+
+
+def usage
+      STDERR.puts(( <<-END
+Extract Iridium signal quality from MetOcean's Certus Stream+ modem
+  -- brent@mbari.org 3/24/25
+Usage:
+   #{ProgName} {options} {serial_port}
+serial_port defaults to #{DefaultPort} if not specified
+
+Outputs a report including the Iridium signal quality (0..5)
+Note:  Can only be used while the Certus modem is idle!
+
+Options:
+  --timeout [seconds] #inactivity timeout (default %.1f seconds)
+                      #specifying timeout <= 0 waits forever
+  --log [file name]   #writes activity log to specified file
+  --baud [rate]       #baud rate (defaults to #{DefaultRate})
+  --debug             #writes activity log to stderr
+ Only one log or debug option may be specified
+
+Example:
+  #{ProgName} -d  /dev/ttyUSB0
+Reports the Iridium signal quality for the Stream+ modem on /dev/ttyUSB0
+Writes a log of activity to stderr
+
+      END
+         ) % $timeout)
+  exit 2
+end
+
+def conflicting
+  STDERR.puts "Conflicting command line options"
+  exit 3
+end
+
+logFn=nil
+opts.each do |opt, arg|
+#puts "#{opt}: #{arg.dump}"
+  case opt
+    when "--timeout"
+      $timeout = Float arg
+    when "--log"
+      conflicting if logFn
+      logFn = arg
+    when "--baud"
+      rate = Integer arg
+    when "--debug"
+      conflicting if logFn
+      logFn = ''
+    else
+      usage
+  end
+end
+usage if ARGV.size > 1
+
+serialPortPath = ARGV.size > 0 ? ARGV[0] : DefaultPort
+
+$: << "/home/esp/esp2/lib" #allow to run as root
+require 'mbari'
+require 'posix/serialport'
+
+class CertusError < StandardError; end
+
+class Log
+#very simple message logging class
+#each log entry is a line consisting of a timestamp and a message
+#timestamps are elasped time in seconds
+
+  def initialize fnOrFile
+    @epoch = Time.now
+    (@file=fnOrFile).is_a?(IO) or @file=open(fnOrFile, "w")
+  end
+
+  def record message
+    @file.puts("@%.3f: %s" % [Time.now - @epoch, message])
+  end
+  def recordException fault
+    record fault.message
+  end
+  def self.recordException fault
+    $log.recordException fault
+  end
+
+  def close
+    record ">END<"
+    @file.close
+  end
+end
+
+def record message
+  $log.record message if $log
+end
+
+class Posix::SerialPort
+  class Timeout < Error; end
+  def untimedResponse cmd=""
+  #get multiline response to query command
+  #returns an array of text lines
+  end
+
+  def response cmd="", timeout=$timeout
+  #raise Timeout exception if no response received within timeout seconds
+    parent = Thread.current
+    sleeper = nil
+    begin
+      sleeper = Thread.new do
+        sleeper = Thread.current
+        endTime = Time.now + timeout
+        while (remaining = endTime - Time.now) > 0
+          doze remaining  #signals may wake us up early
+        end
+        parent.raise Timeout.
+          new "No response received within #{timeout} seconds"
+      end if timeout > 0
+      unless cmd.empty?
+        print cmd
+        flushOutput
+record "Awaiting response to #{cmd.dump}"
+      end
+      gets "\r"
+    ensure
+      sleeper.kill if sleeper
+    end
+  end
+end  #Port class
+
+
+# initialize logger
+
+$log = if logFn
+  begin
+    logFn.empty? ? Log.new(STDERR) : Log.new(logFn)
+  rescue =>cantWriteLog
+    STDERR.puts "Cannot write to log file.  #{cantWriteLog}"
+    exit 1
+  end
+end
+
+# initialize serial port
+certusPortCfg=SerialPort::Configuration.default.with :baud=>rate
+port=Posix::SerialPort.new serialPortPath, certusPortCfg
+begin
+record "Contacting Stream+ modem on #{port} at #{certusPortCfg}"
+  rsp=port.response "PUT imtConfig{\"enabled\":true,\"send\":false}\r"
+record rsp
+  raise CertusError, "Failed to get response to imt enable" unless
+    rsp.include? "imtConfig"
+  loop do
+    puts port.response "GET iridium{}\r"
+    sleep 5
+  end
+rescue Exception
+  STDERR.puts $!
+ensure
+  begin
+record port.response "PUT imtConfig{\"enabled\":false}\r"
+  rescue Exception
+    STDERR.puts $!
+  end
+  port.close
+  $log.close if $log
+end
