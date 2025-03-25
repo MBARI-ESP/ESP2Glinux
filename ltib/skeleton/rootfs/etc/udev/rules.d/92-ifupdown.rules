@@ -1,4 +1,4 @@
-#3/8/25 brent@mbari.org
+#3/24/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -11,7 +11,7 @@ ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="b720", ENV{ifDelay}="4"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
 
 #ensure stickup runs before attempting to bring up SIMCom A76xx
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ifDelay}="2"
+ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ifDelay}="8"
 
 ACTION=="add", RUN+="ifup %E{INTERFACE} %E{ifDelay}"
 ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
