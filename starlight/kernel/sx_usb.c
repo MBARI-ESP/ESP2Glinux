@@ -8,7 +8,7 @@
     Revised:  12/7/24 brent@mbari.org
     * Disabled serial ports by default
     * adopted new timer API for kernels > 4.14
-    * replaced memcpy() to copy_to/from_user()
+    * replaced memcpy() with copyTo/FromUser()
     * do not attempt DMA to stack area
 
     All rights reserved.
@@ -271,7 +271,7 @@ static int devnum[NR_SX] = { [0 ... NR_SX-1] = -1 };
 static int force_load[NR_SX] = { [0 ... NR_SX-1] = 0 };
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0))
 MODULE_AUTHOR("David Schmenk, dschmenk@earthlink.net");
-MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari3");
+MODULE_DESCRIPTION("Starlight Xpress USB astronomy camera driver v1.9mbari4");
 MODULE_LICENSE("GPL");
 MODULE_PARM_DESC(model, "SX camera model");
 MODULE_PARM_DESC(color, "SX camera one-shot color flag");
@@ -521,8 +521,7 @@ static int sx_read_row(void *vp, unsigned int offset,
     /*
      * Move the raw pixels over.
      */
-    if (copy_to_user(buf, sx_read_pixels(sx, row_size), row_size))
-      return -EFAULT;
+    copyToUserRetOnErr(buf, sx_read_pixels(sx, row_size), row_size);
 #endif
 #ifdef __BIG_ENDIAN
     if (sx->pixel_size > 1)
@@ -537,8 +536,7 @@ static int sx_read_row(void *vp, unsigned int offset,
         }
     }
     else
-        if (copy_to_user(buf, sx_read_pixels(sx, row_size), row_size))
-            return -EFAULT;
+        copyToUserRetOnErr(buf, sx_read_pixels(sx, row_size), row_size);
 #endif
     return row_size;
 }
@@ -1062,8 +1060,7 @@ static SSIZE_t sx_tty_write(struct tty_struct *tty, const u8 *buf, SIZE_t count)
         if (from_user)
         {
             written = min(count, 64);
-            if (copy_from_user(data, buf, written))
-	        return -EINVAL;
+            copyFromUserRetOnErr(data, buf, written);
         }
         else
         {

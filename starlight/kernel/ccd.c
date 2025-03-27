@@ -498,8 +498,7 @@ static int read_binary_exposure(struct ccd_exposure *exposure, char *buf, unsign
          * Copy as much into user buffer as will fit.
          */
         client->out_buf_len = rcount - count;
-        if (copy_to_user(buf, client->out_buf, count))
-          return -EFAULT;
+        copyToUserRetOnErr(buf, client->out_buf, count);
         memcpy(client->out_buf, client->out_buf + count, client->out_buf_len);
         rcount = count;
     }
@@ -577,8 +576,7 @@ static int read_text_exposure(struct ccd_exposure *exposure, char *buf, unsigned
      * Copy as much into user buffer as will fit.
      */
     rcount = min_ccd(count, client->out_buf_len);
-    if (copy_to_user(buf, client->out_buf, rcount))
-      return -EFAULT;
+    copyToUserRetOnErr(buf, client->out_buf, rcount);
     if ((client->out_buf_len -= rcount))
         memcpy(client->out_buf, client->out_buf + rcount, client->out_buf_len);
     return rcount;
@@ -1177,8 +1175,7 @@ static ssize_t ccd_read(struct file *file, char *buf, size_t count, loff_t *offs
          * Something in the output buffer.
          */
         rcount = min_ccd(count, client->out_buf_len);
-        if (copy_to_user(buf, client->out_buf, rcount))
-            return -EFAULT;
+        copyToUserRetOnErr(buf, client->out_buf, rcount);
         if ((client->out_buf_len -= rcount))
             memcpy(client->out_buf, client->out_buf + rcount, client->out_buf_len);
     }
@@ -1235,8 +1232,7 @@ static ssize_t ccd_write(struct file *file, const char *buf, size_t count, loff_
      * Copy buffer into in_buf until there is enough to parse the command.
      */
     wcount = min_ccd(count, (MAX_IN_BUF_SIZE - client->in_buf_len));
-    if (copy_from_user(client->in_buf + client->in_buf_len, buf, wcount))
-        return -EFAULT;
+    copyFromUserRetOnErr(client->in_buf + client->in_buf_len, buf, wcount);
     client->in_buf_len += wcount;
     if (mode == MODE_BINARY)
         err = parse_binary_msg(client);

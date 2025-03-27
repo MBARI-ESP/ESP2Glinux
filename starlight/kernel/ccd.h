@@ -1,9 +1,9 @@
 /***************************************************************************\
-    
+
     Copyright (c) 2001, 2002 David Schmenk
-    
+
     All rights reserved.
-    
+
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the
     "Software"), to deal in the Software without restriction, including
@@ -13,7 +13,7 @@
     copyright notice(s) and this permission notice appear in all copies of
     the Software and that both the above copyright notice(s) and this
     permission notice appear in supporting documentation.
-    
+
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
     OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT
@@ -23,12 +23,12 @@
     FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
     NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
     WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-    
+
     Except as contained in this notice, the name of a copyright holder
     shall not be used in advertising or otherwise to promote the sale, use
     or other dealings in this Software without prior written authorization
     of the copyright holder.
-    
+
 \***************************************************************************/
 
 /***************************************************************************\
@@ -71,9 +71,9 @@ struct ccd_mini
     /*
      * Function pointers for basic camera ops.
      */
-    int          (*open)(void *);   
-    int          (*control)(void *, unsigned short, unsigned long);   
-    int          (*close)(void *);   
+    int          (*open)(void *);
+    int          (*control)(void *, unsigned short, unsigned long);
+    int          (*close)(void *);
     int          (*read_row)(void *, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, unsigned char *);
     void         (*begin_read)(void *, unsigned int, unsigned int);
     void         (*end_read)(void *, unsigned int);
@@ -83,5 +83,20 @@ struct ccd_mini
 };
 int ccd_register_device(struct ccd_mini *, void *);
 int ccd_unregister_device(void *);
+
+//copy memory block to user and return -EFAULT if failed
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0))
+#define copyToUserRetOnErr(dst, src, len) \
+    if (copy_to_user((dst),(src),(len))) return -EFAULT
+#define copyFromUserRetOnErr(dst, src, len) \
+    if (copy_from_user((dst),(src),(len))) return -EFAULT
+
+#else  //older kernel
+
+#define copyToUserRetOnErr(dst, src, len) \
+    memcpy((dst),(src),(len))
+#define copyFromUserRetOnErr(dst, src, len) \
+    memcpy((dst),(src),(len))
+#endif
 
 #endif /* _CCD_H_ */
