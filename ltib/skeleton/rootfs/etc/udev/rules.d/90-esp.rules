@@ -1,4 +1,4 @@
-# ESP specific udev rules -- 1/1/25 brent@mbari.org
+# ESP specific udev rules -- 7/2/25 brent@mbari.org
 
 ACTION!="add", GOTO="esp_end"
 SUBSYSTEM!="tty", GOTO="esp_end"
@@ -33,7 +33,7 @@ SUBSYSTEM!="tty", GOTO="esp_end"
 KERNEL=="ttyS8", SYMLINK+="modem", GROUP="root"
 
 #for Certus modem in telebuoy: (keyed to specific serial<->USB adapter)
-#ENV{ID_SERIAL}="FTDI_UC232R_FT6CVZM2", ENV{ID_IFACE}=="00",\
+#ENV{ID_SERIAL}=="FTDI_UC232R_FT*", ENV{ID_IFACE}=="00",\
 #  SYMLINK+="certus", GROUP="root"
 
 LABEL="esp_end"

@@ -1,11 +1,11 @@
 #Site specific networking utilities & definitions
-# -- revised: 3/8/25 brent@mbari.org
+# -- revised: 7/2/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
 
 #configuration for rerouteESPshore script
-cellIface=cdc1	#cell modem
+cellIface=wwan0	#cell modem (may be cdc1)
 cellUSBport=1	#port # on yepkit hub
 cellDelay=	#cell modem connects automatically when powered
 

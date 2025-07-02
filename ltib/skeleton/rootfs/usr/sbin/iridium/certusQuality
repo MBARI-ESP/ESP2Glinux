@@ -10,8 +10,10 @@ require 'getoptlong'
 
 opts = GetoptLong.new(
   ["--log", "-l", GetoptLong::OPTIONAL_ARGUMENT],
-  ["--debug", "-d", GetoptLong::NO_ARGUMENT],
+  ["--verbose", "-v", GetoptLong::NO_ARGUMENT],
+  ["--baud", "-b", GetoptLong::REQUIRED_ARGUMENT],
   ["--timeout", "-t", GetoptLong::REQUIRED_ARGUMENT],
+  ["--delay", "-d", GetoptLong::REQUIRED_ARGUMENT],
   ["--help", "-h",  "-?", GetoptLong::NO_ARGUMENT]
 )
 
@@ -20,12 +22,13 @@ DefaultPort = '/dev/certus'
 DefaultRate = rate = 230400
 
 $timeout = 5.0  #default inactivity timeout in seconds
+$delay   = 0.2  #extra delay for modem to boot up
 
 
 def usage
       STDERR.puts(( <<-END
 Extract Iridium signal quality from MetOcean's Certus Stream+ modem
-  -- brent@mbari.org 3/24/25
+  -- brent@mbari.org 7/2/25
 Usage:
    #{ProgName} {options} {serial_port}
 serial_port defaults to #{DefaultPort} if not specified
@@ -36,23 +39,28 @@ Note:  Can only be used while the Certus modem is idle!
 Options:
   --timeout [seconds] #inactivity timeout (default %.1f seconds)
                       #specifying timeout <= 0 waits forever
+  --delay [seconds]   #modem boot delay (%.f seconds)
   --log [file name]   #writes activity log to specified file
   --baud [rate]       #baud rate (defaults to #{DefaultRate})
-  --debug             #writes activity log to stderr
+  --verbose           #writes activity log to stderr
  Only one log or debug option may be specified
 
 Example:
-  #{ProgName} -d  /dev/ttyUSB0
+  #{ProgName} -v /dev/ttyUSB0
 Reports the Iridium signal quality for the Stream+ modem on /dev/ttyUSB0
 Writes a log of activity to stderr
 
       END
-         ) % $timeout)
+         ) % [$timeout, $delay])
   exit 2
 end
 
 def conflicting
   STDERR.puts "Conflicting command line options"
+  exit 3
+end
+def invalid
+  STDERR.puts "Invalid command line option parameter"
   exit 3
 end
 
@@ -62,12 +70,16 @@ opts.each do |opt, arg|
   case opt
     when "--timeout"
       $timeout = Float arg
+      invalid if $timeout <= 0.01
+    when "--delay"
+      $delay = Float arg
+      invalid if $delay < 0
     when "--log"
       conflicting if logFn
       logFn = arg
     when "--baud"
       rate = Integer arg
-    when "--debug"
+    when "--verbose"
       conflicting if logFn
       logFn = ''
     else
@@ -162,11 +174,13 @@ end
 # initialize serial port
 certusPortCfg=SerialPort::Configuration.default.with :baud=>rate
 port=Posix::SerialPort.new serialPortPath, certusPortCfg
+record "Waiting #{$delay} seconds for Certus modem to boot up..." if $delay>1
+doze $delay
 begin
-record "Contacting Stream+ modem on #{port} at #{certusPortCfg}"
-  rsp=port.response "PUT imtConfig{\"enabled\":true,\"send\":false}\r"
-record rsp
-  raise CertusError, "Failed to get response to imt enable" unless
+  record "Contacting Stream+ modem on #{port} at #{certusPortCfg}"
+  rsp=port.response "PUT imtConfig{\"enabled\":true,\"send\":false}\r"  
+  record rsp
+  raise CertusError, "Failed to get valid response to imt enable" unless
     rsp.include? "imtConfig"
   loop do
     puts port.response "GET iridium{}\r"
