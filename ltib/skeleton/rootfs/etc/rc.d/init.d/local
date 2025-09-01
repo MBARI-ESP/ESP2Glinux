@@ -14,7 +14,7 @@ case "$1" in
       rm -f /var/crash && ln -s tmp/crash /var/crash
 
       mkdir -pm600 /usr/share/empty  #for vsftpd
-      mkdir -pm771 /run/ESPsocket    #for espserver
+      mkdir -pm1775 /run/ESPsocket   #for espserver
       chgrp mbari /run/ESPsocket
 
       # ensure we have valid ssh server keys
