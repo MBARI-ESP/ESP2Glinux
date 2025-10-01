@@ -1,0 +1,49 @@
+#!/bin/sh
+prog=`basename $0`
+
+. /usr/share/netutils.sh
+
+if [ "$1" ]; then
+  hasIP "$1" || { cat >&2 <<END
+Select next available ESPshore route -- 9/30/25 brent@mbari.org
+Assumes gateway.priority DOES NOT contain wildcards!
+Does not cycle power to interfaces
+Intended to be invoked from wgatch or directly with next iface specified
+Usage:
+  $prog {iface to ESPshore}
+END
+  exit 2
+  }
+  nextIface=$1
+else
+  nextGate() {
+  #given name of current gateway interface,
+  #output name of next gateway interface, or first if last gateway active
+    local ifs
+    read -r ifs <$syscfg/gateway.priority || return 6
+    local oldPWD=$PWD found first
+    unset found first
+    cd $run/resolv
+    for next in $ifs; do
+      [ "$first" ] || first=$next
+      [ "$found" ] && break
+      [ "$next" = "$1" ] && found=1
+    done
+    [ "$found" ] || next=$first
+    echo $next
+  }
+
+  failedIface=`routeTo $ESPshore 2>/dev/null`
+  [ "$failedIface" ] && ifdown $failedIface
+  nextIface=`nextGate $failedIface`
+  #advance through next 2 more if they fail
+  ifup $nextIface && hasIP $nextIface || {
+    nextIface=`nextGate $nextIface`
+    ifup $nextIface && hasIP $nextIface || nextIface=`nextGate $nextIface`||exit
+  }
+  shoreIface=`routeTo $ESPshore 2>/dev/null`
+  [ "$shoreIface" = "$nextIface" ] && exit
+fi
+
+nextIP=`gateIPadr $nextIface` &&
+ip route replace $ESPshore via $nextIP dev $nextIface
