@@ -2,7 +2,7 @@
 prog=`basename $0`
 
 [ "$1" ] && { cat >&2 <<END
-Reroute traffic to ESPshore -- 3/9/25 brent@mbari.org
+Reroute traffic to ESPshore -- 9/30/25 brent@mbari.org
 Select different route to ESPshore wireguard server
 Intended to be invoked from wgatch
 Usage:
@@ -41,10 +41,10 @@ case "`routeTo $ESPshore 2>/dev/null`" in
 ;;
 
   *) #if another route has higher priority, create a specific route to ESPshore
-    if isUp $cellIface; then
-      ip route replace $ESPshore dev $cellIface
-    elif isUp $satIface; then
-      ip route replace $ESPshore dev $satIface
+    if isUp $cellIface && cellIP=`gateIPadr $cellIface`; then
+      ip route replace $ESPshore via $cellIP dev $cellIface
+    elif isUp $satIface && satIP=`gateIPadr $satIface`; then
+      ip route replace $ESPshore via $satIP dev $satIface
     else
       startCell
     fi

@@ -147,7 +147,7 @@ server=`dirname $1` && [ "$server" != . ] &&
 gatePriority() {
 #return 0 if active interface $1 has equal or higher gateway priority than $2
 #return 1 if active interface $1 should not effect routes on $2
-#return >1 if niether interface is has an active gateway
+#return >1 if niether interface is in gateway.priority
   [ "$1" = "$2" ] && return
   local ifs
   read -r ifs <$syscfg/gateway.priority || return 6
