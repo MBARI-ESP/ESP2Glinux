@@ -1,0 +1,9 @@
+#!/bin/sh
+[ "$1" ] || {
+  echo Fetch specified key \$1 >&2
+  exit 1
+}
+sleep "$2" 2>/dev/null || sleep 2 #ensure fetch happens after store
+#(echo -n "FETCHING $1 => "; cat /run/store/$1) >/dev/console
+exec cat "/run/store/$1"
+

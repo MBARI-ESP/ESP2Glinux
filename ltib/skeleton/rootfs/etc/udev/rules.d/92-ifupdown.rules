@@ -1,4 +1,4 @@
-#3/24/25 brent@mbari.org
+#10/1/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -10,10 +10,17 @@ ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="b720", ENV{ifDelay}="4"
 #allow time for MultiTech Telit DE900 to boot
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
 
+#rename Siretta ZETA cell modem's network interface
+ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ATTRS{serial}=="6d254be1",\
+  ACTION=="add", NAME="cell"
+
 #ensure stickup runs before attempting to bring up SIMCom A76xx
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ifDelay}="8"
 
+ACTION=="add", ATTRS{serial}!="",\
+  RUN+="store '%s{idVendor}_%s{idProduct}_%s{serial}' %E{INTERFACE}"
 ACTION=="add", RUN+="ifup %E{INTERFACE} %E{ifDelay}"
+
 ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
 
 LABEL="notNetIf"
@@ -22,55 +29,54 @@ SUBSYSTEM!="tty", GOTO="notTTYif"
 ### handle serial USB modems
 ACTION=="remove", RUN+="ifTTYdown"
 ACTION!="add", GOTO="updownEND"
+PROGRAM="fetch '%s{idVendor}_%s{idProduct}_%s{serial}'"
 
 #Telit ME900 (prod 1102 is a USB CDCether device)
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
-  GROUP+="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
+  GROUP="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
-  GROUP+="root", SYMLINK+="AT/me910"
+  GROUP="root", SYMLINK+="AT/me910 AT/%c"
 
 #SIMCom A7080 modem
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
-  GROUP+="root", SYMLINK+="AT/diag"
+  GROUP="root", SYMLINK+="AT/a7080-diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="02",\
-  GROUP+="root", SYMLINK+="AT/a7080"
+  GROUP="root", SYMLINK+="AT/a7080"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="03",\
-  GROUP+="root", SYMLINK+="AT/ppp"
+  GROUP="root", SYMLINK+="AT/a7080-ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
-  GROUP+="root", SYMLINK+="gps"
+  SYMLINK+="AT/a7080-gps gps"
 
 #SIMCom A76XX modem
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
-  GROUP+="root", SYMLINK+="AT/diag"
+  GROUP="root", SYMLINK+="AT/%c-diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
-  GROUP+="root", SYMLINK+="AT/a76xx", RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'"
+  GROUP="root", SYMLINK+="AT/%c AT/a76xx",\
+  RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
-  GROUP+="root", SYMLINK+="AT/ppp"
+  GROUP="root", SYMLINK+="AT/%c-ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
-  GROUP+="root", SYMLINK+="gps"
+ SYMLINK+="AT/%c-gps gps"
 
 #Quectel BG96
-ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", GROUP="root"
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
-  SYMLINK+="AT/bg96", RUN+="ifup bg96 10"
+  GROUP="root", SYMLINK+="AT/bg96 AT/%c", RUN+="ifup bg96 10"
 
 #delay SARA-R4 ifup by a few seconds
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", GROUP="root"
 ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
-  SYMLINK+="AT/saraR4", RUN+="ifup saraR4 14"
+  GROUP="root", SYMLINK+="AT/saraR4 AT/%c", RUN+="ifup saraR4 14"
 
 #Iridium Satphone Handset
-ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset", group="root"
 ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
-  SYMLINK+="AT/iridium", RUN+="ifup iridium"
+  GROUP="root", SYMLINK+="AT/iridium", RUN+="ifup iridium"
 
 #Pantech UML295 has a NMEA GPS port
 ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
-  SYMLINK+="gps"
+  SYMLINK+="AT/%c-gps gps"
 
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
-ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", group="root"
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
+  GROUP="root", SYMLINK+="AT/huawei AT/%c",\
   RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2"
 
 ACTION=="add", GOTO="updownEND"

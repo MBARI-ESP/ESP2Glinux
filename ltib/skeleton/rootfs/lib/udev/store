@@ -1,0 +1,11 @@
+#!/bin/sh
+[ "$1" ] || {
+  echo Store args under /run/store/\$1 >&2
+  exit 1
+}
+key="$1"
+shift
+mkdir -p "/run/store/`dirname $key`"
+#echo "STORING $key := $1" >/dev/console
+echo "$*" >"/run/store/$key"
+
