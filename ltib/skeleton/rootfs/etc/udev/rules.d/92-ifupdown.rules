@@ -31,12 +31,11 @@ ACTION=="remove", RUN+="ifTTYdown"
 ACTION!="add", GOTO="updownEND"
 PROGRAM="fetch '%s{idVendor}_%s{idProduct}_%s{serial}'"
 
-#Telit ME900 (prod 1102 is a USB CDCether device)
+#Telit ME910 (prod 1102 is a USB CDCether device)
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
   GROUP="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/me910 AT/%c",
-  RUN+="stickup $env{DEVNAME} 'AT+CFUN=1' 3"
+  GROUP="root", SYMLINK+="AT/me910 AT/%c"
 
 #SIMCom A7080 modem
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
@@ -53,7 +52,7 @@ ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
   GROUP="root", SYMLINK+="AT/%c-diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
   GROUP="root", SYMLINK+="AT/%c AT/a76xx",\
-  RUN+="stickup $env{DEVNAME} 'AT+CFUN=1;+USBNETIP=1'"
+  RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
   GROUP="root", SYMLINK+="AT/%c-ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
@@ -78,7 +77,7 @@ ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
   GROUP="root", SYMLINK+="AT/huawei AT/%c",\
-  RUN+="stickup $env{DEVNAME} 'AT+CFUN=1;^NDISDUP=1,1' 2"
+  RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2"
 
 ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
