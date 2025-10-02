@@ -1,0 +1,3 @@
+. $syscfg/ifcfg-wwan0
+IFNAME=cell
+

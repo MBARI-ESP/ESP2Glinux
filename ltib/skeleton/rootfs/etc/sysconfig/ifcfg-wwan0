@@ -3,11 +3,8 @@ IFNAME=wwan0
 
 BOOTPROTO="dhcp-b -t30"
 
-#me910 on AT&T OneRate drops service every few hours
-#detaching and reattaching when this happens reestablishes the connection
-
 atCmd() {
-#$1 is command string 
+#$1 is command string
 #$2 are options passed thru to chat (timeout in secs)
   local AT=/dev/AT/$IFNAME  #in case there are multiple
   [ -c "$AT" ] || return 0  #return success if not an me910 modem
@@ -15,9 +12,8 @@ atCmd() {
 }
 
 ifDetach() {
-  atCmd "AT+CGATT=0" t20
+  atCmd "AT+CFUN=0" t30
 }
 ifPrep() {
-  ifDetach
-  atCmd "AT+CFUN=1;+CGATT=1" t30
+  atCmd "AT+CFUN=1" t15 && atCmd "AT+CGATT=1" t60
 }
