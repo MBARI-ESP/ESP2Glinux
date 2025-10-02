@@ -1,22 +1,23 @@
 IFNAME=wwan0
 . $syscfg/if-default
 
+BOOTPROTO="dhcp-b -t30"
+
 #me910 on AT&T OneRate drops service every few hours
 #detaching and reattaching when this happens reestablishes the connection
 
-me910Cmd() {
+atCmd() {
 #$1 is command string 
 #$2 are options passed thru to chat (timeout in secs)
-  local me910=/dev/AT/me910
-  [ -c "$me910" ] || return 0  #return success if not an me910 modem
-  /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$me910 >$me910
+  local AT=/dev/AT/$IFNAME  #in case there are multiple
+  [ -c "$AT" ] || return 0  #return success if not an me910 modem
+  /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT
 }
 
 ifDetach() {
-  me910Cmd "AT+CGATT=0" t20
+  atCmd "AT+CGATT=0" t20
 }
 ifPrep() {
   ifDetach
-  me910Cmd "AT+CGATT=1" t30
+  atCmd "AT+CFUN=1;+CGATT=1" t30
 }
-
