@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 3/7/25 brent@mbari.org
+# -- revised: 10/1/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -480,32 +480,31 @@ ifUp()
     ;;
       dhcp*)
         upping DHCP
-        ipUp && {
-          daemon=/sbin/udhcpc  #only use this dhcp client
-          if test -x $daemon  ; then
-            pidfn=$run/udhcpc-$IFNAME.pid
-            if [ -r $pidfn ]; then
-              kill `head -n1 $pidfn` 2>/dev/null
-            else
-              mkdir -p `dirname $pidfn`
-            fi
-            echo -n "Determining IP configuration for ${IFALIAS:-$IFNAME} ..."
-            insmod af_packet >/dev/null 2>&1
-            mode=${BOOTPROTO#dhcp-}
-            [ "$mode" = "$BOOTPROTO" ] && mode=n
-            $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
-              echo "DHCP failed:  $interface IP=$IPADDR" >&2
-              return 5
-            }
+        ipUp || return
+        daemon=/sbin/udhcpc  #only use this dhcp client
+        if test -x $daemon  ; then
+          pidfn=$run/udhcpc-$IFNAME.pid
+          if [ -r $pidfn ]; then
+            kill `head -n1 $pidfn` 2>/dev/null
           else
-            echo "No $daemon client daemon installed!" >&2
-            return 3
+            mkdir -p `dirname $pidfn`
           fi
-        }
+          echo -n "Determining IP configuration for ${IFALIAS:-$IFNAME} ..."
+          insmod af_packet >/dev/null 2>&1
+          mode=${BOOTPROTO#dhcp-}
+          [ "$mode" = "$BOOTPROTO" ] && mode=n
+          $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
+            echo "DHCP failed:  $interface IP=$IPADDR" >&2
+            return 5
+          }
+        else
+          echo "No $daemon client daemon installed!" >&2
+          return 3
+        fi
     ;;
       static)
         upping static ${IPADDR:+"at $IPADDR"}
-        ipUp
+        ipUp || return
     ;;
       *)
         echo "${IFALIAS:-$IFNAME}:  Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
