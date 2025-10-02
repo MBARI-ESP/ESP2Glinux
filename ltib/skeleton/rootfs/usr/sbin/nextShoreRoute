@@ -17,7 +17,7 @@ END
   nextIface=$1
 else
   gates=$syscfg/gateway.priority
-  
+
   nextGate() {
   #given name of current gateway interface,
   #output name of next gateway interface, or first if last gateway active
@@ -40,15 +40,6 @@ else
 
   stickup=/lib/udev/stickup
   failedIface=`routeTo $ESPshore 2>/dev/null`
-  [ "$failedIface" ] && {
-    failedAT="/dev/AT/$failedIface"
-    [ -c "$failedAT" -a -w "$failedAT" ] && {
-      signal=`signalQuality $failedAT` &&
-        logger -t $failedIface "${signal#chat:*+}"
-      ifdown $failedIface &&
-      $stickup $failedAT "AT+CFUN=4"  #enter airplane mode
-    }
-  }
   firstNext=`nextGate $failedIface`
   [ $firstNext ] || {
     logger -t $prog "No gateway interfaces defined in $gates"
@@ -56,13 +47,22 @@ else
   }
   nextIface=$firstNext
   while :; do #try ifaces in order until one works or firstNext reached again
-    nextAT="/dev/AT/$nextIface"
-    [ -c "$nextAT" -a -w "$nextAT" ] &&
-       $stickup $nextAT "AT+CFUN=1"  #exit airplane mode
+    [ "$failedIface" ] && {
+      failedAT="/dev/AT/$failedIface"
+      [ -c "$failedAT" -a -w "$failedAT" ] && {
+        signal=`signalQuality $failedAT` &&
+          signal=" with ${signal#chat:*+}"
+        logger -t $prog "Shutting down failing $failedIface$signal"
+        ifdown $failedIface
+      }
+      unset failedIface
+    }
     ifup $nextIface && hasIP $nextIface && break
+    failedIface=$nextIface
     nextIface=`nextGate $nextIface`
     [ "$nextGate" = "$firstNext" ] && {
-      logger -t $prog "No internet access!"
+      logger -t $prog "No internet access!  Resetting USB!"
+      resetUSB
       exit 3
     }
   done
