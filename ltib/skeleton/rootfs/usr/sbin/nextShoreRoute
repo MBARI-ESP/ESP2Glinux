@@ -5,7 +5,7 @@ prog=`basename $0`
 
 if [ "$1" ]; then
   hasIP "$1" || { cat >&2 <<END
-Select next available ESPshore route -- 9/30/25 brent@mbari.org
+Select next available ESPshore route -- 10/1/25 brent@mbari.org
 Assumes gateway.priority DOES NOT contain wildcards!
 Does not cycle power to interfaces
 Intended to be invoked from wgatch or directly with next iface specified
@@ -16,34 +16,64 @@ END
   }
   nextIface=$1
 else
+  gates=$syscfg/gateway.priority
+  
   nextGate() {
   #given name of current gateway interface,
   #output name of next gateway interface, or first if last gateway active
-    local ifs
-    read -r ifs <$syscfg/gateway.priority || return 6
-    local oldPWD=$PWD found first
-    unset found first
+    local ifaces oldPWD=$PWD found first next this
+    unset found first this next
+    read -r ifaces <$gates || return 6
     cd $run/resolv
-    for next in $ifs; do
-      [ "$first" ] || first=$next
-      [ "$found" ] && break
-      [ "$next" = "$1" ] && found=1
+    for this in $ifaces; do
+      [ "$first" ] || first=$this
+      [ "$found" ] && {
+        next=$this
+        break
+      }
+      [ "$this" = "$1" ] && found=1
     done
-    [ "$found" ] || next=$first
+    [ "$found" -a "$next" ] || next=$first
+    cd $oldPWD
     echo $next
   }
 
+  stickup=/lib/udev/stickup
   failedIface=`routeTo $ESPshore 2>/dev/null`
-  [ "$failedIface" ] && ifdown $failedIface
-  nextIface=`nextGate $failedIface`
-  #advance through next 2 more if they fail
-  ifup $nextIface && hasIP $nextIface || {
-    nextIface=`nextGate $nextIface`
-    ifup $nextIface && hasIP $nextIface || nextIface=`nextGate $nextIface`||exit
+  [ "$failedIface" ] && {
+    failedAT="/dev/AT/$failedIface"
+    [ -c "$failedAT" -a -w "$failedAT" ] && {
+      signal=`signalQuality $failedAT` &&
+        logger -t $failedIface "${signal#chat:*+}"
+      ifdown $failedIface &&
+      $stickup $failedAT "AT+CFUN=4"  #enter airplane mode
+    }
   }
+  firstNext=`nextGate $failedIface`
+  [ $firstNext ] || {
+    logger -t $prog "No gateway interfaces defined in $gates"
+    exit 8
+  }
+  nextIface=$firstNext
+  while :; do #try ifaces in order until one works or firstNext reached again
+    nextAT="/dev/AT/$nextIface"
+    [ -c "$nextAT" -a -w "$nextAT" ] &&
+       $stickup $nextAT "AT+CFUN=1"  #exit airplane mode
+    ifup $nextIface && hasIP $nextIface && break
+    nextIface=`nextGate $nextIface`
+    [ "$nextGate" = "$firstNext" ] && {
+      logger -t $prog "No internet access!"
+      exit 3
+    }
+  done
   shoreIface=`routeTo $ESPshore 2>/dev/null`
-  [ "$shoreIface" = "$nextIface" ] && exit
+  [ "$shoreIface" = "$nextIface" ] && {
+    logger -t $prog "Already routing to ESPshore via $nextIface"
+    exit 0
+  }
 fi
 
 nextIP=`gateIPadr $nextIface` &&
-ip route replace $ESPshore via $nextIP dev $nextIface
+ip route replace $ESPshore via $nextIP dev $nextIface || exit
+logger -t $prog "Added $nextIface route to ESPshore"
+:
