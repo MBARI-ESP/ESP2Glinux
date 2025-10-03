@@ -1,12 +1,12 @@
 #!/bin/sh
 #first argument the name of a newly detected network interface
 #optional 2nd argument is start up (sleep) delay
-#when /var/lock/if.pending exists, actions are deferred
+#when $lockFn exists, actions are deferred
 #otherwise, this brings interface UP if it was down
 exec 7<&- 5<&- >>/dev/console 2>&1
 
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
-lockFn=/var/lock/ifup.pending  #must be empty before udevd starts
+export PATH=/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin
+lockFn=/run/lock/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
   exec 7<$lockFn  #acquire lock
   flock -x 7 && [ -e $lockFn ] && { #got lock, so defer ifup
