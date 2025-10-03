@@ -1,4 +1,4 @@
 #!/bin/sh
 #first argument is the name of a removed network interface
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
 exec ifdown $1

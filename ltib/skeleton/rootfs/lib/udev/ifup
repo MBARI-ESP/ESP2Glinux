@@ -6,7 +6,7 @@
 exec 7<&- 5<&- >>/dev/console 2>&1
 
 export PATH=/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin
-lockFn=/run/lock/ifup.pending  #must be empty before udevd starts
+lockFn=/run/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
   exec 7<$lockFn  #acquire lock
   flock -x 7 && [ -e $lockFn ] && { #got lock, so defer ifup
