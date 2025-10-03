@@ -1,13 +1,13 @@
 #!/bin/sh
 PATH=/usr/sbin:/sbin:/bin
 daemon=dnsmasq
-pidfn=/var/run/$daemon.pid
+pidfn=/run/$daemon.pid
 OPTIONS="--group=daemon"
 
 stop() {
-  pid=`cat $pidfn` 2>/dev/null && [ "$pid" ] && {
+  pid=`cat $pidfn 2>/dev/null` && [ "$pid" ] && {
     echo "Stopping $daemon"
-    kill $pid && {
+    kill $pid 2>/dev/null && {
       usleep 200000
       for i in 1 2 3 4 5 6 7 8 9; do
         kill -0 $pid 2>/dev/null || return
