@@ -5,7 +5,7 @@ prog=`basename $0`
 
 if [ "$1" ]; then
   hasIP "$1" || { cat >&2 <<END
-Select next available ESPshore route -- 10/1/25 brent@mbari.org
+Select next available ESPshore route -- 10/7/25 brent@mbari.org
 Assumes gateway.priority DOES NOT contain wildcards!
 Does not cycle power to interfaces
 Intended to be invoked from wgatch or directly with next iface specified
@@ -41,7 +41,7 @@ else
   stickup=/lib/udev/stickup
   failedIface=`routeTo $ESPshore 2>/dev/null`
   firstNext=`nextGate $failedIface`
-  [ $firstNext ] || {
+  [ "$firstNext" ] || {
     logger -t $prog "No gateway interfaces defined in $gates"
     exit 8
   }
@@ -60,7 +60,7 @@ else
     ifup $nextIface && hasIP $nextIface && break
     failedIface=$nextIface
     nextIface=`nextGate $nextIface`
-    [ "$nextGate" = "$firstNext" ] && {
+    [ "$nextIface" = "$firstNext" ] && {
       logger -t $prog "No internet access!  Resetting USB!"
       resetUSB
       exit 3
