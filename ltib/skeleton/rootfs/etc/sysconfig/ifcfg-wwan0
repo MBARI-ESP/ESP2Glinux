@@ -7,7 +7,7 @@ atCmd() {
 #$1 is command string
 #$2 are options passed thru to chat (timeout in secs)
   local AT=/dev/AT/$IFNAME  #in case there are multiple
-  [ -c "$AT" ] || return 0  #return success if not an me910 modem
+  [ -c "$AT" ] || return 0  #return success if not a modem
   /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT
 }
 
