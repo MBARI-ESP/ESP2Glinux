@@ -70,7 +70,10 @@ ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
 ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
   GROUP="root", SYMLINK+="AT/iridium", RUN+="ifup iridium"
 
-#Pantech UML295 has a NMEA GPS port
+#Pantech UML295
+ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="06",\
+  SYMLINK+="AT/%c"
+
 ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
   SYMLINK+="AT/%c-gps gps"
 
