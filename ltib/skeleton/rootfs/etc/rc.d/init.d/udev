@@ -7,9 +7,9 @@ case "$1" in
       echo Triggering device events
     else
       echo Starting udevd...
-      touch /run/lock/ifup.pending  #defer bringing up net interfaces
+      touch /run/ifup.pending  #defer bringing up net interfaces
       udevd --daemon || {
-        rm -f /run/lock/ifup.pending
+        rm -f /run/ifup.pending
         exit 1
       }
       : > /proc/sys/kernel/hotplug  #udevd takes over firmware loading

@@ -1,5 +1,5 @@
 #!/bin/sh
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin
+PATH=/usr/sbin:/sbin:/usr/bin:/bin
 [ "$2" ] || {
 cat >&2 <<END
 Some Ethernet modems need an initial AT command to connect
