@@ -3,12 +3,13 @@ modem=$1
 case "$1" in
   -*) self=`basename $0`
       cat <<END >&2
-Display signal quality of indicated cellular modem -- 6/21/21 brent@mbari.org
+Display signal quality of indicated cellular modem -- 10/9/25 brent@mbari.org
 by returning results from the AT+CSQ command
 Usage:
   $self {path to modem's AT command port}
 Example:
   $self /dev/ttyUSB2  #assuming modem's "AT" command port is ttyUSB2
+  $self rnd1  #assuming modem's "AT" port is /dev/AT/rnd1
 Note:
   Modem AT port may be omitted for Telit DE900 or Pantech UML295
 END
@@ -20,12 +21,18 @@ END
     [ -c "$modem" ] || {
       modem=/dev/AT/a76xx; [ -c "$modem" ]
     } || modem=`echo $by/usb-Pantech__Incorporated_PANTECH_UML295_*-if06`
+;;
+  /*)
+;;
+  *)
+    modem="/dev/AT/$1"
 esac
 [ -c "$modem" ] || { cat <<END >&2
 Not a valid serial port: $modem
 END
   exit 1
 }
+echo $modem >&2
 /usr/sbin/chat REPORT +CSQ: '' AT OK AT+CSQ +CSQ: 2>&1 <$modem >$modem || {
   echo "Failed!" >&2
   exit 8
