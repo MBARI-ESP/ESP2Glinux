@@ -1,0 +1,33 @@
+#!/bin/sh
+#https://www.amazon.com/dp/B0B5379VZS
+
+case "$1" in
+  ''|-*) cat <<END >&2
+Activate a relay for specified time -- 10/9/25 brent@mbari.org
+first arg is the relay # (1 to N)
+2nd optional arg is seconds relay to remain active (default 5)
+END
+     exit 6
+esac
+
+hiddev=$(find /sys/devices -iname '*:5131:2007.*') && [ "$hiddev" ] &&
+relayDev=/dev/`ls "$hiddev/hidraw"` && [ -c "$relayDev" ] || {
+  echo "Cannot access USB relay controller" >&2
+  exit 1
+}
+
+relay() {
+#first arg is relay number (1 or 2), 2nd is state (0 or 1)
+  unit=$1
+  state=$2
+  let cksum=unit+state
+  echo -e "\xA0\0$unit\0$state\xA$cksum" >$relayDev
+}
+
+channel=$1
+offSecs=${2-5}
+
+trap "relay $channel 0" EXIT HUP INT QUIT USR1 USR2 PIPE TERM
+relay $channel 1
+echo "Engaging relay #$channel for $offSecs seconds"
+sleep $offSecs
