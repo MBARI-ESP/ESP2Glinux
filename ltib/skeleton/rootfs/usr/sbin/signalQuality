@@ -33,7 +33,7 @@ END
   exit 1
 }
 echo $modem >&2
-/usr/sbin/chat REPORT +CSQ: '' AT OK AT+CSQ +CSQ: 2>&1 <$modem >$modem || {
+/usr/sbin/chat REPORT +CSQ: AT+CFUN=1 OK AT+CSQ +CSQ: 2>&1 <$modem >$modem || {
   echo "Failed!" >&2
   exit 8
 }
