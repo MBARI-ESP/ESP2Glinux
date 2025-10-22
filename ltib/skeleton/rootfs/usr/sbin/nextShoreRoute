@@ -5,7 +5,7 @@ prog=`basename $0`
 
 if [ "$1" ]; then
   hasIP "$1" || { cat >&2 <<END
-Select next available ESPshore route -- 10/7/25 brent@mbari.org
+Select next available ESPshore route -- 10/21/25 brent@mbari.org
 Assumes gateway.priority DOES NOT contain wildcards!
 Does not cycle power to interfaces
 Intended to be invoked from wgatch or directly with next iface specified
@@ -50,9 +50,8 @@ else
     [ "$failedIface" ] && {
       failedAT="/dev/AT/$failedIface"
       [ -c "$failedAT" -a -w "$failedAT" ] && {
-        signal=`signalQuality $failedAT` &&
-          signal=" with ${signal#chat:*+}"
-        logger -t $prog "Shutting down failing $failedIface$signal"
+        signal=`signalQuality $failedAT` && signal="with ${signal#*chat:*+}"
+        logger -t $prog "Shutting down failing $failedIface $signal"
         ifdown $failedIface
       }
       unset failedIface
