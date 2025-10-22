@@ -1,0 +1,9 @@
+#!/bin/sh
+[ "$1" ] || { cat <<-END >&2
+Log output of logSignalQualities at specified interval
+First argument is interval (passed to sleep)
+END
+  exit 2
+}
+#Log output of signalQualites command at specified interval
+exec logEvery $1 signalQualities

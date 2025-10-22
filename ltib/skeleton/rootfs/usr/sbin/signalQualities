@@ -1,0 +1,11 @@
+#!/bin/sh
+#output a single line containing signal quality of all applicable interfaces
+unset q
+for i in /dev/AT/*; do
+  iface=`basename $i`
+  [ -e /sys/class/net/$iface ] && {
+    signal=`signalQuality $i`
+    q="$q; $iface{${signal#*+CSQ: }}"
+  }
+done
+echo ${q#; *}

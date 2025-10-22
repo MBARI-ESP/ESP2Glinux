@@ -1,0 +1,32 @@
+#!/bin/sh
+daemon=logSignal
+OPTIONS="${2-60}"  #default interval of 60s may be overridden
+pidFile=/run/$daemon.pid
+action="start-stop-daemon -p $pidFile"
+startAct="$action -Smbx /usr/sbin/$daemon"
+
+case "$1" in
+    start)
+       [ -e $pidFile ] && {
+         echo "Already running $daemon"
+         exit 3
+       }
+       echo "Starting $daemon..."
+       $startAct -- $OPTIONS
+       ;;
+
+    restart)
+       $action -K || exit
+       rm -f $pidFile 
+       echo "Restarting $daemon..."
+       $startAct -- $OPTIONS
+       ;;
+
+    stop)
+       echo "Stopping $daemon..."
+       $action -Kq && rm -f $pidFile
+       ;;
+
+    *)
+       echo "usage: start|restart|stop"
+esac

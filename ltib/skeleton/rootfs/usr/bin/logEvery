@@ -1,0 +1,14 @@
+#!/bin/sh
+[ "$2" ] || { cat <<-END >&2
+Log output of command at specified interval
+First argument is interval (passed to sleep)
+All the rest are interpreted as the command that outputs a log entry
+END
+  exit 2
+}
+interval=$1
+: ${tag:=$2}
+shift
+while sleep $interval; do
+  logger -t $tag $("$@")
+done
