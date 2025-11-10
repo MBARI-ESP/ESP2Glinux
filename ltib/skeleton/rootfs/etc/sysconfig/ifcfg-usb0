@@ -1,0 +1,2 @@
+. $syscfg/ifcfg-wwan0
+IFNAME=usb0

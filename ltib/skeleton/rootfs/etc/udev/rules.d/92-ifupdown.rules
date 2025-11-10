@@ -1,4 +1,4 @@
-#10/1/25 brent@mbari.org
+#11/7/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -13,6 +13,9 @@ ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
 #rename Siretta ZETA cell modem's network interface
 ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ATTRS{serial}=="6d254be1",\
   ACTION=="add", NAME="cell"
+
+#allow time for Quectel modems to boot and register
+ATTRS{idVendor}=="2c7c", ENV{ifDelay}="20"
 
 #ensure stickup runs before attempting to bring up SIMCom A76xx
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ifDelay}="8"
@@ -41,22 +44,32 @@ ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
   GROUP="root", SYMLINK+="AT/a7080-diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/a7080"
+  GROUP="root", SYMLINK+="AT/a7080 AT/%c"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="03",\
   GROUP="root", SYMLINK+="AT/a7080-ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
-  SYMLINK+="AT/a7080-gps gps"
+  SYMLINK+="AT/a7080-gps AT/gps"
 
 #SIMCom A76XX modem
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
   GROUP="root", SYMLINK+="AT/%c-diag"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
-  GROUP="root", SYMLINK+="AT/%c AT/a76xx",\
+  GROUP="root", SYMLINK+="AT/a76xx AT/%c",\
   RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
   GROUP="root", SYMLINK+="AT/%c-ppp"
 ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
- SYMLINK+="AT/%c-gps gps"
+ SYMLINK+="AT/%c-gps AT/gps"
+
+#SIMcom SIM7672G
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="02",\
+  GROUP="root", SYMLINK+="AT/sim767x AT/%c"
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="04",\
+  GROUP="root", SYMLINK+="AT/%c-diag"
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="06",\
+  GROUP="root", SYMLINK+="AT/ppp AT/%c-ppp"
+ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="08",\
+  SYMLINK+="AT/%c-gps AT/gps"
 
 #Quectel BG96
 ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
@@ -75,12 +88,20 @@ ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="06",\
   SYMLINK+="AT/%c"
 
 ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
-  SYMLINK+="AT/%c-gps gps"
+  SYMLINK+="AT/%c-gps AT/gps"
 
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
 ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
   GROUP="root", SYMLINK+="AT/huawei AT/%c",\
   RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2"
+
+#Quectel EG912-GL
+ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="02",\
+  GROUP="root", SYMLINK+="AT/quectel AT/%c"
+ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="07",\
+  GROUP="root", SYMLINK+="AT/ppp AT/%c-ppp"
+ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="08",\
+  SYMLINK+="AT/%c-gps AT/gps"
 
 ACTION=="add", GOTO="updownEND"
 LABEL="notTTYif"
