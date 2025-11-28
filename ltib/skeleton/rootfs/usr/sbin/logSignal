@@ -5,5 +5,5 @@ First argument is interval (passed to sleep)
 END
   exit 2
 }
-#Log output of signalQualites command at specified interval
-exec logEvery $1 signalQualities
+#Log signal qualites command at specified interval
+exec logEvery $1 signalQuality

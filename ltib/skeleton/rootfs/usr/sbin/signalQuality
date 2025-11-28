@@ -1,47 +1,80 @@
-#!/bin/sh
-modem=$1
-case "$1" in
-  -*) self=`basename $0`
-      cat <<END >&2
-Display signal quality of indicated cellular modem -- 10/21/25 brent@mbari.org
-by returning results from the AT+CSQ command
+#!/bin/bash
+
+#return err if serial port locked by another process
+locked() {
+  relPort=${1#/dev/}
+  lock=/var/lock/LCK..${relPort//'/'/_}
+  [ -s $lock ] && owner=`cat $lock` && kill -0 "${owner// }" && {
+    echo "$1 is locked by pid $owner" >&2
+    return 1
+  }
+  return 0
+}
+
+#output signal quality for given modem given path to its serial port
+quality() {
+  exec 9<>$1 || return
+  locked $1 && locked `realpath $1` || return 99
+  flock -w10 9 || {
+    echo "$1 LOCKED by other process!" >&2
+    return 99
+  }
+  /usr/sbin/chat -t8 REPORT +CSQ:\
+      '' AT OK AT+CFUN=1 OK AT+CSQ +CSQ: 2>&1 <&9 >&9 && {
+    exec 9<&-
+    return 0
+  }
+  exec 9<&-
+  echo "FAILED!" >&2
+  return 1
+}
+
+
+unset ports
+for port; do
+  case "$port" in
+    -*) self=`basename $0`
+        cat <<END >&2
+Output signal quality of indicated cellular modem -- 11/28/25 brent@mbari.org
+by returning results from the standard Hayes AT+CSQ command
 Usage:
-  $self {path to modem's AT command port}
-Example:
-  $self /dev/ttyUSB2  #assuming modem's "AT" command port is ttyUSB2
-  $self rnd1  #assuming modem's "AT" port is /dev/AT/rnd1
-Note:
-  Modem AT port may be omitted for Telit ME910 or Pantech UML295
+$self {network iface | full path to modem's AT command port}*
+Notes:
+No args lists signal quality of all modem network interfaces on one line
+Examples:
+$self rnd1  #modem's "AT" command port is /dev/AT/rnd1
+$self /dev/ttyUSB2  #specify modem's command port is /dev/ttyUSB2
 END
-  exit 2
-;;
-  '')
-    by=/dev/serial/by-id
-    modem=/dev/AT/me910
-    [ -c "$modem" ] || {
-      modem=/dev/AT/a76xx; [ -c "$modem" ]
-    } || modem=`echo $by/usb-Pantech__Incorporated_PANTECH_UML295_*-if06`
-;;
-  /*)
-;;
-  *)
-    modem="/dev/AT/$1"
-esac
-[ -c "$modem" ] || { cat <<END >&2
-Not a valid serial port: $modem
+    exit 2
+  ;;
+    /*) :
+  ;;
+    *) port=/dev/AT/$port
+  esac
+  [ -c "$port" ] || { cat <<END >&2
+Not a valid serial port: $port
 END
   exit 1
 }
+  ports="$ports $port"
+done
 
-iface=`basename $modem`
-ATlock=/var/lock/LCK..AT_$iface
-[ -s $ATlock ] && owner=`cat $ATlock` && kill -0 "${owner// }" && {
-  echo "$modem is locked by pid $owner" >&2
-  return 99
+[ "$ports" ] || {
+  atGlob=/dev/AT/*
+  ats=`echo $atGlob`
+  [ "$atGlob" = "$ats" ] || {
+    for at in $ats; do
+      [ -e /sys/class/net/`basename $at` ] && ports="$ports $at"
+    done
+  }
+  [ "$ports" ] || {
+    echo "No network modems found" >&2
+    exit 3
+  }
 }
-signal=`flock -w30 $modem /usr/sbin/chat -t5 REPORT +CSQ:\
-  '' AT OK AT+CFUN=1 OK AT+CSQ +CSQ: 2>&1 <$modem >$modem || {
-    echo "Failed!" >&2
-    exit 8
-}`
-echo $iface: $signal
+
+unset q
+for port in $ports; do
+  qual=`quality $port` && q="$q; `basename $port`{${qual#*+CSQ: }}"
+done
+echo ${q#; *}
