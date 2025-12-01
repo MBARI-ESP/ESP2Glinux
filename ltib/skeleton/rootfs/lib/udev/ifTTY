@@ -1,4 +1,4 @@
-#!/usr/bin/setsid /bin/bash
+#!/usr/bin/setsid /bin/sh
 #setsid because udev requires blocking processes to detach
 store=/run/link
 [ "$2" ] || {
