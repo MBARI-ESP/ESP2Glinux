@@ -1,6 +1,5 @@
 #!/usr/bin/setsid /bin/sh
 #setsid because udev requires blocking processes to detach
-PATH=/usr/sbin:/sbin:/usr/bin:/bin
 [ "$2" ] || {
 cat >&2 <<END
 Some Ethernet modems need an initial AT command to connect
@@ -10,4 +9,4 @@ First argument is the path to the modem's AT command port
 END
 exit 2
 }
-( [ "$3" ] && sleep $3; flock -w180 $1 chat '' "$2" OK <$1 >$1) &
+( [ "$3" ] && sleep $3; flock -w180 $1 /usr/sbin/chat '' "$2" OK <$1 >$1) &
