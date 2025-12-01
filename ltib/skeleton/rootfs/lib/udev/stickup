@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/setsid /bin/sh
+#setsid because udev requires blocking processes to detach
 PATH=/usr/sbin:/sbin:/usr/bin:/bin
 [ "$2" ] || {
 cat >&2 <<END

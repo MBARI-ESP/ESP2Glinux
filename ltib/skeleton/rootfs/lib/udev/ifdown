@@ -1,4 +1,15 @@
-#!/bin/sh
+#!/usr/bin/setsid /bin/sh
+#setsid because udev requires blocking processes to detach
 #first argument is the name of a removed network interface
-PATH=/usr/sbin:/sbin:/usr/bin:/bin
-exec ifdown $1
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+/usr/sbin/ifdown $1
+# remove any symlinks to this modem's ports under /dev/AT
+store=/run/link
+ifFn="$store/$1"
+exec 5<$ifFn && cd /dev && flock -w60 5 || exit
+while read kernelDev template <&5; do
+  newName=${template/'#'/$1}
+#  echo "removing $newName" >>/tmp/console
+  rm $newName
+done
+keyFn=`realpath $ifFn` && rm $keyFn $store/if-`basename $keyFn` $ifFn

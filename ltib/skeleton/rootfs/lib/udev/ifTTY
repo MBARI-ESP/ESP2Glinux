@@ -1,0 +1,24 @@
+#!/usr/bin/setsid /bin/bash
+#setsid because udev requires blocking processes to detach
+store=/run/link
+[ "$2" ] || {
+  echo add to $store/\$1 tty with kernel name \$DEVNAME for iface \$2 >&2
+  exit 1
+}
+#exec 2>>/tmp/ifTTY
+#date >&2
+#set -x
+
+cd /dev || exit
+key="$1"
+mkdir -p $store
+exec 5>>"$store/$key" && flock -w60 5 || exit
+#echo "ADDING to $key: $2 => ${DEVNAME#*/*}" >>/tmp/console
+echo "${DEVNAME#*/*/} $2" >&5
+
+iface=`cat $store/if-$key 2>/dev/null` && [ "$iface" ] || exit 0
+#if iface known, create the symlink now
+newName=${2/'#'/$iface}
+#echo "ifTTY $1 => $newName" >>/tmp/console
+mkdir -p `dirname $newName`
+ln -sf $DEVNAME $newName

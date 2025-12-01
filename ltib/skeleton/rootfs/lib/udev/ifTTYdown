@@ -1,7 +1,0 @@
-#!/bin/sh
-#bring down network interface associated with the AT port of this modem
-PATH=/usr/sbin:/sbin:/usr/bin:/bin
-for ATport in $DEVLINKS; do
-  iface=${ATport#/dev/AT/}
-  [ "$iface" != "$ATport" ] && exec ifdown $iface
-done

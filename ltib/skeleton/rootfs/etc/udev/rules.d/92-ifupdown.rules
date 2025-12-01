@@ -1,112 +1,130 @@
-#11/7/25 brent@mbari.org
+#11/30/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
 ENV{INTERFACE}=="mon.*", GOTO="updownEND"
 
+ACTION=="remove", RUN+="ifdown %E{INTERFACE}", GOTO="updownEND"
+ACTION!="add", GOTO="updownEND"
+
 #allow time for RealTek RTL8723BU to boot
-ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="b720", ENV{ifDelay}="4"
+ATTRS{idVendor}=="0bda",ATTRS{idProduct}=="b720", ENV{delay}="4"
 
-#allow time for MultiTech Telit DE900 to boot
-ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ifDelay}="30"
-
-#rename Siretta ZETA cell modem's network interface
-ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ATTRS{serial}=="6d254be1",\
-  ACTION=="add", NAME="cell"
+#allow time for Telit to boot
+ATTRS{idVendor}=="1bc7", ENV{delay}="30"
 
 #allow time for Quectel modems to boot and register
-ATTRS{idVendor}=="2c7c", ENV{ifDelay}="20"
+ATTRS{idVendor}=="2c7c", ENV{delay}="20"
 
 #ensure stickup runs before attempting to bring up SIMCom A76xx
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ifDelay}="8"
+ATTRS{idVendor}=="1e0e", ENV{delay}="8"
 
-ACTION=="add", ATTRS{serial}!="",\
-  RUN+="store '%s{idVendor}_%s{idProduct}_%s{serial}' %E{INTERFACE}"
-ACTION=="add", RUN+="ifup %E{INTERFACE} %E{ifDelay}"
-
-ACTION=="remove", RUN+="ifdown %E{INTERFACE}"
+ATTRS{busnum}!="", RUN+="ifLink USB%s{busnum}:%s{devnum}"
+RUN+="ifup %E{INTERFACE} %E{delay}"
+GOTO="updownEND"
 
 LABEL="notNetIf"
-SUBSYSTEM!="tty", GOTO="notTTYif"
+SUBSYSTEM!="tty", GOTO="updownEND"
 
-### handle serial USB modems
-ACTION=="remove", RUN+="ifTTYdown"
+### symlink AT ports on recognized USB modems to /dev/AT/*modem net iface*
 ACTION!="add", GOTO="updownEND"
-PROGRAM="fetch '%s{idVendor}_%s{idProduct}_%s{serial}'"
 
-#Telit ME910 (prod 1102 is a USB CDCether device)
-ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1101", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
-ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/me910 AT/%c"
-
-#SIMCom A7080 modem
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="00",\
-  GROUP="root", SYMLINK+="AT/a7080-diag"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/a7080 AT/%c"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="03",\
-  GROUP="root", SYMLINK+="AT/a7080-ppp"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9205", ENV{ID_IFACE}=="01",\
-  SYMLINK+="AT/a7080-gps AT/gps"
-
-#SIMCom A76XX modem
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/%c-diag"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="04",\
-  GROUP="root", SYMLINK+="AT/a76xx AT/%c",\
-  RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="05",\
-  GROUP="root", SYMLINK+="AT/%c-ppp"
-ATTRS{idVendor}=="1e0e", ATTRS{idProduct}=="9011", ENV{ID_IFACE}=="06",\
- SYMLINK+="AT/%c-gps AT/gps"
-
-#SIMcom SIM7672G
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/sim767x AT/%c"
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="04",\
-  GROUP="root", SYMLINK+="AT/%c-diag"
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="06",\
-  GROUP="root", SYMLINK+="AT/ppp AT/%c-ppp"
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="9330", ENV{ID_IFACE}=="08",\
-  SYMLINK+="AT/%c-gps AT/gps"
-
-#Quectel BG96
-ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0296", ENV{ID_IFACE}=="03",\
-  GROUP="root", SYMLINK+="AT/bg96", RUN+="ifup bg96 10"
-
-#delay SARA-R4 ifup by a few seconds
-ATTRS{idVendor}=="05c6", ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/saraR4", RUN+="ifup saraR4 14"
+ATTRS{idVendor}=="1e0e", GOTO="Arcom"
+ATTRS{idVendor}=="05c6", GOTO="SIMCom"
+ATTRS{idVendor}=="1bc7", GOTO="Telit"
+ATTRS{idVendor}=="10a9", GOTO="Pantech"
+ATTRS{idVendor}=="2c7c", GOTO="Quectel"
+ATTRS{idVendor}=="12d1", GOTO="Huawei"
 
 #Iridium Satphone Handset
 ATTRS{idVendor}=="1edd",ENV{ID_MODEL}=="Iridium_*_Handset",ENV{ID_IFACE}=="00",\
-  GROUP="root", SYMLINK+="AT/iridium", RUN+="ifup iridium"
+  GROUP:="root", SYMLINK+="AT/iridium", RUN+="ifup iridium"
+GOTO="updownEND"
+
+
+LABEL="Arcom"
+ATTRS{idProduct}=="9011", GOTO="A76XX"
+ATTRS{idProduct}=="9205", GOTO="A7080"
+GOTO="updownEND"
+
+LABEL="A7080"
+ENV{ID_IFACE}=="00", GOTO="diagPort"
+ENV{ID_IFACE}=="02", GOTO="ATport"
+ENV{ID_IFACE}=="03", GOTO="PPPport"
+ENV{ID_IFACE}=="01", GOTO="GPSport"
+GOTO="updownEND"
+
+LABEL="A76XX"
+ENV{ID_IFACE}=="02", GOTO="diagPort"
+ENV{ID_IFACE}=="04",\
+  RUN+="stickup $env{DEVNAME} 'AT+USBNETIP=1'", GOTO="ATport"
+ENV{ID_IFACE}=="05", GOTO="PPPport"
+ENV{ID_IFACE}=="06", GOTO="GPSport"
+GOTO="updownEND"
+
+
+LABEL="SIMCom"
+ATTRS{idProduct}=="9330", GOTO="SIM76XX"
+#delay SARA-R4 ifup by a few seconds
+ATTRS{idProduct}=="90b2", ENV{ID_IFACE}=="02",\
+  GROUP:="root", SYMLINK+="AT/saraR4", RUN+="ifup saraR4 14"
+GOTO="updownEND"
+
+LABEL="SIM76XX"
+ENV{ID_IFACE}=="02", GOTO="ATport"
+ENV{ID_IFACE}=="04", GOTO="diagPort"
+ENV{ID_IFACE}=="06", GOTO="PPPport"
+ENV{ID_IFACE}=="08", GOTO="GPSport"
+GOTO="updownEND"
+
+
+#Telit ME910 (prod 1102 is a USB CDCether device)
+ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02", GOTO="ATport"
+ATTRS{idProduct}=="1101",\
+  GROUP:="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
+GOTO="updownEND"
+
 
 #Pantech UML295
-ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="06",\
-  SYMLINK+="AT/%c"
+LABEL="Pantech"
+ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="06", GOTO="ATport"
+ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04", GOTO="GPSport"
+GOTO="updownEND"
 
-ATTRS{idVendor}=="10a9", ATTRS{idProduct}=="6064", ENV{ID_IFACE}=="04",\
-  SYMLINK+="AT/%c-gps AT/gps"
+
+LABEL="Quectel"
+ATTRS{idProduct}=="0901", GOTO="EG912"
+ATTRS{idProduct}=="0296", GROUP:="root",SYMLINK+="AT/bg96",RUN+="ifup bg96 10"
+GOTO="updownEND"
+
+LABEL="EG912"
+ENV{ID_IFACE}=="02", GOTO="ATport"
+ENV{ID_IFACE}=="07", GOTO="PPPport"
+ENV{ID_IFACE}=="08", GOTO="GPSport"
+GOTO="updownEND"
+
 
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
-ATTRS{idVendor}=="12d1", ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
-  GROUP="root", SYMLINK+="AT/huawei AT/%c",\
-  RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2"
+LABEL="Huawei"
+ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
+  RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2", GOTO="ATport"
+GOTO="updownEND"
 
-#Quectel EG912-GL
-ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="02",\
-  GROUP="root", SYMLINK+="AT/quectel AT/%c"
-ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="07",\
-  GROUP="root", SYMLINK+="AT/ppp AT/%c-ppp"
-ATTRS{idVendor}=="2c7c", ATTRS{idProduct}=="0901", ENV{ID_IFACE}=="08",\
-  SYMLINK+="AT/%c-gps AT/gps"
 
-ACTION=="add", GOTO="updownEND"
-LABEL="notTTYif"
+LABEL="GPSport"
+SYMLINK+="AT/gps", ENV{newPort}="AT/#-gps", GOTO="addPort"
 
-#cycle USB power whenever Qualcomm USB modem fireware crashes
-#ATTRS{product}=="QHSUSB__BULK", RUN+="/usr/sbin/resetUSB"
+LABEL="diagPort"
+ENV{newPort}="AT/#-diag", GOTO="rootPort"
+
+LABEL="PPPport"
+ENV{newPort}="AT/#-ppp", GOTO="rootPort"
+
+LABEL="ATport"
+ENV{newPort}="AT/#"
+LABEL="rootPort"
+GROUP:="root"
+LABEL="addPort"
+RUN+="ifTTY USB%s{busnum}:%s{devnum} %E{newPort}"
 
 LABEL="updownEND"

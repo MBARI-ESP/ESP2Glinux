@@ -1,11 +1,12 @@
-#!/bin/sh
+#!/usr/bin/setsid /bin/sh
+#setsid because udev requires blocking processes to detach
 #first argument the name of a newly detected network interface
 #optional 2nd argument is start up (sleep) delay
 #when $lockFn exists, actions are deferred
 #otherwise, this brings interface UP if it was down
 exec 7<&- 5<&- >>/dev/console 2>&1
 
-export PATH=/usr/sbin:/sbin:/usr/bin:/bin:/usr/local/bin
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 lockFn=/run/ifup.pending  #must be empty before udevd starts
 [ -r $lockFn ] && {
   exec 7<$lockFn  #acquire lock

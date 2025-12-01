@@ -1,0 +1,29 @@
+#!/usr/bin/setsid /bin/bash
+#setsid because udev requires blocking processes to detach
+case "$INTERFACE" in
+"")
+  echo add symlinks for all values of key \$1 >&2
+  echo   substituting \$INTERFACE for first \'#\' in each >&2
+  exit 1
+;;
+eth*|wlan*)  #ignore wired Ethernet and WiFi
+  exit 0
+esac
+
+#exec 2>>/tmp/ifLink
+#date >&2
+#set -x
+
+store=/run/link
+ifFn="$store/$INTERFACE"
+keyFn="$store/$1"
+mkdir -p $store
+cd /dev && >>$keyFn && exec 5<$keyFn && flock -w60 5 &&
+echo $INTERFACE >"$store/if-$1" && ln -sf "$1" $ifFn || exit
+#echo stored iface: $INTERFACE >>/tmp/console
+while read kernelDev template <&5; do
+  newName=${template/'#'/$INTERFACE}
+#  echo "ifLink $kernelDev => $newName" >>/tmp/console
+  mkdir -p `dirname $newName`
+  ln -sf /dev/$kernelDev $newName
+done

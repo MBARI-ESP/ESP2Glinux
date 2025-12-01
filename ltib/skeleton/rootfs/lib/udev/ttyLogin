@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/setsid /bin/sh
+#setsid because udev requires blocking processes to detach
 #prompt for login (once)
 #ignore during coldplugging
 [ -e "/run/coldplugged" ] || exit 0
