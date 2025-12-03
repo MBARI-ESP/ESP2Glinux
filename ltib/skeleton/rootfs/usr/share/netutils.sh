@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 10/1/25 brent@mbari.org
+# -- revised: 12/1/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -538,6 +538,17 @@ ifUpAuto() {
     [ "$1" ] && sleep $1
     ifUp
   }
+}
+
+atCmd() {
+#send cmd to modem handline \$IFNAME
+#$1 is command string
+#$2 are options passed thru to chat (timeout in secs)
+  local AT=/dev/AT/$IFNAME  #in case there are multiple
+  [ -c "$AT" ] || return 0  #return success if not a modem
+  /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT && return
+  logger -s -tchat -perr $AT failed \'$1\' command >&2
+  return 1
 }
 
 #append to trace file if it is writable

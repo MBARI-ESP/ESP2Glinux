@@ -35,7 +35,7 @@ for port; do
   case "$port" in
     -*) self=`basename $0`
         cat <<END >&2
-Output signal quality of indicated cellular modem -- 11/28/25 brent@mbari.org
+Output signal quality of indicated cellular modem -- 12/2/25 brent@mbari.org
 by returning results from the standard Hayes AT+CSQ command
 Usage:
 $self {network iface | full path to modem's AT command port}*
@@ -60,14 +60,13 @@ END
 done
 
 [ "$ports" ] || {
-  atGlob=/dev/AT/*
-  ats=`echo $atGlob`
-  [ "$atGlob" = "$ats" ] || {
-    for at in $ats; do
-      [ -e /sys/class/net/`basename $at` ] && ports="$ports $at"
-    done
-  }
-  [ "$ports" ] || {
+  shopt -s extglob
+  set -f
+  atGlob='/dev/AT/!(*-*|gps)'  #all AT ports w/o dashes except gps
+  set +f
+  ports=`echo $atGlob`
+  set -f
+  [ "$atGlob" = "$ports" ] && {
     echo "No network modems found" >&2
     exit 3
   }

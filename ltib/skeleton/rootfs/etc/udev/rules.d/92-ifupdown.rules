@@ -1,26 +1,27 @@
-#11/30/25 brent@mbari.org
+#12/2/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
-ENV{INTERFACE}=="mon.*", GOTO="updownEND"
+KERNEL=="mon.*", GOTO="updownEND"
 
-ACTION=="remove", RUN+="ifdown %E{INTERFACE}", GOTO="updownEND"
+ACTION=="remove", RUN+="ifdown %k", GOTO="updownEND"
 ACTION!="add", GOTO="updownEND"
 
-#allow time for RealTek RTL8723BU to boot
-ATTRS{idVendor}=="0bda",ATTRS{idProduct}=="b720", ENV{delay}="4"
+ATTRS{busnum}=="", GOTO="UPnow"
 
-#allow time for Telit to boot
+#allow extra time for Telit to boot
 ATTRS{idVendor}=="1bc7", ENV{delay}="30"
-
-#allow time for Quectel modems to boot and register
-ATTRS{idVendor}=="2c7c", ENV{delay}="20"
 
 #ensure stickup runs before attempting to bring up SIMCom A76xx
 ATTRS{idVendor}=="1e0e", ENV{delay}="8"
 
-ATTRS{busnum}!="", RUN+="ifLink USB%s{busnum}:%s{devnum}"
-RUN+="ifup %E{INTERFACE} %E{delay}"
+#Pantech does not require much delay
+ATTRS{idVendor}=="10a9", ENV{delay}="1"
+
+RUN+="ifLink USB%s{busnum}:%s{devnum} %k"
+
+LABEL="UPnow"
+RUN+="ifup %k %E{delay}"
 GOTO="updownEND"
 
 LABEL="notNetIf"
@@ -79,6 +80,7 @@ GOTO="updownEND"
 
 
 #Telit ME910 (prod 1102 is a USB CDCether device)
+LABEL="Telit"
 ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02", GOTO="ATport"
 ATTRS{idProduct}=="1101",\
   GROUP:="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
@@ -94,7 +96,8 @@ GOTO="updownEND"
 
 LABEL="Quectel"
 ATTRS{idProduct}=="0901", GOTO="EG912"
-ATTRS{idProduct}=="0296", GROUP:="root",SYMLINK+="AT/bg96",RUN+="ifup bg96 10"
+ATTRS{idProduct}=="0296",ENV{ID_IFACE}=="03",\
+  GROUP:="root",SYMLINK+="AT/bg96",RUN+="ifup bg96 10"
 GOTO="updownEND"
 
 LABEL="EG912"
@@ -106,13 +109,12 @@ GOTO="updownEND"
 
 #Huawei modems in "stick" mode need to receive AT cmd to attach to the network
 LABEL="Huawei"
-ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01",\
-  RUN+="stickup $env{DEVNAME} 'AT^NDISDUP=1,1' 2", GOTO="ATport"
+ATTRS{idProduct}=="1506", ENV{ID_IFACE}=="01", GOTO="ATport"
 GOTO="updownEND"
 
 
 LABEL="GPSport"
-SYMLINK+="AT/gps", ENV{newPort}="AT/#-gps", GOTO="addPort"
+MODE="0640", SYMLINK+="AT/gps", ENV{newPort}="AT/#-gps", GOTO="addPort"
 
 LABEL="diagPort"
 ENV{newPort}="AT/#-diag", GOTO="rootPort"

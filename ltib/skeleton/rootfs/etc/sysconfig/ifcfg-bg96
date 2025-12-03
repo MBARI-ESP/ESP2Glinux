@@ -2,4 +2,4 @@
 IFALIAS=bg96 IFNAME=ppp89
 
 . $syscfg/inetppp.sh
-APN=m2m64.com.attz
+APN=iot.1nce.net

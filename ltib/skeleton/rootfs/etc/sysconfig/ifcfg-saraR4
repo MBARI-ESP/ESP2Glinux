@@ -2,7 +2,7 @@
 IFALIAS=saraR4 IFNAME=ppp88
 
 . $syscfg/inetppp.sh
-APN=m2m64.com.attz
+APN=iot.1nce.net
 
 # uncomment if you want to detect broken links
 #modemTTY="$modemTTY lcp-echo-interval=180"

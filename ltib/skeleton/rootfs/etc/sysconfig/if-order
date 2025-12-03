@@ -3,5 +3,5 @@
 #  Interfaces in STOP list are stopped in sequence before others
 #  Interfaces in START are stopped last in reverse order
 
-START='lo wired'
-STOP='shore wg2shore'
+START='lo wg2shore'
+STOP='wg2shore'

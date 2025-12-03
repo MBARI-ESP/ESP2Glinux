@@ -1,15 +1,7 @@
 IFNAME=wwan0
 . $syscfg/if-default
 
-BOOTPROTO="dhcp-b -t30"
-
-atCmd() {
-#$1 is command string
-#$2 are options passed thru to chat (timeout in secs)
-  local AT=/dev/AT/$IFNAME  #in case there are multiple
-  [ -c "$AT" ] || return 0  #return success if not a modem
-  /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT
-}
+BOOTPROTO="dhcp-b -t20"
 
 ifDetach() {
   atCmd "AT+CFUN=0" t30

@@ -1,19 +1,20 @@
 #!/usr/bin/setsid /bin/sh
 #setsid because udev requires blocking processes to detach
-case "$INTERFACE" in
-"")
+[ "$2" ] || {
   echo add symlinks for all values of key \$1 >&2
-  echo   substituting \$INTERFACE for first \'#\' in each >&2
+  echo   substituting interface \$2 for first \'#\' in each >&2
   exit 1
-;;
-eth*|wlan*)  #ignore wired Ethernet and WiFi
-  exit 0
-esac
+}
 
 #exec 2>>/tmp/ifLink
 #date >&2
+#env >&2
 #set -x
 
+INTERFACE=$2
+case $INTERFACE in
+ eth*|wlan*) exit 0  #ignore non-modems
+esac
 store=/run/link
 ifFn="$store/$INTERFACE"
 keyFn="$store/$1"

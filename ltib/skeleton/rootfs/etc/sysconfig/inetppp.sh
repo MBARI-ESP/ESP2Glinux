@@ -7,8 +7,8 @@ modemTTY=/dev/AT/${IFALIAS:-$IFNAME}
 #VPN=$ESPshore/shore   #server IP / VPN interface
 
 ifPrep() {  #specify ip address of vpn server/vpn iface name
-  ATTACH=${IFALIAS:-$IFNAME} \
-    pppd call $isp unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"}
+  export ATTACH=${IFALIAS:-$IFNAME}
+  pppd call $isp unit ${IFNAME#ppp} $modemTTY${VPN:+" ipparam $VPN"}
 }
 
 hosts() {    #add lines before EOS

@@ -3,6 +3,7 @@
 SUBSYSTEM=="net", ACTION=="add", SUBSYSTEMS=="usb", ATTRS{idVendor}=="1410", ATTRS{idProduct}=="b001", NAME="cdc551L"
 SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_*", KERNEL=="eth*", NAME="cdc%n"
 SUBSYSTEM=="net", ACTION=="add", DRIVERS=="rndis_*", KERNEL=="eth*", NAME="rnd%n"
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="huawei_cdc_*", KERNEL=="wwan*", NAME="huawei%n"
 
 #rename Siretta ZETA cell modem's network interface
 #ATTRS{idVendor}=="1bc7", ATTRS{idProduct}=="1102", ATTRS{serial}=="6d254be1",\
