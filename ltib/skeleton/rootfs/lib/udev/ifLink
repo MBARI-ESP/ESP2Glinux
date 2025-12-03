@@ -1,8 +1,8 @@
 #!/usr/bin/setsid /bin/sh
 #setsid because udev requires blocking processes to detach
 [ "$2" ] || {
-  echo add symlinks for all values of key \$1 >&2
-  echo   substituting interface \$2 for first \'#\' in each >&2
+  echo "add symlinks for all values of key \$1" >&2
+  echo "  substituting interface \$2 for first '#' in each" >&2
   exit 1
 }
 
