@@ -1,8 +1,8 @@
 #!/usr/bin/setsid /bin/sh
 #setsid because udev requires blocking processes to detach
 store=/run/link
-[ "$2" ] || {
-  echo add to $store/\$1 tty with kernel name \$DEVNAME for iface \$2 >&2
+[ "$1" ] || {
+  echo add tty name \$DEVNAME for \$INTERFACE to $store/\$1>&2
   exit 1
 }
 #exec 2>>/tmp/ifTTY

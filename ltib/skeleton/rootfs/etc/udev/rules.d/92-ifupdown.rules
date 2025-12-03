@@ -1,10 +1,10 @@
-#12/2/25 brent@mbari.org
+#12/3/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
 KERNEL=="mon.*", GOTO="updownEND"
 
-ACTION=="remove", RUN+="ifdown %k", GOTO="updownEND"
+ACTION=="remove", RUN+="ifdown", GOTO="updownEND"
 ACTION!="add", GOTO="updownEND"
 
 ATTRS{busnum}=="", GOTO="UPnow"
@@ -18,10 +18,10 @@ ATTRS{idVendor}=="1e0e", ENV{delay}="8"
 #Pantech does not require much delay
 ATTRS{idVendor}=="10a9", ENV{delay}="1"
 
-RUN+="ifLink USB%s{busnum}:%s{devnum} %k"
+RUN+="ifLink USB%s{busnum}:%s{devnum}"
 
 LABEL="UPnow"
-RUN+="ifup %k %E{delay}"
+RUN+="ifup %E{delay}"
 GOTO="updownEND"
 
 LABEL="notNetIf"
