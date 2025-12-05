@@ -1,0 +1,10 @@
+IFNAME=huawei0
+. $syscfg/if-default
+
+BOOTPROTO="dhcp-b -t20"
+
+ifPrep() {
+  atCmd 'AT\^NDISDUP=1,1' t15
+# if you want to specify the APN, you may change the above line to
+#  atCmd 'AT\^NDISDUP=1,1,"yourAPN"' t15
+}
