@@ -1,0 +1,10 @@
+. $syscfg/ifcfg-wwan0
+IFNAME=sim76xx0
+
+return #comment out this line for SIMCom7672G on the Verizon wireless network
+
+ifPrep() {
+  atCmd 'AT+CGDCONT=1,"ip","vzwinternet";+CGDCONT=8,"ip","IMS";+CFUN=1' t15 &&
+  sleep 15 &&
+  atCmd 'AT+CGACT=1,8;+CGACT=0,1;+CGACT=1,1' t20
+}
