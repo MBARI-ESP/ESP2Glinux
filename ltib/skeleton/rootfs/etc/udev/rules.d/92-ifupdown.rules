@@ -15,6 +15,9 @@ ATTRS{idVendor}=="1bc7", ENV{delay}="30"
 #ensure stickup runs before attempting to bring up SIMCom A76xx
 ATTRS{idVendor}=="1e0e", ENV{delay}="8"
 
+#SIMCom modems boot quickly
+ATTRS{idVendor}=="05c6", ENV{delay}="10"
+
 #Pantech does not require much delay
 ATTRS{idVendor}=="10a9", ENV{delay}="1"
 

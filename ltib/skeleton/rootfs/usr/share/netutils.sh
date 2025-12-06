@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/1/25 brent@mbari.org
+# -- revised: 12/5/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -544,10 +544,11 @@ atCmd() {
 #send cmd to modem handline \$IFNAME
 #$1 is command string
 #$2 are options passed thru to chat (timeout in secs)
+#$3 priority passed to logger
   local AT=/dev/AT/$IFNAME  #in case there are multiple
   [ -c "$AT" ] || return 0  #return success if not a modem
   /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT && return
-  logger -s -tchat -perr $AT failed \'$1\' command >&2
+  logger -stchat -p${3-err} $AT failed \'$1\' command >&2
   return 1
 }
 
