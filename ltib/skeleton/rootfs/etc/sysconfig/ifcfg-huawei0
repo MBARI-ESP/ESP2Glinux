@@ -4,7 +4,7 @@ IFNAME=huawei0
 BOOTPROTO="dhcp-b -t20"
 
 ifPrep() {
-  atCmd 'AT\^NDISDUP=1,1' t15
+  atCmd 'AT\^NDISDUP=1,1' t45
 # if you want to specify the APN, you may change the above line to
-#  atCmd 'AT\^NDISDUP=1,1,"yourAPN"' t15
+#  atCmd 'AT\^NDISDUP=1,1,"yourAPN"' t45
 }

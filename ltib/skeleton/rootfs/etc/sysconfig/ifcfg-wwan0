@@ -4,8 +4,8 @@ IFNAME=wwan0
 BOOTPROTO="dhcp-b -t20"
 
 ifDetach() {
-  atCmd "AT+CFUN=0" t30 info
+  atCmd "AT+CFUN=0" t10 info
 }
 ifPrep() {
-  atCmd "AT+CFUN=1" t15 && atCmd "AT+CGATT=1" t60
+  atCmd "AT+CFUN=1" t30 && atCmd "AT+CGATT=1" t45
 }
