@@ -1,4 +1,4 @@
-#12/3/25 brent@mbari.org
+#12/6/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -13,13 +13,11 @@ ATTRS{busnum}=="", GOTO="UPnow"
 ATTRS{idVendor}=="1bc7", ENV{delay}="30"
 
 #ensure stickup runs before attempting to bring up SIMCom A76xx
-ATTRS{idVendor}=="1e0e", ENV{delay}="8"
+ATTRS{idVendor}=="1e0e", ENV{delay}="4"
 
-#SIMCom modems boot quickly
-ATTRS{idVendor}=="05c6", ENV{delay}="10"
-
-#Pantech does not require much delay
+#Pantech and SIMCom modems do not require much delay
 ATTRS{idVendor}=="10a9", ENV{delay}="1"
+ATTRS{idVendor}=="05c6", ENV{delay}="1"
 
 RUN+="ifLink USB%s{busnum}:%s{devnum}"
 

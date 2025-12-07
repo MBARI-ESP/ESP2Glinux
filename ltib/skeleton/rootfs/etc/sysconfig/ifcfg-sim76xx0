@@ -1,15 +1,23 @@
 . $syscfg/ifcfg-wwan0
 IFNAME=sim76xx0
 
-ifPrep() {  #non-verizon -- must preprogram CGDCONT=1,"apn"
-  atCmd 'AT+DIALMODE=0;+USBNETIP=1;+CFUN=1' t30
-}
-
-return #comment out this line for SIMCom7672G on the Verizon wireless network
-
 ifPrep() {
-  atCmd 'AT+DIALMODE=0;+USBNETIP=1' t8 &&
-  atCmd 'AT+CGDCONT=1,"ip","vzwinternet";+CGDCONT=8,"ip","IMS";+CFUN=1' t30 &&
-  sleep 15 &&
-  atCmd 'AT+CGACT=1,8;+CGACT=0,1;+CGACT=1,1' t50
+  atCmd 'AT+DIALMODE=0;+USBNETIP=1' t10
+
+  case Verizon in  #edit carrier to Verizon, DarkStar, LightSpeed, or other
+
+    Verizon)   #Seems one must reactivate main APN after activating IMS
+  atCmd 'AT+CGDCONT=1,"ip","vzwinternet";+CGDCONT=8,"ip","IMS"' t10 &&
+  atCmd 'AT+CFUN=1;+CGATT=1;+CGACT=1,8;+CGACT=0,1;+CGACT=1,1' t60
+;;
+    DarkStar)  #AT&T on US Mobile
+  atCmd 'AT+CGDCONT=1,"ip","ereseller";+CFUN=1;+CGATT=1' t60
+;;
+    LightSpeed)  #T-Mobile on US Mobile
+  atCmd 'AT+CGDCONT=1,"ip","wholesale";+CFUN=1;+CGATT=1' t60
+;;
+    *)
+  atCmd AT+CFUN=1 t30
+
+esac
 }
