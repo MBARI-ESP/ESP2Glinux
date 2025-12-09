@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/5/25 brent@mbari.org
+# -- revised: 12/8/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -548,8 +548,9 @@ atCmd() {
   local AT=/dev/AT/$IFNAME  #in case there are multiple
   [ -c "$AT" ] || return 0  #return success if not a modem
   /usr/sbin/chat -v$2 ABORT ERROR '' "$1" OK <$AT >$AT && return
-  logger -stchat -p${3-err} $AT failed \'$1\' command >&2
-  return 1
+  local err=$?
+  [ "$3" = "ignore" ] || logger -stchat -p${3-err} $AT failed \'$1\' command >&2
+  return $err
 }
 
 #append to trace file if it is writable
