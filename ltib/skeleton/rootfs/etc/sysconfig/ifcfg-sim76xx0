@@ -2,12 +2,11 @@
 IFNAME=sim76xx0
 
 useAPN() {
-  atCmd AT+CFUN=4 t10 && sleep 1 &&
   atCmd "AT+CGDCONT=1,\"ip\",\"$1\";+CFUN=1;+CGATT=1" t60
 }
 
 ifPrep() {
-  atCmd AT+CGATT=0 t30 ignore  #will fail if CFUN!=1
+  atCmd AT+CGATT=0 t30 ignore
   atCmd 'AT+DIALMODE=0;+USBNETIP=1' t10 &&
   local report=`atCmd 'AT+CGDCONT?' 't10 REPORT 1,\"' 2>&1` &&
   local apn=`echo "$report"|awk -F, '{print $3}'|tr '[:upper:]' '[:lower:]'` ||
