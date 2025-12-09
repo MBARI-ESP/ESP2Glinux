@@ -15,21 +15,21 @@ ifPrep() {
   case "${apn//\"/}" in  #APN the sim76xx guessed based on SIM card
 
     vzwinternet*)   #Must reactivate main APN after activating IMS to pass data
-  atCmd 'AT+CGDCONT=8,"ip","IMS"' t10 &&
-  atCmd 'AT+CFUN=1;+CGATT=1;+CGACT=1,8;+CGACT=0,1;+CGACT=1,1' t60
-;;
+      atCmd 'AT+CGDCONT=8,"ip","IMS"' t10 &&
+      atCmd 'AT+CFUN=1;+CGATT=1;+CGACT=1,8;+CGACT=0,1;+CGACT=1,1' t60
+  ;;
     broadband*)     #AT&T
-  useAPN ereseller  # via US Mobile
-;;
+      useAPN ereseller  # via US Mobile
+  ;;
     *.t-mobile.*)   #T-Mobile
-  useAPN wholesale  # via US Mobile
-;;
+      useAPN wholesale  # via US Mobile
+  ;;
     internet.telekom)
-  useAPN iot.1nce.net
-;;
+      useAPN iot.1nce.net
+  ;;
     *)
-  logger -st $IFNAME -p warn "SIM card using APN $apn"
-  atCmd 'AT+CFUN=1;+CGATT=1' t30
+      logger -st $IFNAME -p warn "SIM card using APN $apn"
+      atCmd 'AT+CFUN=1;+CGATT=1' t30
 
-esac
+  esac
 }
