@@ -9,10 +9,11 @@ exec >/dev/console 2>&1
 case "$WPA_ACTION" in
   CONNECTED)
     ifCfg $1
+    ifn=${IFALIAS:-$IFNAME}
     ifPrep() {
       :  #ifPrep() started wpa_supplicant
     }
-    echo ${IFALIAS:-$IFNAME} connected${WPA_ID_STR+" to $WPA_ID_STR"}
+    logger -st wpa -p info "$ifn connected${WPA_ID_STR+" to $WPA_ID_STR"}"
     preppedIfUp
 ;;
   DISCONNECTED|stop|down)
