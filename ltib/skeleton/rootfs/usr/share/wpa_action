@@ -16,9 +16,8 @@ case "$WPA_ACTION" in
     preppedIfUp
 ;;
   DISCONNECTED|stop|down)
-    for dhcp in $run/*dhcpc*-$IFNAME; do
-    dhcpPID=`cat $pidFn` || continue
-    kill "$dhcpPID"  #only the dhcpc daemon, not wpa
+    for dhcp in $run/*dhcpc*-$IFNAME; do   #kill only the dhcpc daemons, not wpa
+      dhcpPID=`cat $pidFn` && [ "$dhcpPID" ] && kill "$dhcpPID"
     done
 ;;
   reload|check)
