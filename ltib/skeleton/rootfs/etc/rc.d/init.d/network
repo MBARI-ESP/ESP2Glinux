@@ -83,8 +83,7 @@ case "$op" in
     #do all in parallel if gang set to &
       for iface; do
         ifCfg $iface
-        #never stop 'ignored' or 'inittab' interfaces
-        [ "${AUTOSTART#[iI]}" = "$AUTOSTART" ] && eval ifDown $gang
+        eval ifDown $gang
       done
       wait
     }

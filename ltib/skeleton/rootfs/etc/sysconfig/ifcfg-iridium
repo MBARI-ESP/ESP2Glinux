@@ -2,7 +2,7 @@
 . $syscfg/inetppp.sh
 IFALIAS=iridium IFNAME=ppp5
 
-AUTOSTART=no
+NOAUTOSTART=1
 modemTTY=/dev/AT/${IFALIAS:-$IFNAME}
 
 ifPrep() {

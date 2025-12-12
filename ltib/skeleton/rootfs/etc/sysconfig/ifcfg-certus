@@ -2,7 +2,7 @@
 . $syscfg/inetppp.sh
 IFALIAS=certus IFNAME=ppp7
 
-AUTOSTART=no
+NOAUTOSTART=1
 modemTTY=/dev/$IFALIAS
 
 ifPrep() {

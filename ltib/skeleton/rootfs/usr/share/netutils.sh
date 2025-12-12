@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/8/25 brent@mbari.org
+# -- revised: 12/12/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -62,7 +62,7 @@ ifCfg() {
 #read configuration for specified interface
 #IFNAME is the unaliased interface name
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
-  unset GATEWAY MTU AUTOSTART NOAUTOSTART IFALIAS KILLSECS KILLSIGS
+  unset NOAUTOSTART GATEWAY MTU IFALIAS KILLSECS KILLSIGS
   IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -454,7 +454,7 @@ ifUp()
   hasIP $IFNAME && return
   local fn=$run/*$IFNAME.pid
   local pidfns=`echo $fn`
-  [ "$pidfns" = "$fn" ] || {  #check for active locks...
+  [ "$pidfns" = "$fn" ] || {  #check for active daemons...
     local owners= owner
     for pidfn in $pidfns; do  #while removing stale ones
       owner=`head -n1 $pidfn` 2>/dev/null
@@ -466,53 +466,56 @@ ifUp()
     done
     [ "$owners" ] && return
   }
-  ifPrep && {
-    wired && { #give wired interface 2 seconds to determine carrier state
-      isDown && ifconfig $IFNAME up 0 && sleep 2
-      pluggedIn || {
-        echo "${IFALIAS:-$IFNAME} is unplugged"
-        IPADDR= ipUp
-        return 2
-      }
+  ifPrep || return
+  wired && { #give wired interface 2 seconds to determine carrier state
+    isDown && ifconfig $IFNAME up 0 && sleep 2
+    pluggedIn || {
+      echo "${IFALIAS:-$IFNAME} is unplugged"
+      IPADDR= ipUp
+      return 2
     }
-    case "$BOOTPROTO" in
-      "")  #unspecified BOOTPROTO defers ipUp
-    ;;
-      dhcp*)
-        upping DHCP
-        ipUp || return
-        daemon=/sbin/udhcpc  #only use this dhcp client
-        if test -x $daemon  ; then
-          pidfn=$run/udhcpc-$IFNAME.pid
-          if [ -r $pidfn ]; then
-            kill `head -n1 $pidfn` 2>/dev/null
-          else
-            mkdir -p `dirname $pidfn`
-          fi
-          echo -n "Determining IP configuration for ${IFALIAS:-$IFNAME} ..."
-          insmod af_packet >/dev/null 2>&1
-          mode=${BOOTPROTO#dhcp-}
-          [ "$mode" = "$BOOTPROTO" ] && mode=n
-          $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
-            echo "DHCP failed:  $interface IP=$IPADDR" >&2
-            return 5
-          }
-        else
-          echo "No $daemon client daemon installed!" >&2
-          return 3
-        fi
-    ;;
-      static)
-        upping static ${IPADDR:+"at $IPADDR"}
-        ipUp || return
-    ;;
-      *)
-        echo "${IFALIAS:-$IFNAME}:  Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
-        return 4
-      ;;
-    esac
-    ifPost
   }
+  preppedIfUp
+}
+
+preppedIfUp() {
+  case "$BOOTPROTO" in
+    "")  #unspecified BOOTPROTO defers ipUp
+  ;;
+    dhcp*)
+      upping DHCP
+      ipUp || return
+      daemon=/sbin/udhcpc  #only use this dhcp client
+      if test -x $daemon  ; then
+        pidfn=$run/udhcpc-$IFNAME.pid
+        if [ -r $pidfn ]; then
+          kill `head -n1 $pidfn` 2>/dev/null
+        else
+          mkdir -p `dirname $pidfn`
+        fi
+        echo -n "Determining IP configuration for ${IFALIAS:-$IFNAME} ..."
+        insmod af_packet >/dev/null 2>&1
+        mode=${BOOTPROTO#dhcp-}
+        [ "$mode" = "$BOOTPROTO" ] && mode=n
+        $daemon -i $IFNAME -p $pidfn ${DHCPNAME:+-H $DHCPNAME }-$mode || {
+          echo "DHCP failed:  $interface IP=$IPADDR" >&2
+          return 5
+        }
+      else
+        echo "No $daemon client daemon installed!" >&2
+        return 3
+      fi
+  ;;
+    static)
+      upping static ${IPADDR:+"at $IPADDR"}
+      ipUp || return
+  ;;
+    *)
+      echo "${IFALIAS:-$IFNAME}:  Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
+      return 4
+    ;;
+  esac
+  ifPost
 }
 
 upping() {

@@ -4,10 +4,8 @@
 #
 usage() {
   cat <<END >&2
-usage:  ifup [netInterface] {mode} {delay}
+usage:  ifup [netInterface]
         configure and enable the specified network interface
-        only bring up IFNAME if its AUTOSTART mode matches regex {mode}
-        or Yes or No if the mode parameter is omitted
 END
   exit 101
 }

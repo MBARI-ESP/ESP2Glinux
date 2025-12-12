@@ -1,7 +1,7 @@
 #Freewave radio modem
 
 IFALIAS=freewave IFNAME=ppp3
-AUTOSTART=ignore
+
 ifPrep() {
   pppd call shore unit ${IFNAME#ppp}
 }
