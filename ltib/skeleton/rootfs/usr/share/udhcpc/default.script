@@ -24,7 +24,11 @@ case "$1" in
     if [ "$validIFconfig" ] && ipUp; then
       [ -f $leased -a "$IPADDR" ] && log notice "reverted to $IPADDR"
     else
-      ifconfig $interface 0 2>/dev/null
+      ifconfig $interface 0 2>/dev/null || {
+        err=$?
+        log notice removed
+        return $err
+      }
       log notice disabled
     fi
     rm -f $leased
