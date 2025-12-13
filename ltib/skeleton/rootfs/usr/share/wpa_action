@@ -1,32 +1,36 @@
 #!/bin/sh
-#wpa_cli action script to start dhcp after client is associated on interface
-WPA_IFACE="$1"
-WPA_ACTION="$2"
+[ "$2" ] || {
+  echo "$0 is wpa_cli hook where \$1=iface \$2=action"
+  exit 9
+}
 
-exec >/dev/console 2>&1
+log() {
+    logger -st "wpa_cli[$PPID]" -p daemon.$1 "${IFALIAS-IFNAME} $2"
+}
 
+[ -t 1 ] || exec >/dev/console 2>&1
 . /usr/share/netutils.sh
+ifCfg $1
 
-case "$WPA_ACTION" in
+case "$2" in
   CONNECTED)
     wpaConnected() {
       :
     }
-    ifCfg $1
-    ifn=${IFALIAS:-$IFNAME}
-    logger -st wpa -p info "$ifn connected${WPA_ID_STR+" to $WPA_ID_STR"}"
+    log notice "connected${WPA_ID_STR+" to $WPA_ID_STR"}"
     wpaConnected && preppedIfUp
 ;;
   DISCONNECTED|stop|down)
+    log notice "disconnected${WPA_ID_STR+" from $WPA_ID_STR"}"
     for dhcp in $run/*dhcpc*-$IFNAME; do   #kill only the dhcpc daemons, not wpa
       dhcpPID=`cat $pidFn 2>/dev/null` && [ "$dhcpPID" ] && kill "$dhcpPID"
     done
 ;;
   reload|check)
-    logger -t wpa_cli -p info "Unimplemented action \"$WPA_ACTION\""
+    log info "unimplemented action \"$2\""
 ;;
   *)
-    logger -st wpa_cli -p err "Unknown action: \"$WPA_ACTION\""
+    log err "unknown action: \"$2\""
     exit 1
 esac
 :

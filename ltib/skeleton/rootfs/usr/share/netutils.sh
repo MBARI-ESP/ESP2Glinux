@@ -97,7 +97,7 @@ ipUp() {
 #  MTU = Maximum Transmit Unit
 #  VPN = associated VPN server / interface
   [ "$IPADDR" ] || {
-    ifconfig $IFNAME 0
+    ifconfig $IFNAME 0 2>/dev/null
     return
   }
   local mask= cast=
