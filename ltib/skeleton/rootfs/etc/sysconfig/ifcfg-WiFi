@@ -3,14 +3,12 @@ IFALIAS=WiFi IFNAME=wlan0
 
 . $syscfg/if-default
 
-BOOTPROTO="dhcp-b -t15" #background after 15s
-
 ifPrep() {
   wpa=wpa_supplicant
   iwconfig $IFNAME power off 2>/dev/null #disable power saving to reduce latency
   mkdir -p $run/$wpa
   $wpa -Bi $IFNAME -P$run/wpa-$IFNAME.pid -c/etc/$wpa.conf && {
-    #cannot defer dhcpcd if cannot start wpa_cli
+    #do not defer dhcpcd if cannot start wpa_cli
     wpa_cli -i $IFNAME -Ba /usr/share/wpa_action || return 0
     unset BOOTPROTO  #defer until $wpa connects
   }

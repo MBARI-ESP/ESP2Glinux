@@ -2,19 +2,20 @@
 #wpa_cli action script to start dhcp after client is associated on interface
 WPA_IFACE="$1"
 WPA_ACTION="$2"
+
 exec >/dev/console 2>&1
 
 . /usr/share/netutils.sh
 
 case "$WPA_ACTION" in
   CONNECTED)
+    wpaConnected() {
+      :
+    }
     ifCfg $1
     ifn=${IFALIAS:-$IFNAME}
-    ifPrep() {
-      :  #ifPrep() started wpa_supplicant
-    }
     logger -st wpa -p info "$ifn connected${WPA_ID_STR+" to $WPA_ID_STR"}"
-    preppedIfUp
+    wpaConnected && preppedIfUp
 ;;
   DISCONNECTED|stop|down)
     for dhcp in $run/*dhcpc*-$IFNAME; do   #kill only the dhcpc daemons, not wpa
