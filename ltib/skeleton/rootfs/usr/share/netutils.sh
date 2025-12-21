@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/20/25 brent@mbari.org
+# -- revised: 12/21/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -289,6 +289,16 @@ setGateway() {
   fi
 }
 
+enableDHCP() {
+#first arg is LAN domain (defaults to lan)
+  local subnet=${IPADDR%.*}
+  cat >$run/dnsmasq/$IFNAME <<END
+interface=$IFNAME
+domain=${1-lan},$subnet.0/24
+dhcp-range=$subnet.150,$subnet.199,4h
+END
+  /etc/init.d/dnsmasq restart >/dev/null
+}
 
 defaultRoutes() {
 #output ip addresses of default routes for specified net interface
