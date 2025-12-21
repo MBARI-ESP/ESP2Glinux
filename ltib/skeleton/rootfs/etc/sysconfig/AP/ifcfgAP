@@ -1,8 +1,7 @@
 #Configure WiFi interface as Access Point
-. $syscfg/if-default
 
 BOOTPROTO=static
-IPADDR=192.168.241.1
+IPADDR=192.168.240.1
 NETMASK=255.255.255.0
 
 ifPrep() {
@@ -17,11 +16,7 @@ ifDetach() {
 
 ifPost() {
   ifDetach
-  cat >$run/dnsmasq/$IFNAME <<END
-interface=$IFNAME
-dhcp-range=${IPADDR}50,${IPADDR}99,4h
-END
-  /etc/init.d/dnsmasq restart >/dev/null
+  enableDHCP
 
   wpa=wpa_supplicant
   mkdir -p $run/$wpa
@@ -32,3 +27,11 @@ END
   $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
 }
 
+hosts() {
+local name=$IFNAME
+[ "$IFALIAS" ] && name=`basename $IFALIAS`
+host=`hostname`
+  cat <<EOS
+$(netIfIP $IFNAME $host-$name $host.lan)
+EOS
+}

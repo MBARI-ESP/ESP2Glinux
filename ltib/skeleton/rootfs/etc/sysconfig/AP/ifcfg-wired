@@ -1,0 +1,22 @@
+#Use Built-in wired Ethernet as local network with other uplink
+#this replaces ifcfg-wired in $syscfg
+IFALIAS=wired IFNAME=eth0
+
+BOOTPROTO=static
+IPADDR=192.168.230.1
+NETMASK=255.255.255.0
+
+ifPost() {  #function called after main interface is UP
+  ifup direct  #bring up static alias
+  ifDetach
+  enableDHCP
+}
+
+hosts() {
+local name=$IFNAME
+[ "$IFALIAS" ] && name=`basename $IFALIAS`
+host=`hostname`
+  cat <<EOS
+$(netIfIP $IFNAME $host-$name $host.lan)
+EOS
+}

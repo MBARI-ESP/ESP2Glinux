@@ -4,7 +4,7 @@ DHCPNAME=`hostname`
 
 #VPN=$ESPshore/shore   #server IP / VPN interface
 
-hosts() {    #add lines before EOS
+hosts() {
 local name=$IFNAME
 [ "$IFALIAS" ] && name=`basename $IFALIAS`
   cat <<EOS
