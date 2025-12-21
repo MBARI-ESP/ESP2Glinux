@@ -2,7 +2,7 @@
 . $syscfg/if-default
 
 BOOTPROTO=static
-IPADDR=192.168.234.1
+IPADDR=192.168.241.1
 NETMASK=255.255.255.0
 
 ifPrep() {
@@ -17,14 +17,18 @@ ifDetach() {
 
 ifPost() {
   ifDetach
+  cat >$run/dnsmasq/$IFNAME <<END
+interface=$IFNAME
+dhcp-range=${IPADDR}50,${IPADDR}99,4h
+END
+  /etc/init.d/dnsmasq restart >/dev/null
+
   wpa=wpa_supplicant
   mkdir -p $run/$wpa
-  cd /etc/sysconfig/AP
-  dnsmasq -C dnsmasq-$IFNAME.conf
   runIF=$run/wpa-$IFNAME
-  >$runIF.conf
-  chmod og-rw $runIF.conf
-  sed "s/ESPwifi/`hostname`/g" <$wpa.conf >>$runIF.conf
+  >$runIF.conf &&
+  chmod og-rw $runIF.conf &&
+  sed "s/ESPwifi/`hostname`/g" <$syscfg/AP/$wpa.conf >>$runIF.conf &&
   $wpa -Bi $IFNAME -P$runIF.pid -c$runIF.conf -e/var/tmp/wpa.rand
 }
 

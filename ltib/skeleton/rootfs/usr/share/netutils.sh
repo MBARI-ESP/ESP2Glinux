@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/12/25 brent@mbari.org
+# -- revised: 12/20/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -239,9 +239,7 @@ hostsUp() {
     echo "${topIP:-127.0.0.1} $(hostname)"
     cat $run/*.hosts
   } >/etc/hosts 2>/dev/null
-  #signal main dnsmasq instance to reread /etc/hosts
-  local masqPID=`cat $run/dnsmasq.pid 2>/dev/null` && [ "$masqPID" ] &&
-    kill -HUP "$masqPID"
+  reloadDNSmasq
   :
 }
 
@@ -249,6 +247,10 @@ gateDown() {
   rm -f $run/$1.hosts $run/resolv/$1
 }
 
+reloadDNSmasq() {
+    local masqPID=`cat $run/dnsmasq.pid 2>/dev/null` && [ "$masqPID" ] &&
+    kill -HUP "$masqPID"
+}
 
 setGateway() {
 #update resolv.conf from device $1
@@ -437,6 +439,10 @@ ifDown() {
       [ "$signal" != TERM ] && rm -f $pidfn
     }
   done
+  [ -e $run/dnsmasq/$IFNAME ] && {
+    rm $run/dnsmasq/$IFNAME
+    /etc/init.d/dnsmasq restart >/dev/null
+  }
   gateDown $IFNAME
   [ "$1" ] || set -- down
   ifconfig $IFNAME $* 2>/dev/null
