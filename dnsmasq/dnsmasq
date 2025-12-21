@@ -4,8 +4,12 @@ daemon=dnsmasq
 pidfn=/run/$daemon.pid
 OPTIONS="--group=daemon"
 
+getpid() {
+  pid=`cat $pidfn 2>/dev/null` && [ "$pid" ]
+}
+
 stop() {
-  pid=`cat $pidfn 2>/dev/null` && [ "$pid" ] && {
+  getpid && {
     echo "Stopping $daemon"
     kill $pid 2>/dev/null && {
       usleep 200000
@@ -20,16 +24,28 @@ stop() {
   rm -f $pidfn
 }
 
+start() {
+  echo "Starting $daemon..."
+  mkdir -p /card/tftp /run/dnsmasq
+  $daemon $OPTIONS
+}
+
 case "$1" in
   start|restart)
     stop
-    echo "Starting $daemon..."
-    mkdir -p /card/tftp
-    $daemon $OPTIONS
+    start
 ;;
   stop)
     stop
 ;;
+  reload)
+    if getpid; then
+      echo "Reloading $daemon..."
+      kill -HUP $pid
+    else
+      start
+    fi
+;;
   *)
-    echo "usage: $daemon {start|stop|restart}"
+    echo "usage: $daemon {start|stop|restart|reload}"
 esac
