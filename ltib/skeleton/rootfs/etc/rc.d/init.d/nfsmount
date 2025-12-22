@@ -1,5 +1,5 @@
 #!/bin/sh
-#mount or umount filesystems of the specified type -- 3/8/25 brent@mbari.org
+#mount or umount filesystems of the specified type -- 12/21/25 brent@mbari.org
 #and start logging to a file via nfs if /var/log is mounted
 #default is to mount all nfs entries
 #this can be overridden.  For example:
@@ -129,7 +129,7 @@ umnt() {
 
 case "$op" in
     start)
-      grep -qv '^[[:space:]]*#' /etc/resolv.conf || {
+      [ "$myIP" ] || {
         echo "Missing Network -- skipping $fstype mounts"
         exit 3
       }
@@ -143,7 +143,7 @@ case "$op" in
        ;;
 
     quietly)  #like start, but faster and quieter
-      grep -qv '^[[:space:]]*#' /etc/resolv.conf && {
+      [ "$myIP" ] && {
         mntpts=`allFsAuto $fstype $mount`
         mnt
       }
