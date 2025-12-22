@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 3/8/25 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 12/21/25 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -90,8 +90,8 @@ etc/var/run -> /run
 etc/var/lock -> /run/lock
 
 etc/issue.net -> issue
-etc/hosts -> /var/run/hosts
-etc/resolv.conf -> /var/run/resolv.conf
+etc/hosts -> /run/hosts
+etc/resolv.conf -> /run/resolv.conf
 etc/ppp/connect-errors -> /var/etc/ppp/connect-errors
 etc/adjtime -> /var/etc/adjtime
 
