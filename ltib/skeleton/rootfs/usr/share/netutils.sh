@@ -263,7 +263,10 @@ setGateway() {
     cat "$1"
   else
     cat
-  fi 2>/dev/null <$run/resolv/$topIface >/etc/resolv.conf
+  fi 2>/dev/null <$run/resolv/$topIface | tee $run/resolv.dnsmasq |{
+    grep -v ^nameserver
+    echo nameserver 127.0.0.1
+  }>/etc/resolv.conf
   if [ "$gateway" ]; then  #replace default routes if changed
     route -n | grep "^0\.0\.0\.0 " | {
       del=
@@ -290,13 +293,17 @@ setGateway() {
 }
 
 enableDHCP() {
-#first arg is LAN domain (defaults to lan)
-  local subnet=${IPADDR%.*}
-  cat >$run/dnsmasq/$IFNAME <<END
+#first arg is the optional LAN domain
+  local domains subnet=${IPADDR%.*}
+  grep -m 1 ^search /etc/resolv.conf | {
+    read search domains
+    cat >$run/dnsmasq/$IFNAME <<END
 interface=$IFNAME
-domain=${1-lan},$subnet.0/24
 dhcp-range=$subnet.150,$subnet.199,4h
+dhcp-option=option:domain-search,${domains// /,}
+${1+domain=$1,$subnet.0/24}
 END
+  }
   /etc/init.d/dnsmasq restart >/dev/null
 }
 
@@ -340,16 +347,11 @@ routeTo() {
 }
 
 searchDomains() {
-#output list of search domains prefixed by any specified
-  local searchDomFn=/etc/DOMAINS
-  [ -r $searchDomFn ] && {
-    [ "$1" ] && {
-      {
-        echo -n " " && cat $searchDomFn && echo -n " "
-      } | grep -q " $* " || echo -n "$* "
-    }
-    cat $searchDomFn
-  }
+#output list of search domains prefixed by any specified removing duplicates
+  {
+    echo $*
+    cat /etc/DOMAINS 2>/dev/null
+  } | awk -v RS=' |\n|\t' -v ORS=' ' '!x[$0]++'
 }
 
 netIfIP() {
@@ -378,15 +380,15 @@ netIfPtp() {
 
 topIf() {
 #output the name of the top priority network interface
-  local iface
-  read -r iface gateway 2>/dev/null </etc/resolv.conf && echo ${iface###}
+  local iface gateway extra
+  read -r iface gateway extra 2>/dev/null </etc/resolv.conf && echo ${iface###}
 }
 
 gateIPadr() {
 #output the IP address of the gateway for the given interface
-  local i=${1:-$IFNAME}
+  local i=${1:-$IFNAME} resolvDev gateway extra
   resolvIF="$run/resolv/$i"
-  read -r resolvDev gateway 2>/dev/null <$resolvIF &&
+  read -r resolvDev gateway extra 2>/dev/null <$resolvIF &&
   [ "$resolvDev" = "#$i" ] && {
     [ "$gateway" ] || return 1
     echo $gateway
