@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 12/5/25 brent@mbari.org
+# -- revised: 12/10/25 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -46,7 +46,7 @@ optimizeWg2shore() {
     	aliveInterval=135
 ;;
     usb*|rnd*|wwan*|sim*)
-    	aliveInterval=85
+    	aliveInterval=55
   esac
   peerPubKey=`wg show $wg2shore peers`
   wg set $wg2shore peer $peerPubKey persistent-keepalive $aliveInterval
