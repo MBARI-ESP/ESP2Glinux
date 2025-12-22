@@ -2,10 +2,11 @@ IFNAME=wg2shore
 username=`hostname`
 WGshore=192.168.5.1		#see /etc/wireguard/$IFNAME.conf
 
-. /etc/sysconfig/mbari.net
-
-resolv_conf() { cat<<EOS
-search `searchDomains lan esp`
+resolv_conf() {
+  local first rest
+  read first rest </etc/DOMAINS
+  cat<<EOS
+search `searchDomains $first esp`
 nameserver $WGshore
 EOS
 }
