@@ -1,5 +1,5 @@
-#Use Built-in wired Ethernet as local network with other uplink
-#this replaces ifcfg-wired in $syscfg
+#To use built-in wired Ethernet as local network with another uplink,
+#replace ifcfg-wired in $syscfg with this file
 IFALIAS=wired IFNAME=eth0
 
 BOOTPROTO=static

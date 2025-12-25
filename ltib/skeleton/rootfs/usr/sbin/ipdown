@@ -1,6 +1,5 @@
 #!/bin/sh
 #shutdown network link in $IFNAME or $1
-
+: ${IFNAME:=$1}
 . /usr/share/netutils.sh
-
-ipDown $1
+ipDown

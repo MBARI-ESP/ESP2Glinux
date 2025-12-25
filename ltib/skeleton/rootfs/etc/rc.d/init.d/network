@@ -10,17 +10,16 @@ shift
   exit 4
 }
 
+unset START STOP NFSAUTO
 . /usr/share/netutils.sh
-
-order=$syscfg/if-order
-[ -r $order ] || exit 3
-. $order
+. $syscfg/if-order
 
 case "$op" in
   start)
     [ "$1" ] || {
       > /etc/resolv.conf
       > /etc/hosts
+      [ "$NFSAUTO" ] && > $run/nfsmount.auto
       set -- $START
     }
     for dev; do
@@ -95,11 +94,12 @@ case "$op" in
     }
 
     #restore default route for any remaining interfaces
-    trap "gateUp; hostsUp; gateUpdated" EXIT TERM INT HUP QUIT
+    trap "gateUp; hostsUp; gateUpdated down" EXIT TERM INT HUP QUIT
 
     if [ "$1" ]; then  #stop only the specified interfaces
       takeDown "$@"
     else  #stop all interfaces
+      rm -f $run/nfsmount.auto  #disable auto nfsmount
       gang=    takeDown `globIfs $STOP`
       gang='&' takeDown `pppIfs`  #all ppp interfaces
       gang='&' takeDown `ifs ':'` #all aliases

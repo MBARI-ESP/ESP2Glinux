@@ -50,4 +50,4 @@ fi
 
 gateUp $IFNAME $gateway && hostsUp $IFNAME &&
   [ "$VPN" ] && vpnUp "$VPN" $IFNAME
-gateUpdated
+gateUpdated up

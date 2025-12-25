@@ -1,13 +1,13 @@
 #!/bin/sh
-#mount or umount filesystems of the specified type -- 12/21/25 brent@mbari.org
+#mount or umount filesystems of the specified type -- 12/25/25 brent@mbari.org
 #and start logging to a file via nfs if /var/log is mounted
 #default is to mount all nfs entries
-#this can be overridden.  For example:
+#This can be overridden.  For example:
 ##  fstype=vfat service nfsmount start
-#one can also select mounts of the specified type:
+#One can also select mounts of the specified type:
 ##  mount="#mbari" service nfsmount start
 #mounts all (nfs) entries containing the string #mbari
-#lines in /etc/fstab after any starting with #SUBNET <CIDR> ... are ignored
+#Lines in /etc/fstab after any starting with #SUBNET <CIDR> ... are ignored
 #if none of the specified subnets match that of our top priority IP address.
 
 op=$1;shift

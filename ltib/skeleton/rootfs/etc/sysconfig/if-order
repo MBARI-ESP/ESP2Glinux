@@ -5,3 +5,5 @@
 
 START='lo wg2shore'
 STOP='wg2shore'
+
+NFSAUTO=1   #comment out to disable nfs automount

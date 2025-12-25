@@ -5,13 +5,12 @@
 ntpserver=ESPshore  #was us.pool.ntp.org
 rdateserver=bufflehead
 
-PATH=/usr/sbin:/sbin:/bin
-
 OPTIONS=""
 
 case "$1" in
     start|"")
-      if grep -qv '^[[:space:]]*#' /etc/resolv.conf; then
+      . /usr/share/netutils.sh
+      topIf >/dev/null && {
         if [ "$ntpserver" ] &&
            timelimit -t8 -T3 ntpclient -s -h $ntpserver >/dev/null; then
           echo -n "NTP sycn'd with $ntpserver at "
@@ -21,14 +20,11 @@ case "$1" in
           echo -n "rdate sycn'd with $rdateserver at "
           quiet=1 exec /etc/init.d/rtc stop
         fi
-      fi
+      }
       echo "Network unavailable:  Local time is `date`"
        ;;
 
-    stop)
-       ;;
-
      *)
-       echo "usage: synctime {start|stop}"
+       echo "usage: synctime {start}"
        ;;
 esac

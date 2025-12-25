@@ -7,7 +7,7 @@ case "$1" in
     start)
        echo "Starting $redir ..."
        cat $conf | while read device group rest; do #skip blank or comment lines
-         [ "$device" -a "$device" = "${device###}" ] && {
+         [ "$device" -a "$device" = "${device#\#}" ] && {
            rm -f $device
            eval "$netdev $device $rest" &&
            chgrp $group $device && chmod g+rw $device

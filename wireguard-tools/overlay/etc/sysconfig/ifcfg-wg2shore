@@ -18,13 +18,15 @@ EOS
 ifPrep() {
   upping Wireguard
   wg-quick up $IFNAME
+  masquerade -A $IFNAME
 }
 ifPost() {
-  mkdir -p $run/dns && resolv_conf >$run/dns/$IFNAME
-  gateUp && hostsUp $IFNAME
   optimizeWg2shore
+  mkdir -p $run/dns &&
+  resolv_conf | tee $run/dns/$IFNAME | updateResolv && hostsUp $IFNAME
 }
 ifClose() {
   rm -f $run/dns/$IFNAME
+  masquerade -D $IFNAME
   wg-quick down $IFNAME
 }

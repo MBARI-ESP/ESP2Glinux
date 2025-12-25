@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/21/25 brent@mbari.org
+# -- revised: 12/24/25 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -83,7 +83,7 @@ ifCfg() {
     :  #invoked at end of ifDown
   }
   cfg=$syscfg/`dirname "$1"`/ifcfg-$IFNAME
-  [ -r $cfg ] || cfg=$syscfg/if-default
+  [ -f $cfg ] || cfg=$syscfg/if-default
   . $cfg
 }
 
@@ -112,21 +112,21 @@ ipUp() {
     echo "FAILED:  ifconfig $IFNAME $ipopts"
     return 2
   }
-  gateUp $IFNAME $GATEWAY && hostsUp $IFNAME || return
+  gateUp $IFNAME $GATEWAY || return
+  hostsUp $IFNAME
   #also bring up associated VPN interface if this one provides gateway
-  [ "$VPN" -a "$GATEWAY" ] && vpnUp $VPN $IFNAME
-  gateUpdated
+  [ "$VPN" ] && vpnUp $VPN $IFNAME
+  gateUpdated up
   :
 }
 
 ipDown() {
 # tear down IP interface per shell environment variables:
 #  IFNAME = network device
-  local netIface=${1:-$IFNAME}
-  gateDown $netIface
+  gateDown
   gateUp
   hostsUp
-  gateUpdated
+  gateUpdated down
 }
 
 vpnUp() {
@@ -170,9 +170,8 @@ gateUp() {
 # if called without args, restore the highest priority gateway
   local oldPWD=$PWD
   local resolv=$run/resolv
-  cd $resolv 2>/dev/null || {
-    mkdir $resolv && cd $resolv || return
-  }
+  mkdir -p $resolv
+  cd $resolv
   local interface resolvIF resolvDev gateway ifs ifs2 topIface
   [ "$1" ] && {
     rm -f "$1"
@@ -186,7 +185,7 @@ gateUp() {
   { #read up to two lines of net interface types from $priorityFn
     if read -r ifs; then
       for interface in $ifs; do  #first try only active ifaces with gateways
-        [ -r "$interface" ] && notUnplugged "$interface" && {
+        [ -f "$interface" ] && notUnplugged "$interface" && {
           read -r resolvDev gateway <$interface
           if [ "$resolvDev" = "#$interface" ]; then
             [ "$gateway" ] && {
@@ -201,7 +200,7 @@ gateUp() {
         read -r ifs2  #optional 2nd line gives priority for inactive ifaces
         : ${ifs2:=$ifs}  #reuse 1st line if 2nd is blank
         for interface in $ifs2; do
-          [ -r "$interface" ] && {
+          [ -f "$interface" ] && {
             read -r resolvDev gateway <$interface
             if [ "$resolvDev" = "#$interface" ]; then
               [ "$gateway" ] && {
@@ -215,12 +214,7 @@ gateUp() {
       }
       cd $oldPWD
       : ${topIface:=$1}  #use given interface no prioritized net iface found
-      if [ "$topIface" ]; then
-        setGateway $topIface $gateway
-      else
-#       echo "No gateway interfaces up" >&2
-        >/etc/resolv.conf
-      fi
+      setGateway $topIface $gateway
     else
       echo "Blank or missing $priorityFn" >&2
       cd $oldPWD
@@ -252,21 +246,27 @@ reloadDNSmasq() {
     kill -HUP "$masqPID"
 }
 
+updateResolv() {
+#update resolv.conf with stdin
+  tee $run/resolv.dnsmasq | {
+    grep -v ^nameserver
+    echo nameserver 127.0.0.1
+  } >/etc/resolv.conf
+}
+
 setGateway() {
 #update resolv.conf from device $1
 #if $2 specified, set device $1's gw route to that IP address
   local topIface=$1 gateway=$2
   gateChange $topIface
   set -- $run/dns/*
-  if [ -r "$1" ]; then  #override default gateway's DNS
+  if [ -f "$1" ]; then  #override default gateway's DNS
     head -1
-    cat "$1"
+    cat $1
   else
     cat
-  fi 2>/dev/null <$run/resolv/$topIface | tee $run/resolv.dnsmasq |{
-    grep -v ^nameserver
-    echo nameserver 127.0.0.1
-  }>/etc/resolv.conf
+  fi 2>/dev/null <$run/resolv/$topIface | updateResolv
+  [ "$topIface" ] || return
   if [ "$gateway" ]; then  #replace default routes if changed
     route -n | grep "^0\.0\.0\.0 " | {
       del=
@@ -294,14 +294,17 @@ setGateway() {
 
 enableDHCP() {
 #first arg is the optional LAN domain
+  local domain=$1
   local domains subnet=${IPADDR%.*}
-  grep -m 1 ^search /etc/resolv.conf | {
-    read search domains
+  set -- $run/dns/*
+  [ -f "$1" ] || set -- /etc/resolv.conf
+  grep -m 1 ^search $1 | {
+    read -r search domains
     cat >$run/dnsmasq/$IFNAME <<END
 interface=$IFNAME
 dhcp-range=$subnet.150,$subnet.199,4h
 dhcp-option=option:domain-search,${domains// /,}
-${1+domain=$1,$subnet.0/24}
+${domain:+domain=$domain,$subnet.0/24}
 END
   }
   /etc/init.d/dnsmasq restart >/dev/null
@@ -380,8 +383,10 @@ netIfPtp() {
 
 topIf() {
 #output the name of the top priority network interface
-  local iface gateway extra
-  read -r iface gateway extra 2>/dev/null </etc/resolv.conf && echo ${iface###}
+  local iface iface0 gateway extra
+  read -r iface0 gateway extra 2>/dev/null </etc/resolv.conf || return
+  iface=${iface0#\#}
+  [ "$iface0" != "$iface" ] && echo $iface
 }
 
 gateIPadr() {
@@ -408,7 +413,7 @@ gateChange() {
 #$1 is the new gateway interface
 :
 }
-[ -r $syscfg/sitecfg.sh ] && . $syscfg/sitecfg.sh
+[ -f $syscfg/sitecfg.sh ] && . $syscfg/sitecfg.sh
 
 ifDown() {
 #shutdown given interface
@@ -506,7 +511,7 @@ preppedIfUp() {
       daemon=/sbin/udhcpc  #only use this dhcp client
       if test -x $daemon  ; then
         pidfn=$run/udhcpc-$IFNAME.pid
-        if [ -r $pidfn ]; then
+        if [ -f $pidfn ]; then
           kill `head -n1 $pidfn` 2>/dev/null
         else
           mkdir -p `dirname $pidfn`
@@ -572,6 +577,12 @@ atCmd() {
   local err=$?
   [ "$3" = "ignore" ] || logger -stchat -p${3-err} $AT failed \'$1\' command >&2
   return $err
+}
+
+masquerade() {
+#process standard iptables source masquerade rule
+#$1 is iptables operation, $2 is the output interface
+  iptables -t nat $1 POSTROUTING -o $2 -j MASQUERADE
 }
 
 #append to trace file if it is writable
