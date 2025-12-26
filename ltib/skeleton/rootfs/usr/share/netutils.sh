@@ -293,9 +293,10 @@ setGateway() {
 }
 
 enableDHCP() {
-#first arg is the optional LAN domain
-  local domain=$1
-  local domains subnet=${IPADDR%.*}
+#first optional arg overrides IP addr
+#domain env var is optional LAN domain
+  local ip=${1:-$IPADDR}
+  local domains subnet=${ip%.*}
   set -- $run/dns/*
   [ -f "$1" ] || set -- /etc/resolv.conf
   grep -m 1 ^search $1 | {
@@ -308,6 +309,19 @@ ${domain:+domain=$domain,$subnet.0/24}
 END
   }
   /etc/init.d/dnsmasq restart >/dev/null
+}
+
+signalDHCPclient() {
+#signal this interface's DHCP client if one is running
+  local dhcpc sig=$1
+  dhcpc=`cat $run/udhcpc-$IFNAME.pid 2>/dev/null` && [ "$dhcpc" ] && {
+    case "$1" in
+      rel*)  sig=USR2
+    ;;
+      ren*)  sig=USR1
+    esac
+    kill -$sig $dhcpc
+  }
 }
 
 defaultRoutes() {

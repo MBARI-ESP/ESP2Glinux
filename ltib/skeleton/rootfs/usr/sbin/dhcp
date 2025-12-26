@@ -1,0 +1,41 @@
+#!/bin/sh
+. /usr/share/netutils.sh
+
+usage() {
+cat <<END >&2
+Enable/disable DHCP server OR renew/release/stop DHCP client reservation
+for specified network interface
+First arg is one of 'enable','disable', 'renew', 'release', or 'stop'
+stop releases the current lease and stops listening for renewals
+2nd arg is interface name
+optional 3rd arg is a static IP (relevant for enable only)
+END
+    exit 2
+}
+
+[ "$2" ] || usage
+ifCfg $2 || exit
+act=`echo $1 | tr A-Z a-z`
+shift 2
+case "$act" in
+  en*)
+    signalDHCPclient HUP && sleep 2
+    [ "$1" ] && {
+      ifconfig $IFNAME $1 || exit
+    }
+    enableDHCP "$@"
+;;
+  di*)
+    rm $run/dnsmasq/$IFNAME
+    signalDHCPclient renew
+    /etc/init.d/dnsmasq restart
+;;
+  rel*) signalDHCPclient release
+;;
+  ren*) signalDHCPclient renew
+;;
+  stop) signalDHCPclient HUP
+;;
+  *) usage
+esac
+
