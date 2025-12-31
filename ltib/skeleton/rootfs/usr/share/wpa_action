@@ -5,7 +5,7 @@
 }
 
 log() {
-    logger -st "wpa_cli[$PPID]" -p daemon.$1 "${IFALIAS-IFNAME} $2"
+    logger -st "wpa_cli[$PPID]" -p daemon.$1 "${IFALIAS:-$IFNAME} $2"
 }
 
 [ -t 1 ] || exec >/dev/console 2>&1
@@ -17,11 +17,11 @@ case "$2" in
     wpaConnected() {
       :
     }
-    log notice "connected${WPA_ID_STR+" to $WPA_ID_STR"}"
+    log notice "connected${WPA_ID_STR:+" to $WPA_ID_STR"}"
     wpaConnected && preppedIfUp
 ;;
   DISCONNECTED|stop|down)
-    log notice "disconnected${WPA_ID_STR+" from $WPA_ID_STR"}"
+    log notice "disconnected${WPA_ID_STR:+" from $WPA_ID_STR"}"
     for dhcp in $run/*dhcpc*-$IFNAME; do   #kill only the dhcpc daemons, not wpa
       dhcpPID=`cat $pidFn 2>/dev/null` && [ "$dhcpPID" ] && kill "$dhcpPID"
     done
