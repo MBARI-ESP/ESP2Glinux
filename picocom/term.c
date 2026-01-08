@@ -633,8 +633,32 @@ term_set_baudrate (int fd, int baudrate)
 		case 460800:
 			spd = B460800;
 			break;
+		case 500000:
+			spd = B500000;
+			break;
+		case 576000:
+			spd = B576000;
+			break;
 		case 921600:
 			spd = B921600;
+			break;
+		case 1000000:
+			spd = B1000000;
+			break;
+		case 1152000:
+			spd = B1152000;
+			break;
+		case 1500000:
+			spd = B1500000;
+			break;
+		case 2000000:
+			spd = B2000000;
+			break;
+		case 2500000:
+			spd = B2500000;
+			break;
+		case 3000000:
+			spd = B3000000;
 			break;
 		default:
 			term_errno = TERM_EBAUD;
