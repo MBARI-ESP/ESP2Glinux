@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 12/24/25 brent@mbari.org
+# -- revised: 1/5/26 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -60,9 +60,12 @@ hasIP() {
 
 ifCfg() {
 #read configuration for specified interface
-#IFNAME is the unaliased interface name
+#$1 is network interface name or alias
+#$2 optionally overrides default configuration
+#(passing $2=. will require that ifcfg-$1 exist)
   unset BOOTPROTO IPADDR NETMASK BROADCAST DHCPNAME
   unset NOAUTOSTART GATEWAY MTU IFALIAS KILLSECS KILLSIGS
+  unset enableGPS disableGPS
   IFNAME=`basename "$1"`
   resolv_conf() {
     :  #stdout incorporated into /etc/resolv.conf
@@ -82,8 +85,18 @@ ifCfg() {
   ifDetach() {
     :  #invoked at end of ifDown
   }
+  enableGPS() {
+    echo "${IFALIAS:-$IFNAME} lacks GPS receiver!" >&2
+    return 99
+  }
+  disableGPS() {
+    return 99
+  }
   cfg=$syscfg/`dirname "$1"`/ifcfg-$IFNAME
-  [ -f $cfg ] || cfg=$syscfg/if-default
+  [ -f "$cfg" ] || {
+    cfg=${2:-$syscfg/if-default}
+    [ -f "$cfg" ] || return
+  }
   . $cfg
 }
 
@@ -97,8 +110,10 @@ ipUp() {
 #  MTU = Maximum Transmit Unit
 #  VPN = associated VPN server / interface
   [ "$IPADDR" ] || {
-    ifconfig $IFNAME 0 2>/dev/null
-    return
+    ifconfig $IFNAME 0 2>/dev/null && return
+    local err=$?
+    echo "Network interface \"$IFNAME\" does not exist!" >&2
+    return $err
   }
   local mask= cast=
   [ "$NETMASK" ] && {
