@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+usage() {
+  cat <<END >&2
+usage:  gps on|off|enable|disable {netInterface} -- 1/8/25 brent@mbari.org
+        Control GPS receiver {associated with specified netInterface}
+        If netInterface not specified, use first one to have come on-line
+END
+  exit 101
+}
+
+. /usr/share/netutils.sh
+
+act=$1
+iface=$2
+[ "$act" ] || usage
+
+case "$iface" in
+  "")  #determine the net interface with GPS by searching available ports
+    gpsPort=`realpath /dev/AT/gps` || exit
+    while :; do
+      for gpsPath in /dev/AT/*-gps; do
+        port=`realpath $gpsPath` && [ "$port" = "$gpsPort" ] && break 2
+      done
+      echo "No installed modem provides GPS!" >&2
+      exit 1
+    done
+    gpsBase=`basename $gpsPath`
+    iface=${gpsBase%-*}
+  ;;
+  -*)  #any flag is a request for help
+    usage
+  ;;
+  *) #anything else must be the name of an interface
+esac
+
+ifCfg $iface || exit
+shift 2 2>/dev/null
+case "$act" in
+  en*|on*|EN*|ON*)
+        enableGPS $iface "$@"
+;;
+  dis*|off|DIS*|OFF*)
+        disableGPS $iface "$@"
+;;
+  *) usage
+esac
+
