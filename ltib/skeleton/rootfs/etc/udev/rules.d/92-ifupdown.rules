@@ -1,4 +1,4 @@
-#12/6/25 brent@mbari.org
+#1/7/25 brent@mbari.org
 #ignore virtual network interfaces
 SUBSYSTEM!="net", GOTO="notNetIf"
 ENV{DEVPATH}=="/devices/virtual/*", GOTO="updownEND"
@@ -15,9 +15,9 @@ ATTRS{idVendor}=="1bc7", ENV{delay}="30"
 #ensure stickup runs before attempting to bring up SIMCom A76xx
 ATTRS{idVendor}=="1e0e", ENV{delay}="4"
 
-#Pantech and SIMCom modems do not require much delay
+#Pantech and other SIMCom modems do not require much delay
 ATTRS{idVendor}=="10a9", ENV{delay}="1"
-ATTRS{idVendor}=="05c6", ENV{delay}="1"
+ATTRS{idVendor}=="05c6", ENV{delay}="6"
 
 RUN+="ifLink USB%s{busnum}:%s{devnum}"
 
@@ -115,7 +115,7 @@ GOTO="updownEND"
 
 
 LABEL="GPSport"
-MODE="0640", SYMLINK+="AT/gps", ENV{newPort}="AT/#-gps", GOTO="addPort"
+MODE="0640", SYMLINK+="AT/gps gps", ENV{newPort}="AT/#-gps", GOTO="addPort"
 
 LABEL="diagPort"
 ENV{newPort}="AT/#-diag", GOTO="rootPort"

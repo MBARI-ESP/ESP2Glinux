@@ -10,6 +10,11 @@ DRIVERS=="huawei_cdc_*",KERNEL=="wwan*", NAME="huawei%n"
 ATTRS{idVendor}=="05c6",ATTRS{idProduct}=="9330", NAME="sim76xx%n"
 ATTRS{idVendor}=="1410",ATTRS{idProduct}=="b001", NAME="cdc551L%n"
 
+#Quectel EG912
+ATTRS{idVendor}=="2c7c",ATTRS{idProduct}=="0901", NAME="quectel%n"
+#Pantech UML295
+ATTRS{idVendor}=="10a9",ATTRS{idProduct}=="6064", NAME="pantech%n"
+
 #rename Siretta ZETA cell modem's network interface
 #ATTRS{idVendor}=="1bc7",ATTRS{idProduct}=="1102",ATTRS{serial}=="6d254be1",\
 #  NAME="cell"

@@ -109,10 +109,11 @@ ipUp() {
 #  GATEWAY = default gateway's IP address
 #  MTU = Maximum Transmit Unit
 #  VPN = associated VPN server / interface
+#  complain about missing interface only if $1 supplied
   [ "$IPADDR" ] || {
     ifconfig $IFNAME 0 2>/dev/null && return
     local err=$?
-    echo "Network interface \"$IFNAME\" does not exist!" >&2
+    [ "$1" ] && echo "Network interface \"$IFNAME\" does not exist!" >&2
     return $err
   }
   local mask= cast=
@@ -536,7 +537,7 @@ preppedIfUp() {
   ;;
     dhcp*)
       upping DHCP
-      ipUp || return
+      ipUp winge || return
       daemon=/sbin/udhcpc  #only use this dhcp client
       if test -x $daemon  ; then
         pidfn=$run/udhcpc-$IFNAME.pid
@@ -560,7 +561,7 @@ preppedIfUp() {
   ;;
     static)
       upping static ${IPADDR:+"at $IPADDR"}
-      ipUp || return
+      ipUp winge || return
   ;;
     *)
       echo "${IFALIAS:-$IFNAME}:  Unrecognized BOOTPROTO=\"$BOOTPROTO\"" >&2
