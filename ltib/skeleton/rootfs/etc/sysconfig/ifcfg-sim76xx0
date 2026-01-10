@@ -26,7 +26,7 @@ ifPrep() {
     report=`atCmd 'AT+CGREG?' 't8 REPORT +CGREG:' 2>&1` &&
     regstat=`echo "$report"|awk 'BEGIN{FS=",";ORS=""};{print $2}'` || continue
     case "$regstat" in
-      1|5) break  #registered on home net or roaming
+      1|5|3) break  #await registered on home net, roaming, or rejected
     esac
   done
   let 'count > 0' || {
