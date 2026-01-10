@@ -30,7 +30,7 @@ ifPrep() {
     esac
   done
   let 'count > 0' || {
-    logger -st $IFNAME -p error "Cannot register on mobile net (SIM trouble?)"
+    logger -st $IFNAME -p err "Cannot register on mobile net (SIM trouble?)"
     return 14
   }
   sleep 3
