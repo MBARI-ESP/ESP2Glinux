@@ -18,10 +18,25 @@ vzw() {
 }
 
 ifPrep() {
-  atCmd 'AT+CFUN=1' && sleep 20 && #ifdown/up fails without at least this delay
+  local trace report apn regstat count=41 #wait up to 40s to register
+  set +x  #because chat writes its REPORT to stderr
+  atCmd 'AT+CFUN=1' &&
+  while let '--count > 0'; do
+    sleep 1
+    report=`atCmd 'AT+CGREG?' 't8 REPORT +CGREG:' 2>&1` &&
+    regstat=`echo "$report"|awk 'BEGIN{FS=",";ORS=""};{print $2}'` || continue
+    case "$regstat" in
+      1|5) break  #registered on home net or roaming
+    esac
+  done
+  let 'count > 0' || {
+    logger -st $IFNAME -p error "Cannot register on mobile net (SIM trouble?)"
+    return 14
+  }
+  sleep 3
   atCmd 'AT+CGATT=0;+DIALMODE=0;+USBNETIP=1' t60 &&
-  local report=`atCmd 'AT+CGDCONT?' 't10 REPORT 1,\"' 2>&1` &&
-  local apn=`echo "$report"|awk 'BEGIN{FS=",";ORS=""};\
+  report=`atCmd 'AT+CGDCONT?' 't10 REPORT 1,\"' 2>&1` &&
+  apn=`echo "$report"|awk 'BEGIN{FS=",";ORS=""};\
     {apn=$3;gsub(/^\s+|\s+$/,"",apn);print tolower(apn)}'` || return
 
   case "${apn//\"/}" in  #APN the sim76xx guessed based on SIM card
