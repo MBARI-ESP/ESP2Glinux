@@ -9,14 +9,14 @@ log() {
 }
 
 [ -t 1 ] || exec >/dev/console 2>&1
+wpaConnected() {
+  :
+}
 . /usr/share/netutils.sh
 ifCfg $1
 
 case "$2" in
   CONNECTED)
-    wpaConnected() {
-      :
-    }
     log notice "connected${WPA_ID_STR:+" to $WPA_ID_STR"}"
     wpaConnected && preppedIfUp
 ;;
