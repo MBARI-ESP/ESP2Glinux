@@ -1,4 +1,4 @@
-IFNAME=huawei0
+IFNAME=huawei
 . $syscfg/if-default
 
 BOOTPROTO="dhcp-b -t20"

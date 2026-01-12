@@ -1,6 +1,6 @@
 #Quectel EG912U
 . $syscfg/ifcfg-wwan0
-IFNAME=quectel0
+IFNAME=eg912
 
 enableGPS() {
 #produce NEMA strings on AT/gps at 1hz

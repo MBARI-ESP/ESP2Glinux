@@ -5,15 +5,16 @@ ACTION!="add", GOTO="endNetRename"
 #Assign Verizon USB551L modem a unique interface name
 DRIVERS=="cdc_*",KERNEL=="eth*", NAME="cdc%n"
 DRIVERS=="rndis_*",KERNEL=="eth*", NAME="rnd%n"
-DRIVERS=="huawei_cdc_*",KERNEL=="wwan*", NAME="huawei%n"
+DRIVERS=="huawei_cdc_*",KERNEL=="wwan*", NAME="huawei"
 
-ATTRS{idVendor}=="05c6",ATTRS{idProduct}=="9330", NAME="sim76xx%n"
-ATTRS{idVendor}=="1410",ATTRS{idProduct}=="b001", NAME="cdc551L%n"
+ATTRS{idVendor}=="1e0e",
+ATTRS{idVendor}=="05c6",ATTRS{idProduct}=="9330", NAME="sim7672"
+ATTRS{idVendor}=="1410",ATTRS{idProduct}=="b001", NAME="cdc551L"
 
 #Quectel EG912
-ATTRS{idVendor}=="2c7c",ATTRS{idProduct}=="0901", NAME="quectel%n"
+ATTRS{idVendor}=="2c7c",ATTRS{idProduct}=="0901", NAME="eg912"
 #Pantech UML295
-ATTRS{idVendor}=="10a9",ATTRS{idProduct}=="6064", NAME="pantech%n"
+ATTRS{idVendor}=="10a9",ATTRS{idProduct}=="6064", NAME="uml295"
 
 #rename Siretta ZETA cell modem's network interface
 #ATTRS{idVendor}=="1bc7",ATTRS{idProduct}=="1102",ATTRS{serial}=="6d254be1",\

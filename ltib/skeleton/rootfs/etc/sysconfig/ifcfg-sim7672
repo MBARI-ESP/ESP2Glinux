@@ -1,5 +1,5 @@
 . $syscfg/ifcfg-wwan0
-IFNAME=sim76xx0
+IFNAME=sim7672
 vzwAPN=vzwinternet
 
 selectAPN() {

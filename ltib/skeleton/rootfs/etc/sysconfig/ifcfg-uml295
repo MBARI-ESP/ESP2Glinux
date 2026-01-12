@@ -1,6 +1,6 @@
 #Pantech UML295
 . $syscfg/if-default
-IFNAME=pantech0
+IFNAME=uml295
 
 enableGPS() {
 #UML295 always produces NMEA strings
