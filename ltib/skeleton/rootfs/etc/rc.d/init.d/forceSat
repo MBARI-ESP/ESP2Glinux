@@ -1,0 +1,17 @@
+#!/bin/sh
+#run early in startup to
+#force system to choose satellite comms over cellular
+#(use for testing only)
+
+case "$1" in
+  start)
+    power off cell
+    power on sat
+     ;;
+
+  *)
+     echo "usage: start"
+     echo "on start:  force initial use of satellite comms"
+     ;;
+esac
+
