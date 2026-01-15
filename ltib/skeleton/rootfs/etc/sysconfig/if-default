@@ -1,5 +1,5 @@
-#defaults if network interface ifg-$IFNAME is not defined
-BOOTPROTO="dhcp-b"  #dhcp in background
+#defaults to use if no network interface "ifg-$IFNAME" file exists
+BOOTPROTO=dhcp-b  #dhcp in background
 DHCPNAME=`hostname`
 
 #VPN=$ESPshore/shore   #server IP / VPN interface

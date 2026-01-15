@@ -9,7 +9,7 @@ ifPrep() {
   mkdir -p $run/$wpa
   $wpa -Bi $IFNAME -P$run/wpa-$IFNAME.pid -c/etc/$wpa.conf && {
     #do not defer dhcpcd if cannot start wpa_cli
-    wpa_cli -i $IFNAME -Ba /usr/share/wpa_action || return 0
+    wpa_cli -i $IFNAME -Ba /usr/share/wpa_action -p $run/$wpa || return 0
     unset BOOTPROTO  #defer until $wpa connects
   }
 }
