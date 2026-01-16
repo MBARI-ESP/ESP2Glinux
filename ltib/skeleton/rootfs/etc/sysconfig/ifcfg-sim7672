@@ -1,3 +1,4 @@
+#revised: 1/15/26 brent@mbari.org
 . $syscfg/ifcfg-wwan0
 IFNAME=sim7672
 vzwAPN=vzwinternet
@@ -23,7 +24,7 @@ ifPrep() {
   atCmd 'AT+CFUN=1' &&
   while let '--count > 0'; do
     sleep 1
-    report=`atCmd 'AT+CGREG?' 't8 REPORT +CGREG:' 2>&1` &&
+    report=`atCmd 'AT+CGREG?' 't8 REPORT +CGREG:' ignore 2>&1` &&
     regstat=`echo "$report"|awk 'BEGIN{FS=",";ORS=""};{print $2}'` || continue
     case "$regstat" in
       1|5|3) break  #await registered on home net, roaming, or rejected
