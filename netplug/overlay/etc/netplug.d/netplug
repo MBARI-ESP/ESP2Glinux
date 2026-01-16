@@ -1,6 +1,6 @@
 #!/bin/sh
 # netplugd 'policy script'
-#  revised 2/11/23 brent@mbari.org
+#  revised 1/15/26 brent@mbari.org
 
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 
@@ -17,7 +17,7 @@ log() {
 
 dev="$1"
 act="$2"
-#echo $dev: $act >/dev/console
+#log notice "$dev $act"
 case "$act" in
   in)     ifCfg $dev && ifUpAuto
 ;;
@@ -25,7 +25,7 @@ case "$act" in
 ;;
   probe)  #ignore or ifconfig $dev up 0 >/dev/null 2>&1
 ;;
-  *)      log err "Unknown netplugd command: $act on $dev"
+  *)      log err "Unknown action: $act on $dev"
           exit 1
 esac
 :
