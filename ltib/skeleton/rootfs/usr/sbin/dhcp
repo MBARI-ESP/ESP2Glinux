@@ -37,5 +37,8 @@ case "$act" in
   stop) signalDHCPclient HUP
 ;;
   *) usage
-esac
-
+esac || {
+  err=$?
+  echo "DHCP $act for ${IFALIAS:-$IFNAME} failed!" 2>&1
+  exit $err
+}
