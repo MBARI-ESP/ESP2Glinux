@@ -1,5 +1,5 @@
 #!/bin/sh
-#12/12/25 by brent@mbari.org
+#1/31/26 by brent@mbari.org
 
 [ "$1" -a "$interface" ] || {
   echo "Error: should be called from udhcpc"
@@ -53,7 +53,7 @@ case "$1" in
       dnsMsg=" with DNS $dns"
     }
 IPADDR=$ip NETMASK=$subnet BROADCAST=$broadcast GATEWAY=$router MTU=$mtu ipUp&&{
-      log notice "$1 to $ip$dnsMsg"
+      log notice "$1 to $ip via $router$dnsMsg"
       echo "$leaseSpec" >$leased
     }
   ;;
