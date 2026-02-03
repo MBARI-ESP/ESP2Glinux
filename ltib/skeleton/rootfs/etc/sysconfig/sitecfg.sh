@@ -1,5 +1,5 @@
 #Site specific networking utilities & definitions
-# -- revised: 12/25/25 brent@mbari.org
+# -- revised: 1/31/26 brent@mbari.org
 
 ESPshore=134.89.2.91  #ESPshore.mbari.org
 wg2shore=wg2shore     #name of wireguard interface to shore
@@ -33,6 +33,7 @@ optimizeWg2shore() {
 
 gateUpdated() {
 #invoked just after gateway interface may have been updated
+#1st arg is 'up' if new interface just come up, 'down' if IF just went down
   local gate tunGate
   read -r tunGate 2>/dev/null <$run/tunGate
   if gate=`topIf`; then
@@ -46,17 +47,21 @@ gateUpdated() {
       optimizeWg2shore
 
       local lock=$run/nfsmount.auto
-      [ "$1" = up -a -f $lock ] && (  #auto nfsmount in 7 seconds
-        exec 8<$lock
-        flock --nonblock 8 || exit  #another instance is running
-        prev=`cat <&8` && [ "$prev" ] && kill $prev
-        echo $$ >$lock
-        flock --unlock 8
-        sleep 7
-        flock --nonblock 8 || exit
-        >$lock
-        /etc/init.d/nfsmount quietly
-      )&
+      if [ "$1" = up ]; then
+        [ -f $lock ] && (  #auto nfsmount in 7 seconds
+          exec 8<$lock
+          flock --nonblock 8 || exit  #another instance is running
+          prev=`cat <&8` && [ "$prev" ] && kill $prev
+          echo $$ >$lock
+          flock --unlock 8
+          sleep 7
+          flock --nonblock 8 || exit
+          >$lock
+          /etc/init.d/nfsmount quietly
+        )&
+      else  #cellular carriers drop lease if no traffic, so renew it whenever a
+        signalDHCPclient renew $gate  #lower priority gateway promoted to topIf
+      fi
     }
   else
     [ "$tunGate" ] && masquerade -D $tunGate

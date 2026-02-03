@@ -1,5 +1,5 @@
 #Common networking utilities
-# -- revised: 1/5/26 brent@mbari.org
+# -- revised: 1/31/26 brent@mbari.org
 
 syscfg=/etc/sysconfig
 run=/run
@@ -328,9 +328,9 @@ END
 }
 
 signalDHCPclient() {
-#signal this interface's DHCP client if one is running
-  local dhcpc sig=$1
-  dhcpc=`cat $run/udhcpc-$IFNAME.pid 2>/dev/null` && [ "$dhcpc" ] && {
+#signal interface's DHCP client to release or renew lease
+  local dhcpc sig=$1 iface=${2:-$IFNAME}
+  dhcpc=`cat $run/udhcpc-$iface.pid 2>/dev/null` && [ "$dhcpc" ] && {
     case "$1" in
       rel*)  sig=USR2
     ;;
