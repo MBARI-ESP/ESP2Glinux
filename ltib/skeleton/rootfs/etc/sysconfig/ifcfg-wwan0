@@ -1,8 +1,6 @@
 IFNAME=wwan0
 . $syscfg/if-default
 
-BOOTPROTO="dhcp-b -t20"
-
 ifDetach() {
   atCmd "AT+CFUN=0" t10 info
 }
