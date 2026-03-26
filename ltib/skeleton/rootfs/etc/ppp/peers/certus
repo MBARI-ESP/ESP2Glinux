@@ -1,5 +1,5 @@
 # pppd configuration for internet via Iridium handset on USB port
-#  - 1/1/25 brent@mbari.org
+#  - 3/25/24 brent@mbari.org
 
 #connection
 linkname certus
@@ -8,13 +8,13 @@ remotename certus
 noauth       #require no password authorization
 
 #debugging options
-debug
+#debug
 #record /tmp/ppptrace.out
 #kdebug
 
 #logging options
-logfile /var/log/certus.pppdlog
-dump
+#logfile /var/log/certus.pppdlog
+#dump
 
 #RS-232 port configuration
 certus
