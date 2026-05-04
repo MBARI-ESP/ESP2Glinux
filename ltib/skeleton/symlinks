@@ -1,4 +1,4 @@
-Configuration symlinks for ESP embedded linux - 1/8/26 brent@mbari.org
+Configuration symlinks for ESP embedded linux - 5/4/26 brent@mbari.org
 Typically Input to the mksymlinks as follows:
 
   mksymlinks rootfs < {this file}
@@ -45,6 +45,7 @@ Next the symlinks:
 etc/localtime -> /usr/share/zoneinfo/US/Pacific
 etc/mtab -> /proc/mounts
 etc/init.d -> rc.d/init.d
+usr/bin/ruby -> /opt/mbari/bin/ruby
 
 etc/rc.d/rc3.d/S05modules -> ../init.d/modules
 etc/rc.d/rc3.d/S10sysmount -> ../init.d/sysmount
