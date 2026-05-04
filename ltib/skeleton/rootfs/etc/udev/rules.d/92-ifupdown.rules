@@ -80,9 +80,9 @@ ENV{ID_IFACE}=="08", GOTO="GPSport"
 GOTO="updownEND"
 
 
-#Telit ME910 (prod 1102 is a USB CDCether device)
+#Telit ME910 (prod 1102 and 110b are USB CDCether devices)
 LABEL="Telit"
-ATTRS{idProduct}=="1102", ENV{ID_IFACE}=="02", GOTO="ATport"
+ATTRS{idProduct}=="1102|110b", ENV{ID_IFACE}=="02", GOTO="ATport"
 ATTRS{idProduct}=="1101",\
   GROUP:="root", SYMLINK+="AT/me910", RUN+="ifup me910 15"
 GOTO="updownEND"
